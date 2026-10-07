@@ -1,7 +1,51 @@
-# KookyeCatCloud
+<p align="center">
+  <img src="docs/assets/cover-kookyecatcloud.png" alt="KookyeCatCloud — Tus archivos y fotos. Siempre contigo." width="100%">
+</p>
 
-Servidor de archivos y backup de fotos autoalojado. Node + Express por detrás,
-PWA sin dependencias por delante.
+<h1 align="center">KookyeCatCloud</h1>
+
+<p align="center">
+  <strong>Tu nube, en tu servidor.</strong><br>
+  Organiza tus archivos, guarda tus fotos y compártelos desde cualquier dispositivo.<br>
+  Servidor de archivos y backup de fotos autoalojado, con una PWA instalable.
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/LICENCIA-MIT-6366f1?style=for-the-badge" alt="Licencia MIT"></a>
+  <a href="public/manifest.json"><img src="https://img.shields.io/badge/PWA-INSTALABLE-8b5cf6?style=for-the-badge&logo=pwa&logoColor=white" alt="PWA instalable"></a>
+  <a href="#despliegue-en-el-vps"><img src="https://img.shields.io/badge/ALOJAMIENTO-TU_SERVIDOR-3b82f6?style=for-the-badge" alt="Autoalojado en tu servidor"></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white" alt="Node.js">
+  <img src="https://img.shields.io/badge/Express-4-555555?logo=express&logoColor=white" alt="Express 4">
+  <img src="https://img.shields.io/badge/JavaScript-f7df1e?logo=javascript&logoColor=black" alt="JavaScript">
+  <a href="#webdav"><img src="https://img.shields.io/badge/WebDAV-COMPATIBLE-6366f1" alt="Compatible con WebDAV"></a>
+</p>
+
+<h3 align="center"><a href="#arrancar-en-local">🚀 Instalar KookyeCatCloud</a></h3>
+
+<p align="center">
+  <a href="#arrancar-en-local">Inicio rápido</a> ·
+  <a href="#despliegue-en-el-vps">Despliegue</a> ·
+  <a href="#variables-de-entorno">Configuración</a> ·
+  <a href="https://github.com/DavidJLlanes/KookyeCatCloud/issues">Reportar un problema</a> ·
+  <a href="LICENSE">Licencia</a>
+</p>
+
+---
+
+## Qué puedes hacer
+
+| | |
+| --- | --- |
+| 📁 **Archivos organizados** | Gestiona carpetas, favoritos, papelera y descargas ZIP. |
+| 📷 **Tu biblioteca de fotos** | Explora álbumes, fechas de captura, datos EXIF y un mapa de fotos. |
+| 🎬 **Vistas previas** | Consulta fotos, vídeos, audio y documentos desde el navegador. |
+| 🔗 **Compartir fácilmente** | Crea enlaces de subida y descarga con caducidad y contraseña opcional para las descargas. |
+| 💻 **Acceso con WebDAV** | Conecta tu nube desde el explorador o una app compatible. |
+| 📝 **Notas y edición** | Guarda notas con autoguardado y edita archivos de texto. |
+| 🔐 **Control de tu cuenta** | Gestiona sesiones, verificación en dos pasos y tokens de aplicación. |
 
 Licencia [MIT](LICENSE): úsalo, modifícalo o redistribúyelo libremente, con o sin fines
 comerciales, siempre que mantengas el aviso de copyright.
