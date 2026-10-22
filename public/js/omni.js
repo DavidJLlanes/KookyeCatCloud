@@ -15,12 +15,14 @@
 
   const ACCIONES = [
     { t: 'Nuevo prompt', s: 'Guardar un prompt con imágenes y etiquetas', i: 'i-sparkle', f: () => K.prompts.newPrompt() },
+    { t: 'Nuevo contacto', s: 'Añadir a la agenda de contactos', i: 'i-contact', f: () => K.contacts.newContact() },
     { t: 'Nuevo evento', s: 'Añadir al calendario', i: 'i-calendar', f: () => K.calendar.newEvent() },
     { t: 'Nueva tarea', s: 'Añadir una tarea al calendario', i: 'i-list-check', f: () => K.calendar.newEvent({ kind: 'task' }) },
     { t: 'Ir a Archivos', i: 'i-folder', f: () => switchTab('files') },
     { t: 'Ir a Notas', i: 'i-note', f: () => switchTab('notes') },
     { t: 'Ir a Calendario', i: 'i-calendar', f: () => switchTab('calendar') },
     { t: 'Ir a Prompts', i: 'i-sparkle', f: () => switchTab('prompts') },
+    { t: 'Ir a Contactos', i: 'i-contact', f: () => switchTab('contacts') },
     { t: 'Gestionar etiquetas', s: 'Renombrar, cambiar color o borrar', i: 'i-tag', f: () => K.manageLabels() },
   ];
 
@@ -33,7 +35,7 @@
     const res = el('div', 'omni-res');
     box.append(top, res);
     const h = K.modal({ content: box, bare: true, onClose: () => { abierto = null; } });
-    h.el.style.cssText = 'background:none;border:none;box-shadow:none;padding:0;max-width:640px;width:100%;align-self:flex-start';
+    h.el.style.cssText = 'background:none;border:none;box-shadow:none;padding:0;max-width:640px;width:100%;margin:0 auto;align-self:flex-start';
     abierto = h;
     let filas = [], hot = 0, tok = 0;
 
@@ -55,11 +57,12 @@
 
     async function busca(q) {
       const n = ++tok;
-      let archivos = { items: [] }, omni = { notes: [], prompts: [], events: [] };
+      let archivos = { items: [] }, omni = { notes: [], prompts: [], events: [] }, contactos = { items: [] };
       try {
-        [archivos, omni] = await Promise.all([
+        [archivos, omni, contactos] = await Promise.all([
           K.get('/api/search?' + K.qs({ q })).catch(() => ({ items: [] })),
           K.get('/api/omni?' + K.qs({ q })).catch(() => ({ notes: [], prompts: [], events: [] })),
+          K.get('/api/contacts/search?' + K.qs({ q })).catch(() => ({ items: [] })),
         ]);
       } catch { /* sin red */ }
       if (n !== tok) return;
@@ -67,6 +70,7 @@
       let hay = false;
       const seccion = (titulo, items, mk) => { if (!items.length) return; hay = true; res.appendChild(grupo(titulo)); items.forEach(i => res.appendChild(mk(i))); };
       seccion('Prompts', omni.prompts.slice(0, 6), p => fila('i-sparkle', p.title, [(S_KIND[p.kind] || ''), p.model, p.tool].filter(Boolean).join(' · ') || p.snippet.slice(0, 60), () => K.open('prompt', p.id)));
+      seccion('Contactos', contactos.items.slice(0, 6), c => fila('i-contact', c.name, c.sub, () => K.open('contact', c.id)));
       seccion('Notas', omni.notes.slice(0, 6), nt => fila(nt.type === 'folder' ? 'i-folder' : 'i-note', nt.title, nt.type === 'folder' ? 'Carpeta de notas' : 'Nota', () => K.open('note', nt.id)));
       seccion('Calendario', omni.events.slice(0, 6), e => fila('i-calendar', e.title, (e.start ? `${K.d.short(K.d.parse(e.start))}${e.allDay ? '' : ' · ' + e.start.slice(11, 16)}` : 'Tarea sin fecha'), () => K.open('event', e.id)));
       seccion('Archivos', archivos.items.slice(0, 8), f => fila(f.isDir ? 'i-folder' : 'i-doc', f.name, f.dir || 'Inicio', () => K.open('file', (f.dir ? f.dir + '/' : '') + f.name, { isDir: f.isDir })));

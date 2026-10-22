@@ -1302,8 +1302,12 @@ function closeLightbox() {
   state.lbIndex = -1;
 }
 
+// Zoom de la foto abierta (rueda, pellizco, doble toque); null si el archivo no es una imagen
+let lbZoom = null;
+
 // Parar la reproducción de verdad: sin esto el vídeo sigue sonando al cerrar
 function vaciarVisor() {
+  if (lbZoom) { lbZoom.destroy(); lbZoom = null; }
   const caja = $('lb-media');
   caja.querySelectorAll('video, audio').forEach(m => { m.pause(); m.removeAttribute('src'); m.load(); });
   caja.textContent = '';
@@ -1354,6 +1358,7 @@ function paintLightbox() {
     img.src = src;
     img.alt = item.name;
     caja.appendChild(img);
+    if (window.KZoom) lbZoom = KZoom.attach($('lb-stage'), img);
   }
 
   $('lb-name').textContent = item.name;
@@ -3886,7 +3891,11 @@ $('lb-open').addEventListener('click', () => {
     : BASE + '/api/preview?path=' + qs(item.rel);
   window.open(url, '_blank', 'noopener');
 });
-$('lb-stage').addEventListener('click', e => { if (e.target === $('lb-stage')) closeLightbox(); });
+// Se mira qué hay bajo el dedo y no e.target: con el zoom activo el puntero queda capturado
+// por el escenario y el objetivo del clic sería siempre él, aunque se toque la foto
+$('lb-stage').addEventListener('click', e => {
+  if (e.target === $('lb-stage') && document.elementFromPoint(e.clientX, e.clientY) === $('lb-stage')) closeLightbox();
+});
 
 document.addEventListener('keydown', e => {
   if (!$('lightbox').hidden) {
@@ -3902,9 +3911,18 @@ document.addEventListener('keydown', e => {
   }
 });
 
-let touchX = 0;
-$('lb-stage').addEventListener('touchstart', e => { touchX = e.changedTouches[0].clientX; }, { passive: true });
+// Deslizar para cambiar de foto. No cuenta si hay zoom, si se usaron dos dedos (pellizco)
+// ni si todavía queda algún dedo apoyado.
+let touchX = 0, touchMulti = false;
+$('lb-stage').addEventListener('touchstart', e => {
+  if (e.touches.length > 1) touchMulti = true;
+  else { touchMulti = false; touchX = e.changedTouches[0].clientX; }
+}, { passive: true });
 $('lb-stage').addEventListener('touchend', e => {
+  if (e.touches.length) return;
+  const multi = touchMulti;
+  touchMulti = false;
+  if (multi || (lbZoom && lbZoom.zoomed())) return;
   const dx = e.changedTouches[0].clientX - touchX;
   if (Math.abs(dx) > 60) lbStep(dx < 0 ? 1 : -1);
 }, { passive: true });

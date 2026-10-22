@@ -16,6 +16,7 @@ const { createDav } = require('./webdav');
 const createLabels = require('./lib/labels');
 const createCalendar = require('./lib/calendar');
 const createPrompts = require('./lib/prompts');
+const createContacts = require('./lib/contacts');
 const createNotesExtra = require('./lib/notes-extra');
 const createVersions = require('./lib/versions');
 const createVault = require('./lib/vault');
@@ -271,6 +272,7 @@ const promptsMod = createPrompts({
   express, multer, sharp, userRoot, sendError, registrarActividad,
   calendar: calendarMod.core, labels: labelsMod,
 });
+const contactsMod = createContacts({ express, userRoot, sendError, registrarActividad, labels: labelsMod });
 
 // Versiones de archivos de texto (se crea aquí porque WebDAV y las rutas de archivos la usan)
 const versionsMod = createVersions({
@@ -2702,6 +2704,7 @@ app.use('/api', passkeysMod.router);
 app.use('/api/labels', auth, labelsMod.router);
 app.use('/api/calendar', auth, calendarMod.router);
 app.use('/api/prompts', auth, promptsMod.router);
+app.use('/api/contacts', auth, contactsMod.router);
 calendarMod.core.registraOrigen('prompt', (user, id, ev) => promptsMod.core.setCal(user, id, ev));
 calendarMod.core.registraOrigen('note', async (user, id, ev) => {
   const data = await readNotes(user);

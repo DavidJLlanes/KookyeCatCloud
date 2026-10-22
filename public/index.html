@@ -1035,6 +1035,11 @@
   <symbol id="i-doc-alert" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><path d="M12 11v4M12 18h.01"/></symbol>
   <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
   <symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><path d="M8.5 12h7M8.5 16h4"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></symbol>
+  <symbol id="i-cake" viewBox="0 0 24 24"><path d="M4 20h16v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2z"/><path d="M4 16c2 1.5 4 1.5 6 0s4-1.5 6 0 3 1 4 0M12 12V8M12 8c-1 0-1.5-1-1.5-1.8S12 4 12 4s1.5 1.4 1.5 2.2S13 8 12 8z"/></symbol>
+  <symbol id="i-contact" viewBox="0 0 24 24"><rect x="4" y="3" width="15" height="18" rx="2"/><circle cx="11.5" cy="10" r="2.6"/><path d="M7 17c.8-2 2.4-3 4.5-3s3.7 1 4.5 3M21 8v3M21 13v3"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5l11 6.5-11 6.5z" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></symbol>
@@ -1125,6 +1130,7 @@
       <button class="tab" data-view="notes"><svg class="ico"><use href="#i-note"/></svg><span>Notas</span></button>
       <button class="tab" data-view="calendar"><svg class="ico"><use href="#i-calendar"/></svg><span>Calendario</span></button>
       <button class="tab" data-view="prompts"><svg class="ico"><use href="#i-sparkle"/></svg><span>Prompts</span></button>
+      <button class="tab" data-view="contacts"><svg class="ico"><use href="#i-contact"/></svg><span>Contactos</span></button>
       <span class="tabs-label">Biblioteca</span>
       <button class="tab" data-view="colecciones"><svg class="ico"><use href="#i-star"/></svg><span>Colecciones</span></button>
       <button class="tab" data-view="map"><svg class="ico"><use href="#i-pin"/></svg><span>Mapa</span></button>
@@ -1193,6 +1199,7 @@
 
   <!-- ---- Vista prompts ---- -->
   <main class="wrap kcc-view" id="view-prompts" hidden></main>
+  <main class="wrap kcc-view" id="view-contacts" hidden></main>
 
   <!-- ---- Caja fuerte ---- -->
   <main class="wrap kcc-view" id="view-vault" hidden></main>
@@ -1488,6 +1495,7 @@
       <button data-view="notes"><svg class="ico"><use href="#i-note"/></svg>Notas</button>
       <button data-view="calendar"><svg class="ico"><use href="#i-calendar"/></svg>Agenda</button>
       <button data-view="prompts"><svg class="ico"><use href="#i-sparkle"/></svg>Prompts</button>
+      <button data-view="contacts"><svg class="ico"><use href="#i-contact"/></svg>Contactos</button>
       <button data-view="colecciones"><svg class="ico"><use href="#i-star"/></svg>Colec.</button>
       <button data-view="map"><svg class="ico"><use href="#i-pin"/></svg>Mapa</button>
       <button data-view="vault"><svg class="ico"><use href="#i-lock"/></svg>Caja</button>
@@ -1707,12 +1715,14 @@
 <div id="toast-host"></div>
 
 <script src="/vendor/leaflet/leaflet.js"></script>
+<script src="/js/zoom.js"></script>
 <script src="/app.js"></script>
 <script src="/js/kit.js"></script>
 <script src="/js/ics.js"></script>
 <script src="/js/calendar.js"></script>
 <script src="/js/calendar-extra.js"></script>
 <script src="/js/prompts.js"></script>
+<script src="/js/contacts.js"></script>
 <script src="/js/filecal.js"></script>
 <script src="/js/versions.js"></script>
 <script src="/js/vault.js"></script>

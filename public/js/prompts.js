@@ -652,7 +652,11 @@
       if (p.images.length > 1) {
         for (const [cls, d, rot] of [['l', -1, true], ['r', 1, false]]) { const a = el('button', 'arrow ' + cls); a.type = 'button'; const ic = icon('i-caret'); if (rot) ic.style.transform = 'rotate(180deg)'; a.appendChild(ic); a.addEventListener('click', () => show(cur + d)); main.appendChild(a); }
       }
-      im.addEventListener('click', () => window.open(imgUrl(p.id, p.images[cur].id), '_blank', 'noopener'));
+      // Visor a pantalla completa con zoom (rueda, pellizco, doble toque); empieza en la foto que se ve
+      im.addEventListener('click', () => {
+        if (window.KZoom) KZoom.lightbox({ items: p.images.map(x => ({ src: imgUrl(p.id, x.id), caption: x.caption || '' })), index: cur, title: p.title });
+        else window.open(imgUrl(p.id, p.images[cur].id), '_blank', 'noopener');
+      });
       gal.append(main); if (p.images.length > 1) gal.appendChild(thumbs);
       show(Math.max(0, p.images.findIndex(x => x.id === p.cover)));
     } else {
@@ -751,6 +755,9 @@
     }
     root.append(gal, info);
     const m = K.modal({ cls: 'xl flush', content: root, bare: true });
+    // Cerrar flotante para móvil (en escritorio el CSS lo oculta y vale el de la cabecera)
+    const xw = el('div', 'pd-xwrap'); const xb = el('button'); xb.type = 'button'; xb.setAttribute('aria-label', 'Cerrar'); xb.appendChild(icon('i-x'));
+    xb.addEventListener('click', () => m.close()); xw.appendChild(xb); m.el.insertBefore(xw, m.el.firstChild);
     // Flechas para pasar al anterior/siguiente de la lista
     const nav = (e) => {
       if (!document.body.contains(root) || e.target.closest('input,textarea')) { if (!document.body.contains(root)) document.removeEventListener('keydown', nav); return; }
