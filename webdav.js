@@ -36,7 +36,7 @@ function decodeHref(href, base = '') {
   return p.replace(/^\/dav\/?/, '').replace(/^\/+/, '').replace(/\/+$/, '');
 }
 
-function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '' }) {
+function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '', alSobrescribir, alMover }) {
   async function exists(p) {
     try { await fsp.access(p); return true; } catch { return false; }
   }
@@ -189,6 +189,7 @@ function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '' }
         case 'PUT': {
           await fsp.mkdir(path.dirname(abs), { recursive: true });
           const nuevo = !await exists(abs);
+          if (!nuevo && alSobrescribir) { try { await alSobrescribir(user, rel, abs); } catch { /* sin versión, pero se guarda igual */ } }
           await new Promise((resolve, reject) => {
             const salida = fs.createWriteStream(abs);
             req.pipe(salida);
@@ -228,7 +229,7 @@ function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '' }
           }
           await fsp.mkdir(path.dirname(absDestino), { recursive: true });
           if (existia) await fsp.rm(absDestino, { recursive: true, force: true });
-          if (metodo === 'MOVE') await fsp.rename(abs, absDestino);
+          if (metodo === 'MOVE') { await fsp.rename(abs, absDestino); if (alMover) { try { await alMover(user, rel, relDestino); } catch { /* sin gancho */ } } }
           else await fsp.cp(abs, absDestino, { recursive: true });
           return res.status(existia ? 204 : 201).end();
         }

@@ -250,6 +250,11 @@ function renderCsv(texto, nombre) {
 
 // Todo lo que viene del servidor se inserta como texto, nunca como HTML:
 // un archivo llamado "<img onerror=...>" debe verse como texto, no ejecutarse.
+// Las carpetas que otros te comparten viven bajo "@compartido" y su nombre lleva "~<id>"; aquí se muestran limpias
+function nombreVisible(nombre) {
+  if (nombre === '@compartido') return 'Compartido conmigo';
+  return String(nombre).replace(/~[a-f0-9]{8}$/, '');
+}
 function el(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -579,7 +584,7 @@ function renderBreadcrumb() {
     acc += (acc ? '/' : '') + part;
     const target = acc;
     bar.appendChild(el('span', 'sep', '/'));
-    const btn = el('button', null, part);
+    const btn = el('button', null, nombreVisible(part));
     if (i === parts.length - 1 && !state.query) btn.classList.add('current');
     else btn.addEventListener('click', () => goTo(target));
     haceSoltable(btn, target);
@@ -649,6 +654,7 @@ async function refresh() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Error');
     state.truncated = !!data.truncated;
+    state.perm = data.perm || null;               // 'read' | 'write' dentro de una carpeta compartida contigo
     state.meta = {};
     // rel = ruta completa relativa a la raíz del usuario; en búsqueda viene el directorio aparte
     state.items = (data.items || []).map(it => ({
@@ -656,6 +662,7 @@ async function refresh() {
       rel: state.query ? joinPath(it.dir || '', it.name) : joinPath(state.path, it.name),
     }));
     render();
+    if (window.KCC.afterList) window.KCC.afterList(data);
     cargarMetaFotos();          // en segundo plano: la rejilla ya está pintada
   } catch {
     const box = $('file-list');
@@ -913,7 +920,7 @@ function abrirCtx(x, y, item) {
   const rutas = sobreSeleccion ? [...state.selection] : item ? [item.rel] : [];
 
   if (item) {
-    menu.appendChild(el('div', 'cab', sobreSeleccion ? `${rutas.length} elementos` : item.name));
+    menu.appendChild(el('div', 'cab', sobreSeleccion ? `${rutas.length} elementos` : nombreVisible(item.name)));
     if (!sobreSeleccion) {
       if (item.isDir) opcionCtx(menu, 'i-folder', 'Abrir', () => goTo(item.rel));
       else if (isViewable(item.name)) opcionCtx(menu,
@@ -926,6 +933,9 @@ function abrirCtx(x, y, item) {
     }
     if (!sobreSeleccion) opcionCtx(menu, 'i-share', 'Compartir enlace…', () => openShare(item));
     if (window.KCC.fileCalendar) opcionCtx(menu, 'i-calendar', 'Fecha en el calendario…', () => window.KCC.fileCalendar(rutas));
+    if (window.KCC.toVault) opcionCtx(menu, 'i-lock', 'Mover a la caja fuerte…', () => window.KCC.toVault(rutas));
+    if (window.KCC.shareMenu) window.KCC.shareMenu(menu, item, rutas, sobreSeleccion);
+    if (!sobreSeleccion && !item.isDir && isTexto(item.name) && window.KCC.fileVersions) opcionCtx(menu, 'i-clock', 'Historial de versiones…', () => window.KCC.fileVersions(item));
     opcionCtx(menu, 'i-zip', 'Descargar como ZIP', () => descargarZip(rutas));
     opcionCtx(menu, 'i-move', 'Mover a…', () => openMove(rutas));
     if (!sobreSeleccion) {
@@ -1005,7 +1015,7 @@ function buildRow(item) {
   }
 
   const info = el('div', 'info');
-  info.appendChild(el('div', 'name', item.name));
+  info.appendChild(el('div', 'name', nombreVisible(item.name)));
   info.appendChild(el('div', 'meta',
     (item.isDir ? 'Carpeta' : fmtSize(item.size)) + ' · ' + fmtDate(item.modified)));
   if (state.query) {
@@ -1079,7 +1089,7 @@ function buildTile(item) {
   tile.appendChild(box);
 
   const cap = el('div', 'cap');
-  cap.appendChild(el('span', 'name', item.name));
+  cap.appendChild(el('span', 'name', nombreVisible(item.name)));
   cap.appendChild(el('span', 'sz', item.isDir ? '' : fmtSize(item.size)));
   tile.appendChild(cap);
 
@@ -1605,6 +1615,11 @@ async function alternarEdicion() {
     cancelar.addEventListener('click', () => alternarEdicion());
     const guardar = el('button', 'btn primary', 'Guardar');
     guardar.addEventListener('click', () => guardarEdicion(item, ta.value));
+    if (window.KCC.fileVersions) {
+      const hist = el('button', 'btn', 'Historial');
+      hist.addEventListener('click', () => window.KCC.fileVersions(item));
+      acciones.appendChild(hist);
+    }
     acciones.appendChild(cancelar);
     acciones.appendChild(guardar);
     wrap.appendChild(acciones);
@@ -2362,6 +2377,7 @@ function menuNota(x, y, item) {
   }
   opcionCtx(menu, 'i-pencil', 'Renombrar', () => renombrarNota(item));
   if (item.parent) opcionCtx(menu, 'i-up', 'Sacar a la raíz', () => moverNota(item, ''));
+  if (window.KCC.noteMenu) window.KCC.noteMenu(menu, item);      // exportar, plantilla… (js/notes-extra.js)
   menu.appendChild(el('div', 'sep'));
   opcionCtx(menu, 'i-trash', item.type === 'folder' ? 'Eliminar carpeta y su contenido' : 'Eliminar nota',
     () => borrarNota(item), true);

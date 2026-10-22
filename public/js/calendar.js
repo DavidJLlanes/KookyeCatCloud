@@ -13,6 +13,8 @@
   const S = {
     built: false, view: 'month', cursor: K.d.day(new Date()), events: [], range: null,
     hidden: new Set(), labelFilter: new Set(), query: '', dirty: true, loading: 0,
+    tasks: [],        // tareas sin fecha (lista lateral)
+    drag: null,       // lo que se está arrastrando: { id, occ, recurring, kind, undated }
   };
   try { S.view = localStorage.getItem('kcc-cal-view') || 'month'; } catch {}
   const R = {};   // referencias al DOM
@@ -57,12 +59,18 @@
     const key = K.d.ymd(a) + '|' + K.d.ymd(b);
     const n = ++S.loading;
     try {
-      const r = await K.get('/api/calendar/events?' + K.qs({ from: K.d.ymd(a), to: K.d.ymd(b) }));
+      const [r, t] = await Promise.all([
+        K.get('/api/calendar/events?' + K.qs({ from: K.d.ymd(a), to: K.d.ymd(b) })),
+        K.get('/api/calendar/tasks'),
+      ]);
       if (n !== S.loading) return;
-      S.events = r.events; S.range = key; S.dirty = false;
+      S.events = r.events; S.tasks = t.tasks; S.range = key; S.dirty = false;
     } catch (e) { K.fail(e); }
     render();
   }
+
+  // Calendarios en los que se puede crear algo: el de festivos es virtual y de solo lectura
+  const calsEscribibles = () => K.cals.list.filter(c => !c.virtual);
 
   /* ---------- Estructura ---------- */
   function build() {
@@ -76,7 +84,14 @@
     search.appendChild(si);
     const nuevo = el('button', 'btn primary'); nuevo.type = 'button';
     nuevo.append(icon('i-plus'), el('span', 'lbl', 'Nuevo evento'));
-    head.append(t, grow, search, nuevo);
+    const mas = el('button', 'btn ghost icon'); mas.type = 'button'; mas.appendChild(icon('i-dots')); mas.title = 'Importar, suscribirse y festivos';
+    mas.addEventListener('click', () => K.menu(mas, [
+      { label: 'Importar archivo .ics…', icon: 'i-upload', onClick: () => K.calExtra.importar() },
+      { label: 'Suscribirse desde otro calendario…', icon: 'i-link', onClick: () => K.calExtra.suscripcion() },
+      { label: 'Festivos de España…', icon: 'i-star', onClick: () => K.calExtra.festivos() },
+      '-', { label: 'Gestionar etiquetas…', icon: 'i-tag', onClick: () => K.manageLabels() },
+    ], { align: 'end' }));
+    head.append(t, grow, search, nuevo, mas);
 
     const cal = el('div', 'cal');
     const side = el('aside', 'cal-side');
@@ -175,6 +190,17 @@
       });
       more.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (c.virtual) {            // festivos: solo comunidad, color y quitarlos
+          K.menu(more, [
+            { label: 'Cambiar comunidad…', icon: 'i-pin', onClick: () => K.calExtra.festivos() },
+            { label: 'Cambiar color…', icon: 'i-palette', onClick: async () => {
+              const cp = K.colorPicker({ value: c.color, onChange: async (col) => { try { await K.put('/api/calendar/calendars/festivos', { color: col }); await K.loadCalendars(true); S.dirty = true; load(); } catch (er) { K.fail(er); } } });
+              const w = el('div'); w.style.padding = '6px'; w.appendChild(cp); K.pop(more, w, { width: 240, align: 'end' });
+            } },
+            '-', { label: 'Quitar festivos', icon: 'i-trash', danger: true, onClick: async () => { try { await K.put('/api/calendar/holidays', { enabled: false }); await K.loadCalendars(true); S.dirty = true; load(); } catch (er) { K.fail(er); } } },
+          ], { align: 'end' });
+          return;
+        }
         K.menu(more, [
           { label: 'Editar…', icon: 'i-pencil', onClick: () => editCalendar(c) },
           { label: 'Mostrar solo este', icon: 'i-check', onClick: () => { S.hidden = new Set(K.cals.list.filter(x => x.id !== c.id).map(x => x.id)); render(); } },
@@ -184,7 +210,7 @@
       list.appendChild(row);
     });
     cals.append(h4, list);
-    side.append(mini, cals);
+    side.append(mini, tasksCard(), cals);
 
     // Filtro por etiquetas
     if (K.labels.list.length) {
@@ -202,6 +228,52 @@
       lc.append(lh, ch);
       side.appendChild(lc);
     }
+  }
+
+  /* ---------- Tareas sin fecha ---------- */
+  // Se arrastran a un hueco del calendario para ponerles día y hora; y de vuelta aquí para quitárselos.
+  function tasksCard() {
+    const card = el('div', 'cal-card cal-tasks');
+    const h4 = el('h4'); h4.append(el('span', null, `Tareas sin fecha${S.tasks.length ? ' · ' + S.tasks.length : ''}`));
+    card.appendChild(h4);
+    const form = el('form', 'task-add');
+    const inp = el('input'); inp.placeholder = 'Nueva tarea…'; inp.maxLength = 200; inp.autocomplete = 'off';
+    form.appendChild(inp);
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = inp.value.trim(); if (!title) return;
+      try { await K.post('/api/calendar/events', { title, kind: 'task', start: '' }); inp.value = ''; K.bus.emit('calendar'); S.dirty = true; load(); } catch (er) { K.fail(er); }
+    });
+    card.appendChild(form);
+    const list = el('div', 'task-list');
+    if (!S.tasks.length) list.appendChild(el('p', 'task-empty', 'Apunta tareas aquí y arrástralas al calendario cuando sepas cuándo.'));
+    S.tasks.forEach(t => {
+      const row = el('div', 'task-item' + (t.done ? ' done' : ''));
+      row.draggable = true;
+      row.title = 'Arrástrala a un día o a una hora del calendario';
+      const chk = el('span', 'cal-check' + (t.done ? ' on' : '')); chk.style.setProperty('--c', evColor(t)); chk.appendChild(icon('i-check'));
+      chk.addEventListener('click', async (e) => { e.stopPropagation(); try { await K.put('/api/calendar/events/' + t.id, { done: !t.done }); S.dirty = true; load(); } catch (er) { K.fail(er); } });
+      row.append(chk, el('span', 'tt', t.title));
+      row.addEventListener('dragstart', (e) => {
+        S.drag = { id: t.id, kind: 'task', undated: true };
+        e.dataTransfer.setData('text/plain', JSON.stringify({ id: t.id, undated: true })); e.dataTransfer.effectAllowed = 'move'; row.classList.add('dragging');
+      });
+      row.addEventListener('dragend', () => { S.drag = null; row.classList.remove('dragging'); });
+      row.addEventListener('click', () => openEvent(t));
+      list.appendChild(row);
+    });
+    card.appendChild(list);
+    // Soltar aquí una tarea ya programada la deja otra vez sin fecha
+    card.addEventListener('dragover', (e) => { if (S.drag && S.drag.kind === 'task' && !S.drag.undated) { e.preventDefault(); card.classList.add('drop'); } });
+    card.addEventListener('dragleave', () => card.classList.remove('drop'));
+    card.addEventListener('drop', async (e) => {
+      e.preventDefault(); card.classList.remove('drop');
+      const d = S.drag; S.drag = null;
+      if (!d || d.undated) return;
+      if (d.recurring) { K.toast('Las tareas repetidas no se pueden dejar sin fecha'); return; }
+      try { await K.put('/api/calendar/events/' + d.id, { start: '', end: '' }); K.bus.emit('calendar'); S.dirty = true; load(); } catch (er) { K.fail(er); }
+    });
+    return card;
   }
 
   function editCalendar(c) {
@@ -249,12 +321,14 @@
     if (showTime && !isSpan(e)) p.appendChild(el('span', 'h', timeTxt(e)));
     p.appendChild(el('span', 't', (contL ? '◂ ' : '') + e.title + (contR ? ' ▸' : '')));
     p.title = `${e.title}\n${rangeTxt(e)}`;
-    p.draggable = true;
+    if (e.holiday) p.classList.add('holiday');
+    p.draggable = !e.readonly;
     p.addEventListener('dragstart', (ev) => {
+      S.drag = { id: e.id, occ: e.occurrence, recurring: e.recurring, kind: e.kind, undated: false };
       ev.dataTransfer.setData('text/plain', JSON.stringify({ id: e.id, occ: e.occurrence, recurring: e.recurring }));
       ev.dataTransfer.effectAllowed = 'move'; p.classList.add('dragging');
     });
-    p.addEventListener('dragend', () => p.classList.remove('dragging'));
+    p.addEventListener('dragend', () => { S.drag = null; p.classList.remove('dragging'); });
     p.addEventListener('click', (ev) => { ev.stopPropagation(); openEvent(e); });
     return p;
   }
@@ -354,11 +428,20 @@
 
   async function dropOnDay(ev, dia) {
     let info; try { info = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch { return; }
+    S.drag = null;
+    if (info.undated) return programa(info.id, dia, null);          // tarea de la lista -> todo el día
     const e = S.events.find(x => x.id === info.id && x.occurrence === info.occ);
-    if (!e) return;
+    if (!e || e.readonly) return;
     const delta = K.d.diffDays(K.d.day(evStart(e)), dia);
     if (!delta) return;
     await moveEvent(e, { start: shiftStr(e.start, delta), end: shiftStr(e.end, delta) });
+  }
+  // Pone fecha a una tarea sin fecha: todo el día (mins null) o a una hora, con 30 minutos de duración
+  async function programa(id, dia, mins) {
+    const cuerpo = mins == null
+      ? { start: K.d.ymd(dia), end: K.d.ymd(dia), allDay: true }
+      : { start: strAt(dia, mins), end: strAt(dia, Math.min(mins + 30, 24 * 60 - 1)), allDay: false };
+    try { await K.put('/api/calendar/events/' + id, cuerpo); K.bus.emit('calendar'); S.dirty = true; load(); } catch (err) { K.fail(err); }
   }
   function shiftStr(s, days) {
     const d = K.d.parse(s);
@@ -395,6 +478,9 @@
       const col = el('div', 'col');
       evs.filter(e => isSpan(e) && K.d.day(evStart(e)) <= d && K.d.day(evEnd(e)) >= d).forEach(e => col.appendChild(pill(e, { contL: K.d.day(evStart(e)) < d })));
       col.addEventListener('click', () => openEvent(null, { date: d, allDay: true }));
+      col.addEventListener('dragover', (e) => { if (S.drag) { e.preventDefault(); col.classList.add('drop'); } });
+      col.addEventListener('dragleave', () => col.classList.remove('drop'));
+      col.addEventListener('drop', (e) => { e.preventDefault(); col.classList.remove('drop'); dropOnDay(e, d); });
       allday.appendChild(col);
     });
     box.append(head, allday);
@@ -455,8 +541,24 @@
       col.appendChild(l);
     }
     attachCreateDrag(col, d);
+    // Soltar una tarea (de la lista) o un evento sobre una hora de la columna
+    col.addEventListener('dragover', (e) => { if (S.drag) { e.preventDefault(); col.classList.add('drop'); } });
+    col.addEventListener('dragleave', (e) => { if (!col.contains(e.relatedTarget)) col.classList.remove('drop'); });
+    col.addEventListener('drop', (e) => {
+      e.preventDefault(); col.classList.remove('drop');
+      const d0 = S.drag; S.drag = null;
+      if (!d0) return;
+      const mins = Math.min(minutesFromY(col, e.clientY), 24 * 60 - SNAP);
+      if (d0.undated) { programa(d0.id, d, mins); return; }
+      const e0 = S.events.find(x => x.id === d0.id && x.occurrence === d0.occ);
+      if (!e0 || e0.readonly || e0.allDay || isSpan(e0)) return;
+      const dur = (evEnd(e0) - evStart(e0)) / 60000;
+      moveEvent(e0, { start: strAt(d, mins), end: fechaMas(d, mins + dur) });
+    });
     return col;
   }
+  // Fin = día + minutos (puede pasar de medianoche)
+  const fechaMas = (d, mins) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, mins); return `${K.d.ymd(x)}T${K.d.hm(x)}`; };
 
   const minutesFromY = (col, y) => {
     const r = col.getBoundingClientRect();
@@ -569,8 +671,18 @@
   /* ---------- Modal de evento ---------- */
   async function openEvent(ev, defaults = {}) {
     await Promise.all([K.loadCalendars(), K.loadLabels()]).catch(() => {});
+    // Los festivos no se editan: solo se enseña de qué día es y de qué ámbito
+    if (ev && ev.holiday) {
+      const w = el('div'); w.append(el('p', 'k-muted', K.d.long(K.d.parse(ev.start))));
+      const ch = el('span', 'k-chip'); ch.style.setProperty('--c', evColor(ev)); ch.textContent = ev.scope === 'nacional' ? 'Festivo nacional' : 'Festivo autonómico'; w.appendChild(ch);
+      const nota = el('p', 'k-faint', 'Fechas orientativas: cada comunidad publica su calendario oficial cada año y los festivos locales no están incluidos.'); nota.style.cssText = 'font-size:12.5px;margin-top:14px';
+      w.appendChild(nota);
+      K.modal({ title: ev.title, content: w, actions: [{ label: 'Cambiar comunidad…', onClick: () => K.calExtra.festivos() }, { label: 'Cerrar', primary: true }] });
+      return;
+    }
     const nuevo = !ev;
     const now = new Date();
+    const sinFecha0 = !!(ev && !ev.start);          // tarea sin fecha
     let base = ev ? { ...ev } : (() => {
       const day = defaults.date ? K.d.day(defaults.date) : K.d.day(now);
       if (defaults.start) return { title: '', allDay: false, start: defaults.start, end: defaults.end || defaults.start };
@@ -578,7 +690,11 @@
       const h = K.d.same(day, K.d.day(now)) ? Math.min(23, now.getHours() + 1) : 9;
       return { title: '', allDay: false, start: `${K.d.ymd(day)}T${p2h(h)}:00`, end: `${K.d.ymd(day)}T${p2h(Math.min(23, h + 1))}:00` };
     })();
-    if (nuevo) { base.calendarId = defaults.calendarId || (K.cals.list.find(c => !S.hidden.has(c.id) && c.id === 'personal') ? 'personal' : K.cals.list[0].id); base.kind = defaults.kind || 'event'; base.labels = []; base.reminders = []; }
+    if (sinFecha0) {                                  // se muestra "hoy" en los campos, pero queda marcada sin fecha
+      const h0 = new Date(); h0.setMinutes(0, 0, 0); h0.setHours(h0.getHours() + 1);
+      base.start = K.d.ymd(h0) + 'T' + K.d.hm(h0); base.end = base.start; base.allDay = true;
+    }
+    if (nuevo) { base.calendarId = defaults.calendarId || (calsEscribibles().find(c => !S.hidden.has(c.id) && c.id === 'personal') ? 'personal' : calsEscribibles()[0].id); base.kind = defaults.kind || 'event'; base.labels = []; base.reminders = []; }
     const bloqueaTitulo = !!(ev && ev.source);
 
     const root = el('div');
@@ -595,11 +711,11 @@
     let kind = base.kind || 'event';
     for (const [id, lbl] of [['event', 'Evento'], ['task', 'Tarea']]) {
       const b = el('button', kind === id ? 'is-active' : '', lbl); b.type = 'button'; b.style.cssText = 'width:auto;padding:0 14px;font-size:13px';
-      b.addEventListener('click', () => { kind = id; segk.querySelectorAll('button').forEach(x => x.classList.toggle('is-active', x === b)); doneRow.hidden = kind !== 'task'; });
+      b.addEventListener('click', () => { kind = id; segk.querySelectorAll('button').forEach(x => x.classList.toggle('is-active', x === b)); doneRow.hidden = kind !== 'task'; syncFecha(); });
       segk.appendChild(b);
     }
     const calSel = el('select'); calSel.style.width = 'auto'; calSel.style.minWidth = '160px';
-    K.cals.list.forEach(c => { const o = el('option', null, c.name); o.value = c.id; calSel.appendChild(o); });
+    calsEscribibles().forEach(c => { const o = el('option', null, c.name); o.value = c.id; calSel.appendChild(o); });
     calSel.value = base.calendarId || 'personal';
     c0.append(segk, calSel); l0.appendChild(c0); root.appendChild(l0);
 
@@ -630,7 +746,18 @@
       prevStart = nuevoIni;
     };
     sd.addEventListener('change', shiftEnd); st.addEventListener('change', shiftEnd);
-    c1.append(sw, dates); l1.appendChild(c1); root.appendChild(l1);
+    // Las tareas pueden quedarse sin fecha (van a la lista lateral hasta que las arrastres al calendario)
+    const nfSw = el('label', 'k-switch'); const sinFecha = el('input'); sinFecha.type = 'checkbox'; sinFecha.checked = sinFecha0;
+    nfSw.append(sinFecha, el('span', 'track'), el('span', null, 'Sin fecha (la programarás después)')); nfSw.style.marginBottom = '10px';
+    const syncFecha = () => {
+      const esTarea = kind === 'task';
+      nfSw.hidden = !esTarea;
+      const oculto = esTarea && sinFecha.checked;
+      sw.hidden = dates.hidden = oculto;
+      l2.hidden = oculto;                        // sin fecha no hay repetición
+    };
+    sinFecha.addEventListener('change', syncFecha);
+    c1.append(nfSw, sw, dates); l1.appendChild(c1); root.appendChild(l1);
 
     // Tarea hecha
     const doneRow = el('div', 'ev-line'); doneRow.hidden = kind !== 'task';
@@ -665,6 +792,7 @@
     };
     rf.addEventListener('change', syncRep); es.addEventListener('change', syncRep); syncRep();
     c2.append(rf, rOpts); l2.appendChild(c2); root.appendChild(l2);
+    syncFecha();
 
     // Recordatorios
     const l3 = el('div', 'ev-line'); l3.appendChild(icon('i-bell'));
@@ -718,7 +846,9 @@
         } : null,
       };
       if (bloqueaTitulo) delete body.title;
-      if (!sd.value) { K.toast('Falta la fecha'); return false; }
+      const undated = kind === 'task' && sinFecha.checked;
+      if (undated) { body.start = ''; body.end = ''; body.allDay = false; body.repeat = null; }
+      else if (!sd.value) { K.toast('Falta la fecha'); return false; }
       try {
         if (nuevo) await K.post('/api/calendar/events', body);
         else {
@@ -735,7 +865,7 @@
       } catch (e) { K.fail(e); return false; }
     } });
     const m = K.modal({ title: nuevo ? (defaults.kind === 'task' ? 'Nueva tarea' : 'Nuevo evento') : 'Editar evento', cls: 'wide', content: root, actions: acciones,
-      sub: nuevo ? '' : rangeTxt(ev) });
+      sub: nuevo ? '' : (sinFecha0 ? 'Sin fecha' : rangeTxt(ev)) });
     if (nuevo) setTimeout(() => title.focus(), 40);
     title.addEventListener('keydown', (e) => { if (e.key === 'Enter' && m.buttons.save) m.buttons.save.click(); });
   }
@@ -818,13 +948,15 @@
     switchTab('calendar');
     try {
       const r = await K.get('/api/calendar/events/' + id);
-      goto(K.d.parse(r.event.start), 'month');
-      openEvent({ ...r.event, occurrence: r.event.start.slice(0, 10), recurring: !!r.event.repeat });
+      if (r.event.start) goto(K.d.parse(r.event.start), 'month');
+      openEvent({ ...r.event, occurrence: (r.event.start || '').slice(0, 10), recurring: !!r.event.repeat });
     } catch (e) { K.fail(e); }
   };
   K.calendar = {
     newEvent: (opts) => { switchTab('calendar'); openEvent(null, opts || {}); },
     goto,
+    reload: () => { S.dirty = true; if (S.built) load(); },
+    hide: (id) => S.hidden.add(id),
   };
 
   // Al iniciar sesión (preload) arrancan también los avisos

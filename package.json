@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check webdav.js && node --check lib/store.js && node --check lib/labels.js && node --check lib/calendar.js && node --check lib/prompts.js"
+    "check": "node --check server.js && node --check webdav.js && node -e \"require('fs').readdirSync('lib').forEach(f=>require('child_process').execFileSync('node',['--check','lib/'+f]))\""
   },
   "dependencies": {
     "archiver": "^8.0.0",

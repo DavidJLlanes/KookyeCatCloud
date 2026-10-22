@@ -1054,6 +1054,7 @@
   <symbol id="i-bars" viewBox="0 0 24 24"><path d="M5 21V10M12 21V4M19 21v-7"/></symbol>
   <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+  <symbol id="i-fingerprint" viewBox="0 0 24 24"><path d="M12 11v3a6 6 0 01-1 3.2M8.5 13a3.5 3.5 0 017 0v1c0 2 .4 3.4 1.3 5M5 12a7 7 0 0114 0v1.5c0 2.2.3 4 1 5.5M3 10.5A9.5 9.5 0 0112 3a9.5 9.5 0 019 7.5M12 7.5a4.5 4.5 0 00-4.5 4.5c0 3 .5 5.5 2 8"/></symbol>
   <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></symbol>
   <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4a1 1 0 011-1h8l9 9-9 9-9-9z"/><circle cx="7.5" cy="7.5" r="1.3"/></symbol>
   <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
@@ -1089,6 +1090,10 @@
     </label>
     <div class="error-msg" id="login-error" role="alert"></div>
     <button class="btn primary block" type="submit" id="login-btn">Entrar</button>
+    <div class="login-or" id="login-or" hidden><span>o</span></div>
+    <button class="btn block passkey-btn" type="button" id="login-passkey" hidden>
+      <svg class="ico"><use href="#i-fingerprint"/></svg><span>Entrar con huella o Face ID</span>
+    </button>
   </form>
 </div>
 
@@ -1123,6 +1128,7 @@
       <span class="tabs-label">Biblioteca</span>
       <button class="tab" data-view="colecciones"><svg class="ico"><use href="#i-star"/></svg><span>Colecciones</span></button>
       <button class="tab" data-view="map"><svg class="ico"><use href="#i-pin"/></svg><span>Mapa</span></button>
+      <button class="tab" data-view="vault"><svg class="ico"><use href="#i-lock"/></svg><span>Caja fuerte</span></button>
       <button class="tab" data-view="trash"><svg class="ico"><use href="#i-trash"/></svg><span>Papelera</span></button>
       <span class="tabs-label">Sistema</span>
       <button class="tab" data-view="cuenta"><svg class="ico"><use href="#i-user"/></svg><span>Cuenta</span></button>
@@ -1187,6 +1193,9 @@
 
   <!-- ---- Vista prompts ---- -->
   <main class="wrap kcc-view" id="view-prompts" hidden></main>
+
+  <!-- ---- Caja fuerte ---- -->
+  <main class="wrap kcc-view" id="view-vault" hidden></main>
 
   <!-- ---- Vista notas ---- -->
   <main class="wrap" id="view-notes" hidden>
@@ -1481,6 +1490,7 @@
       <button data-view="prompts"><svg class="ico"><use href="#i-sparkle"/></svg>Prompts</button>
       <button data-view="colecciones"><svg class="ico"><use href="#i-star"/></svg>Colec.</button>
       <button data-view="map"><svg class="ico"><use href="#i-pin"/></svg>Mapa</button>
+      <button data-view="vault"><svg class="ico"><use href="#i-lock"/></svg>Caja</button>
       <button data-view="trash"><svg class="ico"><use href="#i-trash"/></svg>Papelera</button>
       <button data-view="cuenta"><svg class="ico"><use href="#i-user"/></svg>Cuenta</button>
       <button data-view="admin" id="mnav-admin" hidden><svg class="ico"><use href="#i-users"/></svg>Admin</button>
@@ -1699,10 +1709,17 @@
 <script src="/vendor/leaflet/leaflet.js"></script>
 <script src="/app.js"></script>
 <script src="/js/kit.js"></script>
+<script src="/js/ics.js"></script>
 <script src="/js/calendar.js"></script>
+<script src="/js/calendar-extra.js"></script>
 <script src="/js/prompts.js"></script>
 <script src="/js/filecal.js"></script>
+<script src="/js/versions.js"></script>
+<script src="/js/vault.js"></script>
+<script src="/js/shares.js"></script>
+<script src="/js/passkeys.js"></script>
 <script src="/js/notes.js"></script>
+<script src="/js/notes-extra.js"></script>
 <script src="/js/omni.js"></script>
 </body>
 </html>

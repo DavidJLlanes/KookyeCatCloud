@@ -16,6 +16,11 @@ const { createDav } = require('./webdav');
 const createLabels = require('./lib/labels');
 const createCalendar = require('./lib/calendar');
 const createPrompts = require('./lib/prompts');
+const createNotesExtra = require('./lib/notes-extra');
+const createVersions = require('./lib/versions');
+const createVault = require('./lib/vault');
+const createShares = require('./lib/shares');
+const createWebAuthn = require('./lib/webauthn');
 
 // sharp es opcional: si no está instalado, las miniaturas caen a la imagen original
 let sharp = null;
@@ -180,6 +185,7 @@ function creaSesion(username, req) {
 function revocaSesion(jti) {
   if (!sessions[jti]) return false;
   delete sessions[jti];
+  vaultMod.cierraSesion(jti);                    // la caja fuerte de esa sesión se vuelve a bloquear
   sessionsSucio = true;
   return true;
 }
@@ -257,10 +263,38 @@ function totpVerificar(secretB32, token) {
 
 // Módulos nuevos. Se crean aquí, antes de las rutas, porque las rutas de archivos los usan.
 const labelsMod = createLabels({ express, userRoot, sendError });
-const calendarMod = createCalendar({ express, userRoot, sendError, registrarActividad });
+const calendarMod = createCalendar({
+  express, userRoot, sendError, registrarActividad,
+  icalIndexFile: path.join(APP_DIR, 'ical-tokens.json'),   // token de suscripción -> usuario
+});
 const promptsMod = createPrompts({
   express, multer, sharp, userRoot, sendError, registrarActividad,
   calendar: calendarMod.core, labels: labelsMod,
+});
+
+// Versiones de archivos de texto (se crea aquí porque WebDAV y las rutas de archivos la usan)
+const versionsMod = createVersions({
+  express, auth: (req, res, next) => auth(req, res, next), userRoot, resolveFor, sendError, textMax: Number(process.env.TEXT_MAX || 512 * 1024),
+});
+
+// Passkeys (Face ID, huella, Windows Hello…): entrar sin contraseña. Solo se guardan claves públicas.
+const passkeysMod = createWebAuthn({
+  express, auth: (req, res, next) => auth(req, res, next), file: path.join(APP_DIR, 'passkeys.json'), loadUsers,
+  abreSesion: (req, res, user, accion) => abreSesion(req, res, user, accion),
+  isBlocked, registerFailure, clearFailures, sendError, registrarActividad,
+});
+
+// Compartir carpetas entre usuarios (solo lectura o edición). Las rutas "@compartido/…" se traducen aquí.
+const sharesMod = createShares({
+  express, auth: (req, res, next) => auth(req, res, next), file: path.join(APP_DIR, 'shares.json'),
+  userRoot, safeResolve, assertVisible, loadUsers, sendError, registrarActividad,
+});
+
+// Caja fuerte cifrada (contraseña propia, clave solo en memoria mientras está abierta)
+const vaultMod = createVault({
+  express, auth: (req, res, next) => auth(req, res, next), multer, sharp, userRoot, resolveFor, sendError, registrarActividad,
+  alRetirar: (user, rel) => calendarMod.core.quitaOrigenArchivo(user, limpiaRel(rel)),   // un archivo que entra en la caja deja el calendario
+  maxUpload: MAX_UPLOAD_BYTES,
 });
 
 const root = express();
@@ -277,6 +311,9 @@ app.use('/dav', createDav({
   loadUsers,
   isHidden,
   base: BASE_PATH,
+  // Sobrescribir un archivo de texto desde un cliente WebDAV también deja la versión anterior
+  alMover: async (user, desde, hacia) => { sharesMod.mueve(user.username, desde, hacia); await versionsMod.mueve(user, desde, hacia); await calendarMod.core.mueveOrigenArchivo(user, desde, hacia); },
+  alSobrescribir: async (user, rel, abs) => { if (TEXT_RE.test(path.basename(abs))) await versionsMod.snapshot(user, rel, abs); },
   log: (...a) => console.warn(...a),
 }));
 
@@ -442,13 +479,31 @@ function assertVisible(relPath) {
   const parts = String(relPath || '').split(/[\\/]+/).filter(Boolean);
   if (parts.some(isHidden)) throw invalidPath();
 }
-function resolveFor(user, relPath) {
+// opts.compartidos: acepta rutas "@compartido/<nombre>~<id>/…" (carpetas que otro usuario te compartió).
+// WebDAV y los módulos internos no las usan: llaman con 2 argumentos y esas rutas no existen para ellos.
+function resolveFor(user, relPath, opts) {
+  if (opts && opts.compartidos) {
+    const comp = sharesMod.parse(relPath);
+    if (comp) {
+      if (!comp.id) throw invalidPath();                         // "@compartido" a secas es solo un listado
+      return sharesMod.resolver(user, comp, !!opts.write).abs;
+    }
+  }
   assertVisible(relPath);
   return safeResolve(userRoot(user), relPath);
 }
+// Una petición que no es GET/HEAD modifica algo: sobre una carpeta compartida exige permiso de edición
 function userPath(req, relPath) {
-  return resolveFor(req.user, relPath);
+  return resolveFor(req.user, relPath, { compartidos: true, write: req.method !== 'GET' && req.method !== 'HEAD' });
 }
+// Mover entre tu almacén y una carpeta compartida (o entre dos compartidas) mezclaría almacenes de dueños distintos
+function mismoAlmacen(a, b) {
+  const x = sharesMod.parse(a), y = sharesMod.parse(b);
+  if (!x && !y) return true;
+  return !!x && !!y && x.id === y.id;
+}
+const esCompartida = (rel) => { try { return !!sharesMod.parse(rel); } catch { return true; } };
+const sharesMueve = (user, a, b) => { try { if (!sharesMod.parse(a)) sharesMod.mueve(user.username, a, b); } catch { /* ruta virtual */ } };
 function sendError(res, err) {
   res.status(err.status || 400).json({ error: err.message });
 }
@@ -520,6 +575,13 @@ async function writeTrash(user, entries) {
 // Mueve a la papelera en lugar de borrar: un rm -rf recursivo sin vuelta atrás
 // es demasiado fácil de disparar por accidente desde el móvil.
 async function trashItem(user, relPath) {
+  // Borrar dentro de una carpeta compartida con permiso de edición: va a la papelera de su dueño
+  const comp = sharesMod.parse(relPath);
+  if (comp) {
+    const r = sharesMod.resolver(user, comp, true);
+    if (!comp.resto) { const e = new Error('No puedes borrar la carpeta compartida entera: pídeselo a su dueño o deja de verla'); e.status = 403; throw e; }
+    return trashItem(r.owner, r.ownerRel);
+  }
   const target = resolveFor(user, relPath);
   if (target === userRoot(user)) {
     const err = new Error('No puedes borrar la carpeta raíz');
@@ -531,7 +593,8 @@ async function trashItem(user, relPath) {
   await fsp.rename(target, path.join(trashRoot(user), id));
   const clean = String(relPath).replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
   const from = clean.includes('/') ? clean.slice(0, clean.lastIndexOf('/')) : '';
-  calendarMod.core.quitaOrigenArchivo(user, clean).catch(() => {});   // un archivo en la papelera no ocupa el calendario
+  calendarMod.core.quitaOrigenArchivo(user, clean).catch(() => {});
+  sharesMod.quita(user.username, clean);                                // lo que se borra deja de estar compartido   // un archivo en la papelera no ocupa el calendario
   const entries = await readTrash(user);
   entries.unshift({
     id,
@@ -557,6 +620,16 @@ async function purgeExpired(user) {
 }
 
 // --- Login ---
+// Abre la sesión: registra el jti, firma el JWT y pone la cookie
+function abreSesion(req, res, user, accion) {
+  const jti = creaSesion(user.username, req);
+  const token = jwt.sign({ username: user.username, role: user.role, jti }, JWT_SECRET, { expiresIn: '30d' });
+  res.cookie('token', token, {
+    httpOnly: true, sameSite: 'strict', secure: SECURE_COOKIES, path: COOKIE_PATH, maxAge: 30 * 24 * 3600 * 1000,
+  });
+  registrarActividad({ user: { username: user.username }, ip: req.ip }, accion || 'login', {});
+}
+
 app.post('/api/login', (req, res) => {
   const username = String(req.body?.username || '').trim();
   const password = String(req.body?.password || '');
@@ -680,6 +753,8 @@ app.delete('/api/users/:username', auth, adminOnly, (req, res) => {
   if (req.params.username === 'admin') return res.status(400).json({ error: 'No puedes borrar admin' });
   users = users.filter(u => u.username !== req.params.username);
   saveUsers(users);
+  sharesMod.quitaUsuario(req.params.username);
+  passkeysMod.quitaUsuario(req.params.username);
   registrarActividad(req, 'usuario_eliminado', { username: req.params.username });
   res.json({ ok: true });
 });
@@ -717,7 +792,7 @@ app.delete('/api/sessions/:jti', auth, (req, res) => {
 app.delete('/api/sessions', auth, (req, res) => {
   let n = 0;
   for (const [jti, s] of Object.entries(sessions)) {
-    if (s.username === req.user.username && jti !== req.user.jti) { delete sessions[jti]; n++; }
+    if (s.username === req.user.username && jti !== req.user.jti) { delete sessions[jti]; vaultMod.cierraSesion(jti); n++; }
   }
   if (n) sessionsSucio = true;
   registrarActividad(req, 'sesiones_cerradas_todas', { cantidad: n });
@@ -818,6 +893,8 @@ app.get('/api/activity', auth, async (req, res) => {
 app.get('/api/files', auth, async (req, res) => {
   try {
     const rel = req.query.path || '';
+    // "@compartido" es la carpeta virtual con lo que otros usuarios te han compartido
+    if (limpiaRel(rel) === '@compartido') return res.json({ path: rel, items: sharesMod.entradasPara(req.user), perm: 'read' });
     const dir = userPath(req, rel);
     const entries = (await fsp.readdir(dir, { withFileTypes: true })).filter(e => !isHidden(e.name));
     const items = await Promise.all(entries.map(async e => {
@@ -833,7 +910,9 @@ app.get('/api/files', auth, async (req, res) => {
     }));
     const visible = items.filter(Boolean);
     visible.sort((a, b) => (b.isDir - a.isDir) || a.name.localeCompare(b.name));
-    res.json({ path: rel, items: visible });
+    if (limpiaRel(rel) === '' && sharesMod.hayPara(req.user)) visible.unshift({ name: '@compartido', isDir: true, size: 0, modified: new Date(), virtual: true });
+    const info = sharesMod.permDe(req.user, rel);
+    res.json({ path: rel, items: visible, ...(info ? { perm: info.perm, sharedBy: info.owner } : {}) });
   } catch (err) {
     sendError(res, err);
   }
@@ -961,6 +1040,7 @@ app.get('/api/uploadlinks', auth, (req, res) => {
 app.post('/api/sharelinks', auth, async (req, res) => {
   try {
     const { path: rel, label, days, password } = req.body || {};
+    if (esCompartida(rel)) return res.status(400).json({ error: 'Lo que otro usuario te ha compartido no se puede volver a compartir con un enlace' });
     const abs = userPath(req, rel);
     const stat = await fsp.stat(abs);
     const d = Number(days);
@@ -1167,6 +1247,7 @@ app.get('/s/:id', (req, res) => {
 app.post('/api/uploadlinks', auth, (req, res) => {
   try {
     const { path: rel, label, days } = req.body || {};
+    if (esCompartida(rel || '')) return res.status(400).json({ error: 'No se puede crear un enlace de subida en una carpeta compartida contigo' });
     const dir = userPath(req, rel || '');           // valida que la ruta es suya y visible
     if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
       return res.status(400).json({ error: 'La carpeta de destino no existe' });
@@ -1503,6 +1584,9 @@ app.put('/api/text', auth, express.json({ limit: '2mb' }), async (req, res) => {
     if (stat.isDirectory()) return res.status(400).json({ error: 'Es una carpeta' });
     const contenido = String(req.body?.text ?? '');
     if (contenido.length > TEXT_MAX) return res.status(400).json({ error: 'Demasiado grande para editar aquí' });
+    // Si no cambia nada, no se reescribe ni se crea una versión de más
+    if (stat.size <= TEXT_MAX * 4 && await fsp.readFile(file, 'utf8').then(t => t === contenido, () => false)) return res.json({ ok: true, unchanged: true });
+    await versionsMod.snapshot(req.user, req.query.path, file);     // guarda lo que había antes
     await fsp.writeFile(file, contenido, 'utf8');
     registrarActividad(req, 'archivo_editado', { path: req.query.path });
     res.json({ ok: true });
@@ -1920,7 +2004,10 @@ app.post('/api/batch', auth, async (req, res) => {
           if (to !== from && await exists(to)) to = await freeName(dir, nuevo + ext);
           if (to !== from) {
             await fsp.rename(from, to);
-            calendarMod.core.mueveOrigenArchivo(req.user, limpiaRel(rel), limpiaRel(path.posix.join(path.posix.dirname(limpiaRel(rel)), path.basename(to)))).catch(() => {});
+            const nuevaRel = path.posix.join(path.posix.dirname(limpiaRel(rel)), path.basename(to));
+            calendarMod.core.mueveOrigenArchivo(req.user, limpiaRel(rel), limpiaRel(nuevaRel)).catch(() => {});
+            versionsMod.mueve(req.user, rel, nuevaRel);
+            sharesMueve(req.user, rel, nuevaRel);
           }
           n++;
           hechos++;
@@ -1939,6 +2026,7 @@ app.post('/api/batch', auth, async (req, res) => {
           await trashItem(req.user, rel);
         } else {
           const name = path.basename(String(rel).replace(/\\/g, '/'));
+          if (!mismoAlmacen(rel, dest || '')) throw new Error('No se puede mover entre tus archivos y una carpeta compartida, ni entre dos compartidas');
           const from = userPath(req, rel);
           const destDir = userPath(req, dest || '');
           const to = path.join(destDir, name);
@@ -1949,6 +2037,8 @@ app.post('/api/batch', auth, async (req, res) => {
           await fsp.mkdir(destDir, { recursive: true });
           await fsp.rename(from, to);
           calendarMod.core.mueveOrigenArchivo(req.user, limpiaRel(rel), limpiaRel(path.posix.join(String(dest || ''), name))).catch(() => {});
+          versionsMod.mueve(req.user, rel, path.posix.join(String(dest || ''), name));
+          sharesMueve(req.user, rel, path.posix.join(String(dest || ''), name));
         }
         done++;
       } catch (e) {
@@ -2020,6 +2110,7 @@ app.delete('/api/trash', auth, async (req, res) => {
 // --- Renombrar / mover ---
 app.post('/api/move', auth, async (req, res) => {
   try {
+    if (!mismoAlmacen(req.body?.from, req.body?.to)) return res.status(400).json({ error: 'No se puede mover entre tus archivos y una carpeta compartida, ni entre dos compartidas. Copia y borra.' });
     const from = userPath(req, req.body?.from);
     const to = userPath(req, req.body?.to);
     if (from === to) return res.json({ ok: true });
@@ -2030,6 +2121,8 @@ app.post('/api/move', auth, async (req, res) => {
     } catch { /* destino libre, seguimos */ }
     await fsp.rename(from, to);
     calendarMod.core.mueveOrigenArchivo(req.user, limpiaRel(req.body?.from), limpiaRel(req.body?.to)).catch(() => {});
+    versionsMod.mueve(req.user, req.body?.from, req.body?.to);
+    sharesMueve(req.user, req.body?.from, req.body?.to);
     registrarActividad(req, 'renombrado', { from: req.body?.from, to: req.body?.to });
     res.json({ ok: true });
   } catch (err) {
@@ -2358,6 +2451,7 @@ app.post('/api/notes', auth, async (req, res) => {
       updatedAt: Date.now(),
     };
     aplicaDecoracion(item, req.body);
+    if (type === 'note') item.links = notesExtra.extraeLinks(req.body.body);
     if (req.body.calendar && req.body.calendar.date) item.cal = { date: req.body.calendar.date, time: req.body.calendar.time || '' };
     data.items.push(item);
     if (type === 'note') await fsp.writeFile(notaFile(req.user, item.id), String(req.body.body || '').slice(0, NOTE_MAX_CHARS));
@@ -2390,6 +2484,7 @@ async function actualizarNota(req, res) {
       if (String(body).length > NOTE_MAX_CHARS) return res.status(400).json({ error: 'Nota demasiado larga' });
       await fsp.writeFile(notaFile(req.user, item.id), String(body));
       item.chars = String(body).length;
+      item.links = notesExtra.extraeLinks(body);
     }
     aplicaDecoracion(item, req.body || {});
     const cal = (req.body || {}).calendar;
@@ -2557,6 +2652,26 @@ app.get('/api/stats', auth, async (req, res) => {
 
 /* ---------------- Módulos: etiquetas, calendario y prompts ---------------- */
 const limpiaRel = (p) => String(p || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+
+// Suscripción iCal: sin cookie ni sesión (Google/Apple/Outlook no pueden enviarlas); el acceso
+// lo da un token de 256 bits en la URL, que el usuario puede regenerar o apagar cuando quiera.
+app.get(/^\/ical\/([a-f0-9]{64})\.ics$/, async (req, res) => {
+  try {
+    const user = await calendarMod.core.userPorToken(req.params[0]);
+    const feed = user && await calendarMod.core.icsFeed(user, `${req.protocol}://${req.get('host')}${BASE_PATH}/`);
+    if (!feed) return res.status(404).type('text/plain').send('No encontrado');
+    res.set({ 'Cache-Control': 'private, max-age=300', 'Content-Disposition': 'inline; filename="calendario.ics"' });
+    res.type('text/calendar; charset=utf-8').send(feed);
+  } catch (err) { res.status(500).type('text/plain').send('Error'); }
+});
+
+// Extras de notas: backlinks, exportación y plantillas (cada ruta lleva su propio auth)
+const notesExtra = createNotesExtra({ express, auth, userRoot, sendError, readNotes, writeNotes, notaFile, descendientes, resolveFor, ZipArchive });
+app.use('/api', notesExtra.router);
+app.use('/api', versionsMod.router);
+app.use('/api', vaultMod.router);
+app.use('/api', sharesMod.router);
+app.use('/api', passkeysMod.router);
 
 app.use('/api/labels', auth, labelsMod.router);
 app.use('/api/calendar', auth, calendarMod.router);

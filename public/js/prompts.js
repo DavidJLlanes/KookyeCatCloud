@@ -363,11 +363,19 @@
     return e;
   }
 
-  // Texto con las {{variables}} resaltadas, sin tocar innerHTML
-  function conVars(texto) {
+  // Texto con las {{variables}} resaltadas, sin tocar innerHTML. Las que llevan valor por
+  // defecto o lista se muestran solo con su nombre (el texto completo va en el tooltip).
+  function conVars(texto, completo) {
     const frag = document.createDocumentFragment();
-    texto.split(/(\{\{[^{}\n]{1,40}\}\})/g).forEach(parte => {
-      if (/^\{\{.*\}\}$/.test(parte)) frag.appendChild(el('span', 'var', parte)); else if (parte) frag.appendChild(document.createTextNode(parte));
+    String(texto).split(/(\{\{[^{}\n]{1,120}\}\})/g).forEach(parte => {
+      const m = /^\{\{([^{}\n]{1,120})\}\}$/.exec(parte);
+      if (m) {
+        const v = leeVar(m[1]);
+        const s = el('span', 'var', completo ? parte : `{{${v.nombre}}}`);
+        if (v.opciones.length) s.classList.add('lista');
+        s.title = v.opciones.length ? `Lista: ${v.opciones.join(' · ')}` : (v.def ? `Por defecto: ${v.def}` : 'Variable');
+        frag.appendChild(s);
+      } else if (parte) frag.appendChild(document.createTextNode(parte));
     });
     return frag;
   }
@@ -495,35 +503,122 @@
   async function patch(id, campos) { try { await K.put('/api/prompts/' + id, campos); K.bus.emit('prompts'); load(); } catch (e) { K.fail(e); } }
   async function duplicar(id) { try { await K.post(`/api/prompts/${id}/duplicate`); K.toast('Prompt duplicado'); K.bus.emit('prompts'); load(); } catch (e) { K.fail(e); } }
 
-  /* ---------- Copiar (con variables) ---------- */
-  const varsDe = (txt) => [...new Set((txt.match(/\{\{([^{}\n]{1,40})\}\}/g) || []).map(v => v.slice(2, -2).trim()))];
+  /* ---------- Copiar (con variables) ----------
+     Sintaxis de las variables dentro del texto:
+       {{nombre}}                      campo de texto
+       {{nombre=valor}}                con valor por defecto
+       {{tono=formal|cercano|técnico}} lista desplegable (la primera opción es la predeterminada)
+       {{detalle:largo}}               texto de varias líneas   (también :numero y :fecha)   */
+  const RE_VAR = /\{\{([^{}\n]{1,120})\}\}/g;
+  function leeVar(dentro) {
+    const i = dentro.indexOf('=');
+    const cab = (i < 0 ? dentro : dentro.slice(0, i)).trim();
+    const resto = i < 0 ? '' : dentro.slice(i + 1).trim();
+    const j = cab.indexOf(':');
+    const nombre = (j < 0 ? cab : cab.slice(0, j)).trim();
+    let tipo = j < 0 ? '' : cab.slice(j + 1).trim().toLowerCase();
+    if (!['largo', 'numero', 'fecha'].includes(tipo)) tipo = '';
+    const opciones = resto.includes('|') ? resto.split('|').map(x => x.trim()).filter(Boolean) : [];
+    return { nombre, tipo, def: opciones.length ? opciones[0] : resto, opciones };
+  }
+  // Variables distintas de uno o varios textos, en orden de aparición. Si una variable sale
+  // varias veces, manda la primera definición (salvo que la primera no traiga opciones).
+  function parseVars(...textos) {
+    const mapa = new Map();
+    for (const t of textos) {
+      for (const m of String(t || '').matchAll(RE_VAR)) {
+        const v = leeVar(m[1]);
+        if (!v.nombre) continue;
+        const prev = mapa.get(v.nombre);
+        if (!prev) mapa.set(v.nombre, v);
+        else {
+          if (!prev.opciones.length && v.opciones.length) { prev.opciones = v.opciones; prev.def = prev.def || v.def; }
+          if (!prev.def && v.def) prev.def = v.def;
+          if (!prev.tipo && v.tipo) prev.tipo = v.tipo;
+        }
+      }
+    }
+    return [...mapa.values()];
+  }
+  const varsDe = (txt) => parseVars(txt).map(v => v.nombre);
+  const rellena = (texto, valores) => String(texto || '').replace(RE_VAR, (m, dentro) => {
+    const v = leeVar(dentro);
+    return valores[v.nombre] !== undefined && valores[v.nombre] !== '' ? valores[v.nombre] : m;
+  });
+
   async function copyPrompt(id, full) {
     try {
       const p = full || await K.get('/api/prompts/' + id);
-      const vars = varsDe(p.body + ' ' + p.negative);
+      const vars = parseVars(p.body, p.negative);
       if (vars.length) { fillVars(p, vars); return; }
       await finishCopy(p, p.body);
     } catch (e) { K.fail(e); }
   }
-  async function finishCopy(p, texto) {
+  async function finishCopy(p, texto, msg) {
     const ok = await K.copy(texto);
-    K.toast(ok ? 'Prompt copiado' : 'No se pudo copiar');
+    K.toast(ok ? (msg || 'Prompt copiado') : 'No se pudo copiar');
     try { await K.post(`/api/prompts/${p.id}/use`); } catch {}
   }
+
+  // Formulario para rellenar las variables antes de copiar. Recuerda los últimos valores usados.
   function fillVars(p, vars) {
+    const clave = 'kcc-pv-' + p.id;
+    let guardado = {};
+    try { guardado = JSON.parse(localStorage.getItem(clave) || '{}'); } catch {}
     const w = el('div', 'var-form'); const ins = {};
-    const out = el('pre'); out.style.cssText = 'white-space:pre-wrap;margin:0;padding:12px;border-radius:12px;background:rgba(4,7,15,.6);border:1px solid var(--line);font:inherit;font-size:13.5px;max-height:200px;overflow:auto';
-    const calc = () => p.body.replace(/\{\{([^{}\n]{1,40})\}\}/g, (m, n) => (ins[n.trim()] && ins[n.trim()].value) || m);
+    const valores = () => {
+      const o = {};
+      vars.forEach(v => { o[v.nombre] = ins[v.nombre].value; });
+      return o;
+    };
+    const caja = (titulo) => {
+      const b = el('div'); const t = el('div', 'k-faint', titulo); t.style.cssText = 'font-size:11px;margin:10px 0 4px;text-transform:uppercase;letter-spacing:.08em';
+      const pre = el('pre'); pre.style.cssText = 'white-space:pre-wrap;margin:0;padding:12px;border-radius:12px;background:rgba(4,7,15,.6);border:1px solid var(--line);font:inherit;font-size:13.5px;max-height:180px;overflow:auto;word-break:break-word';
+      b.append(t, pre); return [b, pre];
+    };
+    const [bBody, outBody] = caja('Resultado');
+    const [bNeg, outNeg] = caja('Prompt negativo');
+    const pinta = () => {
+      const v = valores();
+      outBody.textContent = rellena(p.body, v);
+      bNeg.hidden = !p.negative; outNeg.textContent = rellena(p.negative, v);
+      // Se marcan los huecos todavía sin rellenar
+      vars.forEach(x => ins[x.nombre].classList.toggle('vacio', ins[x.nombre].value === ''));
+    };
     vars.forEach(v => {
-      const l = el('label', 'field tight'); l.appendChild(el('span', null, v));
-      const i = el('input'); i.placeholder = `Valor de ${v}`; ins[v] = i; i.addEventListener('input', () => { out.textContent = calc(); }); l.appendChild(i); w.appendChild(l);
+      const l = el('label', 'field tight');
+      const rot = el('span', null, v.nombre);
+      if (v.opciones.length) rot.append(el('small', 'k-faint', '  · lista'));
+      l.appendChild(rot);
+      let c;
+      if (v.opciones.length) {
+        c = el('select');
+        v.opciones.forEach(o => { const op = el('option', null, o); op.value = o; c.appendChild(op); });
+        // Una opción guardada que ya no existe en la lista se añade para no perderla
+        const g = guardado[v.nombre];
+        if (g && !v.opciones.includes(g)) { const op = el('option', null, g); op.value = g; c.appendChild(op); }
+        c.value = g || v.def;
+      } else if (v.tipo === 'largo') {
+        c = el('textarea'); c.rows = 3; c.value = guardado[v.nombre] !== undefined ? guardado[v.nombre] : v.def; c.placeholder = v.def ? '' : `Valor de ${v.nombre}`;
+      } else {
+        c = el('input'); c.value = guardado[v.nombre] !== undefined ? guardado[v.nombre] : v.def;
+        if (v.tipo === 'numero') c.type = 'number'; else if (v.tipo === 'fecha') c.type = 'date';
+        c.placeholder = v.def ? '' : `Valor de ${v.nombre}`;
+      }
+      ins[v.nombre] = c;
+      c.addEventListener('input', pinta); c.addEventListener('change', pinta);
+      l.appendChild(c); w.appendChild(l);
     });
-    w.appendChild(el('div', 'k-faint', 'Resultado')); w.lastChild.style.fontSize = '11px'; w.appendChild(out); out.textContent = p.body;
-    K.modal({ title: 'Rellenar variables', sub: p.title, cls: 'wide', content: w, actions: [
-      { label: 'Copiar sin rellenar', onClick: () => finishCopy(p, p.body) },
-      { label: 'Copiar resultado', primary: true, onClick: () => finishCopy(p, calc()) },
-    ] });
-    setTimeout(() => ins[vars[0]].focus(), 40);
+    w.append(bBody, bNeg);
+    pinta();
+    const recuerda = () => { try { localStorage.setItem(clave, JSON.stringify(valores())); } catch {} };
+    const acciones = [
+      { label: 'Restablecer', close: false, onClick: () => { vars.forEach(v => { ins[v.nombre].value = v.def; }); try { localStorage.removeItem(clave); } catch {} pinta(); return false; } },
+    ];
+    if (p.negative) acciones.push({ label: 'Copiar negativo', onClick: async () => { recuerda(); await finishCopy(p, rellena(p.negative, valores()), 'Negativo copiado'); } });
+    acciones.push({ label: 'Copiar prompt', primary: true, onClick: async () => { recuerda(); await finishCopy(p, rellena(p.body, valores())); } });
+    K.modal({ title: 'Rellenar variables', sub: p.title, cls: 'wide', content: w, actions: acciones });
+    const primero = ins[vars[0].nombre]; setTimeout(() => { primero.focus(); if (primero.select) primero.select(); }, 40);
   }
 
   /* ---------- Ficha ---------- */
@@ -618,11 +713,19 @@
       acts.append(cp, ed, mo);
     }
     info.appendChild(acts);
+    // Notas que mencionan este prompt (enlaces internos)
+    const menc = el('div'); info.appendChild(menc);
+    K.get('/api/backlinks?' + K.qs({ type: 'prompt', ref: p.id })).then(r => {
+      if (!r.items.length) return;
+      const h = el('div', 'pd-meta'); h.append(icon('i-note'), document.createTextNode('Mencionado en: '));
+      r.items.forEach(n => { const b = el('button', 'btn tiny', (n.icon ? n.icon + ' ' : '') + n.title); b.type = 'button'; b.addEventListener('click', () => { m.close(); K.open('note', n.id); }); h.appendChild(b); });
+      menc.appendChild(h);
+    }).catch(() => {});
 
     const bloque = (titulo, texto, cls) => {
       const b = el('div', 'pd-blk ' + (cls || '')); const h = el('header'); h.appendChild(el('span', null, titulo));
       const c = el('button', 'btn ghost tiny'); c.type = 'button'; c.append(icon('i-copy'), document.createTextNode('Copiar')); c.addEventListener('click', async () => { K.toast((await K.copy(texto)) ? 'Copiado' : 'No se pudo copiar'); }); h.appendChild(c);
-      const pre = el('pre'); pre.appendChild(conVars(texto)); b.append(h, pre); return b;
+      const pre = el('pre'); pre.appendChild(conVars(texto, true)); b.append(h, pre); return b;
     };
     if (p.body) info.appendChild(bloque('Prompt', p.body));
     if (p.negative) info.appendChild(bloque('Prompt negativo', p.negative, 'neg'));
@@ -670,14 +773,36 @@
     title.style.cssText = 'font-size:18px;font-weight:650';
     const body = el('textarea', 'pe-textarea'); body.value = d.body; body.placeholder = 'Escribe el prompt. Usa {{variable}} para huecos que rellenarás al copiar.'; body.rows = 9;
     const tb = el('div', 'pe-toolbar');
-    const bv = el('button', 'btn tiny', '{{ }} Variable'); bv.type = 'button'; bv.addEventListener('click', () => { const s = body.selectionStart, e2 = body.selectionEnd; const sel = body.value.slice(s, e2) || 'variable'; body.setRangeText(`{{${sel}}}`, s, e2, 'select'); body.focus(); upd(); });
+    const bv = el('button', 'btn tiny', '{{ }} Variable ▾'); bv.type = 'button';
+    // Inserta una variable de cada tipo; si hay texto seleccionado, lo usa como nombre
+    const poneVar = (plantilla) => {
+      const st = body.selectionStart, e2 = body.selectionEnd; const sel = body.value.slice(st, e2);
+      const txt = plantilla.replace('NOMBRE', sel || 'nombre');
+      body.setRangeText(txt, st, e2, 'select'); body.focus(); upd();
+    };
+    bv.addEventListener('click', () => K.menu(bv, [
+      { head: 'Insertar variable' },
+      { label: 'Campo de texto  {{nombre}}', onClick: () => poneVar('{{NOMBRE}}') },
+      { label: 'Con valor por defecto  {{nombre=valor}}', onClick: () => poneVar('{{NOMBRE=valor}}') },
+      { label: 'Lista desplegable  {{nombre=a|b|c}}', onClick: () => poneVar('{{NOMBRE=opción 1|opción 2|opción 3}}') },
+      { label: 'Texto largo  {{nombre:largo}}', onClick: () => poneVar('{{NOMBRE:largo}}') },
+      { label: 'Número  {{nombre:numero}}', onClick: () => poneVar('{{NOMBRE:numero}}') },
+      { label: 'Fecha  {{nombre:fecha}}', onClick: () => poneVar('{{NOMBRE:fecha}}') },
+    ]));
     const cnt = el('span', 'k-faint'); cnt.style.cssText = 'font-size:12px;margin-left:auto;align-self:center';
-    const upd = () => { const v = varsDe(body.value); cnt.textContent = `${body.value.length} caracteres${v.length ? ` · ${v.length} variable${v.length === 1 ? '' : 's'}` : ''}`; };
-    body.addEventListener('input', upd); upd();
+    const vistaVars = el('div', 'k-chips'); vistaVars.style.margin = '2px 0 8px';
+    const upd = () => {
+      const v = parseVars(body.value, neg.value);
+      cnt.textContent = `${body.value.length} caracteres${v.length ? ` · ${v.length} variable${v.length === 1 ? '' : 's'}` : ''}`;
+      vistaVars.textContent = '';
+      v.forEach(x => { const c = el('span', 'k-chip'); c.style.setProperty('--c', x.opciones.length ? '#a855f7' : '#06b6d4'); c.textContent = x.nombre + (x.opciones.length ? ` ▾ ${x.opciones.length}` : x.def ? ` = ${x.def}` : '') + (x.tipo ? ` (${x.tipo})` : ''); vistaVars.appendChild(c); });
+    };
+    body.addEventListener('input', upd);
     tb.append(bv, cnt);
     const neg = el('textarea', 'pe-textarea'); neg.value = d.negative; neg.rows = 3; neg.style.minHeight = '70px'; neg.placeholder = 'Qué evitar (opcional)';
+    neg.addEventListener('input', upd); upd();
     const notes = el('textarea'); notes.value = d.notes; notes.rows = 3; notes.placeholder = 'Resultados, trucos, qué funcionó…';
-    left.append(fld('Título', title), fld('Prompt', body, true), tb, fld('Prompt negativo', neg), fld('Notas', notes));
+    left.append(fld('Título', title), fld('Prompt', body, true), tb, vistaVars, fld('Prompt negativo', neg), fld('Notas', notes));
 
     // Parámetros
     const paramsBox = el('div', 'pe-params');

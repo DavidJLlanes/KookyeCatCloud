@@ -48,6 +48,9 @@
 | 📅 **Calendario** | Mes, semana, día y agenda con calendarios de colores, repetición y recordatorios. |
 | ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables e imágenes de muestra en WebP. |
 | 🔎 **Todo conectado** | Buscador global (Ctrl+K) y fechas de calendario para lo que subes o creas. |
+| 🫆 **Huella y Face ID** | Entra sin contraseña con la biometría de tu móvil u ordenador (passkeys). |
+| 🔒 **Caja fuerte** | Archivos cifrados con una contraseña propia, que se bloquea sola. |
+| 👥 **Compartir** | Carpetas y archivos entre usuarios, de solo lectura o con edición; versiones de archivos de texto. |
 | 🔐 **Control de tu cuenta** | Gestiona sesiones, verificación en dos pasos y tokens de aplicación. |
 
 Licencia [MIT](LICENSE): úsalo, modifícalo o redistribúyelo libremente, con o sin fines
@@ -407,6 +410,21 @@ color propio por evento.
 - Las fechas se guardan **sin zona horaria**, tal y como las ves: un evento “a las 9:00” sigue
   siendo a las 9:00 aunque cambie el horario de verano.
 - Mini-calendario lateral con puntos en los días con eventos, filtro por etiquetas y búsqueda.
+- **Tareas sin fecha**: una lista lateral donde apuntas tareas sin día ni hora. Se arrastran a un
+  día (todo el día) o a una hora de la vista semana/día para programarlas, y de vuelta a la lista
+  para quitarles la fecha.
+- **Festivos de España**: calendario opcional (menú “⋯” → *Festivos de España…*) con los festivos
+  nacionales y los de tu comunidad autónoma. Se calculan para cualquier año (la Semana Santa sale
+  de la fecha de Pascua), sin servicios externos. Son orientativos: cada comunidad publica su
+  calendario oficial y los festivos locales no están incluidos.
+- **Importar .ics** (Google Calendar, Apple, Outlook…): se interpreta en el navegador, así que las
+  horas en UTC o con zona horaria pasan a tu hora local. Admite eventos y tareas, todo el día,
+  repeticiones (diaria, semanal con días, mensual, anual), excepciones, instancias modificadas y
+  avisos. Volver a importar el mismo archivo no duplica nada.
+- **Suscripción iCal de solo lectura** (menú “⋯” → *Suscribirse desde otro calendario…*): genera un
+  enlace privado `…/ical/<token>.ics` para ver tu calendario en Google Calendar, Apple Calendar u
+  Outlook. El token es de 256 bits, se puede regenerar o apagar, y puedes elegir qué calendarios
+  incluir. Google actualiza estos enlaces cada cierto número de horas.
 
 ## Prompts de IA
 
@@ -421,8 +439,13 @@ memoria y cada prompt es un archivo propio).
   **1600 px** como máximo por el lado mayor y se genera una miniatura de 480 px. Se pueden
   arrastrar, pegar (Ctrl+V), reordenar, elegir portada y poner pie de foto. Requiere `sharp`
   (ver *Miniaturas*). Máximo 15 MB y 64 megapíxeles por imagen de origen.
-- **Variables**: escribe `{{así}}` en el texto y, al copiar, la app pide los valores y copia el
-  resultado ya relleno.
+- **Variables y plantillas con formulario**: al copiar, la app abre un formulario con un campo por
+  variable y una vista previa del resultado. Sintaxis dentro del texto:
+  `{{nombre}}` (campo de texto) · `{{nombre=valor}}` (con valor por defecto) ·
+  `{{tono=formal|cercano|técnico}}` (lista desplegable; la primera opción es la predeterminada) ·
+  `{{detalle:largo}}` (varias líneas; también `:numero` y `:fecha`). Una variable repetida se
+  pide una sola vez, se rellena también en el prompt negativo y la app recuerda los últimos
+  valores de cada prompt.
 - Prompt negativo, notas, parámetros (seed, steps, aspect ratio…) y fuente.
 - **Historial** de versiones del texto (las 30 últimas) para volver atrás.
 - **Vistas** en tarjetas, lista o **tablero por estado** (arrastrando entre columnas), orden por
@@ -442,6 +465,17 @@ Editor estilo Notion sobre las mismas carpetas y el mismo autoguardado de siempr
   seleccionar, o Ctrl+B / I / E / K). Arrastra el asa ⠿ para reordenar bloques.
 - **Enlaces internos**: `/Enlazar un prompt` y `/Enlazar una nota` insertan un enlace que
   abre el prompt o la nota.
+- **Tablas** (Tab y Enter recorren las celdas, botones para filas y columnas) e **imágenes**:
+  súbelas, pégalas (Ctrl+V), arrástralas o elige una de tus archivos. Se guardan en la carpeta
+  *Adjuntos de notas* de tu nube y la nota las referencia, así que no se duplican.
+- **Menciones `@`**: escribe `@` y un nombre para enlazar notas, prompts o archivos. Cada nota
+  muestra abajo **“Enlazada desde…”** (backlinks), y la ficha de un prompt enseña en qué notas
+  se menciona.
+- **Plantillas**: reunión, diario, proyecto, planificación semanal y apuntes de lectura, más las
+  tuyas (menú ⋯ de una nota → *Guardar como plantilla*).
+- **Exportar**: una nota a **Markdown** (si tiene imágenes, un ZIP con `Adjuntos/`), una carpeta a
+  un ZIP con su estructura, o a **PDF** (se abre el diálogo de impresión del navegador →
+  *Guardar como PDF*; una carpeta junta todas sus notas).
 - **Propiedades**: icono (emoji), color, **fijar** arriba, etiquetas y **fecha en el
   calendario**.
 - El contenido se guarda como **Markdown** en el mismo `.md`: las notas anteriores se abren
@@ -452,6 +486,80 @@ y se restauran con su rama entera; caducan a los mismos `TRASH_TTL_DAYS` que los
 `NOTES_LIMIT` (5000) topa el número de elementos y `NOTE_MAX_CHARS` (500 000) el tamaño de una
 nota. Las rutas de notas, prompts y calendario aceptan hasta 2 MB de cuerpo (30 MB la
 importación de prompts), frente a los 100 kB del resto de la API.
+
+## Huella y Face ID (passkeys)
+
+Entra con **Face ID, Touch ID, la huella del móvil, Windows Hello** o una llave de seguridad, sin
+escribir la contraseña. Funciona en iPhone/iPad (Safari y la app instalada, iOS 16+), Android
+(Chrome, Edge, Samsung Internet…), Mac y Windows.
+
+- **Activarlo**: *Cuenta → Huella y Face ID → Añadir este dispositivo* (hay que haber entrado antes
+  con la contraseña). Cada dispositivo se puede renombrar o quitar. En la pantalla de inicio de
+  sesión aparece el botón **“Entrar con huella o Face ID”**. La contraseña sigue funcionando.
+- **Seguridad**: la biometría nunca sale del dispositivo; el servidor solo guarda una **clave
+  pública** por dispositivo (`passkeys.json`). Se exige siempre verificación del usuario (huella,
+  cara o PIN), por eso una passkey cuenta como contraseña + segundo factor y no se pide el código
+  de verificación en dos pasos. Cada intento usa un reto de un solo uso (5 min), se comprueban el
+  dominio y el origen, la firma, y un contador detecta claves clonadas.
+- **Requisitos**: HTTPS (o `localhost`). Las passkeys quedan ligadas al **dominio**: si abres la
+  nube en `cloud.ejemplo.es` y en `ejemplo.es/cloud` tendrás que registrar el dispositivo en cada
+  dirección. Si la app está detrás de un proxy, Nginx debe enviar `Host` y `X-Forwarded-Proto`
+  (ya van en la configuración de ejemplo); en casos raros se pueden fijar con `WEBAUTHN_RP_ID` y
+  `WEBAUTHN_ORIGIN`.
+- Las passkeys de iPhone y Android se sincronizan con iCloud o con tu cuenta de Google, así que un
+  móvil nuevo suele traerlas ya, aunque conviene registrarlo igualmente.
+- Los datos de acceso a la caja fuerte **no** se desbloquean con la huella: la caja usa su propia
+  contraseña a propósito.
+
+## Versiones de archivos de texto
+
+Cada vez que guardas un archivo de texto desde el editor de la web (o lo sobrescribes por WebDAV)
+se guarda antes una copia de lo que había. Menú del archivo → *Historial de versiones…*, o el botón
+*Historial* mientras lo editas: lista de versiones, comparación línea a línea con la actual,
+descarga y restauración. Restaurar guarda antes lo de ahora, así que siempre se puede deshacer.
+Guardar sin cambios no crea versiones. Se conservan las últimas `VERSIONS_KEEP` (30) y se borran
+las de más de `VERSIONS_DAYS` (180) días; no se versionan archivos de más de
+`VERSIONS_MAX_BYTES` (5 MB). Si renombras o mueves el archivo, sus versiones lo siguen. Viven en
+`<usuario>/.kcc/versions/`.
+
+## Caja fuerte
+
+Una sección con **contraseña propia**, distinta a la de la cuenta, para lo realmente privado.
+
+- **Cifrado**: AES-256-GCM por bloques de 1 MiB. La clave sale de tu contraseña con scrypt
+  (N=32768) y envuelve una clave de datos aleatoria; cambiar la contraseña solo vuelve a envolver
+  esa clave, no recifra nada. Los **nombres** y la estructura de carpetas también están cifrados, y
+  cada bloque lleva autenticación: si alguien altera o trunca un archivo en disco, se detecta y no
+  se entregan datos falsos.
+- **Clave en memoria**: el servidor solo tiene la clave mientras la caja está desbloqueada, ligada
+  a tu sesión. Se descarta al bloquear, al cerrar sesión, al salir de la sección (opcional) y tras
+  `VAULT_IDLE_MIN` (15) minutos sin usarla. Cinco contraseñas erróneas bloquean los intentos 5 min.
+- **Uso**: subir (con barra de progreso y arrastrar y soltar), carpetas, vista previa de
+  imágenes, PDF, texto, vídeo y audio (con rangos para saltar en el vídeo), descargar, renombrar,
+  mover, **mover desde tus archivos** (se cifran y se borran los originales) y **sacar a tus
+  archivos**. También desde el menú de cualquier archivo → *Mover a la caja fuerte…*.
+- **Límites a propósito**: los archivos de la caja no aparecen en la búsqueda, ni en WebDAV, ni en
+  enlaces compartidos, ni en copias de miniaturas en claro. Los SVG y HTML se descargan en vez de
+  abrirse.
+- **Si olvidas la contraseña, los datos no se pueden recuperar**, ni siquiera el administrador. La
+  caja vive en `<usuario>/.vault/`: haz copia de esa carpeta junto con el resto de `DATA_DIR`.
+
+## Compartir con usuarios
+
+Menú de un archivo o carpeta → *Compartir con usuarios…*: eliges qué usuarios del servidor lo ven y
+con qué permiso, **solo ver** o **puede editar**. Quien lo recibe lo encuentra en su raíz de
+archivos, en **Compartido conmigo**.
+
+- Con permiso de edición se puede subir, crear carpetas, renombrar, editar textos y borrar dentro
+  (lo borrado va a la **papelera de su dueño**). Sobre la carpeta compartida entera no se puede
+  borrar ni mover, solo dejar de verla.
+- El servidor traduce cada ruta compartida al almacén de su dueño y **comprueba en cada petición**
+  el permiso y que no se sale de la carpeta (`../` no funciona). Lo compartido contigo no se puede
+  volver a compartir con un enlace público ni repartirse a terceros, y no aparece en WebDAV.
+- Si el dueño renombra o mueve la carpeta, la compartición la sigue; si la borra o borras al
+  usuario, desaparece. En **Cuenta → Compartir con usuarios** ves lo que compartes y lo que
+  comparten contigo, y puedes cambiarlo o quitarlo.
+- Los favoritos y los álbumes no admiten elementos de carpetas compartidas.
 
 ## Papelera
 
@@ -600,7 +708,9 @@ Ver [.env.example](.env.example).
 Lo imprescindible: `DATA_DIR` (los archivos), `users.json` (las cuentas, incluye tokens de
 aplicación y el secreto de verificación en dos pasos de quien la tenga activada) y
 `.jwt-secret` (si se pierde, todas las sesiones abiertas se invalidan). Los datos de notas,
-calendario, prompts y etiquetas viven dentro de `DATA_DIR` (carpetas `.notes` y `.kcc`), así que
-quedan cubiertos por la copia de `DATA_DIR`. `sessions.json` y
+calendario, prompts, etiquetas, versiones y la caja fuerte viven dentro de `DATA_DIR` (carpetas
+`.notes`, `.kcc` y `.vault`), así que quedan cubiertos por la copia de `DATA_DIR`. Junto a
+`users.json` conviene copiar `shares.json` (comparticiones entre usuarios), `passkeys.json` (dispositivos con huella/Face ID)
+e `ical-tokens.json` (enlaces de suscripción de calendario). `sessions.json` y
 `activity.log.jsonl` son prescindibles: perderlos solo borra el historial de sesiones/actividad,
 no cierra a nadie ni rompe nada.

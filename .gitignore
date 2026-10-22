@@ -12,3 +12,9 @@ activity.log.jsonl
 *.log
 .DS_Store
 Thumbs.db
+ical-tokens.json
+ical-tokens.json.tmp
+shares.json
+shares.json.tmp
+passkeys.json
+passkeys.json.tmp

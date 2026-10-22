@@ -389,7 +389,7 @@ K.calField = function ({ value = null, defaultDate, defaultCalendar = 'personal'
   const sel = el('select');
   const pintaCals = () => {
     sel.textContent = '';
-    K.cals.list.forEach(c => { const o = el('option', null, c.name); o.value = c.id; sel.appendChild(o); });
+    K.cals.list.filter(c => !c.virtual).forEach(c => { const o = el('option', null, c.name); o.value = c.id; sel.appendChild(o); });
     sel.value = (value && value.calendarId) || defaultCalendar;
     if (!sel.value) sel.value = 'personal';
   };
