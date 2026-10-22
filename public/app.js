@@ -3797,7 +3797,16 @@ document.querySelectorAll('.tab, .mobilenav button').forEach(btn => {
 $('btn-grid').addEventListener('click', () => setView('grid'));
 $('btn-list').addEventListener('click', () => setView('list'));
 $('btn-refresh').addEventListener('click', refresh);
-$('btn-upload').addEventListener('click', () => $('file-input').click());
+// En iPhone, el selector de fotos de Safari quita la ubicación salvo que se active en "Opciones".
+// Un aviso una sola vez evita subir cientos de fotos sin coordenadas sin darse cuenta.
+function avisoUbicacionIOS() {
+  try {
+    if (!/iPhone|iPad|iPod/.test(navigator.userAgent) || localStorage.getItem('kcc-aviso-ubic')) return;
+    localStorage.setItem('kcc-aviso-ubic', '1');
+    showToast('Para conservar la ubicación: en el selector pulsa «Opciones» y activa «Ubicación»');
+  } catch { /* sin almacenamiento */ }
+}
+$('btn-upload').addEventListener('click', () => { avisoUbicacionIOS(); $('file-input').click(); });
 $('file-input').addEventListener('change', e => handleUpload(e.target.files));
 
 $('btn-newfolder').addEventListener('click', () => {

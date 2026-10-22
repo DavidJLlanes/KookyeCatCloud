@@ -1474,7 +1474,7 @@ app.get('/api/download', auth, async (req, res) => {
 
     if (as === 'jpg' && HEIC_TYPES[ext]) {
       if (!sharp) return res.status(501).json({ error: 'Este servidor no puede convertir HEIC' });
-      const buf = await sharp(file, { failOn: 'none' }).rotate().jpeg({ quality: 92 }).toBuffer();
+      const buf = await sharp(file, { failOn: 'none' }).rotate().withMetadata().jpeg({ quality: 92 }).toBuffer();   // conserva EXIF y GPS
       cabeceraDescarga(res, path.basename(file, ext) + '.jpg');
       registrarActividad(req, 'descarga_convertida', { path: req.query.path, as });
       return res.status(200).type('image/jpeg').send(buf);
