@@ -1,4 +1,6 @@
 'use strict';
+// Safari de iOS ignora user-scalable=no: el pellizco de página se corta con sus eventos de gesto
+['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
 const BASE = (document.querySelector('meta[name="kcc-base"]') || {}).content || '';
 // Punto de enganche para los módulos nuevos (calendario, prompts…): cada uno registra aquí
 // su vista con open()/close() y switchTab() se la enseña o esconde. Ver js/kit.js.

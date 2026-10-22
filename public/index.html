@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>KookyeCatCloud</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
@@ -58,6 +58,16 @@
   *{box-sizing:border-box;}
   [hidden]{display:none !important;}
   html,body{height:100%;}
+  /* Sin zoom de página: la interfaz ya se adapta a cada pantalla. pan-x pan-y desactiva el
+     pellizco y el doble toque; los visores con zoom propio ponen touch-action:none en su zona */
+  html{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  body{max-width:100%;overflow-x:clip;}
+  img,video{max-width:100%;}
+  button,a,.tab,[role=button]{touch-action:manipulation;}
+  @media (pointer:coarse){
+    /* iOS hace zoom solo al enfocar un campo con letra menor de 16 px */
+    input,select,textarea{font-size:16px !important;}
+  }
   body{
     margin:0;font-family:var(--font);background:var(--bg-deep);color:var(--text);
     font-size:15px;line-height:1.5;letter-spacing:-.005em;
