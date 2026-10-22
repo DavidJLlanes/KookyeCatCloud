@@ -825,6 +825,10 @@ Dos herramientas nuevas en Administración:
   sumado recursivamente, para encontrar qué está llenando el disco sin adivinarlo por tipo.
   Tope de `DU_LIMIT` (200 000) archivos examinados por subcarpeta, para que un almacén enorme
   no agote los descriptores de archivo del sistema.
+  En la raíz salen también los datos de la propia app (papelera, notas, prompts, contactos y sus
+  fotos, versiones, caja fuerte, calendario y ajustes), y las estadísticas de Administración los
+  suman al total «Ocupado» y a la barra por tipo, así que el espacio contado es todo lo que se
+  guarda de cada usuario. La caché de miniaturas (`.thumbs`) es común a todos y no se cuenta.
 - **Duplicados** — compara primero por tamaño y solo calcula el hash de lo que coincide, así que
   un almacén con miles de archivos se puede analizar sin tardar minutos. Cada grupo permite
   marcar todas las copias menos la más antigua y mandarlas a la papelera de una vez. Tope de

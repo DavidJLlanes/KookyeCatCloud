@@ -2395,6 +2395,8 @@ app.get('/api/diskusage', auth, async (req, res) => {
       }));
       items.push(...parciales.filter(Boolean));
     }
+    // En la raíz también salen los datos de la app (no son carpetas navegables)
+    if (!rel) for (const d of await datosApp(req.user)) if (d.bytes) items.push({ name: d.nombre, isDir: false, app: true, size: d.bytes });
     items.sort((a, b) => b.size - a.size);
     res.json({
       path: rel, items, total: items.reduce((n, i) => n + i.size, 0),
@@ -2637,6 +2639,54 @@ app.delete('/api/notes-trash', auth, async (req, res) => {
 });
 
 // --- Estadísticas de almacenamiento ---
+/* Datos de la propia app que viven en carpetas ocultas de cada usuario (papelera, notas, prompts,
+   contactos y sus fotos, versiones, caja fuerte, calendario y etiquetas). El recorrido de archivos
+   de arriba las salta a propósito, pero ocupan disco y deben contar en el total. */
+const DATOS_APP = [
+  { id: 'trash',    nombre: 'Papelera' },
+  { id: 'notes',    nombre: 'Notas' },
+  { id: 'prompts',  nombre: 'Prompts' },
+  { id: 'contacts', nombre: 'Contactos' },
+  { id: 'versions', nombre: 'Versiones' },
+  { id: 'vault',    nombre: 'Caja fuerte' },
+  { id: 'datos',    nombre: 'Calendario y ajustes' },
+];
+async function tamanoTodo(p) {
+  let bytes = 0, count = 0, st;
+  try { st = await fsp.lstat(p); } catch { return { bytes, count }; }
+  if (!st.isDirectory()) return { bytes: st.size, count: 1 };
+  let entradas;
+  try { entradas = await fsp.readdir(p, { withFileTypes: true }); } catch { return { bytes, count }; }
+  for (const e of entradas) {
+    const r = await tamanoTodo(path.join(p, e.name));
+    bytes += r.bytes; count += r.count;
+  }
+  return { bytes, count };
+}
+async function datosApp(user) {
+  const raiz = userRoot(user);
+  const acum = Object.fromEntries(DATOS_APP.map(d => [d.id, { bytes: 0, count: 0 }]));
+  const suma = async (id, ruta) => { const r = await tamanoTodo(ruta); acum[id].bytes += r.bytes; acum[id].count += r.count; };
+  let ocultos = [];
+  try { ocultos = (await fsp.readdir(raiz, { withFileTypes: true })).filter(e => isHidden(e.name)); } catch { /* sin carpeta */ }
+  for (const e of ocultos) {
+    const ruta = path.join(raiz, e.name);
+    if (e.name === TRASH_DIR) await suma('trash', ruta);
+    else if (e.name === NOTES_DIR) await suma('notes', ruta);
+    else if (e.name === '.vault') await suma('vault', ruta);
+    else if (e.name === '.kcc' && e.isDirectory()) {
+      for (const h of await fsp.readdir(ruta, { withFileTypes: true }).catch(() => [])) {
+        const hp = path.join(ruta, h.name);
+        if (h.name === 'prompts') await suma('prompts', hp);
+        else if (h.name === 'contacts.json' || h.name === 'contact-photos') await suma('contacts', hp);
+        else if (h.name === 'versions') await suma('versions', hp);
+        else await suma('datos', hp);
+      }
+    } else await suma('datos', ruta);
+  }
+  return DATOS_APP.map(d => ({ ...d, ...acum[d.id] }));
+}
+
 app.get('/api/stats', auth, async (req, res) => {
   try {
     // Recorrido asíncrono: con readdirSync el panel de admin bloqueaba el proceso entero
@@ -2664,7 +2714,10 @@ app.get('/api/stats', auth, async (req, res) => {
       return { total, count };
     }
     const { total, count } = await walk(userRoot(req.user));
-    const payload = { totalBytes: total, fileCount: count, byType };
+    const app = await datosApp(req.user);
+    const appBytes = app.reduce((n, d) => n + d.bytes, 0);
+    // totalBytes incluye ahora TODO lo que el usuario guarda; filesBytes son solo sus archivos
+    const payload = { totalBytes: total + appBytes, filesBytes: total, appBytes, fileCount: count, byType, app };
     try {
       if (fsp.statfs) {
         const disk = await fsp.statfs(DATA_ROOT);

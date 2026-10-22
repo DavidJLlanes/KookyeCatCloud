@@ -2702,6 +2702,14 @@ const TIPOS = [
   { id: 'audio', nombre: 'Audio',      color: '#199e70' },
   { id: 'doc',   nombre: 'Documentos', color: '#c98500' },
   { id: 'other', nombre: 'Otros',      color: '#d55181' },
+  // Datos de la propia app (carpetas ocultas de cada usuario)
+  { id: 'trash',    nombre: 'Papelera',             color: '#64748b', app: true },
+  { id: 'notes',    nombre: 'Notas',                color: '#e0c341', app: true },
+  { id: 'prompts',  nombre: 'Prompts',              color: '#8b5cf6', app: true },
+  { id: 'contacts', nombre: 'Contactos',            color: '#22d3ee', app: true },
+  { id: 'versions', nombre: 'Versiones',            color: '#a16207', app: true },
+  { id: 'vault',    nombre: 'Caja fuerte',          color: '#ef4444', app: true },
+  { id: 'datos',    nombre: 'Calendario y ajustes', color: '#94a3b8', app: true },
 ];
 
 function renderByType(byType, total) {
@@ -2855,7 +2863,7 @@ async function loadAdmin() {
       $('stat-free').textContent = 'n/d';
       hide('usage-wrap');
     }
-    renderByType(s.byType, s.totalBytes);
+    renderByType({ ...s.byType, ...Object.fromEntries((s.app || []).map(d => [d.id, { bytes: d.bytes, count: d.count }])) }, s.totalBytes);
   } catch {}
 
   loadLinks();
