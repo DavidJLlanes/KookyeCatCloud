@@ -17,21 +17,57 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white" alt="Node.js">
+  <img src="https://img.shields.io/badge/Node.js-%E2%89%A520.9-339933?logo=nodedotjs&logoColor=white" alt="Node.js 20.9 o superior">
   <img src="https://img.shields.io/badge/Express-4-555555?logo=express&logoColor=white" alt="Express 4">
-  <img src="https://img.shields.io/badge/JavaScript-f7df1e?logo=javascript&logoColor=black" alt="JavaScript">
+  <img src="https://img.shields.io/badge/JavaScript-vanilla,_sin_build-f7df1e?logo=javascript&logoColor=black" alt="JavaScript sin build">
+  <img src="https://img.shields.io/badge/HTML5-CSS3-e34f26?logo=html5&logoColor=white" alt="HTML5 y CSS3">
+  <img src="https://img.shields.io/badge/PWA-Service_Worker-5a0fc8?logo=pwa&logoColor=white" alt="PWA con service worker">
   <a href="#webdav"><img src="https://img.shields.io/badge/WebDAV-COMPATIBLE-6366f1" alt="Compatible con WebDAV"></a>
 </p>
 
-<h3 align="center"><a href="#arrancar-en-local">🚀 Instalar KookyeCatCloud</a></h3>
+<p align="center">
+  <img src="https://img.shields.io/badge/WebAuthn-passkeys-0ea5e9" alt="WebAuthn / passkeys">
+  <img src="https://img.shields.io/badge/AES--256--GCM-caja_fuerte-16a34a" alt="Cifrado AES-256-GCM">
+  <img src="https://img.shields.io/badge/iCalendar-RFC_5545-f59e0b" alt="iCalendar RFC 5545">
+  <img src="https://img.shields.io/badge/TOTP-RFC_6238-ef4444" alt="TOTP RFC 6238">
+  <img src="https://img.shields.io/badge/sharp-WebP_%2F_HEIC-99cc00" alt="sharp">
+  <img src="https://img.shields.io/badge/ffmpeg-opcional-007808?logo=ffmpeg&logoColor=white" alt="ffmpeg opcional">
+  <img src="https://img.shields.io/badge/LibreOffice-opcional-18a303?logo=libreoffice&logoColor=white" alt="LibreOffice opcional">
+  <img src="https://img.shields.io/badge/systemd-Nginx-000000?logo=nginx&logoColor=white" alt="systemd y Nginx">
+</p>
+
+<h3 align="center"><a href="#instalación">🚀 Instalar KookyeCatCloud</a></h3>
 
 <p align="center">
-  <a href="#arrancar-en-local">Inicio rápido</a> ·
-  <a href="#despliegue-en-el-vps">Despliegue</a> ·
+  <a href="#qué-puedes-hacer">Funciones</a> ·
+  <a href="#instalación">Instalación</a> ·
   <a href="#variables-de-entorno">Configuración</a> ·
-  <a href="https://github.com/DavidJLlanes/KookyeCatCloud/issues">Reportar un problema</a> ·
-  <a href="LICENSE">Licencia</a>
+  <a href="#actualizaciones">Actualizar</a> ·
+  <a href="#seguridad">Seguridad</a> ·
+  <a href="#estructura-del-proyecto">Estructura</a> ·
+  <a href="#solución-de-problemas">Problemas</a> ·
+  <a href="https://github.com/DavidJLlanes/KookyeCatCloud/issues">Reportar un problema</a>
 </p>
+
+---
+
+**Tecnologías:** Node.js · Express 4 · JavaScript vanilla (sin framework ni paso de build) · PWA
+(service worker, instalable en iPhone, Android y escritorio) · almacenamiento en archivos y JSON
+(sin base de datos) · WebDAV · WebAuthn/passkeys · AES-256-GCM + scrypt · iCalendar (RFC 5545) ·
+TOTP (RFC 6238) · sharp (WebP/HEIC) · exifr · exceljs · Leaflet + OpenStreetMap ·
+ffmpeg y LibreOffice opcionales · systemd + Nginx.
+
+**Etiquetas:** `self-hosted` `nextcloud-alternative` `file-server` `photo-backup` `pwa` `webdav`
+`notes` `calendar` `ical` `prompt-manager` `passkeys` `webauthn` `encrypted-vault` `nodejs` `express`
+
+## Contenido
+
+- [Qué puedes hacer](#qué-puedes-hacer)
+- [Instalación](#instalación) — [local](#arrancar-en-local) · [VPS paso a paso](#despliegue-en-el-vps) · [dominio, subdominio o subcarpeta](#en-qué-dirección-instalarla)
+- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios)
+- [Actualizaciones](#actualizaciones)
+- [Variables de entorno](#variables-de-entorno)
+- [Seguridad](#seguridad) · [Copias de seguridad](#copias-de-seguridad) · [Estructura del proyecto](#estructura-del-proyecto) · [Solución de problemas](#solución-de-problemas)
 
 ---
 
@@ -52,13 +88,25 @@
 | 🔒 **Caja fuerte** | Archivos cifrados con una contraseña propia, que se bloquea sola. |
 | 👥 **Compartir** | Carpetas y archivos entre usuarios, de solo lectura o con edición; versiones de archivos de texto. |
 | 🔐 **Control de tu cuenta** | Gestiona sesiones, verificación en dos pasos y tokens de aplicación. |
+| 📲 **Instalable en el móvil** | PWA para iPhone y Android, con aviso cuando hay una versión nueva. |
+| 🔄 **Calendario sincronizable** | Suscripción iCal de solo lectura, importación de `.ics` y festivos de España. |
+| 🌐 **Cualquier dirección** | Dominio, subdominio o subcarpeta (`BASE_PATH`), sin tocar el código. |
+| ♻️ **Autoactualización** | Script con vuelta atrás automática y temporizador systemd opcional. |
 
 Licencia [MIT](LICENSE): úsalo, modifícalo o redistribúyelo libremente, con o sin fines
 comerciales, siempre que mantengas el aviso de copyright.
 
-## Arrancar en local
+## Instalación
+
+**Requisitos:** Node.js 20.9 o superior y npm. Opcionales: `ffmpeg` (miniaturas de vídeo) y
+`libreoffice` (vista previa de documentos Office). En producción, un VPS Linux con systemd,
+Nginx y un certificado HTTPS (necesario para la PWA, las passkeys y WebDAV desde Windows).
+
+### Arrancar en local
 
 ```bash
+git clone https://github.com/DavidJLlanes/KookyeCatCloud.git
+cd KookyeCatCloud
 npm install
 INSECURE_COOKIES=1 DATA_DIR=./storage npm start
 ```
@@ -69,15 +117,32 @@ contraseña se imprime **una sola vez** en la consola; cámbiala desde la pesta�
 `INSECURE_COOKIES=1` es necesario en local porque la cookie de sesión lleva el flag
 `Secure` y el navegador la descartaría sobre `http://`.
 
-## Despliegue en el VPS
+### Despliegue en el VPS
+
+Ejemplo con la app en `/opt/filecloud` y los datos en `/data/storage` (cambia las rutas a tu gusto;
+p. ej. `/var/www/tu-dominio/cloud`). Los pasos, en orden:
 
 ```bash
+# 1. Node.js 20 o superior (Debian/Ubuntu)
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt install -y nodejs git
+
+# 2. Código
+git clone https://github.com/DavidJLlanes/KookyeCatCloud.git /opt/filecloud
 cd /opt/filecloud
+
+# 3. Dependencias (como root: el usuario del servicio no tiene carpeta personal)
 npm ci --omit=dev
+
+# 4. Configuración
 cp .env.example .env      # y rellena JWT_SECRET con: openssl rand -hex 32
+nano .env                 # DATA_DIR, PORT, BASE_PATH, ADMIN_PASSWORD…
 ```
 
-### systemd — `/etc/systemd/system/filecloud.service`
+Después crea el usuario, el servicio (siguiente apartado) y el bloque de Nginx. Al terminar,
+abre la dirección: el usuario `admin` se crea en el primer arranque y su contraseña (la de
+`ADMIN_PASSWORD` o una aleatoria) aparece en `journalctl -u filecloud -n 50`.
+
+#### systemd — `/etc/systemd/system/filecloud.service`
 
 El servicio corre con un usuario del sistema sin privilegios, no con `root`:
 
@@ -117,7 +182,7 @@ actualiza también esta línea o el servicio no podrá escribir ahí.
 systemctl daemon-reload && systemctl enable --now filecloud
 ```
 
-### Nginx
+#### Nginx
 
 ```nginx
 server {
@@ -151,7 +216,9 @@ server {
 `X-Forwarded-For` importa: el servidor tiene `trust proxy` activado y el limitador de
 intentos de login usa la IP real del cliente.
 
-### En qué dirección instalarla
+Certificado gratuito con Let's Encrypt: `apt install certbot python3-certbot-nginx && certbot --nginx -d tu-dominio.com`.
+
+#### En qué dirección instalarla
 
 La app no lleva ningún dominio escrito: todo se calcula a partir de la dirección desde la que
 la abres, así que sirve igual en `djl.com.es`, en `davidjllanes.es` o en un subdominio como
@@ -168,7 +235,7 @@ y en el `server` de ese dominio añade un `location` que **conserve** el prefijo
 final en `proxy_pass`):
 
 ```nginx
-    location /cloud/ {
+    location ^~ /cloud/ {
         proxy_pass http://127.0.0.1:4000;
         proxy_set_header Host              $host;
         proxy_set_header X-Real-IP         $remote_addr;
@@ -182,6 +249,10 @@ Con `BASE_PATH` la app, el manifest de la PWA, el service worker, la cookie de s
 enlaces compartidos (`/cloud/s/…`, `/cloud/u/…`) y WebDAV (`/cloud/dav/`) cuelgan todos de
 ese prefijo. Fuera de él el servidor responde 404. Cada instalación necesita su propio
 proceso, puerto y `DATA_DIR`.
+
+`^~` evita que otro `location` de expresión regular del mismo dominio (por ejemplo uno que sirva
+estáticos como `.js` o `.css`) se adelante y deje de pasar las peticiones a Node. Tras instalarla
+comprueba que `https://tu-dominio.com/cloud/.env` **no** devuelve el archivo.
 
 ## Miniaturas
 
@@ -433,8 +504,8 @@ memoria y cada prompt es un archivo propio).
 
 - **Clasificación**: categorías en **árbol** (con emoji y color), **listas** (agrupan prompts de
   cualquier categoría: un proyecto, un cliente), etiquetas de color, **tipo** (imagen, texto,
-  código, vídeo, audio, agente), **estado** (borrador / probando / final / archivado), modelo o
-  herramienta, idioma, valoración de 1 a 5, favorito, fijado y color de tarjeta.
+  código, vídeo, audio, agente), **estado** (borrador / probando / final / archivado), **modelo** (GPT, Claude, FLUX…) y **herramienta** (Midjourney, ComfyUI, Cursor…) por separado,
+  idioma, valoración de 1 a 5, favorito, fijado y color de tarjeta.
 - **Imágenes de muestra**: hasta **10 por prompt**. Se convierten a **WebP**, se reducen a
   **1600 px** como máximo por el lado mayor y se genera una miniatura de 480 px. Se pueden
   arrastrar, pegar (Ctrl+V), reordenar, elegir portada y poner pie de foto. Requiere `sharp`
@@ -754,7 +825,47 @@ recorta solo a `ACTIVITY_MAX` líneas.
 
 ## Variables de entorno
 
-Ver [.env.example](.env.example).
+Se definen en `.env` (copia de [.env.example](.env.example)). Todas son opcionales salvo que se
+indique; reinicia el servicio tras cambiarlas.
+
+| Variable | Por defecto | Qué hace |
+| --- | --- | --- |
+| `PORT` | 4000 | Puerto de Node (Nginx hace de proxy delante) |
+| `DATA_DIR` | — | Dónde se guardan los archivos. Debe estar en `ReadWritePaths` de systemd |
+| `BASE_PATH` | vacío | Subcarpeta (`/cloud`) si no va en la raíz del dominio |
+| `JWT_SECRET` | auto | Secreto de las sesiones; si falta se crea `.jwt-secret` |
+| `ADMIN_PASSWORD` | aleatoria | Contraseña del admin en el **primer** arranque |
+| `INSECURE_COOKIES` | — | `1` solo en desarrollo con `http://localhost` |
+| `MAX_UPLOAD_BYTES` | 5 GB | Tamaño máximo por archivo |
+| `TRASH_TTL_DAYS` | 30 | Días en la papelera |
+| `LINK_MAX_FILES` / `LINK_MAX_BYTES` / `LINK_IP_HOURLY` | 50 / 2 GB / 200 | Límites de los enlaces de subida |
+| `NOTES_LIMIT` / `NOTE_MAX_CHARS` | 5000 / 500000 | Límites de notas |
+| `DISPLAY_MAX` | 2200 | Lado mayor de la conversión HEIC |
+| `TEXT_MAX` / `OFFICE_TIMEOUT` | 512 kB / 90000 ms | Visor de texto y conversión con LibreOffice |
+| `ZIP_LIMIT` | 200 | Elementos máximos por ZIP |
+| `SHEET_MAX_ROWS` / `SHEET_MAX_COLS` | 2000 / 60 | Visor de hojas de cálculo |
+| `TILE_URL` / `TILE_ATTR` / `MAP_LIMIT` | OpenStreetMap / — / 5000 | Mapa de fotos |
+| `ACTIVITY_MAX` | 5000 | Líneas del registro de actividad |
+| `DUP_LIMIT` / `DU_LIMIT` | 20000 / 200000 | Topes del buscador de duplicados y del analizador de espacio |
+| `VERSIONS_KEEP` / `VERSIONS_DAYS` / `VERSIONS_MAX_BYTES` | 30 / 180 / 5 MB | Versiones de archivos de texto |
+| `VAULT_IDLE_MIN` | 15 | Minutos sin usar la caja fuerte hasta que se bloquea |
+| `WEBAUTHN_RP_ID` / `WEBAUTHN_ORIGIN` | deducidos | Solo si el proxy no pasa bien `Host` / `X-Forwarded-Proto` |
+
+## Seguridad
+
+- **Sesiones**: JWT en cookie `HttpOnly`, `Secure` y `SameSite=Strict`, registradas en el servidor
+  (se pueden cerrar en remoto). Límite de intentos de acceso por IP.
+- **Acceso**: contraseña con bcrypt, verificación en dos pasos (TOTP), passkeys (huella / Face ID)
+  y tokens de aplicación para WebDAV y scripts.
+- **Datos privados**: caja fuerte con AES-256-GCM, nombres cifrados y clave solo en memoria.
+- **Aislamiento**: cada usuario ve solo su carpeta; las rutas se validan en cada petición y las
+  carpetas internas (`.trash`, `.notes`, `.kcc`, `.vault`) no son accesibles por la API ni WebDAV.
+- **Navegador**: Content-Security-Policy estricta (sin CDN; la única excepción son los tiles del
+  mapa), contenido de usuario mostrado en `sandbox` y Markdown renderizado sin HTML.
+- **Servicio**: systemd con `NoNewPrivileges`, `ProtectSystem=strict` y un usuario sin privilegios.
+
+Si encuentras una vulnerabilidad, avísala por un
+[issue](https://github.com/DavidJLlanes/KookyeCatCloud/issues) sin publicar datos sensibles.
 
 ## Copias de seguridad
 
@@ -767,3 +878,52 @@ calendario, prompts, etiquetas, versiones y la caja fuerte viven dentro de `DATA
 e `ical-tokens.json` (enlaces de suscripción de calendario). `sessions.json` y
 `activity.log.jsonl` son prescindibles: perderlos solo borra el historial de sesiones/actividad,
 no cierra a nadie ni rompe nada.
+
+## Estructura del proyecto
+
+```text
+server.js            API Express, sesiones, rutas de archivos, enlaces, ZIP, service worker
+webdav.js            Servidor WebDAV (montado antes del analizador de JSON)
+lib/
+  store.js           Escritura atómica de JSON con cola por archivo
+  labels.js          Etiquetas de color compartidas entre módulos
+  calendar.js        Eventos, tareas y repetición; ganchos con notas, prompts y archivos
+  ical.js            Feed iCal (RFC 5545) de solo lectura
+  holidays.js        Festivos de España calculados (sin servicios externos)
+  prompts.js         Biblioteca de prompts e imágenes WebP
+  notes-extra.js     Imágenes, menciones, backlinks, plantillas y exportación de notas
+  versions.js        Historial de versiones de archivos de texto
+  vault.js           Caja fuerte cifrada (AES-256-GCM + scrypt)
+  shares.js          Compartición entre usuarios
+  webauthn.js        Passkeys sin dependencias (CBOR propio)
+public/
+  index.html, app.js Aplicación (JavaScript vanilla)
+  js/                Módulos: calendario, prompts, notas, caja fuerte, passkeys, actualizaciones…
+  css/               Estilos de los módulos
+  sw.js, manifest.json  PWA
+  vendor/            Leaflet alojado en local
+deploy/              update.sh y temporizador systemd de autoactualización
+.env.example         Todas las variables de configuración
+```
+
+`npm run check` revisa la sintaxis de todo el código del servidor. No hay paso de build: lo que
+ves en `public/` es lo que se sirve.
+
+## Solución de problemas
+
+| Síntoma | Causa y solución |
+| --- | --- |
+| `npm ci` falla con `EACCES` en el VPS | Ejecútalo como **root** (el usuario `filecloud` no tiene carpeta personal) y luego `chown -R filecloud:filecloud .` |
+| El servicio arranca pero no guarda nada | `DATA_DIR` no está en `ReadWritePaths` de la unidad systemd |
+| `https://…/cloud/.env` devuelve algo distinto de 404 | El `location` de Nginx no es `^~ /cloud/` o hay otra regla que lo adelanta |
+| Entras y te echa al instante en `http://` | Falta `INSECURE_COOKIES=1` (solo en desarrollo local) |
+| No aparece “Huella y Face ID” | Hace falta HTTPS, haber entrado antes con contraseña y abrir **Cuenta → Huella y Face ID**; las passkeys son por dominio |
+| El mapa muestra “Access blocked” | OpenStreetMap exige que las peticiones de tiles indiquen el origen. La app ya lo envía solo para esas imágenes (`referrerPolicy: 'origin'`); actualiza a la última versión, y si persiste, cambia de proveedor con `TILE_URL` |
+| Los documentos Office no se previsualizan | Instala `libreoffice --no-install-recommends` |
+| No hay miniaturas de vídeo | Instala `ffmpeg` |
+| La app no se actualiza en el móvil | Pulsa **Cuenta → Acerca de → Buscar actualizaciones**; el aviso sale solo al volver a la app |
+| Olvidé la contraseña de la caja fuerte | No se puede recuperar, por diseño |
+
+## Licencia
+
+[MIT](LICENSE) © David J. Llanes

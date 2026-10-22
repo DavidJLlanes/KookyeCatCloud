@@ -15,8 +15,8 @@
 
   const S = {
     built: false, M: null, items: [], total: 0, page: 1, pages: 1, loading: 0,
-    q: { q: '', category: '', list: '', kind: '', status: '', model: '', fav: false, minRating: 0, images: '', cal: false, from: '', to: '', trash: false, sort: 'updated' },
-    labels: new Set(), view: 'grid', sel: new Set(), selMode: false, modelsAll: false,
+    q: { q: '', category: '', list: '', kind: '', status: '', model: '', tool: '', fav: false, minRating: 0, images: '', cal: false, from: '', to: '', trash: false, sort: 'updated' },
+    labels: new Set(), view: 'grid', sel: new Set(), selMode: false, modelsAll: false, toolsAll: false,
   };
   try { S.view = localStorage.getItem('kcc-pr-view') || 'grid'; S.q.sort = localStorage.getItem('kcc-pr-sort') || 'updated'; } catch {}
   const R = {};
@@ -29,7 +29,7 @@
   function params(page) {
     const q = S.q;
     return K.qs({
-      q: q.q, category: q.category, list: q.list, kind: q.kind, status: q.status, model: q.model,
+      q: q.q, category: q.category, list: q.list, kind: q.kind, status: q.status, model: q.model, tool: q.tool,
       fav: q.fav, minRating: q.minRating || '', images: q.images, cal: q.cal, from: q.from, to: q.to,
       trash: q.trash, sort: q.sort, labels: [...S.labels].join(','), page, limit: S.view === 'board' ? 200 : 48,
     });
@@ -120,7 +120,7 @@
     b.addEventListener('keydown', (e) => { if (e.key === 'Enter') onClick(); });
     return b;
   }
-  const resetNav = () => { Object.assign(S.q, { category: '', list: '', fav: false, images: '', trash: false, kind: '', status: '', model: '' }); };
+  const resetNav = () => { Object.assign(S.q, { category: '', list: '', fav: false, images: '', trash: false, kind: '', status: '', model: '', tool: '' }); };
 
   function section(title, action) {
     const s = el('div', 'pr-sec'); const h = el('h4'); h.appendChild(el('span', null, title));
@@ -135,7 +135,7 @@
 
     const [s1, n1] = section('Biblioteca');
     n1.append(
-      link({ ic: 'i-sparkle', name: 'Todos los prompts', n: f.total, on: noFilter && !q.kind && !q.status && !q.model, onClick: () => { resetNav(); load(); } }),
+      link({ ic: 'i-sparkle', name: 'Todos los prompts', n: f.total, on: noFilter && !q.kind && !q.status && !q.model && !q.tool, onClick: () => { resetNav(); load(); } }),
       link({ ic: 'i-star-fill', name: 'Favoritos', n: f.favorites, on: q.fav, onClick: () => { resetNav(); q.fav = true; load(); } }),
       link({ ic: 'i-image', name: 'Con imágenes', n: f.withImages, on: q.images === '1' && !q.trash, onClick: () => { resetNav(); q.images = '1'; load(); } }),
       link({ ic: 'i-inbox', name: 'Sin categoría', n: f.noCategory, on: q.category === '__none', onClick: () => { resetNav(); q.category = '__none'; load(); } }),
@@ -187,10 +187,17 @@
     // Modelo
     const modelos = Object.entries(f.model).sort((a, b) => b[1] - a[1]);
     if (modelos.length) {
-      const [s6, n6] = section('Modelo / herramienta');
+      const [s6, n6] = section('Modelo');
       (S.modelsAll ? modelos : modelos.slice(0, 8)).forEach(([m, n]) => n6.appendChild(link({ ic: 'i-server', name: m, n, on: q.model === m, onClick: () => { q.model = q.model === m ? '' : m; load(); } })));
       if (modelos.length > 8) { const b = el('button', 'btn ghost tiny', S.modelsAll ? 'Ver menos' : `Ver ${modelos.length - 8} más`); b.type = 'button'; b.style.margin = '4px 0 0 6px'; b.addEventListener('click', () => { S.modelsAll = !S.modelsAll; renderRail(); }); n6.appendChild(b); }
       rail.appendChild(s6);
+    }
+    // Herramienta
+    const herrs = Object.entries(f.tool || {}).sort((a, b) => b[1] - a[1]);
+    if (herrs.length) {
+      const [s7, n7] = section('Herramienta');
+      (S.toolsAll ? herrs : herrs.slice(0, 8)).forEach(([m, n]) => n7.appendChild(link({ ic: 'i-sparkle', name: m, n, on: q.tool === m, onClick: () => { q.tool = q.tool === m ? '' : m; load(); } })));
+      if (herrs.length > 8) { const b = el('button', 'btn ghost tiny', S.toolsAll ? 'Ver menos' : `Ver ${herrs.length - 8} más`); b.type = 'button'; b.style.margin = '4px 0 0 6px'; b.addEventListener('click', () => { S.toolsAll = !S.toolsAll; renderRail(); }); n7.appendChild(b); }
     }
 
     // Etiquetas
@@ -284,7 +291,7 @@
     const p = K.pop(anchor, w, { width: 310 });
   }
   function clearAll() {
-    Object.assign(S.q, { q: '', category: '', list: '', kind: '', status: '', model: '', fav: false, minRating: 0, images: '', cal: false, from: '', to: '', trash: false });
+    Object.assign(S.q, { q: '', category: '', list: '', kind: '', status: '', model: '', tool: '', fav: false, minRating: 0, images: '', cal: false, from: '', to: '', trash: false });
     S.labels.clear(); R.si.value = ''; load();
   }
 
@@ -343,6 +350,7 @@
     if (q.kind) chip(`Tipo: ${KIND[q.kind][0]}`, () => { q.kind = ''; load(); });
     if (q.status) chip(`Estado: ${STATUS[q.status]}`, () => { q.status = ''; load(); });
     if (q.model) chip(`Modelo: ${q.model}`, () => { q.model = ''; load(); });
+    if (q.tool) chip(`Herramienta: ${q.tool}`, () => { q.tool = ''; load(); });
     if (q.minRating) chip(`★ ${q.minRating}+`, () => { q.minRating = 0; load(); }, '#f59e0b');
     if (q.images) chip(q.images === '1' ? 'Con imágenes' : 'Sin imágenes', () => { q.images = ''; load(); });
     if (q.cal) chip('En el calendario', () => { q.cal = false; load(); }, '#8b5cf6');
@@ -352,7 +360,7 @@
 
   function emptyState() {
     const e = el('div', 'k-empty'); const em = el('div', 'em'); em.appendChild(icon(S.q.trash ? 'i-trash' : 'i-sparkle')); e.appendChild(em);
-    const filtrado = S.q.q || S.q.category || S.q.list || S.q.kind || S.q.status || S.q.model || S.q.fav || S.q.minRating || S.q.images || S.q.cal || S.labels.size || S.q.from || S.q.to;
+    const filtrado = S.q.q || S.q.category || S.q.list || S.q.kind || S.q.status || S.q.model || S.q.tool || S.q.fav || S.q.minRating || S.q.images || S.q.cal || S.labels.size || S.q.from || S.q.to;
     if (S.q.trash) { e.append(el('h3', null, 'La papelera está vacía'), el('p', null, 'Los prompts que borres aparecerán aquí.')); return e; }
     if (filtrado) {
       e.append(el('h3', null, 'Nada coincide con esos filtros'), el('p', null, 'Prueba a quitar alguno.'));
@@ -406,7 +414,7 @@
     if (p.labels.length > 3) chips.appendChild(el('span', 'k-chip', `+${p.labels.length - 3}`));
     if (chips.children.length) body.appendChild(chips);
     const foot = el('div', 'pr-foot');
-    if (p.model) foot.appendChild(el('span', 'model', p.model));
+    if (p.model || p.tool) foot.appendChild(el('span', 'model', [p.model, p.tool].filter(Boolean).join(' · ')));
     if (p.rating) { const r = el('span', null, '★ ' + p.rating); r.style.color = '#fbbf24'; foot.appendChild(r); }
     if (p.cal) { const cl = el('span'); cl.appendChild(icon('i-calendar')); cl.firstChild.style.cssText = 'width:12px;height:12px;vertical-align:-1px'; cl.append(' ' + K.d.short(K.d.parse(p.cal.date))); cl.title = 'En el calendario'; foot.appendChild(cl); }
     foot.appendChild(el('span', 'grow'));
@@ -434,6 +442,7 @@
     mid.append(h, sn, chips);
     const side = el('div', 'side');
     if (p.model) side.appendChild(el('span', 'k-chip', p.model));
+    if (p.tool) side.appendChild(el('span', 'k-chip', p.tool));
     side.appendChild(el('span', 'pr-badge ' + p.status, STATUS[p.status]));
     if (p.rating) { const rr = el('span', null, '★ ' + p.rating); rr.style.color = '#fbbf24'; side.appendChild(rr); }
     side.appendChild(el('span', null, K.ago(p.updatedAt)));
@@ -664,6 +673,7 @@
     const kc = el('span', 'k-chip'); kc.style.setProperty('--c', '#64748b'); kc.append(icon((KIND[p.kind] || KIND.otro)[1]), document.createTextNode((KIND[p.kind] || KIND.otro)[0])); kc.firstChild.style.cssText = 'width:12px;height:12px'; chips.appendChild(kc);
     const sc = el('span', 'k-chip'); sc.style.setProperty('--c', { borrador: '#94a3b8', probando: '#f59e0b', final: '#22c55e', archivado: '#64748b' }[p.status]); sc.textContent = STATUS[p.status]; chips.appendChild(sc);
     if (p.model) { const mc = el('span', 'k-chip'); mc.style.setProperty('--c', '#06b6d4'); mc.textContent = p.model; chips.appendChild(mc); }
+    if (p.tool) { const tc = el('span', 'k-chip'); tc.style.setProperty('--c', '#8b5cf6'); tc.textContent = 'Herramienta: ' + p.tool; chips.appendChild(tc); }
     p.lists.forEach(id2 => { const l = listBy(id2); if (l) { const c = el('span', 'k-chip btnlike'); c.style.setProperty('--c', l.color); c.textContent = `${l.emoji || '📌'} ${l.name}`; c.addEventListener('click', () => { m.close(); resetNav(); S.q.list = l.id; load(); }); chips.appendChild(c); } });
     info.appendChild(chips);
     if (p.labels.length) info.appendChild(K.labelChips(p.labels, { onClick: (l) => { m.close(); S.labels.clear(); S.labels.add(l.id); load(); } }));
@@ -764,7 +774,7 @@
     if (id) { try { p = await K.get('/api/prompts/' + id); } catch (e) { K.fail(e); return; } }
     const nuevo = !p;
     if (extra.restore && p) { p = { ...p, title: extra.restore.title, body: extra.restore.body, negative: extra.restore.negative }; K.toast('Versión anterior cargada: pulsa Guardar para aplicarla'); }
-    const d = p || { title: '', body: '', negative: '', notes: '', kind: 'imagen', status: 'borrador', model: '', language: '', source: '', rating: 0, favorite: false, category: S.q.category && S.q.category !== '__none' ? S.q.category : '', labels: [...S.labels], lists: S.q.list ? [S.q.list] : [], params: {}, images: [], color: '', cal: null };
+    const d = p || { title: '', body: '', negative: '', notes: '', kind: 'imagen', status: 'borrador', model: '', tool: '', language: '', source: '', rating: 0, favorite: false, category: S.q.category && S.q.category !== '__none' ? S.q.category : '', labels: [...S.labels], lists: S.q.list ? [S.q.list] : [], params: {}, images: [], color: '', cal: null };
 
     const root = el('div', 'pe-grid');
     const left = el('div'); const right = el('div');
@@ -827,11 +837,14 @@
     addCat('', 0); catSel.value = d.category || '';
     const kindSel = el('select'); Object.entries(KIND).forEach(([k, [n]]) => { const o = el('option', null, n); o.value = k; kindSel.appendChild(o); }); kindSel.value = d.kind;
     const statSel = el('select'); Object.entries(STATUS).forEach(([k, n]) => { const o = el('option', null, n); o.value = k; statSel.appendChild(o); }); statSel.value = d.status;
-    const model = el('input'); model.value = d.model; model.setAttribute('list', 'pr-models'); model.placeholder = 'Midjourney, ChatGPT, Claude…'; model.maxLength = 60;
+    const model = el('input'); model.value = d.model; model.setAttribute('list', 'pr-models'); model.placeholder = 'GPT-5, Claude, FLUX, SDXL…'; model.maxLength = 60;
     const dl = el('datalist'); dl.id = 'pr-models'; S.M.models.forEach(x2 => { const o = el('option'); o.value = x2; dl.appendChild(o); });
+    const tool = el('input'); tool.value = d.tool || ''; tool.setAttribute('list', 'pr-tools'); tool.placeholder = 'Midjourney, ComfyUI, Cursor…'; tool.maxLength = 60;
+    const dlt = el('datalist'); dlt.id = 'pr-tools'; (S.M.tools || []).forEach(x2 => { const o = el('option'); o.value = x2; dlt.appendChild(o); });
     const lang = el('input'); lang.value = d.language; lang.placeholder = 'es, en…'; lang.maxLength = 30;
     const row2 = el('div', 'k-2'); row2.append(fld('Tipo', kindSel, true), fld('Estado', statSel, true));
-    const row3 = el('div', 'k-2'); row3.append(fld('Modelo / herramienta', model, true), fld('Idioma', lang, true));
+    const row3 = el('div', 'k-2'); row3.append(fld('Modelo', model, true), fld('Herramienta', tool, true));
+    const row3b = el('div', 'k-2'); row3b.append(fld('Idioma', lang, true));
     const lp = K.labelPicker({ selected: d.labels });
     const rating = d.rating; let rate = rating; const stars = K.stars(rate, (v) => { rate = v; });
     let fav = !!d.favorite; const favSw = el('label', 'k-switch'); const favCk = el('input'); favCk.type = 'checkbox'; favCk.checked = fav; favSw.append(favCk, el('span', 'track'), el('span', null, 'Favorito')); favCk.addEventListener('change', () => { fav = favCk.checked; });
@@ -846,9 +859,9 @@
     // Calendario
     const calF = K.calField({ value: d.cal ? { date: d.cal.date, time: d.cal.time, calendarId: 'prompts' } : null, defaultCalendar: 'prompts', label: 'Poner fecha de subida en el calendario', hint: 'Aparecerá como evento y podrás abrir el prompt desde el calendario.' });
 
-    right.append(fld('Categoría', catSel, true), row2, row3, fld('Etiquetas', lp, true), fld('Listas', listsBox, true));
+    right.append(fld('Categoría', catSel, true), row2, row3, row3b, fld('Etiquetas', lp, true), fld('Listas', listsBox, true));
     const rr = el('div', 'k-row'); rr.style.margin = '4px 0 14px'; rr.append(stars, favSw); right.appendChild(rr);
-    right.append(fld('Color de la tarjeta', color, true), fld('Fuente', src, true), dl, fld('Calendario', calF, true));
+    right.append(fld('Color de la tarjeta', color, true), fld('Fuente', src, true), dl, dlt, fld('Calendario', calF, true));
 
     // Imágenes
     const imgs = (d.images || []).map(i => ({ ...i, key: i.id }));   // existentes
@@ -908,7 +921,7 @@
       const params2 = {}; paramsList.forEach(([k, v]) => { if (k.trim()) params2[k.trim()] = v; });
       const campos = {
         title: title.value, body: body.value, negative: neg.value, notes: notes.value, category: catSel.value, kind: kindSel.value,
-        status: statSel.value, model: model.value, language: lang.value, source: src.value, rating: rate, favorite: fav,
+        status: statSel.value, model: model.value, tool: tool.value, language: lang.value, source: src.value, rating: rate, favorite: fav,
         labels: lp.get(), lists: [...listSel], color: color.get(), params: params2,
       };
       const cal = calF.get();

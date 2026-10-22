@@ -66,7 +66,7 @@
       res.textContent = ''; filas = []; hot = 0;
       let hay = false;
       const seccion = (titulo, items, mk) => { if (!items.length) return; hay = true; res.appendChild(grupo(titulo)); items.forEach(i => res.appendChild(mk(i))); };
-      seccion('Prompts', omni.prompts.slice(0, 6), p => fila('i-sparkle', p.title, [(S_KIND[p.kind] || ''), p.model].filter(Boolean).join(' · ') || p.snippet.slice(0, 60), () => K.open('prompt', p.id)));
+      seccion('Prompts', omni.prompts.slice(0, 6), p => fila('i-sparkle', p.title, [(S_KIND[p.kind] || ''), p.model, p.tool].filter(Boolean).join(' · ') || p.snippet.slice(0, 60), () => K.open('prompt', p.id)));
       seccion('Notas', omni.notes.slice(0, 6), nt => fila(nt.type === 'folder' ? 'i-folder' : 'i-note', nt.title, nt.type === 'folder' ? 'Carpeta de notas' : 'Nota', () => K.open('note', nt.id)));
       seccion('Calendario', omni.events.slice(0, 6), e => fila('i-calendar', e.title, (e.start ? `${K.d.short(K.d.parse(e.start))}${e.allDay ? '' : ' · ' + e.start.slice(11, 16)}` : 'Tarea sin fecha'), () => K.open('event', e.id)));
       seccion('Archivos', archivos.items.slice(0, 8), f => fila(f.isDir ? 'i-folder' : 'i-doc', f.name, f.dir || 'Inicio', () => K.open('file', (f.dir ? f.dir + '/' : '') + f.name, { isDir: f.isDir })));
