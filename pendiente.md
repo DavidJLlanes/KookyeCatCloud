@@ -31,9 +31,9 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [ ] Vista previa de más formatos: PDF, Markdown, audio, vídeo con miniaturas y documentos Office.
 
 ### Fotos y galería
-- [ ] Línea de tiempo por fecha EXIF y mapa si las fotos tienen GPS.
-- [ ] Álbumes inteligentes por cámara, año o ubicación.
-- [ ] Descarga de álbumes en ZIP y álbumes compartibles con enlace.
+- [x] ~~Línea de tiempo por fecha EXIF y mapa si las fotos tienen GPS.~~ Hecho: Colecciones → Línea de tiempo (filtros por año, cámara y ubicación); el mapa ya existía.
+- [x] ~~Álbumes inteligentes por cámara, año o ubicación.~~ Hecho: Colecciones → Inteligentes (el lugar se agrupa por coordenadas, sin nombre de ciudad).
+- [x] ~~Descarga de álbumes en ZIP y álbumes compartibles con enlace.~~ Hecho: botones ZIP y Compartir en cada álbum.
 
 ### Contactos
 - [ ] Fusión de duplicados y selección múltiple.
@@ -42,10 +42,10 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [ ] Enlace de "mi tarjeta": página pública del contacto con código QR.
 
 ### Prompts
-- [ ] Colecciones y versiones de un prompt, para comparar su evolución.
-- [ ] Importar metadatos de ComfyUI directamente desde el PNG (workflow, seed, modelo).
-- [ ] Plantillas con variables, por ejemplo `{sujeto}` y `{estilo}`, que rellenan el texto.
-- [ ] Estadísticas: modelos y herramientas más usados, prompts favoritos.
+- [x] ~~Colecciones y versiones de un prompt, para comparar su evolución.~~ Hecho: las listas ya existían; ahora se pueden comparar versiones con las diferencias marcadas.
+- [x] ~~Importar metadatos de ComfyUI directamente desde el PNG (workflow, seed, modelo).~~ Hecho (también Automatic1111/Forge): menú ⋯ → Crear desde imágenes.
+- [x] ~~Plantillas con variables, por ejemplo `{sujeto}` y `{estilo}`, que rellenan el texto.~~ Ya existía con `{{variable}}` (valor por defecto, listas, texto largo, número y fecha).
+- [x] ~~Estadísticas: modelos y herramientas más usados, prompts favoritos.~~ Hecho: menú ⋯ → Estadísticas.
 
 ### Productividad
 - [ ] Recordatorios y tareas vinculados a notas o contactos.
@@ -66,4 +66,4 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 ## Prioridad sugerida
 1. Copias de seguridad desde la propia app.
 2. Compartir desde el móvil.
-3. Importar metadatos de ComfyUI en prompts.
+3. ~~Importar metadatos de ComfyUI en prompts.~~ Hecho.

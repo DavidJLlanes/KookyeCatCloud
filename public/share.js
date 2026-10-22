@@ -76,7 +76,8 @@ async function cargar() {
 
     $('titulo').textContent = data.label;
     const partes = [];
-    if (data.isDir) partes.push('Carpeta compartida');
+    if (data.album) partes.push('Álbum compartido');
+    else if (data.isDir) partes.push('Carpeta compartida');
     else if (data.size) partes.push(fmtSize(data.size));
     if (data.expiresAt) {
       partes.push('caduca el ' + new Date(data.expiresAt).toLocaleDateString('es-ES',

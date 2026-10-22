@@ -2595,7 +2595,9 @@ function descargarZip(rutas) {
 --------------------------------------------------------------- */
 function openShare(item) {
   state.compartiendo = item;
-  $('share-sub').textContent = item.isDir
+  $('share-sub').textContent = item.album
+    ? `El álbum "${item.name}" se verá como una galería pública y se podrá descargar en ZIP`
+    : item.isDir
     ? `La carpeta "${item.name}" se descargará como ZIP`
     : `${item.name} · ${fmtSize(item.size)}`;
   $('share-label').value = item.name;
@@ -2613,6 +2615,7 @@ async function crearCompartir() {
   try {
     const res = await post(BASE + '/api/sharelinks', {
       path: item.rel,
+      album: item.album || undefined,
       label: $('share-label').value.trim() || item.name,
       days: Number($('share-days').value),
       password: $('share-pass').value || undefined,
@@ -2840,16 +2843,18 @@ async function loadLinks() {
       const caduca = l.expiresAt
         ? (l.expired ? 'caducado' : 'caduca el ' + fmtDate(l.expiresAt))
         : 'sin caducidad';
-      info.appendChild(el('div', 'meta',
-        `→ ${l.path || 'Inicio'} · ${l.files} archivo${l.files === 1 ? '' : 's'} recibidos · ${caduca}`));
-      info.appendChild(el('div', 'url', urlDelEnlace(l.id)));
+      const compartido = l.kind === 'share';
+      info.appendChild(el('div', 'meta', compartido
+        ? `${l.album ? 'Álbum' : (l.isDir ? 'Carpeta' : 'Archivo')} compartido · ${l.downloads || 0} descarga${l.downloads === 1 ? '' : 's'} · ${caduca}`
+        : `→ ${l.path || 'Inicio'} · ${l.files} archivo${l.files === 1 ? '' : 's'} recibidos · ${caduca}`));
+      info.appendChild(el('div', 'url', urlDelEnlace(l.id, l.kind)));
       row.appendChild(info);
 
       const copiar = el('button', 'icon-btn');
       copiar.appendChild(icon('i-copy'));
       copiar.title = 'Copiar enlace';
       copiar.setAttribute('aria-label', 'Copiar enlace');
-      copiar.addEventListener('click', () => copiarEnlace(l.id));
+      copiar.addEventListener('click', () => copiarEnlace(l.id, l.kind));
       row.appendChild(copiar);
 
       const borrar = el('button', 'icon-btn');
@@ -2864,10 +2869,10 @@ async function loadLinks() {
   } catch {}
 }
 
-const urlDelEnlace = (id) => `${location.origin}${BASE}/u/${id}`;
+const urlDelEnlace = (id, kind) => `${location.origin}${BASE}/${kind === 'share' ? 's' : 'u'}/${id}`;
 
-async function copiarEnlace(id) {
-  copiarTexto(urlDelEnlace(id), 'Enlace copiado al portapapeles');
+async function copiarEnlace(id, kind) {
+  copiarTexto(urlDelEnlace(id, kind), 'Enlace copiado al portapapeles');
 }
 
 async function crearEnlace() {
@@ -3006,12 +3011,14 @@ const COL = { modo: 'favoritos', albumAbierto: null };
 function loadColecciones() {
   pintarColSubnav();
   if (COL.modo === 'favoritos') cargarFavoritos();
-  else cargarAlbumes();
+  else if (COL.modo === 'albumes') cargarAlbumes();
+  else if (window.Fotos) Fotos.carga(COL.modo);
 }
 function pintarColSubnav() {
   document.querySelectorAll('#col-subnav .chip').forEach(c => c.classList.toggle('is-active', c.dataset.col === COL.modo));
   $('col-favoritos').hidden = COL.modo !== 'favoritos';
   $('col-albumes').hidden = COL.modo !== 'albumes';
+  $('col-fotos').hidden = COL.modo !== 'timeline' && COL.modo !== 'smart';
 }
 
 function tileGenerico(item, onQuitar, tituloQuitar, iconoQuitar) {
@@ -3148,6 +3155,7 @@ async function abrirAlbum(id) {
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'No se pudo abrir'); volverAAlbumes(); return; }
     $('album-titulo').textContent = data.title;
+    COL.albumTitulo = data.title;
     state.viewables = data.items.filter(i => !i.isDir && isViewable(i.name));
     box.textContent = '';
     if (!data.items.length) {
@@ -3168,6 +3176,20 @@ async function abrirAlbum(id) {
     box.className = '';
     box.appendChild(emptyState('No se pudo abrir el álbum'));
   }
+}
+function descargarAlbum() {
+  if (!COL.albumAbierto) return;
+  const a = el('a');
+  a.href = BASE + '/api/albums/' + COL.albumAbierto + '/zip';
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  showToast('Preparando el ZIP del álbum…');
+}
+function compartirAlbum() {
+  if (!COL.albumAbierto) return;
+  openShare({ name: COL.albumTitulo || 'Álbum', isDir: true, rel: '', album: COL.albumAbierto });
 }
 function volverAAlbumes() {
   COL.albumAbierto = null;
@@ -3800,6 +3822,8 @@ $('col-subnav').addEventListener('click', e => {
 $('btn-nuevo-album').addEventListener('click', crearAlbumSolo);
 $('btn-album-volver').addEventListener('click', volverAAlbumes);
 $('btn-album-eliminar').addEventListener('click', eliminarAlbumActual);
+$('btn-album-zip').addEventListener('click', descargarAlbum);
+$('btn-album-compartir').addEventListener('click', compartirAlbum);
 $('btn-album-pick-new').addEventListener('click', crearAlbumYAñadir);
 $('sel-rename').addEventListener('click', () => openRenameModal(selectedItems().map(i => i.rel)));
 $('sel-album').addEventListener('click', () => openAlbumPicker(selectedItems().filter(i => !i.isDir).map(i => i.rel)));

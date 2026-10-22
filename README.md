@@ -76,13 +76,13 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | | |
 | --- | --- |
 | 📁 **Archivos organizados** | Gestiona carpetas, favoritos, papelera y descargas ZIP. |
-| 📷 **Tu biblioteca de fotos** | Explora álbumes, fechas de captura, datos EXIF y un mapa de fotos. |
+| 📷 **Tu biblioteca de fotos** | Explora álbumes, línea de tiempo, álbumes inteligentes (año, cámara, lugar), datos EXIF y un mapa de fotos. Los álbumes se descargan en ZIP y se comparten con un enlace. |
 | 🎬 **Vistas previas** | Consulta fotos, vídeos, audio y documentos desde el navegador, con zoom en las imágenes. |
 | 🔗 **Compartir fácilmente** | Crea enlaces de subida y descarga con caducidad y contraseña opcional para las descargas. |
 | 💻 **Acceso con WebDAV** | Conecta tu nube desde el explorador o una app compatible. |
 | 📝 **Notas tipo Notion** | Editor de bloques con carpetas, colores, etiquetas y enlaces internos. |
 | 📅 **Calendario** | Mes, semana, día y agenda con calendarios de colores, repetición y recordatorios. |
-| ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables e imágenes de muestra en WebP. |
+| ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables, imágenes de muestra, comparación de versiones, estadísticas y creación desde PNG de ComfyUI / Automatic1111. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
 | ⚡ **Actualización en directo** | La lista de archivos se refresca sola cuando llega algo por un enlace de subida o desde otro dispositivo, sin consultas periódicas. |
 | 🔎 **Todo conectado** | Buscador global (Ctrl+K) y fechas de calendario para lo que subes o creas. |
@@ -316,6 +316,32 @@ foto guarda coordenadas, aparece un enlace a **Google Maps** y las coordenadas e
 Se lee con **exifr** (sin dependencias propias). Esa misma caché de coordenadas es la que
 aprovecha el mapa de fotos (siguiente sección) para no releer el EXIF de todo el árbol.
 
+## Línea de tiempo y álbumes inteligentes
+
+En **Colecciones** hay dos pestañas nuevas que trabajan sobre *todas* las fotos de tu nube, estén en la
+carpeta que estén:
+
+- **Línea de tiempo**: las fotos ordenadas por fecha de captura (EXIF), agrupadas por mes, con filtros
+  por año, cámara y «con ubicación». Se pintan por tramos mientras haces scroll, así que aguanta
+  bibliotecas grandes. El botón *Guardar como álbum* convierte lo que estás viendo en un álbum normal.
+- **Inteligentes**: tarjetas que se forman solas **por año**, **por cámara** y **por lugar**, más dos
+  grupos para revisar («sin ubicación» y «sin fecha de captura»). Al abrir una se ve su cuadrícula y se
+  puede guardar como álbum. Los lugares se agrupan por coordenadas (celdas de unos 25 km) y se nombran
+  con ellas; hay un enlace para verlos en OpenStreetMap. No se consulta ningún servicio externo.
+
+Las dos usan `GET /api/photoindex`, que devuelve para cada foto su fecha, cámara y coordenadas apoyándose
+en la misma caché de EXIF del mapa (`.thumbs/exif-cache.json`): la primera vez tarda si hay miles de
+fotos, después es inmediato. La caché de versiones anteriores se relee una vez para añadir la cámara.
+Tope de `PHOTOS_INDEX_LIMIT` (50000) fotos, de más recientes a más antiguas.
+
+## Álbumes: ZIP y enlace público
+
+Dentro de un álbum, **ZIP** descarga todas sus fotos en un archivo (`GET /api/albums/<id>/zip`) y
+**Compartir** crea un enlace público `/s/<token>` con la misma galería que las carpetas compartidas, con
+caducidad y contraseña opcional. En un enlace de álbum no hay rutas: quien lo recibe solo puede pedir
+fotos del álbum por su nombre (si dos coinciden se numeran, `foto (2).jpg`), nunca salir de ahí. Si el
+álbum se borra, el enlace deja de funcionar. Los enlaces aparecen en *Enlaces* con su tipo y descargas.
+
 ## Zonas seguras en móvil
 
 La app declara `viewport-fit=cover` y barra de estado translúcida, así que el contenido llega
@@ -521,7 +547,19 @@ memoria y cada prompt es un archivo propio).
   pide una sola vez, se rellena también en el prompt negativo y la app recuerda los últimos
   valores de cada prompt.
 - Prompt negativo, notas, parámetros (seed, steps, aspect ratio…) y fuente.
-- **Historial** de versiones del texto (las 30 últimas) para volver atrás.
+- **Historial** de versiones del texto (las 30 últimas) para volver atrás, y **Comparar versiones**:
+  eliges dos versiones (o la actual) y se marcan por palabras lo quitado y lo añadido en título, prompt
+  y prompt negativo.
+- **Crear desde imágenes de ComfyUI / Automatic1111** (menú ⋯): eliges hasta 20 PNG y se crea un prompt
+  por imagen leyendo los metadatos que llevan dentro. De **ComfyUI** se sigue el workflow desde el
+  muestreador (KSampler, SamplerCustom, Flux…) hasta los nodos de texto y el cargador del modelo:
+  prompt, negativo, modelo, semilla, pasos, CFG, sampler, scheduler, tamaño y LoRA. De **Automatic1111 /
+  Forge** se lee el bloque `parameters`. La imagen queda de muestra (WebP) y el nombre del archivo como
+  fuente. Los PNG sin datos (pasados por redes sociales, JPG…) se saltan. Solo se lee JSON: no se
+  ejecuta nada del workflow.
+- **Estadísticas** (menú ⋯): totales, valoración media, los más copiados, los que no usas, creados por
+  mes y reparto por herramienta, modelo, tipo, estado, categoría, etiqueta y lista. Las filas de
+  herramienta, modelo, tipo y estado filtran la biblioteca al pulsarlas.
 - **Vistas** en tarjetas, lista o **tablero por estado** (arrastrando entre columnas), orden por
   fecha, título, valoración o uso, filtros combinables, **selección múltiple** con acciones en
   lote y **papelera** con restauración.
@@ -932,6 +970,7 @@ indique; reinicia el servicio tras cambiarlas.
 | `ZIP_LIMIT` | 200 | Elementos máximos por ZIP |
 | `SHEET_MAX_ROWS` / `SHEET_MAX_COLS` | 2000 / 60 | Visor de hojas de cálculo |
 | `TILE_URL` / `TILE_ATTR` / `MAP_LIMIT` | OpenStreetMap / — / 5000 | Mapa de fotos |
+| `PHOTOS_INDEX_LIMIT` | 50000 | Fotos que recorre la línea de tiempo y los álbumes inteligentes |
 | `ACTIVITY_MAX` | 5000 | Líneas del registro de actividad |
 | `EVENTS_PER_USER` | 8 | Conexiones de avisos en directo por usuario |
 | `DUP_LIMIT` / `DU_LIMIT` | 20000 / 200000 | Topes del buscador de duplicados y del analizador de espacio |
@@ -980,6 +1019,7 @@ lib/
   ical.js            Feed iCal (RFC 5545) de solo lectura
   holidays.js        Festivos de España calculados (sin servicios externos)
   prompts.js         Biblioteca de prompts e imágenes WebP
+  comfy.js           Lee los metadatos de los PNG de ComfyUI y Automatic1111
   contacts.js        Contactos: API, búsqueda, importación y exportación vCard
   vcard.js           Lectura y escritura de vCard 3.0
   notes-extra.js     Imágenes, menciones, backlinks, plantillas y exportación de notas
@@ -989,7 +1029,7 @@ lib/
   webauthn.js        Passkeys sin dependencias (CBOR propio)
 public/
   index.html, app.js Aplicación (JavaScript vanilla)
-  js/                Módulos: calendario, prompts, contactos, visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
+  js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
   css/               Estilos de los módulos
   sw.js, manifest.json  PWA
   vendor/            Leaflet alojado en local

@@ -95,6 +95,7 @@
     mas.addEventListener('click', () => K.menu(mas, [
       { label: 'Importar prompts…', icon: 'i-upload', onClick: openImport },
       { label: 'Exportar todo (JSON)', icon: 'i-download', onClick: () => { location.href = BASE + '/api/prompts/export/all'; } },
+      ...((K.prompts && K.prompts.extraMenu) || []),
       '-', { label: 'Gestionar etiquetas…', icon: 'i-tag', onClick: () => K.manageLabels() },
     ], { align: 'end' }));
     filt.addEventListener('click', () => openFilters(filt));
@@ -766,6 +767,12 @@
       const det = el('details'); const sm = el('summary', null, `Historial (${p.versions.length} versiones)`); sm.style.cssText = 'cursor:pointer;color:var(--muted);font-size:13px'; det.appendChild(sm);
       const vl = el('div', 'pd-vers');
       p.versions.forEach(v => { const b = el('button'); b.type = 'button'; b.append(el('span', null, v.title), el('span', 'k-faint', K.ago(v.at))); b.addEventListener('click', () => { m.close(); openEditor(p.id, { restore: v }); }); vl.appendChild(b); });
+      if (K.prompts && K.prompts.comparar) {
+        const cmp = el('button', 'btn sm'); cmp.type = 'button'; cmp.append(icon('i-columns'), el('span', null, 'Comparar versiones'));
+        cmp.style.margin = '8px 10px 0';
+        cmp.addEventListener('click', () => K.prompts.comparar(p));
+        det.appendChild(cmp);
+      }
       det.appendChild(vl); info.appendChild(det);
     }
     root.append(gal, info);
@@ -1024,5 +1031,13 @@
   });
   K.bus.on('labels', () => { if (S.built && !$('view-prompts').hidden) load(); });
   K.openers.prompt = (id) => { switchTab('prompts'); setTimeout(() => openDetail(id), 60); };
-  K.prompts = { open: (id) => K.openers.prompt(id), newPrompt: () => { switchTab('prompts'); openEditor(null); } };
+  // prompts-extra.js cuelga de aquí sus entradas de menú, la comparación de versiones y las estadísticas
+  K.prompts = Object.assign(K.prompts || {}, {
+    open: (id) => K.openers.prompt(id),
+    newPrompt: () => { switchTab('prompts'); openEditor(null); },
+    extraMenu: (K.prompts && K.prompts.extraMenu) || [],
+    reload: () => { K.bus.emit('prompts'); return load(); },
+    detail: (id) => openDetail(id),
+    filtrar: (campo, valor) => { S.q[campo] = valor; load(); },
+  });
 })();

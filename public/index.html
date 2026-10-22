@@ -1283,12 +1283,16 @@
   <!-- ---- Vista colecciones (favoritos y álbumes) ---- -->
   <main class="wrap" id="view-colecciones" hidden>
     <div class="view-head">
-      <div><h2>Colecciones</h2><p>Favoritos y álbumes que has creado</p></div>
+      <div><h2>Colecciones</h2><p>Favoritos, álbumes, línea de tiempo y álbumes inteligentes</p></div>
     </div>
     <div class="chips" id="col-subnav">
       <button class="chip is-active" data-col="favoritos">Favoritos</button>
       <button class="chip" data-col="albumes">Álbumes</button>
+      <button class="chip" data-col="timeline">Línea de tiempo</button>
+      <button class="chip" data-col="smart">Inteligentes</button>
     </div>
+
+    <div id="col-fotos" hidden></div>
 
     <div id="col-favoritos">
       <div id="fav-list" class="grid"></div>
@@ -1306,6 +1310,8 @@
           <button class="btn ghost icon" id="btn-album-volver" aria-label="Volver a los álbumes"><svg class="ico"><use href="#i-left"/></svg></button>
           <b id="album-titulo" style="font-size:16px;"></b>
           <span class="spacer"></span>
+          <button class="btn ghost" id="btn-album-zip" title="Descargar el álbum en un ZIP"><svg class="ico"><use href="#i-zip"/></svg><span class="lbl">ZIP</span></button>
+          <button class="btn ghost" id="btn-album-compartir" title="Compartir el álbum con un enlace"><svg class="ico"><use href="#i-link"/></svg><span class="lbl">Compartir</span></button>
           <button class="btn ghost icon" id="btn-album-eliminar" title="Eliminar álbum" aria-label="Eliminar álbum"><svg class="ico"><use href="#i-trash"/></svg></button>
         </div>
         <div id="album-items" class="grid"></div>
@@ -1732,7 +1738,9 @@
 <script src="/js/calendar.js"></script>
 <script src="/js/calendar-extra.js"></script>
 <script src="/js/prompts.js"></script>
+<script src="/js/prompts-extra.js"></script>
 <script src="/js/contacts.js"></script>
+<script src="/js/fotos.js"></script>
 <script src="/js/filecal.js"></script>
 <script src="/js/versions.js"></script>
 <script src="/js/vault.js"></script>

@@ -1086,19 +1086,29 @@ app.get('/api/uploadlinks', auth, (req, res) => {
 /* --- Enlaces de descarga: compartir un archivo o una carpeta --- */
 app.post('/api/sharelinks', auth, async (req, res) => {
   try {
-    const { path: rel, label, days, password } = req.body || {};
-    if (esCompartida(rel)) return res.status(400).json({ error: 'Lo que otro usuario te ha compartido no se puede volver a compartir con un enlace' });
-    const abs = userPath(req, rel);
-    const stat = await fsp.stat(abs);
+    const { path: rel, label, days, password, album: albumId } = req.body || {};
+    let abs = '', stat = null, albumTitulo = '';
+    if (albumId) {
+      // Un álbum se comparte como una galería plana con sus fotos, estén en la carpeta que estén
+      const album = (await readAlbums(req.user)).find(a => a.id === String(albumId));
+      if (!album) return res.status(404).json({ error: 'Álbum no encontrado' });
+      if (!(await albumArchivos(req.user, album)).length) return res.status(400).json({ error: 'El álbum no tiene archivos que compartir' });
+      albumTitulo = album.title;
+    } else {
+      if (esCompartida(rel)) return res.status(400).json({ error: 'Lo que otro usuario te ha compartido no se puede volver a compartir con un enlace' });
+      abs = userPath(req, rel);
+      stat = await fsp.stat(abs);
+    }
     const d = Number(days);
     const links = loadLinks();
     const entrada = {
       id: crypto.randomBytes(16).toString('hex'),
       kind: 'share',
       owner: req.user.username,
-      path: String(rel || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, ''),
-      label: String(label || '').slice(0, 80) || path.basename(abs),
-      isDir: stat.isDirectory(),
+      path: albumId ? '' : String(rel || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, ''),
+      label: String(label || '').slice(0, 80) || (albumId ? albumTitulo : path.basename(abs)),
+      isDir: albumId ? true : stat.isDirectory(),
+      ...(albumId ? { album: String(albumId) } : {}),
       createdAt: Date.now(),
       expiresAt: d > 0 ? Date.now() + d * 86400000 : null,
       downloads: 0,
@@ -1106,7 +1116,7 @@ app.post('/api/sharelinks', auth, async (req, res) => {
     if (password) entrada.passwordHash = bcrypt.hashSync(String(password), 10);
     links.unshift(entrada);
     saveLinks(links);
-    registrarActividad(req, 'enlace_compartido_creado', { path: entrada.path, isDir: entrada.isDir });
+    registrarActividad(req, 'enlace_compartido_creado', { path: entrada.path || `álbum ${entrada.label}`, isDir: entrada.isDir });
     res.json({ ok: true, link: { ...entrada, passwordHash: undefined, protegido: !!entrada.passwordHash } });
   } catch (err) {
     sendError(res, err);
@@ -1123,14 +1133,19 @@ app.get('/api/public/share/:id', async (req, res) => {
 
   let size = 0;
   try {
-    const abs = resolveFor(owner, link.path);
-    const stat = await fsp.stat(abs);
-    size = stat.isDirectory() ? 0 : stat.size;
+    if (link.album) {
+      const album = (await readAlbums(owner)).find(a => a.id === link.album);
+      if (!album) throw new Error('álbum borrado');
+    } else {
+      const abs = resolveFor(owner, link.path);
+      const stat = await fsp.stat(abs);
+      size = stat.isDirectory() ? 0 : stat.size;
+    }
   } catch {
-    return res.status(410).json({ error: 'El archivo ya no está disponible' });
+    return res.status(410).json({ error: link.album ? 'El álbum ya no está disponible' : 'El archivo ya no está disponible' });
   }
   res.json({
-    id: link.id, label: link.label, isDir: link.isDir, size,
+    id: link.id, label: link.label, isDir: link.isDir, album: !!link.album, size,
     expiresAt: link.expiresAt, downloads: link.downloads, protegido: !!link.passwordHash,
   });
 });
@@ -1148,6 +1163,16 @@ app.get('/api/public/share/:id/download', async (req, res) => {
     const owner = ownerOf(link);
     if (!owner) return res.status(410).json({ error: 'Este enlace ya no está disponible' });
 
+    if (link.album) {
+      const album = (await readAlbums(owner)).find(a => a.id === link.album);
+      if (!album) return res.status(410).json({ error: 'El álbum ya no está disponible' });
+      const archivos = await albumArchivos(owner, album);
+      if (!archivos.length) return res.status(410).json({ error: 'El álbum está vacío' });
+      link.downloads = (link.downloads || 0) + 1;
+      link.lastDownloadAt = Date.now();
+      saveLinks(links);
+      return enviarZip(res, archivos.map(a => ({ abs: a.abs, name: a.name, isDir: false })), `${nombreSeguro(album.title)}.zip`);
+    }
     const abs = resolveFor(owner, link.path);
     const stat = await fsp.stat(abs);
 
@@ -1175,6 +1200,17 @@ function dentroDeLink(owner, link, subrel) {
   assertVisible(sub);
   return safeResolve(base, sub);
 }
+/* Ruta real de lo que se pide en un enlace público. En un enlace de álbum "sub" es el nombre de una foto
+   del álbum (nunca una ruta): se busca entre sus archivos, así no se puede salir de lo compartido. */
+async function rutaPublica(owner, link, subrel) {
+  if (!link.album) return dentroDeLink(owner, link, subrel);
+  const album = (await readAlbums(owner)).find(a => a.id === link.album);
+  if (!album) throw new Error('álbum borrado');
+  const nombre = String(subrel || '');
+  const a = (await albumArchivos(owner, album)).find(x => x.name === nombre);
+  if (!a) throw new Error('no está en el álbum');
+  return a.abs;
+}
 function claveCompartida(link, req) {
   return !link.passwordHash || bcrypt.compareSync(String(req.query.pw || ''), link.passwordHash);
 }
@@ -1193,6 +1229,14 @@ app.get('/api/public/share/:id/list', async (req, res) => {
     const owner = ownerOf(link);
     if (!owner) return res.status(410).json({ error: 'Este enlace ya no está disponible' });
 
+    if (link.album) {
+      if (req.query.sub) return res.status(404).json({ error: 'No encontrado' });
+      const album = (await readAlbums(owner)).find(a => a.id === link.album);
+      if (!album) return res.status(410).json({ error: 'El álbum ya no está disponible' });
+      const archivos = await albumArchivos(owner, album);
+      return res.json({ items: archivos.map(a => ({ name: a.name, isDir: false, size: a.size, modified: a.modified,
+        viewable: esMediaPublico(a.name) })) });
+    }
     const dir = dentroDeLink(owner, link, req.query.sub || '');
     const entradas = (await fsp.readdir(dir, { withFileTypes: true })).filter(e => !isHidden(e.name));
     const items = (await Promise.all(entradas.map(async e => {
@@ -1212,7 +1256,7 @@ app.get('/api/public/share/:id/thumb', async (req, res) => {
     if (!link || linkExpired(link) || !link.isDir || !claveCompartida(link, req)) return res.status(404).end();
     const owner = ownerOf(link);
     if (!owner) return res.status(404).end();
-    const file = dentroDeLink(owner, link, req.query.sub || '');
+    const file = await rutaPublica(owner, link, req.query.sub || '');
     const ext = path.extname(file).toLowerCase();
     const esVideo = !!VIDEO_TYPES[ext];
     const tipo = THUMBABLE[ext];
@@ -1249,7 +1293,7 @@ app.get('/api/public/share/:id/view', async (req, res) => {
     if (!link || linkExpired(link) || !link.isDir || !claveCompartida(link, req)) return res.status(404).end();
     const owner = ownerOf(link);
     if (!owner) return res.status(404).end();
-    const file = dentroDeLink(owner, link, req.query.sub || '');
+    const file = await rutaPublica(owner, link, req.query.sub || '');
     const ext = path.extname(file).toLowerCase();
     const type = PREVIEW_TYPES[ext];
     if (!type || ext === '.pdf') return res.status(415).end();   // la galería pública es solo fotos y vídeos
@@ -1276,7 +1320,7 @@ app.get('/api/public/share/:id/file', async (req, res) => {
     if (!claveCompartida(link, req)) return res.status(401).end();
     const owner = ownerOf(link);
     if (!owner) return res.status(404).end();
-    const file = dentroDeLink(owner, link, req.query.sub || '');
+    const file = await rutaPublica(owner, link, req.query.sub || '');
     const stat = await fsp.stat(file);
     if (stat.isDirectory()) return res.status(400).end();
     link.downloads = (link.downloads || 0) + 1;
@@ -1865,11 +1909,12 @@ async function leerExif(file) {
 async function exifResumido(file, stat) {
   const cache = cargarExifCache();
   const clave = claveExif(file, stat);
-  if (cache[clave]) return cache[clave];
-  let r = { t: null, lat: null, lon: null };
+  // Las entradas anteriores a la cámara no llevan "c": se vuelven a leer una vez
+  if (cache[clave] && 'c' in cache[clave]) return cache[clave];
+  let r = { t: null, lat: null, lon: null, c: null };
   try {
     const e = await leerExif(file);
-    if (e) r = { t: e.tomada, lat: e.lat, lon: e.lon };
+    if (e) r = { t: e.tomada, lat: e.lat, lon: e.lon, c: e.camara ? e.camara.slice(0, 60) : null };
   } catch { /* sin EXIF utilizable */ }
   cache[clave] = r;
   exifCacheSucio = true;
@@ -1960,6 +2005,54 @@ app.get('/api/photomap', auth, async (req, res) => {
     await recorrer(raiz, '');
     fotos.sort((a, b) => b.t - a.t);
     res.json({ fotos, total, conCoordenadas: fotos.length, conFecha, cortado, limite: MAP_LIMIT });
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
+/* Índice de todas las fotos (fecha de captura, cámara y coordenadas): alimenta la línea de tiempo y
+   los álbumes inteligentes. Se apoya en la misma caché de EXIF que el mapa, así que solo la primera
+   vez es lenta. Se recorre de cuatro en cuatro por carpeta para no saturar el disco. */
+const PHOTOS_INDEX_LIMIT = Number(process.env.PHOTOS_INDEX_LIMIT || 50000);
+app.get('/api/photoindex', auth, async (req, res) => {
+  try {
+    const raiz = userRoot(req.user);
+    const fotos = [];
+    let cortado = false;
+
+    async function recorrer(dir, rel) {
+      if (cortado) return;
+      let entradas;
+      try { entradas = await fsp.readdir(dir, { withFileTypes: true }); } catch { return; }
+      const archivos = [];
+      for (const e of entradas) {
+        if (isHidden(e.name)) continue;
+        if (e.isDirectory()) continue;
+        const ext = path.extname(e.name).toLowerCase();
+        if (IMAGE_TYPES[ext] || HEIC_TYPES[ext]) archivos.push(e.name);
+      }
+      for (let i = 0; i < archivos.length; i += 4) {
+        if (fotos.length >= PHOTOS_INDEX_LIMIT) { cortado = true; return; }
+        await Promise.all(archivos.slice(i, i + 4).map(async nombre => {
+          const full = path.join(dir, nombre);
+          try {
+            const stat = await fsp.stat(full);
+            const m = await exifResumido(full, stat);
+            fotos.push({ rel: rel ? `${rel}/${nombre}` : nombre, name: nombre, t: m.t || stat.mtimeMs, exif: !!m.t,
+                         lat: m.lat, lon: m.lon, c: m.c || null, size: stat.size });
+          } catch { /* archivo desaparecido */ }
+        }));
+      }
+      for (const e of entradas) {
+        if (cortado) return;
+        if (isHidden(e.name) || !e.isDirectory()) continue;
+        await recorrer(path.join(dir, e.name), rel ? `${rel}/${e.name}` : e.name);
+      }
+    }
+
+    await recorrer(raiz, '');
+    fotos.sort((a, b) => b.t - a.t);
+    res.json({ fotos, total: fotos.length, cortado, limite: PHOTOS_INDEX_LIMIT });
   } catch (err) {
     sendError(res, err);
   }
@@ -2238,6 +2331,38 @@ async function writeAlbums(user, list) {
   await fsp.writeFile(tmp, JSON.stringify(list, null, 2));
   await fsp.rename(tmp, file);
 }
+const nombreSeguro = (n) => String(n || 'album').replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').trim().slice(0, 80) || 'album';
+/* Archivos de un álbum (las carpetas y lo que ya no existe se saltan). Dos fotos con el mismo nombre
+   en carpetas distintas se distinguen con un sufijo, para el ZIP y para la galería pública. */
+async function albumArchivos(user, album) {
+  const salida = [];
+  const usados = new Set();
+  for (const rel of album.items) {
+    try {
+      const abs = resolveFor(user, rel);
+      const stat = await fsp.stat(abs);
+      if (stat.isDirectory()) continue;
+      const ext = path.extname(abs);
+      const base = path.basename(abs, ext);
+      let name = path.basename(abs), n = 2;
+      while (usados.has(name.toLowerCase())) name = `${base} (${n++})${ext}`;
+      usados.add(name.toLowerCase());
+      salida.push({ rel, abs, name, size: stat.size, modified: stat.mtime });
+    } catch { /* ya no se puede alcanzar */ }
+  }
+  return salida;
+}
+app.get('/api/albums/:id/zip', auth, async (req, res) => {
+  try {
+    const album = (await readAlbums(req.user)).find(a => a.id === req.params.id);
+    if (!album) return res.status(404).json({ error: 'No encontrado' });
+    const archivos = await albumArchivos(req.user, album);
+    if (!archivos.length) return res.status(400).json({ error: 'El álbum no tiene archivos' });
+    await enviarZip(res, archivos.map(a => ({ abs: a.abs, name: a.name, isDir: false })), `${nombreSeguro(album.title)}.zip`);
+  } catch (err) {
+    if (!res.headersSent) sendError(res, err);
+  }
+});
 app.get('/api/albums', auth, async (req, res) => {
   try {
     const albums = await readAlbums(req.user);
