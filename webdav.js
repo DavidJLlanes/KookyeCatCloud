@@ -36,7 +36,7 @@ function decodeHref(href, base = '') {
   return p.replace(/^\/dav\/?/, '').replace(/^\/+/, '').replace(/\/+$/, '');
 }
 
-function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '', alSobrescribir, alMover }) {
+function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '', alSobrescribir, alMover, alCambiar }) {
   async function exists(p) {
     try { await fsp.access(p); return true; } catch { return false; }
   }
@@ -140,6 +140,10 @@ function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '', 
   return async function dav(req, res) {
     const user = autenticar(req, res);
     if (!user) return;
+    // Avisa a las pestañas abiertas cuando un cliente WebDAV cambia algo
+    if (alCambiar && /^(PUT|DELETE|MKCOL|MOVE|COPY)$/.test(req.method)) {
+      res.on('finish', () => { if (res.statusCode < 400) { try { alCambiar(user); } catch { /* sin aviso */ } } });
+    }
 
     res.setHeader('DAV', '1, 2');
     res.setHeader('MS-Author-Via', 'DAV');

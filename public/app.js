@@ -289,8 +289,12 @@ async function errorOf(res, fallback) {
     return data.error || fallback;
   } catch { return fallback; }
 }
+// Id de esta pestaña: el servidor lo usa para no avisarle de los cambios que ella misma hace
+const CID = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)).replace(/[^\w-]/g, '').slice(0, 36);
 async function api(url, opts = {}) {
-  const res = await fetch(url, { credentials: 'include', ...opts });
+  const headers = new Headers(opts.headers || {});
+  headers.set('X-KCC-Client', CID);
+  const res = await fetch(url, { credentials: 'include', ...opts, headers });
   if (res.status === 401) { showLogin(); throw new Error('No autenticado'); }
   return res;
 }
@@ -494,9 +498,43 @@ async function logout() {
   showLogin();
 }
 
-function showLogin() { salirModo2fa(); show('login-screen'); hide('app'); }
+function showLogin() { desconectaEventos(); salirModo2fa(); show('login-screen'); hide('app'); }
+
+/* ---------------------------------------------------------------
+   Avisos en directo: una conexión (EventSource) y el servidor avisa cuando cambia algo.
+   Si la pestaña estaba oculta o la conexión se cortó, se refresca al volver.
+--------------------------------------------------------------- */
+const LIVE = { es: null, timer: null, sucio: false, ultimo: 0, abierta: false };
+function refrescoEnDirecto() {
+  LIVE.sucio = false; LIVE.ultimo = Date.now();
+  if (state.tab !== 'files' || state.query || state.selectMode || UP.activos > 0) { LIVE.sucio = true; return; }
+  refresh({ silent: true });
+}
+function avisoDeCambio() {
+  if (document.visibilityState !== 'visible') { LIVE.sucio = true; return; }
+  clearTimeout(LIVE.timer);
+  LIVE.timer = setTimeout(refrescoEnDirecto, 400);
+}
+function conectaEventos() {
+  if (LIVE.es || !window.EventSource) return;
+  const es = new EventSource(`${BASE}/api/events?cid=${encodeURIComponent(CID)}`, { withCredentials: true });
+  LIVE.es = es;
+  es.addEventListener('files', avisoDeCambio);
+  es.addEventListener('hola', () => { if (LIVE.abierta) avisoDeCambio(); LIVE.abierta = true; });   // al reconectar, por si se perdió algún aviso
+  es.onerror = () => { if (es.readyState === 2) { LIVE.es = null; LIVE.abierta = false; } };          // cerrada del todo (p. ej. sin sesión)
+}
+function desconectaEventos() {
+  if (LIVE.es) LIVE.es.close();
+  LIVE.es = null; LIVE.abierta = false; clearTimeout(LIVE.timer);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || $('app').hidden) return;
+  if (!LIVE.es) conectaEventos();
+  if (LIVE.sucio || Date.now() - LIVE.ultimo > 60000) avisoDeCambio();
+});
 
 function showApp() {
+  conectaEventos();
   hide('login-screen');
   show('app');
   medirAlturaNav();
@@ -649,11 +687,15 @@ function emptyState(title, sub, iconName) {
   return wrap;
 }
 
-async function refresh() {
-  renderBreadcrumb();
-  renderSkeleton();
-  state.selection.clear();
-  updateSelbar();
+async function refresh(opts) {
+  // silent: actualización en directo por un aviso del servidor; sin esqueleto y sin perder la selección
+  const silent = !!(opts && opts.silent === true);
+  if (!silent) {
+    renderBreadcrumb();
+    renderSkeleton();
+    state.selection.clear();
+    updateSelbar();
+  }
   try {
     const url = state.query
       ? `${BASE}/api/search?q=${qs(state.query)}&path=${qs(state.path)}`
@@ -669,10 +711,16 @@ async function refresh() {
       ...it,
       rel: state.query ? joinPath(it.dir || '', it.name) : joinPath(state.path, it.name),
     }));
+    if (silent) {
+      const existen = new Set(state.items.map(i => i.rel));
+      for (const r of [...state.selection]) if (!existen.has(r)) state.selection.delete(r);
+    }
     render();
+    if (silent) updateSelbar();
     if (window.KCC.afterList) window.KCC.afterList(data);
     cargarMetaFotos();          // en segundo plano: la rejilla ya está pintada
   } catch {
+    if (silent) return;         // un fallo de red en una actualización en directo no debe tapar lo que ya se ve
     const box = $('file-list');
     box.textContent = '';
     box.className = '';
@@ -2109,6 +2157,7 @@ function subirUno(item) {
   item.xhr = xhr;
   xhr.open('POST', BASE + '/api/upload?path=' + qs(item.dest));
   xhr.withCredentials = true;
+  xhr.setRequestHeader('X-KCC-Client', CID);
   xhr.upload.addEventListener('progress', e => {
     if (!e.lengthComputable) return;
     item.subido = e.loaded;

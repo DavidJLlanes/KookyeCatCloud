@@ -740,6 +740,39 @@ API rechaza cualquier ruta que lo contenga, así que a `.trash` solo se llega po
 
 Al restaurar (o al subir) nunca se sobrescribe: si el nombre ya está ocupado se añade `_1`, `_2`…
 
+## Actualización en directo
+
+La lista de archivos se actualiza sola cuando cambia algo desde otro sitio: un archivo que llega
+por un **enlace de subida**, un cambio desde otro dispositivo o desde un cliente **WebDAV**. No
+hay consultas periódicas: cada pestaña mantiene **una** conexión abierta (Server-Sent Events,
+`GET /api/events`) y el servidor solo avisa cuando hay algo nuevo. Varios cambios seguidos (una
+subida de 50 fotos) llegan como un solo aviso, y la pestaña que hizo el cambio no lo recibe.
+
+- La lista se refresca sin esqueleto y sin perder la selección. No se toca mientras estás
+  buscando, seleccionando o subiendo archivos; se pone al día al volver a la pestaña.
+- Si la conexión se corta (móvil en segundo plano), el navegador reconecta solo y refresca.
+- Máximo `EVENTS_PER_USER` (8) conexiones por usuario; el servidor manda una señal de vida cada 25 s.
+- **Nginx**: hay que dejar pasar esa ruta sin retenerla. Con la app en `/cloud/`:
+
+```nginx
+location = /cloud/api/events {
+    proxy_pass http://127.0.0.1:4010;      # el puerto de tu PORT
+    proxy_http_version 1.1;
+    proxy_set_header Connection '';
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 1h;
+    gzip off;
+}
+```
+
+  Va antes del `location` general de la app. Sin él, la app funciona igual, pero los avisos llegan
+  tarde o no llegan.
+
 ## Descargar como ZIP
 
 `GET /api/zip?p=ruta&p=otra` empaqueta al vuelo carpetas enteras o una selección, hasta
@@ -895,6 +928,7 @@ indique; reinicia el servicio tras cambiarlas.
 | `SHEET_MAX_ROWS` / `SHEET_MAX_COLS` | 2000 / 60 | Visor de hojas de cálculo |
 | `TILE_URL` / `TILE_ATTR` / `MAP_LIMIT` | OpenStreetMap / — / 5000 | Mapa de fotos |
 | `ACTIVITY_MAX` | 5000 | Líneas del registro de actividad |
+| `EVENTS_PER_USER` | 8 | Conexiones de avisos en directo por usuario |
 | `DUP_LIMIT` / `DU_LIMIT` | 20000 / 200000 | Topes del buscador de duplicados y del analizador de espacio |
 | `VERSIONS_KEEP` / `VERSIONS_DAYS` / `VERSIONS_MAX_BYTES` | 30 / 180 / 5 MB | Versiones de archivos de texto |
 | `VAULT_IDLE_MIN` | 15 | Minutos sin usar la caja fuerte hasta que se bloquea |
@@ -935,6 +969,7 @@ server.js            API Express, sesiones, rutas de archivos, enlaces, ZIP, ser
 webdav.js            Servidor WebDAV (montado antes del analizador de JSON)
 lib/
   store.js           Escritura atómica de JSON con cola por archivo
+  events.js          Avisos en directo (Server-Sent Events)
   labels.js          Etiquetas de color compartidas entre módulos
   calendar.js        Eventos, tareas y repetición; ganchos con notas, prompts y archivos
   ical.js            Feed iCal (RFC 5545) de solo lectura

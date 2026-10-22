@@ -13,6 +13,7 @@ const cookieParser = require('cookie-parser');
 // archiver 8 ya no exporta una función: se instancia la clase del formato
 const { ZipArchive } = require('archiver');
 const { createDav } = require('./webdav');
+const createEvents = require('./lib/events');
 const createLabels = require('./lib/labels');
 const createCalendar = require('./lib/calendar');
 const createPrompts = require('./lib/prompts');
@@ -299,6 +300,9 @@ const vaultMod = createVault({
   maxUpload: MAX_UPLOAD_BYTES,
 });
 
+// Avisos en directo a las pestañas abiertas (ver lib/events.js)
+const eventsMod = createEvents({ userRoot: (u) => userRoot(u) });
+
 const root = express();
 root.set('trust proxy', 1); // detrás de Nginx: necesario para que req.ip sea la IP real
 root.disable('x-powered-by');
@@ -316,6 +320,7 @@ app.use('/dav', createDav({
   // Sobrescribir un archivo de texto desde un cliente WebDAV también deja la versión anterior
   alMover: async (user, desde, hacia) => { sharesMod.mueve(user.username, desde, hacia); await versionsMod.mueve(user, desde, hacia); await calendarMod.core.mueveOrigenArchivo(user, desde, hacia); },
   alSobrescribir: async (user, rel, abs) => { if (TEXT_RE.test(path.basename(abs))) await versionsMod.snapshot(user, rel, abs); },
+  alCambiar: (user) => eventsMod.cambio(userRoot(user)),
   log: (...a) => console.warn(...a),
 }));
 
@@ -431,6 +436,20 @@ function auth(req, res, next) {
     return res.status(401).json({ error: 'Token inválido' });
   }
 }
+// Cuando alguien cambia archivos (subir, borrar, mover, carpetas, papelera…) se avisa a las demás
+// pestañas del mismo espacio. La pestaña que hizo el cambio manda su id y no recibe el aviso.
+const RUTAS_ARCHIVOS = /^\/(mkdir|upload|text|files|batch|trash|move|favorites|albums)(\/|$)/;
+app.use('/api', (req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD' && RUTAS_ARCHIVOS.test(req.path)) {
+    const origen = String(req.get('x-kcc-client') || '').slice(0, 40).replace(/[^\w-]/g, '');
+    res.on('finish', () => {
+      if (res.statusCode < 400 && req.user) { try { eventsMod.cambio(userRoot(req.user), origen); } catch { /* sin aviso */ } }
+    });
+  }
+  next();
+});
+app.get('/api/events', auth, eventsMod.manejador);
+
 function adminOnly(req, res, next) {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Solo administradores' });
   next();
@@ -1346,6 +1365,7 @@ app.post('/api/public/link/:id/upload', (req, res) => {
       actual.lastUploadAt = Date.now();
       saveLinks(actuales);
     }
+    try { eventsMod.cambio(resolveFor(owner, link.path)); } catch { /* sin aviso */ }
     res.json({ ok: true, uploaded: subidos.length });
   });
 });
