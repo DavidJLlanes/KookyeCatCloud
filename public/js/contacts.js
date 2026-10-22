@@ -40,8 +40,14 @@
     return `hsl(${h} 58% 46%)`;
   }
   function avatar(c, tam) {
-    const a = el('div', 'ct-av', iniciales(c));
+    const a = el('div', 'ct-av');
     a.style.setProperty('--c', colorDe(c));
+    if (c.photo) {
+      const im = el('img'); im.alt = ''; im.loading = 'lazy'; im.draggable = false;
+      im.src = `${BASE}/api/contacts/${c.id}/photo?v=${c.photo}`;
+      im.addEventListener('error', () => { im.remove(); a.textContent = iniciales(c); });
+      a.appendChild(im);
+    } else a.textContent = iniciales(c);
     if (tam) a.style.setProperty('--s', tam + 'px');
     a.setAttribute('aria-hidden', 'true');
     return a;
@@ -412,6 +418,37 @@
     const fechas = repetidor({ titulo: 'Fechas', ic: 'i-cake', anadir: 'Añadir fecha', items: base.dates || [], nuevaFila: filaFecha });
     f.append(tels.el, mails.el, dirs.el, webs.el, fechas.el);
 
+    // Foto: se reduce en el servidor a 300x300 (WebP); se sube al guardar
+    const foto = { file: null, quitar: false };
+    const fotoBox = el('div', 'ct-photo');
+    const fotoIn = el('input'); fotoIn.type = 'file'; fotoIn.accept = 'image/*'; fotoIn.hidden = true;
+    const pintaFoto = () => {
+      fotoBox.textContent = '';
+      const prev = el('div', 'ct-av'); prev.style.setProperty('--s', '72px'); prev.style.setProperty('--c', colorDe(c || { id: 'nuevo' }));
+      if (foto.file) { const im = el('img'); im.alt = ''; im.src = foto.url; prev.appendChild(im); }
+      else if (c && c.photo && !foto.quitar) { const im = el('img'); im.alt = ''; im.src = `${BASE}/api/contacts/${c.id}/photo?v=${c.photo}`; prev.appendChild(im); }
+      else prev.appendChild(icon('i-contact'));
+      const b1 = el('button', 'btn sm'); b1.type = 'button'; b1.append(icon('i-image'), el('span', null, (foto.file || (c && c.photo && !foto.quitar)) ? 'Cambiar foto' : 'Añadir foto'));
+      b1.addEventListener('click', () => fotoIn.click());
+      fotoBox.append(prev, b1);
+      if (foto.file || (c && c.photo && !foto.quitar)) {
+        const b2 = el('button', 'btn ghost sm'); b2.type = 'button'; b2.append(icon('i-trash'), el('span', null, 'Quitar'));
+        b2.addEventListener('click', () => { if (foto.url) URL.revokeObjectURL(foto.url); foto.file = null; foto.url = ''; foto.quitar = true; pintaFoto(); });
+        fotoBox.appendChild(b2);
+      }
+      fotoBox.appendChild(fotoIn);
+    };
+    fotoIn.addEventListener('change', () => {
+      const fl = fotoIn.files && fotoIn.files[0]; fotoIn.value = '';
+      if (!fl) return;
+      if (!/^image\//.test(fl.type) && !/\.(heic|heif|avif|webp|jpe?g|png|gif)$/i.test(fl.name)) { K.toast('Elige una imagen'); return; }
+      if (fl.size > 15 * 1024 * 1024) { K.toast('La imagen supera los 15 MB'); return; }
+      if (foto.url) URL.revokeObjectURL(foto.url);
+      foto.file = fl; foto.url = URL.createObjectURL(fl); foto.quitar = false; pintaFoto();
+    });
+    pintaFoto();
+    f.insertBefore(fotoBox, f.firstChild);
+
     const notas = el('textarea'); notas.value = base.notes || ''; notas.maxLength = 5000; notas.rows = 3; notas.placeholder = 'Notas';
     f.appendChild(campo('Notas', notas));
     const picker = K.labelPicker({ selected: base.labels || [] });
@@ -433,6 +470,19 @@
         };
         try {
           const r = c ? await K.put('/api/contacts/' + c.id, body) : await K.post('/api/contacts', body);
+          let ct = r.contact;
+          try {
+            if (foto.file) {
+              const rs = await api(`${BASE}/api/contacts/${ct.id}/photo`, { method: 'PUT', headers: { 'Content-Type': foto.file.type || 'application/octet-stream' }, body: foto.file });
+              const dj = await rs.json().catch(() => ({}));
+              if (!rs.ok) throw new Error(dj.error || 'No se pudo guardar la foto');
+              ct = dj.contact;
+            } else if (foto.quitar && c && c.photo) {
+              ct = (await K.del(`/api/contacts/${ct.id}/photo`)).contact || ct;
+            }
+          } catch (e) { K.fail(e); }
+          if (foto.url) URL.revokeObjectURL(foto.url);
+          r.contact = ct;
           sustituye(r.contact); render();
           K.toast(c ? 'Contacto actualizado' : 'Contacto creado');
           if (c) setTimeout(() => openDetail(r.contact.id), 30);

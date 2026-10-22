@@ -543,14 +543,15 @@ ordenador, barra inferior en el móvil).
 - **Ficha**: botones de llamar y escribir, enlace “Ver en el mapa” en las direcciones, copiar cada
   dato y menú con favorito, exportar y eliminar. Las webs solo se enlazan si empiezan por
   `http://` o `https://`.
+- **Foto**: cada contacto puede llevar una foto. Se recorta y se reduce en el servidor a **300×300 en WebP** (el original no se guarda) y se muestra como avatar; sin foto salen las iniciales sobre un color. Se guarda en `<usuario>/.kcc/contact-photos/`. Las fotos que se suben en **Archivos** no se tocan: se guardan con su resolución original.
 - **Etiquetas**: son las mismas de notas, prompts y calendario.
 - **Importar y exportar vCard (`.vcf`)**: importa archivos de Google Contacts, iCloud y Android
-  (vCard 3.0 y variantes habituales; las categorías pasan a etiquetas) sin duplicar los contactos
-  que ya tienes —mismo nombre y algún teléfono o correo en común—. Exporta todos o uno solo.
+  (vCard 3.0 y variantes habituales; las categorías pasan a etiquetas y las fotos incrustadas se reducen igual) sin duplicar los contactos
+  que ya tienes —mismo nombre y algún teléfono o correo en común—. Exporta todos o uno solo, con la foto incluida.
 - **Buscador global**: Ctrl+K encuentra contactos y ofrece “Nuevo contacto”.
 
 API (`/api/contacts`, requiere sesión): `GET /`, `GET /search?q=`, `GET /export[?ids=a,b]`,
-`POST /import` (cuerpo: texto del `.vcf`, hasta 8 MB), `POST /`, `PUT /:id` y `DELETE /:id`.
+`POST /import` (cuerpo: texto del `.vcf`, hasta 8 MB), `GET|PUT|DELETE /:id/photo` (el `PUT` recibe la imagen tal cual, hasta 15 MB), `POST /`, `PUT /:id` y `DELETE /:id`.
 Límite de `CONTACTS_LIMIT` contactos por usuario (10000 por defecto).
 
 ## Visor con zoom

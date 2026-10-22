@@ -272,7 +272,7 @@ const promptsMod = createPrompts({
   express, multer, sharp, userRoot, sendError, registrarActividad,
   calendar: calendarMod.core, labels: labelsMod,
 });
-const contactsMod = createContacts({ express, userRoot, sendError, registrarActividad, labels: labelsMod });
+const contactsMod = createContacts({ express, sharp, userRoot, sendError, registrarActividad, labels: labelsMod });
 
 // Versiones de archivos de texto (se crea aquí porque WebDAV y las rutas de archivos la usan)
 const versionsMod = createVersions({
