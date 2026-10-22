@@ -64,7 +64,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 - [Qué puedes hacer](#qué-puedes-hacer)
 - [Instalación](#instalación) — [local](#arrancar-en-local) · [VPS paso a paso](#despliegue-en-el-vps) · [dominio, subdominio o subcarpeta](#en-qué-dirección-instalarla)
-- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios)
+- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [contactos](#contactos), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios)
 - [Actualizaciones](#actualizaciones)
 - [Variables de entorno](#variables-de-entorno)
 - [Seguridad](#seguridad) · [Copias de seguridad](#copias-de-seguridad) · [Estructura del proyecto](#estructura-del-proyecto) · [Solución de problemas](#solución-de-problemas)
@@ -77,12 +77,13 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | --- | --- |
 | 📁 **Archivos organizados** | Gestiona carpetas, favoritos, papelera y descargas ZIP. |
 | 📷 **Tu biblioteca de fotos** | Explora álbumes, fechas de captura, datos EXIF y un mapa de fotos. |
-| 🎬 **Vistas previas** | Consulta fotos, vídeos, audio y documentos desde el navegador. |
+| 🎬 **Vistas previas** | Consulta fotos, vídeos, audio y documentos desde el navegador, con zoom en las imágenes. |
 | 🔗 **Compartir fácilmente** | Crea enlaces de subida y descarga con caducidad y contraseña opcional para las descargas. |
 | 💻 **Acceso con WebDAV** | Conecta tu nube desde el explorador o una app compatible. |
 | 📝 **Notas tipo Notion** | Editor de bloques con carpetas, colores, etiquetas y enlaces internos. |
 | 📅 **Calendario** | Mes, semana, día y agenda con calendarios de colores, repetición y recordatorios. |
 | ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables e imágenes de muestra en WebP. |
+| 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
 | 🔎 **Todo conectado** | Buscador global (Ctrl+K) y fechas de calendario para lo que subes o creas. |
 | 🫆 **Huella y Face ID** | Entra sin contraseña con la biometría de tu móvil u ordenador (passkeys). |
 | 🔒 **Caja fuerte** | Archivos cifrados con una contraseña propia, que se bloquea sola. |
@@ -421,9 +422,9 @@ Dos cosas de Windows que conviene saber: exige HTTPS con certificado válido par
 básica (aquí lo hay), y trae un límite de 50 MB por descarga que se sube en el registro
 (`HKLM\SYSTEM\CurrentControlSet\Services\WebClient\Parameters\FileSizeLimitInBytes`).
 
-## Espacio de trabajo: notas, calendario y prompts
+## Espacio de trabajo: notas, calendario, prompts y contactos
 
-Tres módulos que comparten **etiquetas de color**, **fechas de calendario** y el **buscador
+Cuatro módulos que comparten **etiquetas de color**, **fechas de calendario** y el **buscador
 global**. Todo lo que subes o creas puede llevar una fecha, y esa fecha aparece como evento
 en el calendario con un enlace de vuelta al elemento.
 
@@ -432,6 +433,7 @@ en el calendario con un enlace de vuelta al elemento.
 | Notas | Un `.md` por nota + `index.json` con la estructura | `<usuario>/.notes/` |
 | Calendario | Calendarios, eventos y tareas | `<usuario>/.kcc/calendar.json` |
 | Prompts | Un `.json` por prompt + imágenes WebP | `<usuario>/.kcc/prompts/` |
+| Contactos | Todos los contactos en un solo archivo | `<usuario>/.kcc/contacts.json` |
 | Etiquetas | Lista de etiquetas con color | `<usuario>/.kcc/labels.json` |
 
 Todo está oculto al explorador de archivos y a WebDAV (son carpetas con punto). Para las
@@ -441,13 +443,13 @@ copias de seguridad basta con respaldar `DATA_DIR`.
 
 Se escriben donde haga falta (nota, prompt, evento) y se crean al vuelo con Enter. Son las
 mismas en todas partes: renombrar una o cambiarle el color lo cambia en todos los módulos a la
-vez, y borrarla la quita de todo lo que la usaba. Se gestionan desde el menú “⋯” de Prompts, el
+vez, y borrarla la quita de todo lo que la usaba. Se gestionan desde el menú “⋯” de Prompts o de Contactos, el
 panel de etiquetas del Calendario o el buscador (Ctrl+K → “Gestionar etiquetas”).
 
 ### Buscador global (Ctrl+K)
 
-Un solo cuadro que busca en archivos, notas (título y contenido), prompts y eventos, y que
-también crea cosas (“Nuevo prompt”, “Nuevo evento”…) y salta entre secciones. Se abre con
+Un solo cuadro que busca en archivos, notas (título y contenido), prompts, contactos y eventos, y que
+también crea cosas (“Nuevo prompt”, “Nuevo contacto”, “Nuevo evento”…) y salta entre secciones. Se abre con
 **Ctrl+K** (⌘K en Mac) o desde el botón de la barra lateral.
 
 ### Fecha en el calendario
@@ -524,6 +526,47 @@ memoria y cada prompt es un archivo propio).
   lote y **papelera** con restauración.
 - **Importar / exportar** en JSON (hasta 5000 por importación), o pegando texto con prompts
   separados por una línea `---`.
+
+## Contactos
+
+Agenda personal al estilo de Google Contacts, en la pestaña **Contactos** (barra lateral en el
+ordenador, barra inferior en el móvil).
+
+- **Campos**: nombre, segundo nombre, apellidos, apodo, empresa, cargo y departamento; **varios**
+  teléfonos, correos, direcciones, sitios web y fechas (cumpleaños, aniversario u otra, con o
+  sin año), cada uno con su etiqueta (Móvil, Trabajo, Casa…); notas y favorito. Basta con un
+  nombre, una empresa, un teléfono o un correo para guardar un contacto.
+- **Lista**: agrupada por inicial, ordenable por nombre o apellido, con avatar de color, búsqueda
+  instantánea (sin acentos; por nombre, empresa, correo, notas, dirección o dígitos del
+  teléfono) y filtros por **Favoritos** y por **etiqueta**. Atajos: `/` para buscar, `n` para
+  crear.
+- **Ficha**: botones de llamar y escribir, enlace “Ver en el mapa” en las direcciones, copiar cada
+  dato y menú con favorito, exportar y eliminar. Las webs solo se enlazan si empiezan por
+  `http://` o `https://`.
+- **Etiquetas**: son las mismas de notas, prompts y calendario.
+- **Importar y exportar vCard (`.vcf`)**: importa archivos de Google Contacts, iCloud y Android
+  (vCard 3.0 y variantes habituales; las categorías pasan a etiquetas) sin duplicar los contactos
+  que ya tienes —mismo nombre y algún teléfono o correo en común—. Exporta todos o uno solo.
+- **Buscador global**: Ctrl+K encuentra contactos y ofrece “Nuevo contacto”.
+
+API (`/api/contacts`, requiere sesión): `GET /`, `GET /search?q=`, `GET /export[?ids=a,b]`,
+`POST /import` (cuerpo: texto del `.vcf`, hasta 8 MB), `POST /`, `PUT /:id` y `DELETE /:id`.
+Límite de `CONTACTS_LIMIT` contactos por usuario (10000 por defecto).
+
+## Visor con zoom
+
+Las fotos de la galería y las imágenes de muestra de los prompts se abren en un visor a pantalla
+completa con zoom: **rueda del ratón** o **pellizco con dos dedos** (de 1× a 8×), **doble toque o
+doble clic** para acercar y alejar, y arrastre para moverte por la imagen ampliada. Con la imagen
+sin ampliar, deslizar un dedo cambia de foto; en el teclado, `Esc` cierra, las flechas cambian de
+imagen, `+` y `-` hacen zoom y `0` lo restablece. Está en `public/js/zoom.js`.
+
+## Móvil: desplazamiento y tamaños táctiles
+
+Las ventanas altas (como el detalle de un prompt) se desplazan con el dedo y llevan un botón de
+cerrar fijo arriba. La barra inferior usa iconos de 26 px y botones de al menos 78×60 px, se
+desliza hacia los lados y centra sola la pestaña activa; el resto de botones tiene una zona táctil
+mínima de 44 px.
 
 ## Notas (editor de bloques)
 
@@ -840,6 +883,7 @@ indique; reinicia el servicio tras cambiarlas.
 | `TRASH_TTL_DAYS` | 30 | Días en la papelera |
 | `LINK_MAX_FILES` / `LINK_MAX_BYTES` / `LINK_IP_HOURLY` | 50 / 2 GB / 200 | Límites de los enlaces de subida |
 | `NOTES_LIMIT` / `NOTE_MAX_CHARS` | 5000 / 500000 | Límites de notas |
+| `CONTACTS_LIMIT` | 10000 | Contactos máximos por usuario |
 | `DISPLAY_MAX` | 2200 | Lado mayor de la conversión HEIC |
 | `TEXT_MAX` / `OFFICE_TIMEOUT` | 512 kB / 90000 ms | Visor de texto y conversión con LibreOffice |
 | `ZIP_LIMIT` | 200 | Elementos máximos por ZIP |
@@ -872,7 +916,7 @@ Si encuentras una vulnerabilidad, avísala por un
 Lo imprescindible: `DATA_DIR` (los archivos), `users.json` (las cuentas, incluye tokens de
 aplicación y el secreto de verificación en dos pasos de quien la tenga activada) y
 `.jwt-secret` (si se pierde, todas las sesiones abiertas se invalidan). Los datos de notas,
-calendario, prompts, etiquetas, versiones y la caja fuerte viven dentro de `DATA_DIR` (carpetas
+calendario, prompts, contactos, etiquetas, versiones y la caja fuerte viven dentro de `DATA_DIR` (carpetas
 `.notes`, `.kcc` y `.vault`), así que quedan cubiertos por la copia de `DATA_DIR`. Junto a
 `users.json` conviene copiar `shares.json` (comparticiones entre usuarios), `passkeys.json` (dispositivos con huella/Face ID)
 e `ical-tokens.json` (enlaces de suscripción de calendario). `sessions.json` y
@@ -891,6 +935,8 @@ lib/
   ical.js            Feed iCal (RFC 5545) de solo lectura
   holidays.js        Festivos de España calculados (sin servicios externos)
   prompts.js         Biblioteca de prompts e imágenes WebP
+  contacts.js        Contactos: API, búsqueda, importación y exportación vCard
+  vcard.js           Lectura y escritura de vCard 3.0
   notes-extra.js     Imágenes, menciones, backlinks, plantillas y exportación de notas
   versions.js        Historial de versiones de archivos de texto
   vault.js           Caja fuerte cifrada (AES-256-GCM + scrypt)
@@ -898,7 +944,7 @@ lib/
   webauthn.js        Passkeys sin dependencias (CBOR propio)
 public/
   index.html, app.js Aplicación (JavaScript vanilla)
-  js/                Módulos: calendario, prompts, notas, caja fuerte, passkeys, actualizaciones…
+  js/                Módulos: calendario, prompts, contactos, visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
   css/               Estilos de los módulos
   sw.js, manifest.json  PWA
   vendor/            Leaflet alojado en local
