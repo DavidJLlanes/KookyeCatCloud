@@ -1680,7 +1680,9 @@ async function loadMap() {
     const url = (state.caps && state.caps.tileUrl) || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
     const attr = (state.caps && state.caps.tileAttr) ||
       '&copy; colaboradores de OpenStreetMap';
-    L.tileLayer(url, { maxZoom: 19, attribution: attr }).addTo(MP.mapa);
+    // OpenStreetMap bloquea (403 "Access blocked") las peticiones sin Referer. La app manda
+    // Referrer-Policy: no-referrer en todo, así que solo estas imágenes envían el origen.
+    L.tileLayer(url, { maxZoom: 19, attribution: attr, referrerPolicy: 'origin' }).addTo(MP.mapa);
     MP.capa = L.layerGroup().addTo(MP.mapa);
     // Solo al cambiar el zoom: la agrupación depende de él, no del desplazamiento.
     // Con 'moveend' además se rompía el globo: abrirlo desplaza el mapa para que

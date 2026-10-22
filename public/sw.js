@@ -1,4 +1,4 @@
-const CACHE = 'kookyecatcloud-shell-v26';
+const CACHE = 'kookyecatcloud-shell-v27';
 // El prefijo (subcarpeta del dominio) sale del ámbito con el que se registró el worker
 const BASE = new URL(self.registration.scope).pathname.replace(/\/+$/, '');
 const SHELL = ['/', '/app.js', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-maskable-512.png',
