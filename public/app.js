@@ -1219,6 +1219,24 @@ function updateSelbar() {
     : `${n} seleccionado${n > 1 ? 's' : ''}`;
   ['sel-move', 'sel-download', 'sel-delete'].forEach(id => { $(id).disabled = n === 0; });
 }
+// La barra de acciones de selección flota sobre el contenido y tapaba las últimas filas, que ya no se podían
+// marcar. Se mide su altura real y se reserva ese hueco al final de la página mientras esté visible.
+(function vigilaBarrasSeleccion() {
+  let pendiente = false;
+  const calcula = () => {
+    pendiente = false;
+    let alto = 0;
+    document.querySelectorAll('.selbar,.pr-selbar').forEach(b => {
+      if (!b.hidden && b.getClientRects().length) alto = Math.max(alto, b.offsetHeight);
+    });
+    document.documentElement.style.setProperty('--selbar-h', alto + 'px');
+    document.body.classList.toggle('selbar-on', alto > 0);
+  };
+  const pide = () => { if (!pendiente) { pendiente = true; requestAnimationFrame(calcula); } };
+  new MutationObserver(pide).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
+  window.addEventListener('resize', pide);
+})();
+
 function selectedItems() {
   return state.items.filter(i => state.selection.has(i.rel));
 }
