@@ -1745,7 +1745,7 @@ function pararSlideshow() {
 /* ---------------------------------------------------------------
    Mapa de fotos (Leaflet, alojado aquí; los tiles vienen de OpenStreetMap)
 --------------------------------------------------------------- */
-const MP = { mapa: null, capa: null, fotos: [], cargado: false };
+const MP = { mapa: null, capa: null, fotos: [], cargado: false, cuando: 0 };
 
 async function loadMap() {
   const vacio = $('mapa-vacio');
@@ -1773,7 +1773,9 @@ async function loadMap() {
   }
   // El contenedor estaba oculto al crearse el mapa: hay que recalcular su tamaño
   setTimeout(() => MP.mapa.invalidateSize(), 60);
-  if (!MP.cargado) await pedirFotosMapa();
+  // Se vuelve a pedir al abrir el mapa (la lista sale de una caché, así que es barato): si no, las fotos
+  // subidas después de la primera visita no aparecían hasta pulsar «Actualizar».
+  if (!MP.cargado || Date.now() - MP.cuando > 15000) await pedirFotosMapa();
 }
 
 async function pedirFotosMapa() {
@@ -1783,7 +1785,7 @@ async function pedirFotosMapa() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     MP.fotos = data.fotos || [];
-    MP.cargado = true;
+    MP.cargado = true; MP.cuando = Date.now();
 
     const resumen = MP.fotos.length
       ? `${MP.fotos.length} foto${MP.fotos.length === 1 ? '' : 's'} con ubicación, de ${data.total} en total`
@@ -1797,9 +1799,11 @@ async function pedirFotosMapa() {
       em.appendChild(icon('i-pin'));
       vacio.appendChild(em);
       vacio.appendChild(el('h3', null, 'Sin fotos ubicadas'));
-      vacio.appendChild(el('p', null,
-        'Ninguna foto trae coordenadas. Suelen llevarlas las hechas con el móvil, ' +
-        'si tenías activada la ubicación al tomarlas.'));
+      // Distinguir "los metadatos se borraron" de "hay metadatos pero sin GPS" dice dónde está el problema
+      const sinMeta = data.total - (data.conExif || 0);
+      vacio.appendChild(el('p', null, !data.total ? 'Aún no hay fotos.'
+        : sinMeta === data.total ? `Ninguna de las ${data.total} fotos conserva metadatos: se borraron antes de subirlas (mensajería, recompresión o el selector del móvil). En iPhone, al elegirlas pulsa «Opciones» y activa «Ubicación».`
+        : `${data.conExif} foto${data.conExif === 1 ? '' : 's'} conserva${data.conExif === 1 ? '' : 'n'} metadatos pero ninguna trae coordenadas: se hicieron sin la ubicación de la cámara activada. ${sinMeta} más no tienen metadatos.`));
       vacio.hidden = false;
       return;
     }

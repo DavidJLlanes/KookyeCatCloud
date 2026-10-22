@@ -2048,7 +2048,7 @@ app.get('/api/photomap', auth, async (req, res) => {
   try {
     const raiz = userRoot(req.user);
     const fotos = [];
-    let conFecha = 0, total = 0, cortado = false;
+    let conFecha = 0, total = 0, cortado = false, conExif = 0;
 
     async function recorrer(dir, rel) {
       if (fotos.length >= MAP_LIMIT) { cortado = true; return; }
@@ -2067,6 +2067,7 @@ app.get('/api/photomap', auth, async (req, res) => {
         try {
           const stat = await fsp.stat(full);
           const meta = await exifResumido(full, stat);
+          if (meta.t || meta.c) conExif++;          // la foto conserva metadatos (aunque no tenga GPS)
           if (meta.lat === null || meta.lon === null) continue;
           if (meta.t) conFecha++;
           fotos.push({ rel: hijoRel, nombre: e.name, lat: meta.lat, lon: meta.lon,
@@ -2077,7 +2078,7 @@ app.get('/api/photomap', auth, async (req, res) => {
 
     await recorrer(raiz, '');
     fotos.sort((a, b) => b.t - a.t);
-    res.json({ fotos, total, conCoordenadas: fotos.length, conFecha, cortado, limite: MAP_LIMIT });
+    res.json({ fotos, total, conCoordenadas: fotos.length, conFecha, conExif, cortado, limite: MAP_LIMIT });
   } catch (err) {
     sendError(res, err);
   }
