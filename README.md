@@ -64,7 +64,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 - [Qué puedes hacer](#qué-puedes-hacer)
 - [Instalación](#instalación) — [local](#arrancar-en-local) · [VPS paso a paso](#despliegue-en-el-vps) · [dominio, subdominio o subcarpeta](#en-qué-dirección-instalarla)
-- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [contactos](#contactos), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios)
+- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [contactos](#contactos), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
 - [Actualizaciones](#actualizaciones)
 - [Variables de entorno](#variables-de-entorno)
 - [Seguridad](#seguridad) · [Copias de seguridad](#copias-de-seguridad) · [Estructura del proyecto](#estructura-del-proyecto) · [Solución de problemas](#solución-de-problemas)
@@ -84,6 +84,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 📅 **Calendario** | Mes, semana, día y agenda con calendarios de colores, repetición y recordatorios. |
 | ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables e imágenes de muestra en WebP. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
+| ⚡ **Actualización en directo** | La lista de archivos se refresca sola cuando llega algo por un enlace de subida o desde otro dispositivo, sin consultas periódicas. |
 | 🔎 **Todo conectado** | Buscador global (Ctrl+K) y fechas de calendario para lo que subes o creas. |
 | 🫆 **Huella y Face ID** | Entra sin contraseña con la biometría de tu móvil u ordenador (passkeys). |
 | 🔒 **Caja fuerte** | Archivos cifrados con una contraseña propia, que se bloquea sola. |
@@ -524,6 +525,8 @@ memoria y cada prompt es un archivo propio).
 - **Vistas** en tarjetas, lista o **tablero por estado** (arrastrando entre columnas), orden por
   fecha, título, valoración o uso, filtros combinables, **selección múltiple** con acciones en
   lote y **papelera** con restauración.
+- **Ficha con propiedades**: categoría, listas, tipo, estado, modelo, herramienta y etiquetas van
+  en filas con su título, y cada valor es un botón que filtra la biblioteca por él.
 - **Importar / exportar** en JSON (hasta 5000 por importación), o pegando texto con prompts
   separados por una línea `---`.
 
@@ -567,7 +570,9 @@ imagen, `+` y `-` hacen zoom y `0` lo restablece. Está en `public/js/zoom.js`.
 Las ventanas altas (como el detalle de un prompt) se desplazan con el dedo y llevan un botón de
 cerrar fijo arriba. La barra inferior usa iconos de 26 px y botones de al menos 78×60 px, se
 desliza hacia los lados y centra sola la pestaña activa; el resto de botones tiene una zona táctil
-mínima de 44 px.
+mínima de 44 px. La página no se puede ampliar con el pellizco (la interfaz ya se adapta a cada
+pantalla) y los campos de texto usan 16 px para que iOS no haga zoom al enfocarlos; el zoom
+sigue disponible dentro del visor de fotos.
 
 ## Notas (editor de bloques)
 
