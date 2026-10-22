@@ -1,13 +1,16 @@
-const CACHE = 'kookyecatcloud-shell-v34';
+// El servidor sustituye el marcador de la línea siguiente por el identificador de versión al servir este archivo (ver /sw.js en server.js)
+const BUILD = '__BUILD__';
+const CACHE = 'kookyecatcloud-shell-' + BUILD;
 // El prefijo (subcarpeta del dominio) sale del ámbito con el que se registró el worker
 const BASE = new URL(self.registration.scope).pathname.replace(/\/+$/, '');
 const SHELL = ['/', '/app.js', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-maskable-512.png',
   '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/css/modules.css', '/css/notes.css', '/js/kit.js', '/js/calendar.js',
-  '/js/ics.js', '/js/calendar-extra.js', '/js/prompts.js', '/js/notes.js', '/js/notes-extra.js', '/js/filecal.js', '/js/versions.js', '/js/vault.js', '/js/shares.js', '/js/passkeys.js', '/js/omni.js'].map(p => BASE + p);
+  '/js/ics.js', '/js/calendar-extra.js', '/js/prompts.js', '/js/notes.js', '/js/notes-extra.js', '/js/filecal.js', '/js/versions.js', '/js/vault.js', '/js/shares.js', '/js/passkeys.js', '/js/updates.js', '/js/omni.js'].map(p => BASE + p);
 // La página pública de los enlaces no se cachea: /u/<id> siempre debe consultar al servidor
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));
+  // cache: 'reload' obliga a pedir lo último al servidor, no a la caché HTTP del navegador
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))));
   self.skipWaiting();
 });
 

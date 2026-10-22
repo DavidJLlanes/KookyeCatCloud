@@ -377,9 +377,35 @@ function enviaPlantilla(res, nombre, tipo) {
   res.type(tipo).send(texto);
 }
 app.get('/manifest.json', (req, res) => enviaPlantilla(res, 'manifest.json', 'application/manifest+json'));
+// Identificador de la versión instalada: sale de la versión del paquete y del tamaño y la fecha de
+// cada archivo de public/. Cambia solo cuando se actualiza el código, y con él cambia el nombre de
+// la caché del service worker: así los navegadores detectan la actualización sin que haya que
+// acordarse de subir ningún número a mano.
+const APP_VERSION = require('./package.json').version;
+const ARRANQUE = Date.now();
+let buildCache = { t: 0, id: '' };
+function buildId() {
+  if (Date.now() - buildCache.t < 5000 && buildCache.id) return buildCache.id;
+  const h = crypto.createHash('sha1').update(APP_VERSION);
+  const recorre = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) { if (e.name !== 'vendor') recorre(p); }
+      else { const st = fs.statSync(p); h.update(`${p.slice(PUBLIC_DIR.length)}:${st.size}:${Math.floor(st.mtimeMs)};`); }
+    }
+  };
+  try { recorre(PUBLIC_DIR); } catch { /* sin public */ }
+  buildCache = { t: Date.now(), id: h.digest('hex').slice(0, 10) };
+  return buildCache.id;
+}
 app.get('/sw.js', (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
-  res.sendFile(path.join(PUBLIC_DIR, 'sw.js'));
+  res.type('application/javascript').send(fs.readFileSync(path.join(PUBLIC_DIR, 'sw.js'), 'utf8').split('__BUILD__').join(buildId()));
+});
+// Versión instalada: pública y sin datos sensibles (la usa la tarjeta "Acerca de" y las comprobaciones)
+app.get('/api/version', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ version: APP_VERSION, build: buildId(), startedAt: ARRANQUE });
 });
 app.use(express.static(PUBLIC_DIR, { index: false }));
 

@@ -576,3 +576,10 @@ select option{background:#111a2b;color:var(--text);}
 .passkey-btn{margin-top:0;gap:10px;}
 .passkey-btn[hidden]{display:none;}
 .passkey-btn .ico{width:19px;height:19px;}
+
+/* ---------- Aviso de versión nueva ---------- */
+.update-banner{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + var(--safe-bottom));z-index:210;display:flex;align-items:center;gap:12px;
+  padding:11px 14px 11px 16px;border-radius:16px;max-width:calc(100vw - 24px);font-size:13.5px;font-weight:600;
+  background:linear-gradient(170deg,rgba(28,37,63,.99),rgba(13,18,34,.99));border:1px solid var(--accent-line);box-shadow:var(--sh-3);animation:riseIn .4s var(--ease) both;}
+.update-banner .ico{width:18px;height:18px;color:var(--accent-text);flex-shrink:0;}
+@media (min-width:821px){.update-banner{bottom:28px;margin-left:calc(var(--side-w) / 2);}}

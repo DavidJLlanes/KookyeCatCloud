@@ -1,0 +1,11 @@
+[Unit]
+Description=Actualiza KookyeCatCloud desde GitHub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Ajusta la ruta si tu instalación está en otra carpeta
+ExecStart=/bin/bash /var/www/djl.com.es/cloud/deploy/update.sh
+# Opcional: aviso por correo (necesita el comando "mail"). Descomenta y ajusta:
+# Environment=NOTIFY_CMD="mail -s 'KookyeCatCloud' tu@correo.es"

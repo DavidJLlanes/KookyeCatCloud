@@ -561,6 +561,59 @@ archivos, en **Compartido conmigo**.
   comparten contigo, y puedes cambiarlo o quitarlo.
 - Los favoritos y los álbumes no admiten elementos de carpetas compartidas.
 
+## Actualizaciones
+
+### En el navegador y en el móvil
+Cuando el servidor tiene una versión nueva, la app lo detecta sola (busca al volver a la pestaña, al
+recuperar la conexión y cada 30 minutos) y muestra un aviso **“Hay una versión nueva · Actualizar”**,
+sin tener que abrirla dos veces. El service worker sabe que hay novedad porque su caché lleva un
+identificador de versión (`/api/version`) calculado a partir de los archivos de `public/`: cambia
+solo al actualizar el código, no hay que subir ningún número a mano. En **Cuenta → Acerca de** se
+ve la versión instalada y hay un botón para buscar actualizaciones.
+
+### En el servidor
+Actualizar a mano:
+
+```bash
+cd /var/www/tu-dominio/cloud
+sudo -u filecloud git pull
+npm ci --omit=dev              # como root: el usuario filecloud no tiene carpeta personal
+chown -R filecloud:filecloud .
+systemctl restart kookyecatcloud
+```
+
+O con el script, que además comprueba y **vuelve atrás si algo falla**:
+
+```bash
+sudo bash deploy/update.sh --check   # solo mira si hay algo nuevo
+sudo bash deploy/update.sh           # actualiza
+```
+
+El script solo aplica avances en línea recta (`git merge --ff-only`); se niega si hay cambios
+locales o la historia ha divergido; ejecuta `npm ci --omit=dev` solo si cambiaron las dependencias;
+comprueba la sintaxis de todo el código **antes** de reiniciar; reinicia y espera a que
+`/api/version` responda; y si algo falla en esos pasos, **restaura la versión anterior** y vuelve a
+reiniciar. Cada resultado se escribe en el registro del sistema.
+
+### Actualización automática cada noche (opcional)
+```bash
+sudo cp deploy/kookyecat-update.service deploy/kookyecat-update.timer /etc/systemd/system/
+sudo nano /etc/systemd/system/kookyecat-update.service      # revisa la ruta de ExecStart
+sudo systemctl daemon-reload
+sudo systemctl enable --now kookyecat-update.timer
+systemctl list-timers kookyecat-update.timer                # próxima ejecución (≈ 04:30)
+journalctl -u kookyecat-update.service -n 30 --no-pager     # qué hizo la última vez
+```
+
+- Aplica **todo lo que haya en la rama `main` de tu repositorio**: actívalo solo si tú controlas
+  lo que se sube. Para **pausarlo** sin desinstalar nada: `touch .no-autoupdate` en la carpeta de la
+  app (bórralo para reanudar).
+- **Aviso por correo** (necesita el comando `mail`): en el `.service`, descomenta la línea
+  `Environment=NOTIFY_CMD=…` con tu dirección. Recibirás el resultado de cada actualización o de
+  cada vuelta atrás. Con otro comando (Telegram, un webhook…) funciona igual: recibe el mensaje por
+  la entrada estándar.
+- Si no existe el repositorio remoto, no hay red o GitHub falla, el script lo anota y no toca nada.
+
 ## Papelera
 
 `DELETE /api/files` ya no borra: renombra el elemento a `<carpeta del usuario>/.trash/<id>` y
