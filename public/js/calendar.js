@@ -387,11 +387,11 @@
         const extra = dia.length - cap + segs.filter(s => s.lane >= MAXL && s.s <= i && s.f >= i).length;
         if (extra > 0) {
           const m = el('span', 'more-ev', `+${extra} más`);
-          m.addEventListener('click', (ev) => { ev.stopPropagation(); dayPopup(d, m); });
+          m.addEventListener('click', (ev) => { ev.stopPropagation(); openDay(d); });
           list.appendChild(m);
         }
         cell.appendChild(list);
-        cell.addEventListener('click', () => openEvent(null, { date: d }));
+        cell.addEventListener('click', () => openDay(d));
         cell.addEventListener('dragover', (ev) => { ev.preventDefault(); cell.classList.add('drop'); });
         cell.addEventListener('dragleave', () => cell.classList.remove('drop'));
         cell.addEventListener('drop', (ev) => { ev.preventDefault(); cell.classList.remove('drop'); dropOnDay(ev, d); });
@@ -411,6 +411,36 @@
     }
     wrap.appendChild(weeks);
     return wrap;
+  }
+
+  // Ventana del día: lo programado ese día y botones para añadir un evento o una tarea
+  function openDay(d) {
+    const dia = K.d.day(d);
+    const evs = visibleEvents().filter(e => K.d.day(evStart(e)) <= dia && K.d.day(evEnd(e)) >= dia)
+      .sort((a, b) => (a.allDay === b.allDay ? (a.start < b.start ? -1 : 1) : a.allDay ? -1 : 1));
+    const w = el('div', 'cal-dia');
+    if (!evs.length) w.appendChild(el('p', 'k-faint', 'No hay nada programado este día.'));
+    evs.forEach(e => {
+      const it = el('div', 'ag-ev'); it.style.setProperty('--c', evColor(e));
+      if (e.kind === 'task' && !e.holiday) {
+        const chk = el('span', 'cal-check' + (e.done ? ' on' : '')); chk.style.setProperty('--c', evColor(e)); chk.appendChild(icon('i-check'));
+        chk.addEventListener('click', async (ev) => { ev.stopPropagation(); try { await K.put('/api/calendar/events/' + e.id, { done: !e.done }); S.dirty = true; await load(); m.close(); openDay(dia); } catch (er) { K.fail(er); } });
+        it.appendChild(chk);
+      }
+      it.append(el('span', 'tm', e.allDay ? 'Todo el día' : `${K.d.hm(evStart(e))} – ${K.d.hm(evEnd(e))}`));
+      const tt = el('span', 'tt', e.title); if (e.done) tt.style.textDecoration = 'line-through'; it.appendChild(tt);
+      if (e.location) it.appendChild(el('span', 'meta', '📍 ' + e.location));
+      it.addEventListener('click', () => { m.close(); openEvent(e); });
+      w.appendChild(it);
+    });
+    const m = K.modal({
+      title: K.d.long(dia), sub: evs.length ? `${evs.length} elemento${evs.length === 1 ? '' : 's'}` : '', content: w, cls: 'wide',
+      actions: [
+        { label: 'Cerrar' },
+        { label: 'Añadir tarea', onClick: () => openEvent(null, { date: dia, allDay: true, kind: 'task' }) },
+        { label: 'Añadir evento', primary: true, onClick: () => openEvent(null, { date: dia }) },
+      ],
+    });
   }
 
   function dayPopup(d, anchor) {
@@ -478,7 +508,7 @@
     days.forEach(d => {
       const col = el('div', 'col');
       evs.filter(e => isSpan(e) && K.d.day(evStart(e)) <= d && K.d.day(evEnd(e)) >= d).forEach(e => col.appendChild(pill(e, { contL: K.d.day(evStart(e)) < d })));
-      col.addEventListener('click', () => openEvent(null, { date: d, allDay: true }));
+      col.addEventListener('click', () => openDay(d));
       col.addEventListener('dragover', (e) => { if (S.drag) { e.preventDefault(); col.classList.add('drop'); } });
       col.addEventListener('dragleave', () => col.classList.remove('drop'));
       col.addEventListener('drop', (e) => { e.preventDefault(); col.classList.remove('drop'); dropOnDay(e, d); });

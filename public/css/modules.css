@@ -823,3 +823,6 @@ button.st-fila:hover{background:var(--glass-2);}
 .ct-row.sel-mode{cursor:pointer;}
 .ct-row.is-sel{background:var(--brand-soft);}
 .ct-row .ct-who{display:flex;align-items:center;gap:10px;}
+
+.cal-dia{display:flex;flex-direction:column;gap:6px;max-height:55vh;overflow-y:auto;}
+.cal-dia .ag-ev{cursor:pointer;}
