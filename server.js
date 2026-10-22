@@ -1912,22 +1912,50 @@ function aDecimal(valor, ref) {
   return Math.round(d * 1e6) / 1e6;
 }
 
-async function leerExif(file) {
-  const exifr = require('exifr');
-  const datos = await exifr.parse(file, {
+const EXIF_OPCIONES = {
     tiff: true, exif: true, gps: true, ifd0: true,
     pick: ['Make', 'Model', 'LensModel', 'DateTimeOriginal', 'CreateDate', 'ModifyDate',
            'ExposureTime', 'FNumber', 'ISO', 'FocalLength', 'FocalLengthIn35mmFormat',
            'Orientation', 'ExifImageWidth', 'ExifImageHeight', 'Flash', 'WhiteBalance',
            'Software', 'latitude', 'longitude', 'GPSLatitude', 'GPSLatitudeRef',
            'GPSLongitude', 'GPSLongitudeRef', 'GPSAltitude'],
-  }).catch(() => null);
+};
+
+// exifr no lee el EXIF de algunos HEIC/HEIF (devuelve solo { errors }). En ese caso se extrae el bloque
+// con sharp (que sí entiende el contenedor) y se le pasa a exifr ya como TIFF.
+async function exifDeHeic(file) {
+  if (!sharp) return null;
+  const exifr = require('exifr');
+  const m = await sharp(file).metadata();
+  if (!m.exif || m.exif.length < 12) return null;
+  const buf = m.exif;
+  const off = buf.readUInt32BE(0);                 // cabecera HEIF: desplazamiento hasta el TIFF
+  let tiff = buf.subarray(4 + (off < buf.length - 4 ? off : 0));
+  if (tiff.subarray(0, 4).toString('latin1') === 'Exif') tiff = tiff.subarray(6);
+  const datos = await exifr.parse(tiff, EXIF_OPCIONES).catch(() => null);
+  return datos && !datos.errors ? datos : null;
+}
+
+// Devuelve null si la foto no tiene EXIF y lanza si no se ha podido leer (para no darlo por vacío)
+async function leerExif(file) {
+  const exifr = require('exifr');
+  let datos = await exifr.parse(file, EXIF_OPCIONES).catch(() => undefined);
+  const vacio = !datos || datos.errors;
+  if (vacio && HEIC_TYPES[path.extname(file).toLowerCase()]) {
+    try { datos = await exifDeHeic(file) || datos; } catch { /* se queda con lo de exifr */ }
+  }
+  if (datos && datos.errors) {
+    if (HEIC_TYPES[path.extname(file).toLowerCase()]) throw new Error('EXIF ilegible');   // se reintentará
+    return null;
+  }
   if (!datos) return null;
 
   const lat = datos.latitude !== undefined
     ? datos.latitude : aDecimal(datos.GPSLatitude, datos.GPSLatitudeRef);
   const lon = datos.longitude !== undefined
     ? datos.longitude : aDecimal(datos.GPSLongitude, datos.GPSLongitudeRef);
+  // Algunas cámaras escriben 0,0 cuando no hay posición: no es una coordenada real
+  const sinPos = lat === 0 && lon === 0;
   const fecha = datos.DateTimeOriginal || datos.CreateDate || datos.ModifyDate || null;
 
   return {
@@ -1942,8 +1970,8 @@ async function leerExif(file) {
     ancho: datos.ExifImageWidth || null,
     alto: datos.ExifImageHeight || null,
     software: datos.Software || null,
-    lat: typeof lat === 'number' && isFinite(lat) ? lat : null,
-    lon: typeof lon === 'number' && isFinite(lon) ? lon : null,
+    lat: !sinPos && typeof lat === 'number' && isFinite(lat) && Math.abs(lat) <= 90 ? lat : null,
+    lon: !sinPos && typeof lon === 'number' && isFinite(lon) && Math.abs(lon) <= 180 ? lon : null,
     altitud: typeof datos.GPSAltitude === 'number' ? Math.round(datos.GPSAltitude) : null,
   };
 }
@@ -1952,13 +1980,15 @@ async function leerExif(file) {
 async function exifResumido(file, stat) {
   const cache = cargarExifCache();
   const clave = claveExif(file, stat);
-  // Las entradas anteriores a la cámara no llevan "c": se vuelven a leer una vez
-  if (cache[clave] && 'c' in cache[clave]) return cache[clave];
-  let r = { t: null, lat: null, lon: null, c: null };
+  // Las entradas anteriores a la versión 2 ("g") se vuelven a leer una vez: algunas se guardaron vacías por un fallo de lectura
+  if (cache[clave] && 'c' in cache[clave] && cache[clave].g === 2) return cache[clave];
+  let r = { t: null, lat: null, lon: null, c: null, g: 2 };
   try {
     const e = await leerExif(file);
-    if (e) r = { t: e.tomada, lat: e.lat, lon: e.lon, c: e.camara ? e.camara.slice(0, 60) : null };
-  } catch { /* sin EXIF utilizable */ }
+    if (e) r = { t: e.tomada, lat: e.lat, lon: e.lon, c: e.camara ? e.camara.slice(0, 60) : null, g: 2 };
+  } catch {
+    return { t: null, lat: null, lon: null, c: null };   // fallo de lectura: no se guarda, se reintenta la próxima vez
+  }
   cache[clave] = r;
   exifCacheSucio = true;
   return r;
