@@ -25,17 +25,18 @@ const escapeXml = (s) => String(s)
   .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 
 // Cada segmento se codifica por separado: las barras deben seguir siendo barras
-const encodeHref = (rel) => '/dav/' + String(rel).split('/').filter(Boolean).map(encodeURIComponent).join('/');
+const encodeHref = (rel, base = '') => base + '/dav/' + String(rel).split('/').filter(Boolean).map(encodeURIComponent).join('/');
 
-function decodeHref(href) {
+function decodeHref(href, base = '') {
   let p = href;
   try { p = decodeURIComponent(href); } catch { /* se usa tal cual */ }
   try { p = new URL(p, 'http://x').pathname; } catch { /* ya era una ruta */ }
   // Se normaliza venga montado como venga (app.use recorta el prefijo, app.all no)
+  if (base && (p === base || p.startsWith(base + '/'))) p = p.slice(base.length);
   return p.replace(/^\/dav\/?/, '').replace(/^\/+/, '').replace(/\/+$/, '');
 }
 
-function createDav({ resolveFor, userRoot, loadUsers, isHidden, log }) {
+function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '' }) {
   async function exists(p) {
     try { await fsp.access(p); return true; } catch { return false; }
   }
@@ -114,7 +115,7 @@ function createDav({ resolveFor, userRoot, loadUsers, isHidden, log }) {
     const cuerpo = entradas.map(({ rel: r, stat: st }) => {
       const nombre = r ? r.split('/').pop() : 'KookyeCatCloud';
       const esDir = st.isDirectory();
-      const href = encodeHref(r) + (esDir && r ? '/' : '');
+      const href = encodeHref(r, base) + (esDir && r ? '/' : '');
       return `<D:response>
   <D:href>${escapeXml(href)}</D:href>
   <D:propstat>
@@ -168,7 +169,7 @@ function createDav({ resolveFor, userRoot, loadUsers, isHidden, log }) {
           // o Windows aborta la copia tras escribir el archivo.
           res.status(207).set('Content-Type', 'application/xml; charset=utf-8').end(
             `<?xml version="1.0" encoding="utf-8"?>\n<D:multistatus xmlns:D="DAV:"><D:response>` +
-            `<D:href>${escapeXml(encodeHref(rel))}</D:href>` +
+            `<D:href>${escapeXml(encodeHref(rel, base))}</D:href>` +
             `<D:propstat><D:status>HTTP/1.1 200 OK</D:status></D:propstat></D:response></D:multistatus>`);
           return;
 
@@ -216,7 +217,7 @@ function createDav({ resolveFor, userRoot, loadUsers, isHidden, log }) {
         case 'COPY': {
           const destinoCab = req.headers.destination;
           if (!destinoCab) return res.status(400).end('Falta Destination');
-          const relDestino = decodeHref(destinoCab);
+          const relDestino = decodeHref(destinoCab, base);
           if (relDestino.split('/').filter(Boolean).some(isHidden)) return res.status(403).end('Destino reservado');
           const absDestino = resolveFor(user, relDestino);
           const sobrescribir = (req.headers.overwrite || 'T').toUpperCase() !== 'F';

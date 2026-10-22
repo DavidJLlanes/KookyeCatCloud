@@ -1,4 +1,8 @@
 'use strict';
+const BASE = (document.querySelector('meta[name="kcc-base"]') || {}).content || '';
+// Punto de enganche para los módulos nuevos (calendario, prompts…): cada uno registra aquí
+// su vista con open()/close() y switchTab() se la enseña o esconde. Ver js/kit.js.
+window.KCC = window.KCC || { views: {} };
 
 /* ---------------------------------------------------------------
    Estado
@@ -422,7 +426,7 @@ async function doLogin(ev) {
   try {
     if (esperando2fa) {
       btn.textContent = 'Comprobando…';
-      const res = await fetch('/api/login/2fa', {
+      const res = await fetch(BASE + '/api/login/2fa', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: $('login-2fa-code').value.trim() }),
@@ -438,7 +442,7 @@ async function doLogin(ev) {
     btn.textContent = 'Entrando…';
     const username = $('login-user').value.trim();
     const password = $('login-pass').value;
-    const res = await fetch('/api/login', {
+    const res = await fetch(BASE + '/api/login', {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
@@ -478,7 +482,7 @@ function salirModo2fa() {
 }
 
 async function logout() {
-  try { await fetch('/api/logout', { method: 'POST', credentials: 'include' }); } catch {}
+  try { await fetch(BASE + '/api/logout', { method: 'POST', credentials: 'include' }); } catch {}
   state.user = null;
   showLogin();
 }
@@ -489,6 +493,7 @@ function showApp() {
   hide('login-screen');
   show('app');
   medirAlturaNav();
+  if (window.K) K.preload();
   const name = state.user.username;
   $('user-av').textContent = name.charAt(0).toUpperCase();
   $('user-name').textContent = name;
@@ -496,7 +501,7 @@ function showApp() {
   const isAdmin = state.user.role === 'admin';
   $('tab-admin').hidden = !isAdmin;
   $('mnav-admin').hidden = !isAdmin;
-  $('dav-url').textContent = location.origin + '/dav/';
+  $('dav-url').textContent = location.origin + BASE + '/dav/';
   $('dav-user').textContent = name;
   cargarCapacidades();       // aquí, no en checkSession: así vale entrando por el formulario
   cargarFavoritosSet();
@@ -510,7 +515,7 @@ function showApp() {
 
 async function checkSession() {
   try {
-    const res = await api('/api/me');
+    const res = await api(BASE + '/api/me');
     if (res.ok) { state.user = await res.json(); showApp(); return; }
   } catch {}
   showLogin();
@@ -520,7 +525,7 @@ async function checkSession() {
 // prometer una vista previa que luego no va a existir
 async function cargarCapacidades() {
   try {
-    const res = await api('/api/capabilities');
+    const res = await api(BASE + '/api/capabilities');
     if (res.ok) state.caps = await res.json();
   } catch {}
 }
@@ -534,6 +539,7 @@ function switchTab(tab) {
   $('view-colecciones').hidden = tab !== 'colecciones';
   $('view-cuenta').hidden = tab !== 'cuenta';
   $('view-admin').hidden = tab !== 'admin';
+  document.querySelectorAll('main.kcc-view').forEach(m => { m.hidden = m.id !== 'view-' + tab; });
   document.querySelectorAll('.tab, .mobilenav button').forEach(b => {
     b.classList.toggle('is-active', b.dataset.view === tab);
   });
@@ -545,6 +551,11 @@ function switchTab(tab) {
   if (tab === 'trash') loadTrash();
   if (tab === 'colecciones') loadColecciones();
   if (tab === 'cuenta') { renderTints(); loadCuenta(); }
+  for (const [nombre, vista] of Object.entries(window.KCC.views)) {
+    if (nombre !== tab && vista.close) vista.close();
+  }
+  if (window.KCC.views[tab]) window.KCC.views[tab].open();
+  try { sessionStorage.setItem('kcc-tab', tab); } catch {}
 }
 
 /* ---------------------------------------------------------------
@@ -632,8 +643,8 @@ async function refresh() {
   updateSelbar();
   try {
     const url = state.query
-      ? `/api/search?q=${qs(state.query)}&path=${qs(state.path)}`
-      : `/api/files?path=${qs(state.path)}`;
+      ? `${BASE}/api/search?q=${qs(state.query)}&path=${qs(state.path)}`
+      : `${BASE}/api/files?path=${qs(state.path)}`;
     const res = await api(url);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Error');
@@ -680,7 +691,7 @@ async function cargarMetaFotos() {
   if (!hayFotos) return;
   const ruta = state.path;
   try {
-    const res = await api('/api/photometa?path=' + qs(ruta));
+    const res = await api(BASE + '/api/photometa?path=' + qs(ruta));
     const data = await res.json();
     if (!res.ok || ruta !== state.path) return;      // ya cambió de carpeta
     state.meta = data.fotos || {};
@@ -872,7 +883,7 @@ function haceSoltable(node, destino) {
 
 async function moverA(rutas, destino) {
   try {
-    const res = await post('/api/batch', { op: 'move', paths: rutas, dest: destino });
+    const res = await post(BASE + '/api/batch', { op: 'move', paths: rutas, dest: destino });
     const data = await res.json();
     reportBatch(data, 'elemento movido', 'elementos movidos');
     exitSelectMode();
@@ -914,6 +925,7 @@ function abrirCtx(x, y, item) {
       opcionCtx(menu, 'i-download', 'Descargar', bulkDownload);
     }
     if (!sobreSeleccion) opcionCtx(menu, 'i-share', 'Compartir enlace…', () => openShare(item));
+    if (window.KCC.fileCalendar) opcionCtx(menu, 'i-calendar', 'Fecha en el calendario…', () => window.KCC.fileCalendar(rutas));
     opcionCtx(menu, 'i-zip', 'Descargar como ZIP', () => descargarZip(rutas));
     opcionCtx(menu, 'i-move', 'Mover a…', () => openMove(rutas));
     if (!sobreSeleccion) {
@@ -973,7 +985,7 @@ function buildRow(item) {
 
   if (!item.isDir && hasThumb(item.name)) {
     const img = el('img', 'thumb');
-    img.src = '/api/thumb?path=' + qs(item.rel);
+    img.src = BASE + '/api/thumb?path=' + qs(item.rel);
     img.loading = 'lazy';
     img.alt = '';
     // Si el servidor no puede generarla (sin ffmpeg, formato raro), cae al distintivo
@@ -1032,7 +1044,7 @@ function buildTile(item) {
     // .photo: la imagen ocupa toda la baldosa y el nombre va sobre un velo degradado
     tile.classList.add('photo');
     const img = el('img');
-    img.src = '/api/thumb?path=' + qs(item.rel);
+    img.src = BASE + '/api/thumb?path=' + qs(item.rel);
     img.loading = 'lazy';
     img.alt = item.name;
     img.addEventListener('error', () => {
@@ -1141,7 +1153,7 @@ function selectedItems() {
 
 function downloadRel(rel) {
   const a = document.createElement('a');
-  a.href = '/api/download?path=' + qs(rel);
+  a.href = BASE + '/api/download?path=' + qs(rel);
   a.rel = 'noopener';
   document.body.appendChild(a);
   a.click();
@@ -1153,7 +1165,7 @@ async function bulkDelete() {
   if (!items.length) return;
   if (!confirm(`¿Enviar ${items.length} elemento${items.length > 1 ? 's' : ''} a la papelera?`)) return;
   try {
-    const res = await post('/api/batch', { op: 'delete', paths: items.map(i => i.rel) });
+    const res = await post(BASE + '/api/batch', { op: 'delete', paths: items.map(i => i.rel) });
     const data = await res.json();
     reportBatch(data, 'movido a la papelera', 'movidos a la papelera');
     exitSelectMode();
@@ -1211,7 +1223,7 @@ async function loadPicker() {
   list.textContent = '';
   list.appendChild(el('div', 'none', 'Cargando…'));
   try {
-    const res = await api('/api/files?path=' + qs(state.pickerPath));
+    const res = await api(BASE + '/api/files?path=' + qs(state.pickerPath));
     const data = await res.json();
     list.textContent = '';
 
@@ -1253,7 +1265,7 @@ async function confirmMove() {
     return;
   }
   try {
-    const res = await post('/api/batch', { op: 'move', paths: state.moving, dest });
+    const res = await post(BASE + '/api/batch', { op: 'move', paths: state.moving, dest });
     const data = await res.json();
     hide('move-modal');
     reportBatch(data, 'elemento movido', 'elementos movidos');
@@ -1298,7 +1310,7 @@ function paintLightbox() {
   $('lb-fav').hidden = false;
   pintarLbFav(item);
   $('lb-play').hidden = state.viewables.length <= 1;
-  const src = '/api/preview?path=' + qs(item.rel);
+  const src = BASE + '/api/preview?path=' + qs(item.rel);
   // Las hojas no se abren en pestaña: no hay PDF que enseñar, se pintan aquí
   $('lb-open').hidden = !(isPdf(item.name) || (isOffice(item.name) && !isSheet(item.name)));
   $('lb-info').hidden = !isImage(item.name);
@@ -1472,7 +1484,7 @@ async function pintarDocumento(caja, item) {
     cargando.appendChild(el('h3', null, 'Abriendo la hoja…'));
     caja.appendChild(cargando);
     try {
-      const res = await api('/api/sheet?path=' + qs(item.rel));
+      const res = await api(BASE + '/api/sheet?path=' + qs(item.rel));
       const datos = await res.json();
       if (state.lbIndex < 0 || state.viewables[state.lbIndex] !== item) return;
       caja.textContent = '';
@@ -1490,7 +1502,7 @@ async function pintarDocumento(caja, item) {
 
   // PDF: lo pinta el visor propio del navegador
   if (isPdf(item.name)) {
-    caja.appendChild(marcoDocumento('/api/preview?path=' + qs(item.rel), item.name));
+    caja.appendChild(marcoDocumento(BASE + '/api/preview?path=' + qs(item.rel), item.name));
     return;
   }
 
@@ -1503,7 +1515,7 @@ async function pintarDocumento(caja, item) {
     }
     caja.appendChild(estadoDoc('i-refresh', 'Convirtiendo el documento…',
       'La primera vez tarda unos segundos; después queda en caché.'));
-    const url = '/api/office?path=' + qs(item.rel);
+    const url = BASE + '/api/office?path=' + qs(item.rel);
     try {
       // HEAD primero: dispara la conversión y deja saber si salió bien, sin
       // arriesgarse a que el marco acabe enseñando un error en JSON
@@ -1528,7 +1540,7 @@ async function pintarDocumento(caja, item) {
   cargando.appendChild(el('h3', null, 'Cargando…'));
   caja.appendChild(cargando);
   try {
-    const res = await api('/api/text?path=' + qs(item.rel));
+    const res = await api(BASE + '/api/text?path=' + qs(item.rel));
     const data = await res.json();
     if (state.lbIndex < 0 || state.viewables[state.lbIndex] !== item) return;
     caja.textContent = '';
@@ -1572,7 +1584,7 @@ async function alternarEdicion() {
   caja.textContent = '';
   caja.appendChild(estadoDoc('i-refresh', 'Cargando…'));
   try {
-    const res = await api('/api/text?path=' + qs(item.rel));
+    const res = await api(BASE + '/api/text?path=' + qs(item.rel));
     const data = await res.json();
     if (state.lbIndex < 0 || state.viewables[state.lbIndex] !== item) return;
     if (!res.ok) {
@@ -1607,7 +1619,7 @@ async function alternarEdicion() {
 
 async function guardarEdicion(item, texto) {
   try {
-    const res = await api('/api/text?path=' + qs(item.rel), {
+    const res = await api(BASE + '/api/text?path=' + qs(item.rel), {
       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: texto }),
     });
     const data = await res.json();
@@ -1683,7 +1695,7 @@ async function loadMap() {
 async function pedirFotosMapa() {
   $('map-resumen').textContent = 'Buscando fotos con ubicación…';
   try {
-    const res = await api('/api/photomap');
+    const res = await api(BASE + '/api/photomap');
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     MP.fotos = data.fotos || [];
@@ -1770,7 +1782,7 @@ function pintarPuntos() {
 function popupFoto(f) {
   const caja = el('div', 'mapa-pop');
   const img = el('img');
-  img.src = '/api/thumb?path=' + qs(f.rel);
+  img.src = BASE + '/api/thumb?path=' + qs(f.rel);
   img.alt = f.nombre;
   img.addEventListener('error', () => img.remove());
   caja.appendChild(img);
@@ -1822,7 +1834,7 @@ async function alternarExif() {
   panel.hidden = false;
 
   try {
-    const res = await api('/api/exif?path=' + qs(item.rel));
+    const res = await api(BASE + '/api/exif?path=' + qs(item.rel));
     const e = await res.json();
     if (state.viewables[state.lbIndex] !== item) return;
     panel.textContent = '';
@@ -1896,7 +1908,7 @@ function openActions(item) {
 }
 function downloadConvertido(rel, as) {
   const a = document.createElement('a');
-  a.href = '/api/download?path=' + qs(rel) + '&as=' + as;
+  a.href = BASE + '/api/download?path=' + qs(rel) + '&as=' + as;
   a.rel = 'noopener';
   document.body.appendChild(a);
   a.click();
@@ -1912,7 +1924,7 @@ async function renameSelected() {
   if (/[\\/]/.test(newName)) { showToast('El nombre no puede contener / ni \\'); return; }
   const dir = parentOf(item.rel);
   try {
-    const res = await post('/api/move', { from: item.rel, to: joinPath(dir, newName) });
+    const res = await post(BASE + '/api/move', { from: item.rel, to: joinPath(dir, newName) });
     if (res.ok) { showToast('Renombrado'); refresh(); }
     else showToast(await errorOf(res, 'No se pudo renombrar'));
   } catch { showToast('Error de conexión'); }
@@ -1925,7 +1937,7 @@ async function deleteSelected() {
   const what = item.isDir ? 'la carpeta y todo su contenido' : 'el archivo';
   if (!confirm(`¿Enviar ${what} "${item.name}" a la papelera?`)) return;
   try {
-    const res = await api('/api/files?path=' + qs(item.rel), { method: 'DELETE' });
+    const res = await api(BASE + '/api/files?path=' + qs(item.rel), { method: 'DELETE' });
     if (res.ok) { showToast('En la papelera. Puedes restaurarlo desde ahí.'); refresh(); }
     else showToast(await errorOf(res, 'No se pudo eliminar'));
   } catch { showToast('Error de conexión'); }
@@ -1940,7 +1952,7 @@ async function loadTrash() {
   box.textContent = '';
   box.appendChild(el('div', 'skel', ''));
   try {
-    const res = await api('/api/trash');
+    const res = await api(BASE + '/api/trash');
     const data = await res.json();
     $('trash-note').textContent = `Los elementos se borran solos pasados ${data.ttlDays} días`;
     box.textContent = '';
@@ -1985,7 +1997,7 @@ async function loadTrash() {
 
 async function restoreTrash(entry) {
   try {
-    const res = await post('/api/trash/restore', { id: entry.id });
+    const res = await post(BASE + '/api/trash/restore', { id: entry.id });
     const data = await res.json();
     if (res.ok) {
       showToast(data.restoredAs !== entry.name
@@ -1999,7 +2011,7 @@ async function restoreTrash(entry) {
 async function purgeTrash(entry) {
   if (!confirm(`¿Eliminar "${entry.name}" definitivamente? Esto no se puede deshacer.`)) return;
   try {
-    const res = await api('/api/trash/' + qs(entry.id), { method: 'DELETE' });
+    const res = await api(BASE + '/api/trash/' + qs(entry.id), { method: 'DELETE' });
     if (res.ok) { showToast('Eliminado definitivamente'); loadTrash(); }
     else showToast(await errorOf(res, 'No se pudo eliminar'));
   } catch { showToast('Error de conexión'); }
@@ -2008,7 +2020,7 @@ async function purgeTrash(entry) {
 async function emptyTrash() {
   if (!confirm('¿Vaciar la papelera por completo? Esto no se puede deshacer.')) return;
   try {
-    const res = await api('/api/trash', { method: 'DELETE' });
+    const res = await api(BASE + '/api/trash', { method: 'DELETE' });
     const data = await res.json();
     if (res.ok) { showToast(`${data.removed} elemento(s) eliminados`); loadTrash(); }
     else showToast(data.error || 'No se pudo vaciar');
@@ -2035,6 +2047,7 @@ function refreshSoon() {
 function handleUpload(files, destino) {
   if (!files || !files.length) return;
   const dest = destino === undefined ? state.path : destino;
+  if (window.KCC.onUploadStart && !UP.items.length) window.KCC.onUploadStart();
   for (const f of Array.from(files)) {
     UP.items.push({ id: ++UP.seq, file: f, name: f.name, size: f.size, dest,
                     estado: 'espera', subido: 0, xhr: null, el: null });
@@ -2064,7 +2077,7 @@ function subirUno(item) {
 
   const xhr = new XMLHttpRequest();
   item.xhr = xhr;
-  xhr.open('POST', '/api/upload?path=' + qs(item.dest));
+  xhr.open('POST', BASE + '/api/upload?path=' + qs(item.dest));
   xhr.withCredentials = true;
   xhr.upload.addEventListener('progress', e => {
     if (!e.lengthComputable) return;
@@ -2077,6 +2090,8 @@ function subirUno(item) {
     if (xhr.status === 200) {
       item.estado = 'ok';
       item.subido = item.size;
+      // El servidor puede haber cambiado el nombre (foto_1.jpg si ya existía): se guarda el real
+      try { item.guardado = JSON.parse(xhr.responseText).uploaded[0]; } catch { item.guardado = item.name; }
     } else if (xhr.status === 401) {
       item.estado = 'error';
       item.error = 'Sesión caducada';
@@ -2151,6 +2166,12 @@ function terminarCola() {
   const fallidos = UP.items.filter(i => i.estado === 'error' || i.estado === 'cancelado').length;
   hide('upbar-cancel');
   show('upbar-close');
+  // Fecha de subida en el calendario (si el usuario la pidió en la barra de subida)
+  if (window.KCC.onUploaded) {
+    const nuevos = UP.items.filter(i => i.estado === 'ok' && !i.calEnviado);
+    nuevos.forEach(i => { i.calEnviado = true; });
+    if (nuevos.length) window.KCC.onUploaded(nuevos);
+  }
   if (!fallidos) {
     showToast(listos === 1 ? 'Archivo subido' : `${listos} archivos subidos`);
     setTimeout(() => { if (!UP.items.some(i => i.estado === 'espera' || i.estado === 'subiendo')) cerrarCola(); }, 2500);
@@ -2195,7 +2216,7 @@ async function createFolder() {
   const name = $('folder-name-input').value.trim();
   if (!name) return;
   try {
-    const res = await post('/api/mkdir', { path: state.path, name });
+    const res = await post(BASE + '/api/mkdir', { path: state.path, name });
     if (res.ok) { hide('folder-modal'); showToast('Carpeta creada'); refresh(); }
     else showToast(await errorOf(res, 'No se pudo crear'));
   } catch { showToast('Error de conexión'); }
@@ -2220,7 +2241,7 @@ function guardarAbiertas() {
 
 async function loadNotes(mantener) {
   try {
-    const res = await api('/api/notes');
+    const res = await api(BASE + '/api/notes');
     const data = await res.json();
     NT.items = data.items || [];
     renderNotes();
@@ -2231,7 +2252,9 @@ async function loadNotes(mantener) {
 function hijosDe(parent) {
   return NT.items
     .filter(i => i.parent === parent)
-    .sort((a, b) => (a.type === b.type ? a.title.localeCompare(b.title, 'es') : a.type === 'folder' ? -1 : 1));
+    .sort((a, b) => (a.type === b.type
+      ? ((b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) || a.title.localeCompare(b.title, 'es')
+      : a.type === 'folder' ? -1 : 1));
 }
 
 // Con filtro activo se muestran las coincidencias y sus carpetas padre, para no perder el contexto
@@ -2276,8 +2299,18 @@ function filaNota(item, nivel) {
     renderNotes();
   });
   row.appendChild(caret);
-  row.appendChild(icon(item.type === 'folder' ? 'i-folder' : 'i-note', 'ic'));
+  if (item.color) row.style.setProperty('--nc', item.color);
+  if (item.icon) row.appendChild(el('span', 'em', item.icon));
+  else row.appendChild(icon(item.type === 'folder' ? 'i-folder' : 'i-note', 'ic'));
   row.appendChild(el('span', 'tx', item.title));
+  // Etiquetas (puntos de color), fecha del calendario y fijada: se ven sin abrir la nota
+  if (window.K && K.labels && item.labels && item.labels.length) {
+    const pts = el('span', 'ldots');
+    item.labels.slice(0, 3).forEach(id => { const l = K.labels.by[id]; if (l) { const d = el('span', 'k-dot'); d.style.setProperty('--c', l.color); d.title = l.name; pts.appendChild(d); } });
+    if (pts.children.length) row.appendChild(pts);
+  }
+  if (item.cal) { const c = icon('i-calendar', 'calmark'); c.setAttribute('aria-label', 'En el calendario'); row.appendChild(c); }
+  if (item.pinned) row.appendChild(icon('i-pin-fill', 'pinmark'));
 
   const mas = el('button', 'mas');
   mas.appendChild(icon('i-dots'));
@@ -2341,7 +2374,7 @@ function menuNota(x, y, item) {
 
 async function crearNota(type, parent) {
   try {
-    const res = await post('/api/notes', { type, parent: parent || '', title: type === 'folder' ? 'Nueva carpeta' : 'Nota sin título' });
+    const res = await post(BASE + '/api/notes', { type, parent: parent || '', title: type === 'folder' ? 'Nueva carpeta' : 'Nota sin título' });
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'No se pudo crear'); return; }
     if (parent) { NT.abiertas.add(parent); guardarAbiertas(); }
@@ -2354,7 +2387,7 @@ async function renombrarNota(item) {
   const titulo = prompt('Nuevo nombre:', item.title);
   if (titulo === null || titulo.trim() === item.title) return;
   try {
-    const res = await api('/api/notes/' + qs(item.id), {
+    const res = await api(BASE + '/api/notes/' + qs(item.id), {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: titulo.trim() || item.title }),
     });
@@ -2365,7 +2398,7 @@ async function renombrarNota(item) {
 
 async function moverNota(item, parent) {
   try {
-    const res = await api('/api/notes/' + qs(item.id), {
+    const res = await api(BASE + '/api/notes/' + qs(item.id), {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ parent }),
     });
@@ -2380,7 +2413,7 @@ async function borrarNota(item) {
     : `¿Eliminar la nota "${item.title}"? No va a la papelera.`;
   if (!confirm(aviso)) return;
   try {
-    const res = await api('/api/notes/' + qs(item.id), { method: 'DELETE' });
+    const res = await api(BASE + '/api/notes/' + qs(item.id), { method: 'DELETE' });
     const data = await res.json();
     if (res.ok) {
       showToast(data.borrados > 1 ? `${data.borrados} elementos eliminados` : 'Eliminado');
@@ -2393,7 +2426,7 @@ async function borrarNota(item) {
 async function abrirNota(id) {
   await guardarAhora();                       // no perder lo escrito al cambiar de nota
   try {
-    const res = await api('/api/notes/' + qs(id));
+    const res = await api(BASE + '/api/notes/' + qs(id));
     const nota = await res.json();
     if (!res.ok) { showToast(nota.error || 'No se pudo abrir'); return; }
     NT.abierta = id;
@@ -2442,7 +2475,7 @@ async function guardarAhora() {
   const cuerpo = { title: $('note-title').value.trim() || 'Nota sin título', body: $('note-body').value };
   NT.sucia = false;
   try {
-    const res = await api('/api/notes/' + qs(id), {
+    const res = await api(BASE + '/api/notes/' + qs(id), {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(cuerpo),
     });
@@ -2467,7 +2500,7 @@ async function guardarAhora() {
 function descargarZip(rutas) {
   if (!rutas.length) return;
   if (rutas.length > 200) { showToast('Máximo 200 elementos por ZIP'); return; }
-  const url = '/api/zip?' + rutas.map(r => 'p=' + qs(r)).join('&');
+  const url = BASE + '/api/zip?' + rutas.map(r => 'p=' + qs(r)).join('&');
   const a = el('a');
   a.href = url;
   a.rel = 'noopener';
@@ -2498,7 +2531,7 @@ async function crearCompartir() {
   const item = state.compartiendo;
   if (!item) return;
   try {
-    const res = await post('/api/sharelinks', {
+    const res = await post(BASE + '/api/sharelinks', {
       path: item.rel,
       label: $('share-label').value.trim() || item.name,
       days: Number($('share-days').value),
@@ -2506,7 +2539,7 @@ async function crearCompartir() {
     });
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'No se pudo crear'); return; }
-    const url = `${location.origin}/s/${data.link.id}`;
+    const url = `${location.origin}${BASE}/s/${data.link.id}`;
     $('share-url').textContent = url;
     hide('share-form');
     hide('btn-create-share');
@@ -2536,7 +2569,7 @@ async function copiarTexto(texto, exito) {
 --------------------------------------------------------------- */
 async function refrescarContadorPapeleraNotas() {
   try {
-    const res = await api('/api/notes-trash');
+    const res = await api(BASE + '/api/notes-trash');
     const data = await res.json();
     NT.papelera = data.items || [];
     $('notes-trash-n').textContent = NT.papelera.length
@@ -2550,7 +2583,7 @@ async function abrirPapeleraNotas() {
   caja.textContent = '';
   caja.appendChild(el('div', 'none', 'Cargando…'));
   try {
-    const res = await api('/api/notes-trash');
+    const res = await api(BASE + '/api/notes-trash');
     const data = await res.json();
     NT.papelera = data.items || [];
     $('notes-trash-sub').textContent = `Se borran solas pasados ${data.ttlDays} días`;
@@ -2596,7 +2629,7 @@ async function abrirPapeleraNotas() {
 
 async function restaurarNota(t) {
   try {
-    const res = await post('/api/notes-trash/restore', { id: t.id });
+    const res = await post(BASE + '/api/notes-trash/restore', { id: t.id });
     const data = await res.json();
     if (res.ok) {
       showToast(data.restaurados > 1 ? `${data.restaurados} elementos restaurados` : 'Restaurado');
@@ -2610,7 +2643,7 @@ async function restaurarNota(t) {
 async function purgarNota(t) {
   if (!confirm(`¿Eliminar "${t.title}" definitivamente? Esto no se puede deshacer.`)) return;
   try {
-    const res = await api('/api/notes-trash/' + qs(t.id), { method: 'DELETE' });
+    const res = await api(BASE + '/api/notes-trash/' + qs(t.id), { method: 'DELETE' });
     if (res.ok) { showToast('Eliminado definitivamente'); abrirPapeleraNotas(); refrescarContadorPapeleraNotas(); }
     else showToast(await errorOf(res, 'No se pudo eliminar'));
   } catch { showToast('Error de conexión'); }
@@ -2619,7 +2652,7 @@ async function purgarNota(t) {
 async function vaciarPapeleraNotas() {
   if (!confirm('¿Vaciar la papelera de notas? Esto no se puede deshacer.')) return;
   try {
-    const res = await api('/api/notes-trash', { method: 'DELETE' });
+    const res = await api(BASE + '/api/notes-trash', { method: 'DELETE' });
     const data = await res.json();
     if (res.ok) { showToast(`${data.removed} elemento(s) eliminados`); abrirPapeleraNotas(); refrescarContadorPapeleraNotas(); }
     else showToast(data.error || 'No se pudo vaciar');
@@ -2704,7 +2737,7 @@ function ocultarTip() {
 --------------------------------------------------------------- */
 async function loadLinks() {
   try {
-    const res = await api('/api/uploadlinks');
+    const res = await api(BASE + '/api/uploadlinks');
     const links = await res.json();
     const box = $('links-list');
     box.textContent = '';
@@ -2743,7 +2776,7 @@ async function loadLinks() {
   } catch {}
 }
 
-const urlDelEnlace = (id) => `${location.origin}/u/${id}`;
+const urlDelEnlace = (id) => `${location.origin}${BASE}/u/${id}`;
 
 async function copiarEnlace(id) {
   copiarTexto(urlDelEnlace(id), 'Enlace copiado al portapapeles');
@@ -2753,7 +2786,7 @@ async function crearEnlace() {
   const label = $('link-label').value.trim();
   const days = Number($('link-days').value);
   try {
-    const res = await post('/api/uploadlinks', { path: state.linkPath || '', label, days });
+    const res = await post(BASE + '/api/uploadlinks', { path: state.linkPath || '', label, days });
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'No se pudo crear'); return; }
     $('link-label').value = '';
@@ -2765,7 +2798,7 @@ async function crearEnlace() {
 async function revocarEnlace(l) {
   if (!confirm(`¿Revocar el enlace "${l.label}"? Quien lo tenga dejará de poder subir.`)) return;
   try {
-    const res = await api('/api/uploadlinks/' + qs(l.id), { method: 'DELETE' });
+    const res = await api(BASE + '/api/uploadlinks/' + qs(l.id), { method: 'DELETE' });
     if (res.ok) { showToast('Enlace revocado'); loadLinks(); }
     else showToast(await errorOf(res, 'No se pudo revocar'));
   } catch { showToast('Error de conexión'); }
@@ -2776,7 +2809,7 @@ async function revocarEnlace(l) {
 --------------------------------------------------------------- */
 async function loadAdmin() {
   try {
-    const res = await api('/api/stats');
+    const res = await api(BASE + '/api/stats');
     const s = await res.json();
     $('stat-size').textContent = fmtSize(s.totalBytes);
     $('stat-count').textContent = s.fileCount;
@@ -2797,7 +2830,7 @@ async function loadAdmin() {
   loadLinks();
 
   try {
-    const res = await api('/api/users');
+    const res = await api(BASE + '/api/users');
     const users = await res.json();
     const box = $('user-list');
     box.textContent = '';
@@ -2824,7 +2857,7 @@ async function addUser() {
   const role = $('new-userrole').value;
   if (!username || !password) { showToast('Faltan datos'); return; }
   try {
-    const res = await post('/api/users', { username, password, role });
+    const res = await post(BASE + '/api/users', { username, password, role });
     if (res.ok) {
       showToast('Usuario creado');
       $('new-username').value = '';
@@ -2837,7 +2870,7 @@ async function addUser() {
 async function deleteUser(username) {
   if (!confirm(`¿Eliminar el usuario "${username}"? Sus archivos no se borran.`)) return;
   try {
-    const res = await api('/api/users/' + qs(username), { method: 'DELETE' });
+    const res = await api(BASE + '/api/users/' + qs(username), { method: 'DELETE' });
     if (res.ok) { showToast('Usuario eliminado'); loadAdmin(); }
     else showToast(await errorOf(res, 'No se pudo eliminar'));
   } catch { showToast('Error de conexión'); }
@@ -2847,7 +2880,7 @@ async function changeMyPassword() {
   const password = $('my-newpass').value;
   if (!password || password.length < 6) { showToast('Mínimo 6 caracteres'); return; }
   try {
-    const res = await post('/api/users/' + qs(state.user.username) + '/password', { password });
+    const res = await post(BASE + '/api/users/' + qs(state.user.username) + '/password', { password });
     if (res.ok) { showToast('Contraseña actualizada'); $('my-newpass').value = ''; }
     else showToast(await errorOf(res, 'No se pudo cambiar'));
   } catch { showToast('Error de conexión'); }
@@ -2859,7 +2892,7 @@ async function changeMyPassword() {
 let favSet = new Set();
 async function cargarFavoritosSet() {
   try {
-    const res = await api('/api/favorites');
+    const res = await api(BASE + '/api/favorites');
     const data = await res.json();
     favSet = new Set(data.items || []);
   } catch { /* se deja el set como estaba */ }
@@ -2868,8 +2901,8 @@ async function toggleFavorite(rel) {
   const esFav = favSet.has(rel);
   try {
     const res = esFav
-      ? await api('/api/favorites?path=' + qs(rel), { method: 'DELETE' })
-      : await post('/api/favorites', { path: rel });
+      ? await api(BASE + '/api/favorites?path=' + qs(rel), { method: 'DELETE' })
+      : await post(BASE + '/api/favorites', { path: rel });
     if (!res.ok) { showToast(await errorOf(res, 'No se pudo actualizar')); return; }
     esFav ? favSet.delete(rel) : favSet.add(rel);
     showToast(esFav ? 'Quitado de favoritos' : 'Añadido a favoritos');
@@ -2899,7 +2932,7 @@ function tileGenerico(item, onQuitar, tituloQuitar, iconoQuitar) {
   if (!item.isDir && hasThumb(item.name)) {
     tile.classList.add('photo');
     const img = el('img');
-    img.src = '/api/thumb?path=' + qs(item.rel);
+    img.src = BASE + '/api/thumb?path=' + qs(item.rel);
     img.loading = 'lazy';
     img.alt = item.name;
     img.addEventListener('error', () => {
@@ -2941,7 +2974,7 @@ async function cargarFavoritos() {
   box.textContent = '';
   box.appendChild(el('div', 'skel', ''));
   try {
-    const res = await api('/api/favorites');
+    const res = await api(BASE + '/api/favorites');
     const data = await res.json();
     favSet = new Set(data.items || []);
     if (!data.items.length) {
@@ -2955,7 +2988,7 @@ async function cargarFavoritos() {
         const partes = rel.split('/');
         const name = partes.pop();
         const dir = partes.join('/');
-        const r = await api('/api/files?path=' + qs(dir));
+        const r = await api(BASE + '/api/files?path=' + qs(dir));
         const d = await r.json();
         const it = (d.items || []).find(i => i.name === name);
         return it ? { ...it, rel } : null;
@@ -2984,7 +3017,7 @@ async function cargarAlbumes() {
   grid.textContent = '';
   grid.appendChild(el('div', 'skel', ''));
   try {
-    const res = await api('/api/albums');
+    const res = await api(BASE + '/api/albums');
     const data = await res.json();
     grid.textContent = '';
     if (!data.items.length) {
@@ -3023,7 +3056,7 @@ async function abrirAlbum(id) {
   box.textContent = '';
   box.appendChild(el('div', 'skel', ''));
   try {
-    const res = await api('/api/albums/' + id);
+    const res = await api(BASE + '/api/albums/' + id);
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'No se pudo abrir'); volverAAlbumes(); return; }
     $('album-titulo').textContent = data.title;
@@ -3037,7 +3070,7 @@ async function abrirAlbum(id) {
     data.items.forEach(item => {
       box.appendChild(tileGenerico(item, async () => {
         try {
-          const r = await api(`/api/albums/${id}/items?path=` + qs(item.rel), { method: 'DELETE' });
+          const r = await api(`${BASE}/api/albums/${id}/items?path=` + qs(item.rel), { method: 'DELETE' });
           if (r.ok) abrirAlbum(id);
         } catch { showToast('Error de conexión'); }
       }, 'Quitar del álbum', 'i-x'));
@@ -3056,7 +3089,7 @@ async function eliminarAlbumActual() {
   if (!COL.albumAbierto) return;
   if (!confirm('¿Eliminar este álbum? Las fotos no se borran, solo la colección.')) return;
   try {
-    const res = await api('/api/albums/' + COL.albumAbierto, { method: 'DELETE' });
+    const res = await api(BASE + '/api/albums/' + COL.albumAbierto, { method: 'DELETE' });
     if (res.ok) { showToast('Álbum eliminado'); volverAAlbumes(); }
     else showToast(await errorOf(res, 'No se pudo eliminar'));
   } catch { showToast('Error de conexión'); }
@@ -3065,7 +3098,7 @@ async function crearAlbumSolo() {
   const nombre = prompt('Nombre del nuevo álbum:', 'Álbum sin título');
   if (nombre === null) return;
   try {
-    const res = await post('/api/albums', { title: nombre.trim() || 'Álbum sin título' });
+    const res = await post(BASE + '/api/albums', { title: nombre.trim() || 'Álbum sin título' });
     if (res.ok) { showToast('Álbum creado'); cargarAlbumes(); }
     else showToast(await errorOf(res, 'No se pudo crear'));
   } catch { showToast('Error de conexión'); }
@@ -3084,7 +3117,7 @@ async function openAlbumPicker(rels) {
   list.appendChild(el('div', 'none', 'Cargando…'));
   show('album-pick-modal');
   try {
-    const res = await api('/api/albums');
+    const res = await api(BASE + '/api/albums');
     const data = await res.json();
     list.textContent = '';
     if (!data.items.length) { list.appendChild(el('div', 'none', 'No tienes álbumes todavía. Crea uno abajo.')); return; }
@@ -3102,7 +3135,7 @@ async function openAlbumPicker(rels) {
 }
 async function añadirAAlbum(id) {
   try {
-    const res = await post(`/api/albums/${id}/items`, { paths: albumPickRutas });
+    const res = await post(`${BASE}/api/albums/${id}/items`, { paths: albumPickRutas });
     if (res.ok) { showToast('Añadido al álbum'); hide('album-pick-modal'); }
     else showToast(await errorOf(res, 'No se pudo añadir'));
   } catch { showToast('Error de conexión'); }
@@ -3111,7 +3144,7 @@ async function crearAlbumYAñadir() {
   const nombre = $('album-pick-new').value.trim();
   if (!nombre) { showToast('Escribe un nombre'); return; }
   try {
-    const res = await post('/api/albums', { title: nombre, paths: albumPickRutas });
+    const res = await post(BASE + '/api/albums', { title: nombre, paths: albumPickRutas });
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'No se pudo crear'); return; }
     showToast('Álbum creado y elementos añadidos');
@@ -3135,7 +3168,7 @@ async function confirmRename() {
   const pattern = $('rename-pattern').value.trim();
   if (!pattern) { showToast('Escribe un patrón'); return; }
   try {
-    const res = await post('/api/batch', {
+    const res = await post(BASE + '/api/batch', {
       op: 'rename', paths: renameRutas, pattern, start: Number($('rename-start').value) || 1,
     });
     const data = await res.json();
@@ -3158,7 +3191,7 @@ async function loadDiskUsage(rel) {
   box.textContent = '';
   box.appendChild(el('div', 'skel', ''));
   try {
-    const res = await api('/api/diskusage?path=' + qs(duPath));
+    const res = await api(BASE + '/api/diskusage?path=' + qs(duPath));
     let data;
     try { data = await res.json(); }
     // Un 502/504 del propio nginx (por ejemplo, si la carpeta tarda demasiado) no
@@ -3207,7 +3240,7 @@ async function scanDuplicates() {
   list.textContent = '';
   $('btn-scan-dup').disabled = true;
   try {
-    const res = await api('/api/duplicates');
+    const res = await api(BASE + '/api/duplicates');
     const data = await res.json();
     if (!res.ok) { resumen.textContent = data.error || 'No se pudo escanear'; return; }
     if (!data.grupos.length) {
@@ -3252,7 +3285,7 @@ function buildDupGroup(grupo) {
     if (!marcados.length) { showToast('No has marcado ninguna copia'); return; }
     if (!confirm(`¿Enviar ${marcados.length} archivo(s) a la papelera?`)) return;
     try {
-      const res = await post('/api/batch', { op: 'delete', paths: marcados });
+      const res = await post(BASE + '/api/batch', { op: 'delete', paths: marcados });
       const data = await res.json();
       reportBatch(data, 'copia eliminada', 'copias eliminadas');
       wrap.remove();
@@ -3298,7 +3331,7 @@ async function cargarActividad(containerId, global) {
   box.textContent = '';
   box.appendChild(el('div', 'none', 'Cargando…'));
   try {
-    const res = await api('/api/activity?limit=' + (global ? 200 : 40));
+    const res = await api(BASE + '/api/activity?limit=' + (global ? 200 : 40));
     const data = await res.json();
     box.textContent = '';
     if (!data.items.length) { box.appendChild(el('p', 'card-sub', 'Sin actividad todavía')); return; }
@@ -3341,7 +3374,7 @@ async function cargarSesiones() {
   box.textContent = '';
   box.appendChild(el('div', 'none', 'Cargando…'));
   try {
-    const res = await api('/api/sessions');
+    const res = await api(BASE + '/api/sessions');
     const data = await res.json();
     box.textContent = '';
     if (!data.length) { box.appendChild(el('p', 'card-sub', 'Sin sesiones registradas')); return; }
@@ -3357,7 +3390,7 @@ async function cargarSesiones() {
         del.title = 'Cerrar esta sesión';
         del.setAttribute('aria-label', 'Cerrar esta sesión');
         del.addEventListener('click', async () => {
-          const r = await api('/api/sessions/' + s.jti, { method: 'DELETE' });
+          const r = await api(BASE + '/api/sessions/' + s.jti, { method: 'DELETE' });
           if (r.ok) { showToast('Sesión cerrada'); cargarSesiones(); }
         });
         row.appendChild(del);
@@ -3372,7 +3405,7 @@ async function cargarSesiones() {
 async function cerrarOtrasSesiones() {
   if (!confirm('¿Cerrar todas las demás sesiones? Esta se mantiene.')) return;
   try {
-    const res = await api('/api/sessions', { method: 'DELETE' });
+    const res = await api(BASE + '/api/sessions', { method: 'DELETE' });
     const data = await res.json();
     showToast(`${data.removed} sesión(es) cerradas`);
     cargarSesiones();
@@ -3384,7 +3417,7 @@ async function cargarAppTokens() {
   box.textContent = '';
   box.appendChild(el('div', 'none', 'Cargando…'));
   try {
-    const res = await api('/api/apptokens');
+    const res = await api(BASE + '/api/apptokens');
     const tokens = await res.json();
     box.textContent = '';
     if (!tokens.length) { box.appendChild(el('p', 'card-sub', 'Sin tokens creados')); return; }
@@ -3401,7 +3434,7 @@ async function cargarAppTokens() {
       del.setAttribute('aria-label', 'Revocar token');
       del.addEventListener('click', async () => {
         if (!confirm(`¿Revocar el token "${t.name}"?`)) return;
-        const r = await api('/api/apptokens/' + t.id, { method: 'DELETE' });
+        const r = await api(BASE + '/api/apptokens/' + t.id, { method: 'DELETE' });
         if (r.ok) { showToast('Token revocado'); cargarAppTokens(); }
       });
       row.appendChild(del);
@@ -3416,7 +3449,7 @@ async function crearAppToken() {
   const name = $('apptoken-name').value.trim();
   if (!name) { showToast('Escribe para qué es'); return; }
   try {
-    const res = await post('/api/apptokens', { name });
+    const res = await post(BASE + '/api/apptokens', { name });
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'No se pudo crear'); return; }
     $('apptoken-name').value = '';
@@ -3433,7 +3466,7 @@ async function cargarEstado2fa() {
   hide('twofa-off'); hide('twofa-setup'); hide('twofa-on');
   $('twofa-sub').textContent = 'Comprobando…';
   try {
-    const res = await api('/api/2fa/status');
+    const res = await api(BASE + '/api/2fa/status');
     const data = await res.json();
     if (data.enabled) {
       $('twofa-sub').textContent = 'Tu cuenta está protegida con verificación en dos pasos.';
@@ -3446,7 +3479,7 @@ async function cargarEstado2fa() {
 }
 async function iniciar2faSetup() {
   try {
-    const res = await post('/api/2fa/setup', {});
+    const res = await post(BASE + '/api/2fa/setup', {});
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'No se pudo iniciar'); return; }
     $('twofa-secret').textContent = data.secret;
@@ -3459,7 +3492,7 @@ async function confirmar2fa() {
   const code = $('twofa-code').value.trim();
   if (!code) { showToast('Escribe el código'); return; }
   try {
-    const res = await post('/api/2fa/confirm', { code });
+    const res = await post(BASE + '/api/2fa/confirm', { code });
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'Código incorrecto'); return; }
     showToast('Verificación en dos pasos activada');
@@ -3470,7 +3503,7 @@ async function desactivar2fa() {
   const password = $('twofa-disable-pass').value;
   if (!password) { showToast('Escribe tu contraseña'); return; }
   try {
-    const res = await post('/api/2fa/disable', { password });
+    const res = await post(BASE + '/api/2fa/disable', { password });
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'No se pudo desactivar'); return; }
     $('twofa-disable-pass').value = '';
@@ -3770,7 +3803,7 @@ $('notes-filter').addEventListener('input', e => {
 window.addEventListener('beforeunload', () => {
   if (!NT.sucia || !NT.abierta) return;
   const datos = JSON.stringify({ title: $('note-title').value, body: $('note-body').value });
-  navigator.sendBeacon?.('/api/notes/' + qs(NT.abierta) + '?beacon=1', new Blob([datos], { type: 'application/json' }));
+  navigator.sendBeacon?.(BASE + '/api/notes/' + qs(NT.abierta) + '?beacon=1', new Blob([datos], { type: 'application/json' }));
 });
 
 // Menú contextual: clic derecho en el hueco vacío del listado
@@ -3831,8 +3864,8 @@ $('lb-open').addEventListener('click', () => {
   const item = state.viewables[state.lbIndex];
   if (!item) return;
   const url = isOffice(item.name)
-    ? '/api/office?path=' + qs(item.rel)
-    : '/api/preview?path=' + qs(item.rel);
+    ? BASE + '/api/office?path=' + qs(item.rel)
+    : BASE + '/api/preview?path=' + qs(item.rel);
   window.open(url, '_blank', 'noopener');
 });
 $('lb-stage').addEventListener('click', e => { if (e.target === $('lb-stage')) closeLightbox(); });
@@ -3879,7 +3912,7 @@ window.addEventListener('drop', e => {
 });
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  window.addEventListener('load', () => navigator.serviceWorker.register(BASE + '/sw.js', { scope: BASE + '/' }).catch(() => {}));
 }
 
 // Antes de pintar nada, para que no se vea un cambio de color al entrar

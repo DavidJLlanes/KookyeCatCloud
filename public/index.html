@@ -6,6 +6,8 @@
 <title>KookyeCatCloud</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="/css/modules.css">
+<link rel="stylesheet" href="/css/notes.css">
 <!-- Mismo icono que el logotipo, en SVG incrustado: sin archivo extra que subir.
      app.js lo regenera con los colores de la tonalidad elegida. -->
 <link rel="icon" id="favicon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%234f7cff%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23a855f7%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2224%22%20height%3D%2224%22%20rx%3D%226%22%20fill%3D%22url(%23g)%22%2F%3E%3Cg%20transform%3D%22translate(12%2012)%20scale(.8)%20translate(-12%20-12)%22%3E%3Cpath%20d%3D%22M17.5%2019a4.5%204.5%200%200%200%20.5-8.97%206%206%200%200%200-11.66-1.5A4%204%200%200%200%206.5%2019z%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
@@ -1052,6 +1054,20 @@
   <symbol id="i-bars" viewBox="0 0 24 24"><path d="M5 21V10M12 21V4M19 21v-7"/></symbol>
   <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4a1 1 0 011-1h8l9 9-9 9-9-9z"/><circle cx="7.5" cy="7.5" r="1.3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5z"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M17 2l4 4-4 4M3 11V9a3 3 0 013-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 01-3 3H3"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9zM10 21a2 2 0 004 0"/></symbol>
+  <symbol id="i-list-check" viewBox="0 0 24 24"><path d="M10 6h11M10 12h11M10 18h11M3 6l1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17"/></symbol>
+  <symbol id="i-columns" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-sidebar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
+  <symbol id="i-pin-fill" viewBox="0 0 24 24"><path d="M12 2l3 6 6 1-4.5 4.5L17.5 20 12 17l-5.5 3 1-6.5L3 9l6-1 3-6z" fill="currentColor"/></symbol>
+  <symbol id="i-image-plus" viewBox="0 0 24 24"><path d="M14 4H5a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-7M3 16l5-5 4 4 3-3 2 2M18 3v6M15 6h6"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 001 1h12a1 1 0 001-1V8M10 12h4"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24" stroke-width="0"><circle cx="9" cy="6" r="1.5" fill="currentColor"/><circle cx="15" cy="6" r="1.5" fill="currentColor"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/><circle cx="15" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="18" r="1.5" fill="currentColor"/><circle cx="15" cy="18" r="1.5" fill="currentColor"/></symbol>
 </svg>
 
 <!-- ================= LOGIN ================= -->
@@ -1097,15 +1113,21 @@
   </header>
 
   <div class="wrap">
-    <div class="tabs" id="tabs">
-      <button class="tab is-active" data-view="files"><svg class="ico"><use href="#i-folder"/></svg>Archivos</button>
-      <button class="tab" data-view="notes"><svg class="ico"><use href="#i-note"/></svg>Notas</button>
-      <button class="tab" data-view="map"><svg class="ico"><use href="#i-pin"/></svg>Mapa</button>
-      <button class="tab" data-view="trash"><svg class="ico"><use href="#i-trash"/></svg>Papelera</button>
-      <button class="tab" data-view="colecciones"><svg class="ico"><use href="#i-star"/></svg>Colecciones</button>
-      <button class="tab" data-view="cuenta"><svg class="ico"><use href="#i-user"/></svg>Cuenta</button>
-      <button class="tab" data-view="admin" id="tab-admin" hidden><svg class="ico"><use href="#i-users"/></svg>Administración</button>
-    </div>
+    <nav class="tabs" id="tabs" aria-label="Secciones">
+      <button class="side-search" id="btn-omni" type="button"><svg class="ico"><use href="#i-search"/></svg><span>Buscar en todo</span><kbd>Ctrl K</kbd></button>
+      <span class="tabs-label">Espacio</span>
+      <button class="tab is-active" data-view="files"><svg class="ico"><use href="#i-folder"/></svg><span>Archivos</span></button>
+      <button class="tab" data-view="notes"><svg class="ico"><use href="#i-note"/></svg><span>Notas</span></button>
+      <button class="tab" data-view="calendar"><svg class="ico"><use href="#i-calendar"/></svg><span>Calendario</span></button>
+      <button class="tab" data-view="prompts"><svg class="ico"><use href="#i-sparkle"/></svg><span>Prompts</span></button>
+      <span class="tabs-label">Biblioteca</span>
+      <button class="tab" data-view="colecciones"><svg class="ico"><use href="#i-star"/></svg><span>Colecciones</span></button>
+      <button class="tab" data-view="map"><svg class="ico"><use href="#i-pin"/></svg><span>Mapa</span></button>
+      <button class="tab" data-view="trash"><svg class="ico"><use href="#i-trash"/></svg><span>Papelera</span></button>
+      <span class="tabs-label">Sistema</span>
+      <button class="tab" data-view="cuenta"><svg class="ico"><use href="#i-user"/></svg><span>Cuenta</span></button>
+      <button class="tab" data-view="admin" id="tab-admin" hidden><svg class="ico"><use href="#i-users"/></svg><span>Administración</span></button>
+    </nav>
   </div>
 
   <!-- ---- Vista archivos ---- -->
@@ -1159,6 +1181,12 @@
     <input type="file" id="file-input" multiple hidden>
     <div id="file-list"></div>
   </main>
+
+  <!-- ---- Vista calendario ---- -->
+  <main class="wrap kcc-view" id="view-calendar" hidden></main>
+
+  <!-- ---- Vista prompts ---- -->
+  <main class="wrap kcc-view" id="view-prompts" hidden></main>
 
   <!-- ---- Vista notas ---- -->
   <main class="wrap" id="view-notes" hidden>
@@ -1449,9 +1477,11 @@
     <div class="inner">
       <button class="is-active" data-view="files"><svg class="ico"><use href="#i-folder"/></svg>Archivos</button>
       <button data-view="notes"><svg class="ico"><use href="#i-note"/></svg>Notas</button>
+      <button data-view="calendar"><svg class="ico"><use href="#i-calendar"/></svg>Agenda</button>
+      <button data-view="prompts"><svg class="ico"><use href="#i-sparkle"/></svg>Prompts</button>
+      <button data-view="colecciones"><svg class="ico"><use href="#i-star"/></svg>Colec.</button>
       <button data-view="map"><svg class="ico"><use href="#i-pin"/></svg>Mapa</button>
       <button data-view="trash"><svg class="ico"><use href="#i-trash"/></svg>Papelera</button>
-      <button data-view="colecciones"><svg class="ico"><use href="#i-star"/></svg>Colec.</button>
       <button data-view="cuenta"><svg class="ico"><use href="#i-user"/></svg>Cuenta</button>
       <button data-view="admin" id="mnav-admin" hidden><svg class="ico"><use href="#i-users"/></svg>Admin</button>
     </div>
@@ -1479,6 +1509,7 @@
   </div>
   <div class="track"><div class="fill" id="upbar-fill"></div></div>
   <div class="uplist" id="upbar-list"></div>
+  <div class="upbar-cal" id="upbar-cal"></div>
   <div class="upbar-actions" id="upbar-actions">
     <button class="btn" id="upbar-retry" hidden><svg class="ico"><use href="#i-restore"/></svg> Reintentar</button>
     <button class="btn ghost" id="upbar-cancel">Cancelar</button>
@@ -1667,5 +1698,11 @@
 
 <script src="/vendor/leaflet/leaflet.js"></script>
 <script src="/app.js"></script>
+<script src="/js/kit.js"></script>
+<script src="/js/calendar.js"></script>
+<script src="/js/prompts.js"></script>
+<script src="/js/filecal.js"></script>
+<script src="/js/notes.js"></script>
+<script src="/js/omni.js"></script>
 </body>
 </html>

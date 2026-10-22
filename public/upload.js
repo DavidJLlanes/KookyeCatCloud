@@ -1,4 +1,5 @@
 'use strict';
+const BASE = (document.querySelector('meta[name="kcc-base"]') || {}).content || '';
 
 // Página pública de un enlace de subida: /u/<id>
 const $ = (id) => document.getElementById(id);
@@ -25,7 +26,7 @@ function aviso(texto, tipo) {
 
 async function cargar() {
   try {
-    const res = await fetch('/api/public/link/' + encodeURIComponent(linkId));
+    const res = await fetch(BASE + '/api/public/link/' + encodeURIComponent(linkId));
     const data = await res.json();
     $('cargando').hidden = true;
     if (!res.ok) {
@@ -97,7 +98,7 @@ function enviar() {
   aviso('');
 
   const xhr = new XMLHttpRequest();
-  xhr.open('POST', '/api/public/link/' + encodeURIComponent(linkId) + '/upload');
+  xhr.open('POST', BASE + '/api/public/link/' + encodeURIComponent(linkId) + '/upload');
   xhr.upload.addEventListener('progress', e => {
     if (e.lengthComputable) $('progreso').style.width = Math.round((e.loaded / e.total) * 100) + '%';
   });

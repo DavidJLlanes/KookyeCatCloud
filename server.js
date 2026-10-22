@@ -13,6 +13,9 @@ const cookieParser = require('cookie-parser');
 // archiver 8 ya no exporta una función: se instancia la clase del formato
 const { ZipArchive } = require('archiver');
 const { createDav } = require('./webdav');
+const createLabels = require('./lib/labels');
+const createCalendar = require('./lib/calendar');
+const createPrompts = require('./lib/prompts');
 
 // sharp es opcional: si no está instalado, las miniaturas caen a la imagen original
 let sharp = null;
@@ -37,6 +40,14 @@ const SECRET_FILE = path.join(APP_DIR, '.jwt-secret');
 const PORT = process.env.PORT || 4000;
 // Las cookies van con flag Secure salvo que se desactive a propósito (desarrollo en http://localhost)
 const SECURE_COOKIES = process.env.INSECURE_COOKIES !== '1';
+// Prefijo de URL si la app vive en una subcarpeta del dominio (p. ej. /cloud para
+// midominio.es/cloud). Vacío = raíz del dominio o de un subdominio. Se normaliza para
+// admitir "cloud", "/cloud" o "/cloud/".
+const BASE_PATH = (() => {
+  const limpio = String(process.env.BASE_PATH || '').trim().replace(/^\/+|\/+$/g, '');
+  return limpio ? '/' + limpio : '';
+})();
+const COOKIE_PATH = BASE_PATH || '/';
 const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES || 5 * 1024 * 1024 * 1024);
 const USERNAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]{2,31}$/;
 const MIN_PASSWORD = 6;
@@ -243,9 +254,20 @@ function totpVerificar(secretB32, token) {
   return false;
 }
 
-const app = express();
-app.set('trust proxy', 1); // detrás de Nginx: necesario para que req.ip sea la IP real
-app.disable('x-powered-by');
+
+// Módulos nuevos. Se crean aquí, antes de las rutas, porque las rutas de archivos los usan.
+const labelsMod = createLabels({ express, userRoot, sendError });
+const calendarMod = createCalendar({ express, userRoot, sendError, registrarActividad });
+const promptsMod = createPrompts({
+  express, multer, sharp, userRoot, sendError, registrarActividad,
+  calendar: calendarMod.core, labels: labelsMod,
+});
+
+const root = express();
+root.set('trust proxy', 1); // detrás de Nginx: necesario para que req.ip sea la IP real
+root.disable('x-powered-by');
+// Todas las rutas cuelgan de este router, que se monta en BASE_PATH (o en la raíz)
+const app = express.Router();
 // WebDAV va ANTES del analizador de JSON: un cliente que suba un .json con
 // Content-Type: application/json haría que express.json() se comiera el cuerpo
 // y el PUT escribiera un archivo vacío.
@@ -254,10 +276,21 @@ app.use('/dav', createDav({
   userRoot,
   loadUsers,
   isHidden,
+  base: BASE_PATH,
   log: (...a) => console.warn(...a),
 }));
 
-app.use(express.json({ limit: '100kb' }));
+// El tope del cuerpo JSON depende de la ruta: la API general es pequeña, pero notas,
+// prompts y la importación llevan textos largos. Los analizadores propios de cada ruta
+// se saltan solos si el cuerpo ya está leído.
+const jsonPequeno = express.json({ limit: '100kb' });
+const jsonMedio = express.json({ limit: '2mb' });
+const jsonGrande = express.json({ limit: '30mb' });
+app.use((req, res, next) => {
+  if (req.path === '/api/prompts/import') return jsonGrande(req, res, next);
+  if (/^\/api\/(notes|text|prompts|calendar|labels)(\/|$)/.test(req.path)) return jsonMedio(req, res, next);
+  return jsonPequeno(req, res, next);
+});
 app.use(cookieParser());
 
 // --- Cabeceras de seguridad ---
@@ -272,15 +305,46 @@ app.use((req, res, next) => {
   // enmarca. Con 'none' sale el recuadro gris de "no se pudo cargar". Sigue limitado
   // al propio dominio, y todo se sirve con nosniff y con el tipo declarado.
   // img-src incluye el servidor de tiles del mapa: es lo ÚNICO externo de toda la app.
+  // blob: es solo para la vista previa local de las imágenes que se están a punto de subir.
   res.setHeader(
     'Content-Security-Policy',
-    `default-src 'self'; img-src 'self' data: ${TILE_ORIGIN}; style-src 'self' 'unsafe-inline'; ` +
+    `default-src 'self'; img-src 'self' data: blob: ${TILE_ORIGIN}; style-src 'self' 'unsafe-inline'; ` +
     "script-src 'self'; object-src 'self'; frame-src 'self'; base-uri 'none'; frame-ancestors 'self'"
   );
   next();
 });
 
-app.use(express.static(path.join(APP_DIR, 'public')));
+// Las páginas HTML y el manifest llevan rutas absolutas ("/app.js"): se reescriben con el
+// prefijo al servirlas. El resto de estáticos se sirven tal cual.
+const PUBLIC_DIR = path.join(APP_DIR, 'public');
+const plantillas = new Map();
+function enviaPlantilla(res, nombre, tipo) {
+  // Se cachea la plantilla ya reescrita, pero se vuelve a generar si el archivo cambia
+  const archivo = path.join(PUBLIC_DIR, nombre);
+  const mtime = fs.statSync(archivo).mtimeMs;
+  let hit = plantillas.get(nombre);
+  let texto = hit && hit.mtime === mtime ? hit.texto : undefined;
+  if (texto === undefined) {
+    texto = fs.readFileSync(archivo, 'utf8');
+    if (BASE_PATH) {
+      texto = nombre.endsWith('.json')
+        ? texto.replace(/("(?:id|start_url|scope|src)": ")\//g, `$1${BASE_PATH}/`)
+        : texto.replace(/((?:href|src)=")\/(?!\/)/g, `$1${BASE_PATH}/`);
+    }
+    if (nombre.endsWith('.html')) {
+      texto = texto.replace('<head>', `<head>
+<meta name="kcc-base" content="${BASE_PATH}">`);
+    }
+    plantillas.set(nombre, { texto, mtime });
+  }
+  res.type(tipo).send(texto);
+}
+app.get('/manifest.json', (req, res) => enviaPlantilla(res, 'manifest.json', 'application/manifest+json'));
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache');
+  res.sendFile(path.join(PUBLIC_DIR, 'sw.js'));
+});
+app.use(express.static(PUBLIC_DIR, { index: false }));
 
 // --- Auth middleware ---
 function auth(req, res, next) {
@@ -467,6 +531,7 @@ async function trashItem(user, relPath) {
   await fsp.rename(target, path.join(trashRoot(user), id));
   const clean = String(relPath).replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
   const from = clean.includes('/') ? clean.slice(0, clean.lastIndexOf('/')) : '';
+  calendarMod.core.quitaOrigenArchivo(user, clean).catch(() => {});   // un archivo en la papelera no ocupa el calendario
   const entries = await readTrash(user);
   entries.unshift({
     id,
@@ -521,7 +586,7 @@ app.post('/api/login', (req, res) => {
   if (user.twofaSecret) {
     const pendiente = jwt.sign({ username: user.username, stage: '2fa' }, JWT_SECRET, { expiresIn: '5m' });
     res.cookie('pending2fa', pendiente, {
-      httpOnly: true, sameSite: 'strict', secure: SECURE_COOKIES, maxAge: 5 * 60 * 1000,
+      httpOnly: true, sameSite: 'strict', secure: SECURE_COOKIES, path: COOKIE_PATH, maxAge: 5 * 60 * 1000,
     });
     return res.json({ ok: true, need2fa: true });
   }
@@ -532,6 +597,7 @@ app.post('/api/login', (req, res) => {
     httpOnly: true,
     sameSite: 'strict',
     secure: SECURE_COOKIES,
+    path: COOKIE_PATH,
     maxAge: 30 * 24 * 3600 * 1000,
   });
   registrarActividad({ user: { username: user.username }, ip: req.ip }, 'login', {});
@@ -561,12 +627,12 @@ app.post('/api/login/2fa', (req, res) => {
     return res.status(401).json({ error: 'Código incorrecto' });
   }
   clearFailures(ipKey);
-  res.clearCookie('pending2fa', { httpOnly: true, sameSite: 'strict', secure: SECURE_COOKIES });
+  res.clearCookie('pending2fa', { httpOnly: true, sameSite: 'strict', secure: SECURE_COOKIES, path: COOKIE_PATH });
 
   const jti = creaSesion(user.username, req);
   const token = jwt.sign({ username: user.username, role: user.role, jti }, JWT_SECRET, { expiresIn: '30d' });
   res.cookie('token', token, {
-    httpOnly: true, sameSite: 'strict', secure: SECURE_COOKIES, maxAge: 30 * 24 * 3600 * 1000,
+    httpOnly: true, sameSite: 'strict', secure: SECURE_COOKIES, path: COOKIE_PATH, maxAge: 30 * 24 * 3600 * 1000,
   });
   registrarActividad({ user: { username: user.username }, ip: req.ip }, 'login', {});
   res.json({ ok: true, username: user.username, role: user.role });
@@ -577,8 +643,8 @@ app.post('/api/logout', (req, res) => {
   if (token) {
     try { const p = jwt.verify(token, JWT_SECRET); if (p.jti) revocaSesion(p.jti); } catch { /* token ya inválido */ }
   }
-  res.clearCookie('token', { httpOnly: true, sameSite: 'strict', secure: SECURE_COOKIES });
-  res.clearCookie('pending2fa', { httpOnly: true, sameSite: 'strict', secure: SECURE_COOKIES });
+  res.clearCookie('token', { httpOnly: true, sameSite: 'strict', secure: SECURE_COOKIES, path: COOKIE_PATH });
+  res.clearCookie('pending2fa', { httpOnly: true, sameSite: 'strict', secure: SECURE_COOKIES, path: COOKIE_PATH });
   res.json({ ok: true });
 });
 
@@ -1095,7 +1161,7 @@ app.get('/api/public/share/:id/file', async (req, res) => {
 
 // Página pública del enlace de descarga
 app.get('/s/:id', (req, res) => {
-  res.sendFile(path.join(APP_DIR, 'public', 'share.html'));
+  enviaPlantilla(res, 'share.html', 'html');
 });
 
 app.post('/api/uploadlinks', auth, (req, res) => {
@@ -1177,7 +1243,7 @@ app.post('/api/public/link/:id/upload', (req, res) => {
 
 // Página pública del enlace
 app.get('/u/:id', (req, res) => {
-  res.sendFile(path.join(APP_DIR, 'public', 'upload.html'));
+  enviaPlantilla(res, 'upload.html', 'html');
 });
 
 // --- Descargar archivo ---
@@ -1852,7 +1918,10 @@ app.post('/api/batch', auth, async (req, res) => {
           nuevo = nuevo.replace(/[\\/]/g, '-').trim() || nombreOriginal;
           let to = path.join(dir, nuevo + ext);
           if (to !== from && await exists(to)) to = await freeName(dir, nuevo + ext);
-          if (to !== from) await fsp.rename(from, to);
+          if (to !== from) {
+            await fsp.rename(from, to);
+            calendarMod.core.mueveOrigenArchivo(req.user, limpiaRel(rel), limpiaRel(path.posix.join(path.posix.dirname(limpiaRel(rel)), path.basename(to)))).catch(() => {});
+          }
           n++;
           hechos++;
         } catch (e) { errores.push({ path: rel, error: e.message }); }
@@ -1879,6 +1948,7 @@ app.post('/api/batch', auth, async (req, res) => {
           if (await exists(to)) throw new Error(`Ya existe "${name}" en el destino`);
           await fsp.mkdir(destDir, { recursive: true });
           await fsp.rename(from, to);
+          calendarMod.core.mueveOrigenArchivo(req.user, limpiaRel(rel), limpiaRel(path.posix.join(String(dest || ''), name))).catch(() => {});
         }
         done++;
       } catch (e) {
@@ -1959,6 +2029,7 @@ app.post('/api/move', auth, async (req, res) => {
       return res.status(409).json({ error: 'Ya existe un archivo con ese nombre' });
     } catch { /* destino libre, seguimos */ }
     await fsp.rename(from, to);
+    calendarMod.core.mueveOrigenArchivo(req.user, limpiaRel(req.body?.from), limpiaRel(req.body?.to)).catch(() => {});
     registrarActividad(req, 'renombrado', { from: req.body?.from, to: req.body?.to });
     res.json({ ok: true });
   } catch (err) {
@@ -2241,6 +2312,17 @@ function padreValido(items, parent) {
   return !!p && p.type === 'folder';
 }
 
+// Campos de presentación que comparten notas y carpetas: color, icono, etiquetas, fijada…
+const HEX6 = /^#[0-9a-f]{6}$/i;
+function aplicaDecoracion(item, b) {
+  if (b.color !== undefined) item.color = HEX6.test(String(b.color)) ? String(b.color).toLowerCase() : '';
+  if (b.icon !== undefined) item.icon = String(b.icon).slice(0, 8);
+  if (b.pinned !== undefined) item.pinned = !!b.pinned;
+  if (b.labels !== undefined) {
+    item.labels = [...new Set((Array.isArray(b.labels) ? b.labels : []).map(x => String(x).slice(0, 40)))].slice(0, 30);
+  }
+}
+
 app.get('/api/notes', auth, async (req, res) => {
   try { res.json(await readNotes(req.user)); }
   catch (err) { sendError(res, err); }
@@ -2275,8 +2357,11 @@ app.post('/api/notes', auth, async (req, res) => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
+    aplicaDecoracion(item, req.body);
+    if (req.body.calendar && req.body.calendar.date) item.cal = { date: req.body.calendar.date, time: req.body.calendar.time || '' };
     data.items.push(item);
-    if (type === 'note') await fsp.writeFile(notaFile(req.user, item.id), '');
+    if (type === 'note') await fsp.writeFile(notaFile(req.user, item.id), String(req.body.body || '').slice(0, NOTE_MAX_CHARS));
+    if (item.cal) await calendarMod.core.sincronizaOrigen(req.user, 'note', item.id, item.title, req.body.calendar);
     await writeNotes(req.user, data);
     res.json({ ok: true, item });
   } catch (err) { sendError(res, err); }
@@ -2306,8 +2391,13 @@ async function actualizarNota(req, res) {
       await fsp.writeFile(notaFile(req.user, item.id), String(body));
       item.chars = String(body).length;
     }
+    aplicaDecoracion(item, req.body || {});
+    const cal = (req.body || {}).calendar;
+    if (cal !== undefined) item.cal = cal && cal.date ? { date: cal.date, time: cal.time || '' } : undefined;
     item.updatedAt = Date.now();
     await writeNotes(req.user, data);
+    if (cal !== undefined) await calendarMod.core.sincronizaOrigen(req.user, 'note', item.id, item.title, cal);
+    else if (title !== undefined && item.cal) await calendarMod.core.renombraOrigen(req.user, 'note', item.id, item.title);
     res.json({ ok: true, item });
   } catch (err) { sendError(res, err); }
 }
@@ -2335,6 +2425,7 @@ app.delete('/api/notes/:id', auth, async (req, res) => {
       }
       // Se guarda el grupo entero para poder restaurar la rama completa de una vez
       data.trash.unshift({ ...f, deletedAt: cuando, grupo: item.id });
+      if (f.cal) await calendarMod.core.quitaOrigen(req.user, 'note', f.id);
     }
     const ids = new Set(fuera.map(f => f.id));
     data.items = data.items.filter(i => !ids.has(i.id));
@@ -2384,6 +2475,7 @@ app.post('/api/notes-trash/restore', auth, async (req, res) => {
       }
       data.items.push(limpio);
       idsVivos.add(limpio.id);
+      if (limpio.cal) await calendarMod.core.sincronizaOrigen(req.user, 'note', limpio.id, limpio.title, limpio.cal);
     }
     const ids = new Set(grupo.map(t => t.id));
     data.trash = (data.trash || []).filter(t => !ids.has(t.id));
@@ -2463,9 +2555,91 @@ app.get('/api/stats', auth, async (req, res) => {
   }
 });
 
-// SPA fallback
-app.get('*', (req, res) => {
-  res.sendFile(path.join(APP_DIR, 'public', 'index.html'));
+/* ---------------- Módulos: etiquetas, calendario y prompts ---------------- */
+const limpiaRel = (p) => String(p || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+
+app.use('/api/labels', auth, labelsMod.router);
+app.use('/api/calendar', auth, calendarMod.router);
+app.use('/api/prompts', auth, promptsMod.router);
+calendarMod.core.registraOrigen('prompt', (user, id, ev) => promptsMod.core.setCal(user, id, ev));
+calendarMod.core.registraOrigen('note', async (user, id, ev) => {
+  const data = await readNotes(user);
+  const it = data.items.find(i => i.id === id);
+  if (!it) return;
+  if (ev) it.cal = { date: ev.start.slice(0, 10), time: ev.allDay ? '' : ev.start.slice(11, 16) };
+  else delete it.cal;
+  await writeNotes(user, data);
+});
+labelsMod.registrarContador((user) => calendarMod.core.usoEtiquetas(user));
+labelsMod.registrarLimpieza((user, id) => calendarMod.core.quitaEtiqueta(user, id));
+labelsMod.registrarContador(async (user) => {
+  const uso = {};
+  (await readNotes(user)).items.forEach(i => (i.labels || []).forEach(l => { uso[l] = (uso[l] || 0) + 1; }));
+  return uso;
+});
+labelsMod.registrarLimpieza(async (user, id) => {
+  const data = await readNotes(user);
+  let tocado = false;
+  data.items.forEach(i => { if ((i.labels || []).includes(id)) { i.labels = i.labels.filter(l => l !== id); tocado = true; } });
+  if (tocado) await writeNotes(user, data);
 });
 
-app.listen(PORT, () => console.log(`KookyeCatCloud escuchando en puerto ${PORT}, datos en ${DATA_ROOT}`));
+// Pone, mueve o quita la fecha de calendario de archivos ya subidos. Con pocos archivos
+// cada uno tiene su evento; con muchos (una subida de fotos) se crea uno solo para la carpeta.
+app.post('/api/files/calendar', auth, async (req, res) => {
+  try {
+    const { paths, calendar } = req.body || {};
+    if (!Array.isArray(paths) || !paths.length || paths.length > 500) return res.status(400).json({ error: 'Selección no válida' });
+    const rels = [];
+    for (const rel of paths) {
+      const abs = userPath(req, rel);
+      await fsp.stat(abs);
+      rels.push(limpiaRel(rel));
+    }
+    if (!calendar || rels.length <= 3) {
+      for (const rel of rels) await calendarMod.core.sincronizaOrigen(req.user, 'file', rel, path.posix.basename(rel), calendar || null);
+    } else {
+      const carpetas = new Set(rels.map(r => path.posix.dirname(r)));
+      const dir = carpetas.size === 1 ? [...carpetas][0] : '.';
+      const ref = dir === '.' ? '' : dir;
+      const titulo = `${rels.length} archivos subidos${ref ? ' a ' + ref : ''}`;
+      await calendarMod.core.sincronizaOrigen(req.user, 'file', ref || '/', titulo, calendar);
+    }
+    res.json({ ok: true });
+  } catch (err) { sendError(res, err); }
+});
+
+// Búsqueda global: notas, prompts y eventos (los archivos ya tienen /api/search)
+app.get('/api/omni', auth, async (req, res) => {
+  try {
+    const q = String(req.query.q || '').toLowerCase().trim().slice(0, 100);
+    if (q.length < 2) return res.json({ notes: [], prompts: [], events: [] });
+    const data = await readNotes(req.user);
+    const notes = [];
+    for (const it of data.items) {
+      if (notes.length >= 20) break;
+      if (it.title.toLowerCase().includes(q)) { notes.push({ id: it.id, title: it.title, type: it.type }); continue; }
+      if (it.type === 'note') {
+        try {
+          const body = await fsp.readFile(notaFile(req.user, it.id), 'utf8');
+          if (body.toLowerCase().includes(q)) notes.push({ id: it.id, title: it.title, type: it.type });
+        } catch {}
+      }
+    }
+    const [prompts, events] = await Promise.all([
+      promptsMod.core.buscar(req.user, q),
+      calendarMod.core.buscar(req.user, q),
+    ]);
+    res.json({ notes, prompts, events: events.map(e => ({ id: e.id, title: e.title, start: e.start, allDay: e.allDay, calendarId: e.calendarId })) });
+  } catch (err) { sendError(res, err); }
+});
+
+// SPA fallback
+app.get('*', (req, res) => {
+  enviaPlantilla(res, 'index.html', 'html');
+});
+
+root.use(BASE_PATH || '/', app);
+
+root.listen(PORT, () => console.log(
+  `KookyeCatCloud escuchando en puerto ${PORT}${BASE_PATH ? `, bajo ${BASE_PATH}/` : ''}, datos en ${DATA_ROOT}`));

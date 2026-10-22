@@ -1,4 +1,5 @@
 'use strict';
+const BASE = (document.querySelector('meta[name="kcc-base"]') || {}).content || '';
 
 // Página pública de un enlace de descarga: /s/<id>
 const $ = (id) => document.getElementById(id);
@@ -59,7 +60,7 @@ const isVid = (n) => /\.(mp4|m4v|webm|mov|mkv|ogv)$/i.test(n);
 --------------------------------------------------------------- */
 async function cargar() {
   try {
-    const res = await fetch('/api/public/share/' + qs(linkId));
+    const res = await fetch(BASE + '/api/public/share/' + qs(linkId));
     const data = await res.json();
     $('cargando').hidden = true;
     if (!res.ok) { aviso(data.error || 'Este enlace no es válido', 'err'); return; }
@@ -96,7 +97,7 @@ async function cargar() {
 
 async function descargar() {
   clavePw = $('clave').value;
-  const url = '/api/public/share/' + qs(linkId) + '/download' +
+  const url = BASE + '/api/public/share/' + qs(linkId) + '/download' +
     (info.protegido ? '?pw=' + qs(clavePw) : '');
 
   if (info.protegido) {
@@ -133,7 +134,7 @@ function galUrl(accion, extra) {
   if (galSub) p.set('sub', galSub);
   if (info.protegido) p.set('pw', clavePw);
   if (extra) for (const k in extra) p.set(k, extra[k]);
-  return `/api/public/share/${qs(linkId)}/${accion}?${p.toString()}`;
+  return `${BASE}/api/public/share/${qs(linkId)}/${accion}?${p.toString()}`;
 }
 
 async function verGaleria() {

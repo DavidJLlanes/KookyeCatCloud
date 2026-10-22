@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js"
+    "check": "node --check server.js && node --check webdav.js && node --check lib/store.js && node --check lib/labels.js && node --check lib/calendar.js && node --check lib/prompts.js"
   },
   "dependencies": {
     "archiver": "^8.0.0",

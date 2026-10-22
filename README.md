@@ -44,7 +44,10 @@
 | 🎬 **Vistas previas** | Consulta fotos, vídeos, audio y documentos desde el navegador. |
 | 🔗 **Compartir fácilmente** | Crea enlaces de subida y descarga con caducidad y contraseña opcional para las descargas. |
 | 💻 **Acceso con WebDAV** | Conecta tu nube desde el explorador o una app compatible. |
-| 📝 **Notas y edición** | Guarda notas con autoguardado y edita archivos de texto. |
+| 📝 **Notas tipo Notion** | Editor de bloques con carpetas, colores, etiquetas y enlaces internos. |
+| 📅 **Calendario** | Mes, semana, día y agenda con calendarios de colores, repetición y recordatorios. |
+| ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables e imágenes de muestra en WebP. |
+| 🔎 **Todo conectado** | Buscador global (Ctrl+K) y fechas de calendario para lo que subes o creas. |
 | 🔐 **Control de tu cuenta** | Gestiona sesiones, verificación en dos pasos y tokens de aplicación. |
 
 Licencia [MIT](LICENSE): úsalo, modifícalo o redistribúyelo libremente, con o sin fines
@@ -144,6 +147,38 @@ server {
 
 `X-Forwarded-For` importa: el servidor tiene `trust proxy` activado y el limitador de
 intentos de login usa la IP real del cliente.
+
+### En qué dirección instalarla
+
+La app no lleva ningún dominio escrito: todo se calcula a partir de la dirección desde la que
+la abres, así que sirve igual en `djl.com.es`, en `davidjllanes.es` o en un subdominio como
+`cloud.davidjllanes.es`. Para esos casos basta el bloque de Nginx de arriba cambiando
+`server_name` (y el certificado).
+
+Para colgarla de una **subcarpeta** (`davidjllanes.es/cloud`) define el prefijo en el `.env`:
+
+```ini
+BASE_PATH=/cloud
+```
+
+y en el `server` de ese dominio añade un `location` que **conserve** el prefijo (sin barra
+final en `proxy_pass`):
+
+```nginx
+    location /cloud/ {
+        proxy_pass http://127.0.0.1:4000;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location = /cloud { return 301 /cloud/; }
+```
+
+Con `BASE_PATH` la app, el manifest de la PWA, el service worker, la cookie de sesión, los
+enlaces compartidos (`/cloud/s/…`, `/cloud/u/…`) y WebDAV (`/cloud/dav/`) cuelgan todos de
+ese prefijo. Fuera de él el servidor responde 404. Cada instalación necesita su propio
+proceso, puerto y `DATA_DIR`.
 
 ## Miniaturas
 
@@ -312,19 +347,111 @@ Dos cosas de Windows que conviene saber: exige HTTPS con certificado válido par
 básica (aquí lo hay), y trae un límite de 50 MB por descarga que se sube en el registro
 (`HKLM\SYSTEM\CurrentControlSet\Services\WebClient\Parameters\FileSizeLimitInBytes`).
 
-## Bloc de notas
+## Espacio de trabajo: notas, calendario y prompts
 
-Carpetas anidadas sin límite de profundidad y notas de texto, con autoguardado. Vive en
-`<carpeta del usuario>/.notes/`: la estructura en `index.json` y el cuerpo de cada nota en su
-propio `.md`, así una nota larga no engorda el índice y el contenido sigue siendo texto plano
-recuperable a mano. No aparece en el explorador ni en WebDAV.
+Tres módulos que comparten **etiquetas de color**, **fechas de calendario** y el **buscador
+global**. Todo lo que subes o creas puede llevar una fecha, y esa fecha aparece como evento
+en el calendario con un enlace de vuelta al elemento.
 
-Las notas eliminadas van a `.notes/trash/` y se restauran con su rama entera: borrar una carpeta
-y recuperarla devuelve sus subcarpetas y sus notas con el contenido intacto. Caducan a los mismos
-`TRASH_TTL_DAYS` que los archivos.
+| Módulo | Qué guarda | Dónde |
+| --- | --- | --- |
+| Notas | Un `.md` por nota + `index.json` con la estructura | `<usuario>/.notes/` |
+| Calendario | Calendarios, eventos y tareas | `<usuario>/.kcc/calendar.json` |
+| Prompts | Un `.json` por prompt + imágenes WebP | `<usuario>/.kcc/prompts/` |
+| Etiquetas | Lista de etiquetas con color | `<usuario>/.kcc/labels.json` |
 
+Todo está oculto al explorador de archivos y a WebDAV (son carpetas con punto). Para las
+copias de seguridad basta con respaldar `DATA_DIR`.
+
+### Etiquetas de color
+
+Se escriben donde haga falta (nota, prompt, evento) y se crean al vuelo con Enter. Son las
+mismas en todas partes: renombrar una o cambiarle el color lo cambia en todos los módulos a la
+vez, y borrarla la quita de todo lo que la usaba. Se gestionan desde el menú “⋯” de Prompts, el
+panel de etiquetas del Calendario o el buscador (Ctrl+K → “Gestionar etiquetas”).
+
+### Buscador global (Ctrl+K)
+
+Un solo cuadro que busca en archivos, notas (título y contenido), prompts y eventos, y que
+también crea cosas (“Nuevo prompt”, “Nuevo evento”…) y salta entre secciones. Se abre con
+**Ctrl+K** (⌘K en Mac) o desde el botón de la barra lateral.
+
+### Fecha en el calendario
+
+- **Al subir archivos**: en la barra de subida hay un interruptor *“Poner fecha de subida en
+  el calendario”*. Con pocos archivos cada uno tiene su evento; con una subida grande se crea
+  un solo evento para la carpeta. El interruptor se recuerda; la fecha vuelve a ser “hoy” en
+  cada subida.
+- **En un archivo ya subido**: menú del archivo → *“Fecha en el calendario…”* (poner,
+  cambiar o quitar). Si el archivo se renombra o se mueve, el evento lo sigue; si va a la
+  papelera, el evento desaparece.
+- **En un prompt o una nota**: interruptor en el editor / propiedades de la nota.
+- **Desde el calendario**: mover un evento de un prompt o una nota (arrastrándolo o
+  editándolo) actualiza la fecha en su ficha, y borrarlo la quita de la ficha. Pulsar el
+  origen en el evento abre el prompt, la nota o la carpeta del archivo.
+
+Los eventos nacidos de un origen van a calendarios de sistema (*Prompts*, *Notas*,
+*Archivos*) que se pueden recolorear o ocultar, pero no borrar.
+
+## Calendario
+
+Vistas **mes, semana, día y agenda**; varios calendarios con color; eventos de día completo,
+multidía y **tareas** con casilla; **repetición** (diaria, semanal con días, mensual, anual,
+hasta una fecha o N veces) y edición de “solo este evento” o “todos”; **recordatorios** (avisos
+en la propia app y notificación del navegador si das permiso); lugar, descripción, etiquetas y
+color propio por evento.
+
+- **Arrastrar** una pastilla en la vista mes la mueve de día; en semana/día se arrastra para
+  mover (también a otro día), con el borde inferior para cambiar la duración, y arrastrando en
+  un hueco vacío se crea un evento con ese rango.
+- Las fechas se guardan **sin zona horaria**, tal y como las ves: un evento “a las 9:00” sigue
+  siendo a las 9:00 aunque cambie el horario de verano.
+- Mini-calendario lateral con puntos en los días con eventos, filtro por etiquetas y búsqueda.
+
+## Prompts de IA
+
+Biblioteca pensada para guardar muchos prompts (aguanta decenas de miles: el índice vive en
+memoria y cada prompt es un archivo propio).
+
+- **Clasificación**: categorías en **árbol** (con emoji y color), **listas** (agrupan prompts de
+  cualquier categoría: un proyecto, un cliente), etiquetas de color, **tipo** (imagen, texto,
+  código, vídeo, audio, agente), **estado** (borrador / probando / final / archivado), modelo o
+  herramienta, idioma, valoración de 1 a 5, favorito, fijado y color de tarjeta.
+- **Imágenes de muestra**: hasta **10 por prompt**. Se convierten a **WebP**, se reducen a
+  **1600 px** como máximo por el lado mayor y se genera una miniatura de 480 px. Se pueden
+  arrastrar, pegar (Ctrl+V), reordenar, elegir portada y poner pie de foto. Requiere `sharp`
+  (ver *Miniaturas*). Máximo 15 MB y 64 megapíxeles por imagen de origen.
+- **Variables**: escribe `{{así}}` en el texto y, al copiar, la app pide los valores y copia el
+  resultado ya relleno.
+- Prompt negativo, notas, parámetros (seed, steps, aspect ratio…) y fuente.
+- **Historial** de versiones del texto (las 30 últimas) para volver atrás.
+- **Vistas** en tarjetas, lista o **tablero por estado** (arrastrando entre columnas), orden por
+  fecha, título, valoración o uso, filtros combinables, **selección múltiple** con acciones en
+  lote y **papelera** con restauración.
+- **Importar / exportar** en JSON (hasta 5000 por importación), o pegando texto con prompts
+  separados por una línea `---`.
+
+## Notas (editor de bloques)
+
+Editor estilo Notion sobre las mismas carpetas y el mismo autoguardado de siempre.
+
+- **Bloques**: texto, títulos 1-3, listas con viñetas, numeradas y de tareas (anidables con
+  Tab), citas, código, avisos de colores y separadores. Escribe **`/`** para insertar, o usa
+  atajos de Markdown (`# `, `- `, `1. `, `[] `, `> `, tres comillas invertidas, `---`).
+- **Formato**: negrita, cursiva, tachado, resaltado, código y enlaces (barra flotante al
+  seleccionar, o Ctrl+B / I / E / K). Arrastra el asa ⠿ para reordenar bloques.
+- **Enlaces internos**: `/Enlazar un prompt` y `/Enlazar una nota` insertan un enlace que
+  abre el prompt o la nota.
+- **Propiedades**: icono (emoji), color, **fijar** arriba, etiquetas y **fecha en el
+  calendario**.
+- El contenido se guarda como **Markdown** en el mismo `.md`: las notas anteriores se abren
+  tal cual y todo sigue siendo texto recuperable a mano.
+
+Notas y carpetas anidadas sin límite de profundidad. Las notas eliminadas van a `.notes/trash/`
+y se restauran con su rama entera; caducan a los mismos `TRASH_TTL_DAYS` que los archivos.
 `NOTES_LIMIT` (5000) topa el número de elementos y `NOTE_MAX_CHARS` (500 000) el tamaño de una
-nota. Las rutas de notas aceptan hasta 2 MB de cuerpo, frente a los 100 kB del resto de la API.
+nota. Las rutas de notas, prompts y calendario aceptan hasta 2 MB de cuerpo (30 MB la
+importación de prompts), frente a los 100 kB del resto de la API.
 
 ## Papelera
 
@@ -472,6 +599,8 @@ Ver [.env.example](.env.example).
 
 Lo imprescindible: `DATA_DIR` (los archivos), `users.json` (las cuentas, incluye tokens de
 aplicación y el secreto de verificación en dos pasos de quien la tenga activada) y
-`.jwt-secret` (si se pierde, todas las sesiones abiertas se invalidan). `sessions.json` y
+`.jwt-secret` (si se pierde, todas las sesiones abiertas se invalidan). Los datos de notas,
+calendario, prompts y etiquetas viven dentro de `DATA_DIR` (carpetas `.notes` y `.kcc`), así que
+quedan cubiertos por la copia de `DATA_DIR`. `sessions.json` y
 `activity.log.jsonl` son prescindibles: perderlos solo borra el historial de sesiones/actividad,
 no cierra a nadie ni rompe nada.

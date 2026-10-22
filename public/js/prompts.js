@@ -1,0 +1,868 @@
+'use strict';
+/* ---------------------------------------------------------------
+   Prompts de IA: biblioteca con categorías (en árbol), listas, etiquetas de color, tipo,
+   estado, modelo, valoración, imágenes de muestra (WebP), variables {{así}}, historial,
+   papelera, importación/exportación y fecha vinculada al calendario.
+--------------------------------------------------------------- */
+(function () {
+  const KIND = {
+    imagen: ['Imagen', 'i-image'], texto: ['Texto', 'i-doc'], codigo: ['Código', 'i-bars'], video: ['Vídeo', 'i-play'],
+    audio: ['Audio', 'i-music'], agente: ['Agente', 'i-sparkle'], otro: ['Otro', 'i-stack'],
+  };
+  const STATUS = { borrador: 'Borrador', probando: 'Probando', final: 'Final', archivado: 'Archivado' };
+  const SORTS = [['updated', 'Modificados recientemente'], ['created', 'Más nuevos'], ['oldest', 'Más antiguos'], ['title', 'Título A-Z'],
+    ['rating', 'Mejor valorados'], ['uses', 'Más usados']];
+
+  const S = {
+    built: false, M: null, items: [], total: 0, page: 1, pages: 1, loading: 0,
+    q: { q: '', category: '', list: '', kind: '', status: '', model: '', fav: false, minRating: 0, images: '', cal: false, from: '', to: '', trash: false, sort: 'updated' },
+    labels: new Set(), view: 'grid', sel: new Set(), selMode: false, modelsAll: false,
+  };
+  try { S.view = localStorage.getItem('kcc-pr-view') || 'grid'; S.q.sort = localStorage.getItem('kcc-pr-sort') || 'updated'; } catch {}
+  const R = {};
+  const imgUrl = (pid, iid, thumb) => `${BASE}/api/prompts/${pid}/img/${iid}${thumb ? '?thumb=1' : ''}`;
+  const catBy = (id) => (S.M ? S.M.categories.find(c => c.id === id) : null);
+  const listBy = (id) => (S.M ? S.M.lists.find(c => c.id === id) : null);
+  const colorOf = (p) => p.color || (catBy(p.category) && catBy(p.category).color) || 'transparent';
+
+  /* ---------- Datos ---------- */
+  function params(page) {
+    const q = S.q;
+    return K.qs({
+      q: q.q, category: q.category, list: q.list, kind: q.kind, status: q.status, model: q.model,
+      fav: q.fav, minRating: q.minRating || '', images: q.images, cal: q.cal, from: q.from, to: q.to,
+      trash: q.trash, sort: q.sort, labels: [...S.labels].join(','), page, limit: S.view === 'board' ? 200 : 48,
+    });
+  }
+  async function loadMeta() {
+    S.M = await K.get('/api/prompts/meta');
+  }
+  async function load(append) {
+    const n = ++S.loading;
+    try {
+      if (!append) S.page = 1;
+      const [r, m] = await Promise.all([K.get('/api/prompts?' + params(append ? S.page + 1 : 1)), append ? Promise.resolve(S.M) : K.get('/api/prompts/meta')]);
+      if (n !== S.loading) return;
+      S.M = m;
+      if (append) { S.items.push(...r.items); S.page++; } else { S.items = r.items; S.page = 1; }
+      S.total = r.total; S.pages = r.pages;
+      if (!append) S.sel = new Set([...S.sel].filter(id => S.items.some(i => i.id === id)));
+    } catch (e) { K.fail(e); }
+    render();
+  }
+
+  /* ---------- Estructura ---------- */
+  function build() {
+    const v = $('view-prompts');
+    v.textContent = '';
+    const head = el('div', 'kv-head');
+    const t = el('div'); const h2 = el('h2', null, 'Prompts'); const sub = el('p', 'sub', ''); t.append(h2, sub);
+    const search = el('div', 'kv-search'); search.appendChild(icon('i-search'));
+    const si = el('input'); si.type = 'search'; si.placeholder = 'Buscar en títulos, textos, notas…  ( / )'; si.autocomplete = 'off'; search.appendChild(si);
+    const nuevo = el('button', 'btn primary'); nuevo.type = 'button'; nuevo.append(icon('i-plus'), el('span', 'lbl', 'Nuevo prompt'));
+    const mas = el('button', 'btn ghost icon'); mas.type = 'button'; mas.appendChild(icon('i-dots')); mas.title = 'Importar, exportar y más';
+    head.append(t, el('span', 'grow'), search, nuevo, mas);
+
+    const wrap = el('div', 'pr');
+    const rail = el('aside', 'pr-rail');
+    const main = el('section', 'pr-main');
+    const tools = el('div', 'pr-tools');
+    const sort = el('select'); SORTS.forEach(([v2, l]) => { const o = el('option', null, l); o.value = v2; sort.appendChild(o); }); sort.value = S.q.sort;
+    const seg = el('div', 'seg'); seg.style.width = 'auto';
+    for (const [id, ic, tt] of [['grid', 'i-grid', 'Tarjetas'], ['list', 'i-list', 'Lista'], ['board', 'i-columns', 'Tablero por estado']]) {
+      const b = el('button'); b.type = 'button'; b.dataset.v = id; b.title = tt; b.appendChild(icon(ic));
+      b.addEventListener('click', () => { S.view = id; try { localStorage.setItem('kcc-pr-view', id); } catch {} load(); });
+      seg.appendChild(b);
+    }
+    const filt = el('button', 'btn sm'); filt.type = 'button'; filt.append(icon('i-filter'), el('span', null, 'Filtros'));
+    const selb = el('button', 'btn sm'); selb.type = 'button'; selb.append(icon('i-check-square'), el('span', null, 'Seleccionar'));
+    const count = el('span', 'pr-count');
+    // En pantallas estrechas la barra de categorías se esconde tras este botón
+    const railBtn = el('button', 'btn sm pr-railbtn'); railBtn.type = 'button'; railBtn.append(icon('i-sidebar'), el('span', null, 'Categorías'));
+    railBtn.addEventListener('click', () => { wrap.classList.toggle('rail-open'); railBtn.classList.toggle('is-on'); });
+    tools.append(railBtn, sort, seg, filt, selb, count);
+    const active = el('div', 'pr-active');
+    const content = el('div', 'pr-content');
+    main.append(tools, active, content);
+    wrap.append(rail, main);
+    v.append(head, wrap);
+    const selbar = el('div', 'pr-selbar'); selbar.hidden = true; v.appendChild(selbar);
+    Object.assign(R, { head, sub, rail, content, active, count, sort, seg, si, selbar, selb, filt });
+
+    si.addEventListener('input', K.debounce(() => { S.q.q = si.value.trim(); load(); }, 220));
+    sort.addEventListener('change', () => { S.q.sort = sort.value; try { localStorage.setItem('kcc-pr-sort', sort.value); } catch {} load(); });
+    nuevo.addEventListener('click', () => openEditor(null));
+    mas.addEventListener('click', () => K.menu(mas, [
+      { label: 'Importar prompts…', icon: 'i-upload', onClick: openImport },
+      { label: 'Exportar todo (JSON)', icon: 'i-download', onClick: () => { location.href = BASE + '/api/prompts/export/all'; } },
+      '-', { label: 'Gestionar etiquetas…', icon: 'i-tag', onClick: () => K.manageLabels() },
+    ], { align: 'end' }));
+    filt.addEventListener('click', () => openFilters(filt));
+    selb.addEventListener('click', () => { S.selMode = !S.selMode; if (!S.selMode) S.sel.clear(); render(); });
+    document.addEventListener('keydown', (e) => {
+      if ($('view-prompts').hidden || e.target.closest('input,textarea,select,[contenteditable]') || e.ctrlKey || e.metaKey) return;
+      if (e.key === '/') { e.preventDefault(); si.focus(); }
+      else if (e.key === 'n' && !document.querySelector('.overlay')) { e.preventDefault(); openEditor(null); }
+    });
+    S.built = true;
+  }
+
+  /* ---------- Barra lateral ---------- */
+  function link({ emoji, ic, name, n, on, color, depth = 0, onClick, menu }) {
+    const b = el('div', 'pr-link' + (on ? ' is-on' : '') + (depth ? ' sub' + Math.min(depth, 2) : ''));
+    b.setAttribute('role', 'button'); b.tabIndex = 0;
+    if (color) b.style.setProperty('--c', color);
+    const em = el('span', 'em'); if (emoji) em.textContent = emoji; else if (ic) em.appendChild(icon(ic)); else { const d = el('span', 'k-dot'); d.style.setProperty('--c', color || '#64748b'); em.appendChild(d); }
+    b.append(em, el('span', 'nm', name));
+    if (n !== undefined) b.appendChild(el('span', 'n', String(n)));
+    if (menu) { const m = el('button', 'more'); m.type = 'button'; m.appendChild(icon('i-dots')); m.addEventListener('click', (e) => { e.stopPropagation(); menu(m); }); b.appendChild(m); }
+    b.addEventListener('click', onClick);
+    b.addEventListener('keydown', (e) => { if (e.key === 'Enter') onClick(); });
+    return b;
+  }
+  const resetNav = () => { Object.assign(S.q, { category: '', list: '', fav: false, images: '', trash: false, kind: '', status: '', model: '' }); };
+
+  function section(title, action) {
+    const s = el('div', 'pr-sec'); const h = el('h4'); h.appendChild(el('span', null, title));
+    if (action) { const b = el('button'); b.type = 'button'; b.appendChild(icon('i-plus')); b.title = action.title; b.addEventListener('click', action.fn); h.appendChild(b); }
+    const nav = el('div', 'pr-nav'); s.append(h, nav); return [s, nav];
+  }
+
+  function renderRail() {
+    const rail = R.rail; const f = S.M.facets; const q = S.q;
+    rail.textContent = '';
+    const noFilter = !q.category && !q.list && !q.fav && !q.images && !q.trash;
+
+    const [s1, n1] = section('Biblioteca');
+    n1.append(
+      link({ ic: 'i-sparkle', name: 'Todos los prompts', n: f.total, on: noFilter && !q.kind && !q.status && !q.model, onClick: () => { resetNav(); load(); } }),
+      link({ ic: 'i-star-fill', name: 'Favoritos', n: f.favorites, on: q.fav, onClick: () => { resetNav(); q.fav = true; load(); } }),
+      link({ ic: 'i-image', name: 'Con imágenes', n: f.withImages, on: q.images === '1' && !q.trash, onClick: () => { resetNav(); q.images = '1'; load(); } }),
+      link({ ic: 'i-inbox', name: 'Sin categoría', n: f.noCategory, on: q.category === '__none', onClick: () => { resetNav(); q.category = '__none'; load(); } }),
+      link({ ic: 'i-trash', name: 'Papelera', n: f.trash, on: q.trash, onClick: () => { resetNav(); q.trash = true; load(); } }),
+    );
+    rail.appendChild(s1);
+
+    // Categorías en árbol
+    const [s2, n2] = section('Categorías', { title: 'Nueva categoría', fn: () => editCategory(null) });
+    const pinta = (parent, depth) => {
+      S.M.categories.filter(c => (c.parent || '') === parent).forEach(c => {
+        const total = countTree(c.id);
+        n2.appendChild(link({
+          emoji: c.emoji, color: c.color, name: c.name, n: total, depth, on: q.category === c.id,
+          onClick: () => { const k = q.category === c.id; resetNav(); q.category = k ? '' : c.id; load(); },
+          menu: (a) => K.menu(a, [
+            { label: 'Editar…', icon: 'i-pencil', onClick: () => editCategory(c) },
+            { label: 'Añadir subcategoría…', icon: 'i-plus', onClick: () => editCategory(null, c.id) },
+            '-', { label: 'Borrar', icon: 'i-trash', danger: true, onClick: () => delMeta('categories', c) },
+          ], { align: 'end' }),
+        }));
+        pinta(c.id, depth + 1);
+      });
+    };
+    pinta('', 0);
+    if (!S.M.categories.length) n2.appendChild(el('p', 'k-faint', 'Crea tu primera categoría con +')).style.cssText = 'font-size:12.5px;padding:4px 8px';
+    rail.appendChild(s2);
+
+    // Listas
+    const [s3, n3] = section('Listas', { title: 'Nueva lista', fn: () => editList(null) });
+    S.M.lists.forEach(l => n3.appendChild(link({
+      emoji: l.emoji || '📌', color: l.color, name: l.name, n: f.list[l.id] || 0, on: q.list === l.id,
+      onClick: () => { const k = q.list === l.id; resetNav(); q.list = k ? '' : l.id; load(); },
+      menu: (a) => K.menu(a, [{ label: 'Editar…', icon: 'i-pencil', onClick: () => editList(l) }, '-', { label: 'Borrar', icon: 'i-trash', danger: true, onClick: () => delMeta('lists', l) }], { align: 'end' }),
+    })));
+    if (!S.M.lists.length) { const p = el('p', 'k-faint', 'Agrupa prompts de un proyecto con una lista'); p.style.cssText = 'font-size:12.5px;padding:4px 8px'; n3.appendChild(p); }
+    rail.appendChild(s3);
+
+    // Tipo
+    const [s4, n4] = section('Tipo');
+    Object.entries(KIND).forEach(([k, [name, ic]]) => { if (f.kind[k]) n4.appendChild(link({ ic, name, n: f.kind[k], on: q.kind === k, onClick: () => { q.kind = q.kind === k ? '' : k; load(); } })); });
+    if (n4.children.length) rail.appendChild(s4);
+
+    // Estado
+    const [s5, n5] = section('Estado');
+    Object.entries(STATUS).forEach(([k, name]) => { if (f.status[k]) n5.appendChild(link({ name, n: f.status[k], color: { borrador: '#94a3b8', probando: '#f59e0b', final: '#22c55e', archivado: '#64748b' }[k], on: q.status === k, onClick: () => { q.status = q.status === k ? '' : k; load(); } })); });
+    if (n5.children.length) rail.appendChild(s5);
+
+    // Modelo
+    const modelos = Object.entries(f.model).sort((a, b) => b[1] - a[1]);
+    if (modelos.length) {
+      const [s6, n6] = section('Modelo / herramienta');
+      (S.modelsAll ? modelos : modelos.slice(0, 8)).forEach(([m, n]) => n6.appendChild(link({ ic: 'i-server', name: m, n, on: q.model === m, onClick: () => { q.model = q.model === m ? '' : m; load(); } })));
+      if (modelos.length > 8) { const b = el('button', 'btn ghost tiny', S.modelsAll ? 'Ver menos' : `Ver ${modelos.length - 8} más`); b.type = 'button'; b.style.margin = '4px 0 0 6px'; b.addEventListener('click', () => { S.modelsAll = !S.modelsAll; renderRail(); }); n6.appendChild(b); }
+      rail.appendChild(s6);
+    }
+
+    // Etiquetas
+    const used = K.labels.list.filter(l => f.label[l.id]);
+    if (used.length) {
+      const s7 = el('div', 'pr-sec'); const h = el('h4'); h.appendChild(el('span', null, 'Etiquetas'));
+      const g = el('button'); g.type = 'button'; g.appendChild(icon('i-pencil')); g.title = 'Gestionar etiquetas'; g.addEventListener('click', () => K.manageLabels()); h.appendChild(g);
+      const ch = el('div', 'k-chips'); ch.style.padding = '2px 4px 4px';
+      used.forEach(l => {
+        const c = K.labelChip(l, { onClick: () => { if (S.labels.has(l.id)) S.labels.delete(l.id); else S.labels.add(l.id); load(); } });
+        c.append(el('span', null, ' ' + f.label[l.id])); c.lastChild.style.opacity = '.6';
+        if (S.labels.size && !S.labels.has(l.id)) c.classList.add('is-off');
+        ch.appendChild(c);
+      });
+      s7.append(h, ch); rail.appendChild(s7);
+    }
+  }
+  function countTree(id) {
+    const ids = new Set([id]); let grow = true;
+    while (grow) { grow = false; for (const c of S.M.categories) if (c.parent && ids.has(c.parent) && !ids.has(c.id)) { ids.add(c.id); grow = true; } }
+    let n = 0; ids.forEach(i => { n += S.M.facets.category[i] || 0; }); return n;
+  }
+
+  async function editCategory(c, parent) {
+    const nm = el('input'); nm.value = c ? c.name : ''; nm.maxLength = 60; nm.placeholder = 'Nombre';
+    const em = el('button', 'btn'); em.type = 'button'; let emoji = c ? c.emoji : '📁'; em.textContent = emoji || '＋'; em.style.fontSize = '20px';
+    em.addEventListener('click', () => K.emojiPicker(em, (e) => { emoji = e; em.textContent = e || '＋'; }));
+    const col = K.colorPicker({ value: c ? c.color : '#8b5cf6' });
+    const par = el('select'); const o0 = el('option', null, 'Sin categoría padre'); o0.value = ''; par.appendChild(o0);
+    const add = (p, d) => S.M.categories.filter(x => (x.parent || '') === p).forEach(x => { if (!c || x.id !== c.id) { const o = el('option', null, '  '.repeat(d) + x.name); o.value = x.id; par.appendChild(o); add(x.id, d + 1); } });
+    add('', 0); par.value = c ? (c.parent || '') : (parent || '');
+    const w = el('div'); const r1 = el('div', 'k-row'); r1.style.marginBottom = '14px'; r1.append(em, nm); nm.style.flex = '1';
+    const f2 = el('div', 'field'); f2.append(el('span', null, 'Color'), col);
+    const f3 = el('label', 'field'); f3.append(el('span', null, 'Dentro de'), par);
+    w.append(r1, f2, f3);
+    K.modal({ title: c ? 'Editar categoría' : 'Nueva categoría', content: w, actions: [{ label: 'Cancelar' }, { label: 'Guardar', primary: true, onClick: async () => {
+      try {
+        const body = { name: nm.value, emoji, color: col.get(), parent: par.value };
+        if (c) await K.put('/api/prompts/categories/' + c.id, body); else await K.post('/api/prompts/categories', body);
+        K.bus.emit('prompts'); await load();
+      } catch (e) { K.fail(e); return false; }
+    } }] });
+    setTimeout(() => nm.focus(), 30);
+  }
+  function editList(l) {
+    const nm = el('input'); nm.value = l ? l.name : ''; nm.maxLength = 60; nm.placeholder = 'Nombre de la lista';
+    const em = el('button', 'btn'); em.type = 'button'; let emoji = l ? l.emoji : '📌'; em.textContent = emoji || '＋'; em.style.fontSize = '20px';
+    em.addEventListener('click', () => K.emojiPicker(em, (e) => { emoji = e; em.textContent = e || '＋'; }));
+    const col = K.colorPicker({ value: l ? l.color : '#06b6d4' });
+    const w = el('div'); const r1 = el('div', 'k-row'); r1.style.marginBottom = '14px'; r1.append(em, nm); nm.style.flex = '1';
+    const f2 = el('div', 'field'); f2.append(el('span', null, 'Color'), col); w.append(r1, f2);
+    K.modal({ title: l ? 'Editar lista' : 'Nueva lista', sub: 'Una lista agrupa prompts de cualquier categoría (un proyecto, un cliente…)', content: w, actions: [{ label: 'Cancelar' }, { label: 'Guardar', primary: true, onClick: async () => {
+      try {
+        const body = { name: nm.value, emoji, color: col.get() };
+        if (l) await K.put('/api/prompts/lists/' + l.id, body); else await K.post('/api/prompts/lists', body);
+        K.bus.emit('prompts'); await load();
+      } catch (e) { K.fail(e); return false; }
+    } }] });
+    setTimeout(() => nm.focus(), 30);
+  }
+  async function delMeta(tipo, x) {
+    if (!await K.confirm(tipo === 'categories' ? `Se borrará “${x.name}”. Sus prompts pasarán a la categoría superior.` : `Se borrará la lista “${x.name}”. Los prompts no se tocan.`, { ok: 'Borrar', danger: true })) return;
+    try {
+      await K.del(`/api/prompts/${tipo}/${x.id}`);
+      if (S.q.category === x.id) S.q.category = ''; if (S.q.list === x.id) S.q.list = '';
+      await load();
+    } catch (e) { K.fail(e); }
+  }
+
+  /* ---------- Filtros avanzados ---------- */
+  function openFilters(anchor) {
+    const q = S.q;
+    const w = el('div'); w.style.cssText = 'padding:6px;display:flex;flex-direction:column;gap:12px;width:290px';
+    const f1 = el('div'); f1.append(el('div', 'head', 'Valoración mínima'));
+    const st = K.stars(q.minRating, (v) => { q.minRating = v; load(); }); st.style.padding = '2px 8px'; f1.appendChild(st);
+    const f2 = el('div'); f2.appendChild(el('div', 'head', 'Imágenes'));
+    const sg = el('div', 'seg'); sg.style.cssText = 'width:auto;margin:2px 8px';
+    for (const [v, l] of [['', 'Todos'], ['1', 'Con'], ['0', 'Sin']]) { const b = el('button', q.images === v ? 'is-active' : '', l); b.type = 'button'; b.style.cssText = 'width:auto;padding:0 12px;font-size:12.5px'; b.addEventListener('click', () => { q.images = v; sg.querySelectorAll('button').forEach(x => x.classList.toggle('is-active', x === b)); load(); }); sg.appendChild(b); }
+    f2.appendChild(sg);
+    const f3 = el('div'); f3.appendChild(el('div', 'head', 'Fecha de creación'));
+    const r = el('div', 'k-row'); r.style.cssText = 'padding:0 8px;flex-wrap:nowrap';
+    const d1 = el('input'); d1.type = 'date'; d1.value = q.from; const d2 = el('input'); d2.type = 'date'; d2.value = q.to;
+    [d1, d2].forEach(i => { i.style.cssText = 'padding:7px 8px;font-size:13px'; });
+    d1.addEventListener('change', () => { q.from = d1.value; load(); }); d2.addEventListener('change', () => { q.to = d2.value; load(); });
+    r.append(d1, d2); f3.appendChild(r);
+    const f4 = el('div'); f4.style.padding = '0 8px';
+    const sw = el('label', 'k-switch'); const ck = el('input'); ck.type = 'checkbox'; ck.checked = q.cal; sw.append(ck, el('span', 'track'), el('span', null, 'Solo con fecha en el calendario'));
+    ck.addEventListener('change', () => { q.cal = ck.checked; load(); }); f4.appendChild(sw);
+    const clear = el('button', 'btn sm', 'Limpiar todos los filtros'); clear.type = 'button'; clear.addEventListener('click', () => { clearAll(); p.close(); });
+    w.append(f1, f2, f3, f4, clear);
+    const p = K.pop(anchor, w, { width: 310 });
+  }
+  function clearAll() {
+    Object.assign(S.q, { q: '', category: '', list: '', kind: '', status: '', model: '', fav: false, minRating: 0, images: '', cal: false, from: '', to: '', trash: false });
+    S.labels.clear(); R.si.value = ''; load();
+  }
+
+  /* ---------- Render ---------- */
+  function render() {
+    if (!S.built || !S.M) return;
+    const f = S.M.facets;
+    R.sub.textContent = S.q.trash ? `${f.trash} en la papelera` : `${f.total} prompt${f.total === 1 ? '' : 's'} guardado${f.total === 1 ? '' : 's'}`;
+    R.seg.querySelectorAll('button').forEach(b => b.classList.toggle('is-active', b.dataset.v === S.view));
+    R.selb.classList.toggle('is-on', S.selMode);
+    renderRail();
+    renderActive();
+    R.count.textContent = S.total === S.items.length ? `${S.total} resultado${S.total === 1 ? '' : 's'}` : `${S.items.length} de ${S.total}`;
+    const c = R.content; c.textContent = '';
+    if (S.q.trash && f.trash) {
+      const b = el('div', 'k-row'); b.style.marginBottom = '12px';
+      b.append(el('span', 'k-faint', 'Los prompts en la papelera se borran solos pasados unos días.'));
+      const v = el('button', 'btn sm danger', 'Vaciar papelera'); v.type = 'button'; v.addEventListener('click', async () => { if (await K.confirm('Se borrarán para siempre, con sus imágenes.', { ok: 'Vaciar', danger: true })) { try { await K.del('/api/prompts'); load(); } catch (e) { K.fail(e); } } });
+      b.appendChild(v); c.appendChild(b);
+    }
+    if (!S.items.length) { c.appendChild(emptyState()); renderSelbar(); return; }
+    if (S.view === 'list') {
+      const l = el('div', 'pr-list'); S.items.forEach(p => l.appendChild(row(p))); c.appendChild(l);
+    } else if (S.view === 'board') {
+      const b = el('div', 'pr-board');
+      Object.entries(STATUS).forEach(([k, name]) => {
+        const col = el('div', 'pr-col'); const items = S.items.filter(p => p.status === k);
+        const h = el('h4'); h.append(el('span', null, name), el('span', null, String(items.length))); col.appendChild(h);
+        items.forEach(p => col.appendChild(card(p)));
+        col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('drop'); });
+        col.addEventListener('dragleave', () => col.classList.remove('drop'));
+        col.addEventListener('drop', async (e) => {
+          e.preventDefault(); col.classList.remove('drop');
+          const id = e.dataTransfer.getData('text/plain'); const p = S.items.find(x => x.id === id);
+          if (!p || p.status === k) return;
+          try { await K.put('/api/prompts/' + id, { status: k }); K.bus.emit('prompts'); load(); } catch (er) { K.fail(er); }
+        });
+        b.appendChild(col);
+      });
+      c.appendChild(b);
+    } else {
+      const g = el('div', 'pr-grid'); S.items.forEach(p => g.appendChild(card(p))); c.appendChild(g);
+    }
+    if (S.view !== 'board' && S.items.length < S.total) {
+      const m = el('div', 'pr-more'); const b = el('button', 'btn', `Cargar más (${S.total - S.items.length})`); b.type = 'button'; b.addEventListener('click', () => load(true)); m.appendChild(b); c.appendChild(m);
+    }
+    renderSelbar();
+  }
+
+  function renderActive() {
+    const a = R.active; a.textContent = ''; const q = S.q;
+    const chip = (txt, fn, color) => { const c = el('span', 'k-chip btnlike'); c.style.setProperty('--c', color || '#6366f1'); c.append(el('span', null, txt), el('span', null, ' ×')); c.addEventListener('click', fn); a.appendChild(c); };
+    if (q.q) chip(`“${q.q}”`, () => { q.q = ''; R.si.value = ''; load(); });
+    if (q.category && q.category !== '__none' && catBy(q.category)) chip(`${catBy(q.category).emoji || ''} ${catBy(q.category).name}`, () => { q.category = ''; load(); }, catBy(q.category).color);
+    if (q.list && listBy(q.list)) chip(`Lista: ${listBy(q.list).name}`, () => { q.list = ''; load(); }, listBy(q.list).color);
+    if (q.kind) chip(`Tipo: ${KIND[q.kind][0]}`, () => { q.kind = ''; load(); });
+    if (q.status) chip(`Estado: ${STATUS[q.status]}`, () => { q.status = ''; load(); });
+    if (q.model) chip(`Modelo: ${q.model}`, () => { q.model = ''; load(); });
+    if (q.minRating) chip(`★ ${q.minRating}+`, () => { q.minRating = 0; load(); }, '#f59e0b');
+    if (q.images) chip(q.images === '1' ? 'Con imágenes' : 'Sin imágenes', () => { q.images = ''; load(); });
+    if (q.cal) chip('En el calendario', () => { q.cal = false; load(); }, '#8b5cf6');
+    if (q.from || q.to) chip(`${q.from || '…'} → ${q.to || '…'}`, () => { q.from = q.to = ''; load(); });
+    S.labels.forEach(id => { const l = K.labels.by[id]; if (l) chip('# ' + l.name, () => { S.labels.delete(id); load(); }, l.color); });
+  }
+
+  function emptyState() {
+    const e = el('div', 'k-empty'); const em = el('div', 'em'); em.appendChild(icon(S.q.trash ? 'i-trash' : 'i-sparkle')); e.appendChild(em);
+    const filtrado = S.q.q || S.q.category || S.q.list || S.q.kind || S.q.status || S.q.model || S.q.fav || S.q.minRating || S.q.images || S.q.cal || S.labels.size || S.q.from || S.q.to;
+    if (S.q.trash) { e.append(el('h3', null, 'La papelera está vacía'), el('p', null, 'Los prompts que borres aparecerán aquí.')); return e; }
+    if (filtrado) {
+      e.append(el('h3', null, 'Nada coincide con esos filtros'), el('p', null, 'Prueba a quitar alguno.'));
+      const b = el('button', 'btn', 'Limpiar filtros'); b.type = 'button'; b.addEventListener('click', clearAll); e.appendChild(b); return e;
+    }
+    e.append(el('h3', null, 'Tu biblioteca de prompts está vacía'), el('p', null, 'Guarda el primero con su texto, categoría, etiquetas e imágenes de muestra.'));
+    const b = el('button', 'btn primary', 'Crear el primer prompt'); b.type = 'button'; b.addEventListener('click', () => openEditor(null)); e.appendChild(b);
+    return e;
+  }
+
+  // Texto con las {{variables}} resaltadas, sin tocar innerHTML
+  function conVars(texto) {
+    const frag = document.createDocumentFragment();
+    texto.split(/(\{\{[^{}\n]{1,40}\}\})/g).forEach(parte => {
+      if (/^\{\{.*\}\}$/.test(parte)) frag.appendChild(el('span', 'var', parte)); else if (parte) frag.appendChild(document.createTextNode(parte));
+    });
+    return frag;
+  }
+
+  function card(p) {
+    const c = el('article', 'pr-card' + (S.sel.has(p.id) ? ' is-sel' : '') + (S.selMode ? ' sel-mode' : ''));
+    c.style.setProperty('--c', colorOf(p)); c.tabIndex = 0; c.draggable = S.view === 'board';
+    c.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', p.id));
+    const cover = el('div', 'pr-cover');
+    if (p.cover) { const im = el('img'); im.loading = 'lazy'; im.alt = ''; im.src = imgUrl(p.id, p.cover, true); cover.appendChild(im); }
+    else { const ph = el('div', 'ph'); ph.appendChild(icon((KIND[p.kind] || KIND.otro)[1])); cover.appendChild(ph); }
+    const badges = el('div', 'pr-badges'); badges.appendChild(el('span', 'pr-badge ' + p.status, STATUS[p.status] || p.status)); cover.appendChild(badges);
+    if (p.images.length > 1) { const n = el('span', 'nimg'); n.append(icon('i-image'), document.createTextNode(String(p.images.length))); cover.appendChild(n); }
+    if (p.pinned) { const pin = el('span', 'pr-pin'); pin.appendChild(icon('i-pin-fill')); cover.appendChild(pin); }
+    const fav = el('button', 'pr-fav' + (p.favorite ? ' on' : '')); fav.type = 'button'; fav.appendChild(icon(p.favorite ? 'i-star-fill' : 'i-star')); fav.title = 'Favorito';
+    fav.addEventListener('click', async (e) => { e.stopPropagation(); try { await K.put('/api/prompts/' + p.id, { favorite: !p.favorite }); p.favorite = !p.favorite; fav.classList.toggle('on', p.favorite); fav.replaceChildren(icon(p.favorite ? 'i-star-fill' : 'i-star')); S.M.facets.favorites += p.favorite ? 1 : -1; renderRail(); } catch (er) { K.fail(er); } });
+    cover.appendChild(fav);
+    const chk = el('div', 'pr-chk'); chk.appendChild(icon('i-check')); cover.appendChild(chk);
+    c.appendChild(cover);
+
+    const body = el('div', 'pr-body');
+    body.appendChild(el('h3', 'pr-title', p.title));
+    const sn = el('p', 'pr-snip'); sn.appendChild(conVars(p.snippet)); body.appendChild(sn);
+    const chips = el('div', 'k-chips');
+    const cat = catBy(p.category);
+    if (cat) { const ch = el('span', 'k-chip'); ch.style.setProperty('--c', cat.color); ch.textContent = `${cat.emoji || ''} ${cat.name}`.trim(); chips.appendChild(ch); }
+    p.labels.slice(0, 3).forEach(l => { const ch = K.labelChip(l); if (ch) chips.appendChild(ch); });
+    if (p.labels.length > 3) chips.appendChild(el('span', 'k-chip', `+${p.labels.length - 3}`));
+    if (chips.children.length) body.appendChild(chips);
+    const foot = el('div', 'pr-foot');
+    if (p.model) foot.appendChild(el('span', 'model', p.model));
+    if (p.rating) { const r = el('span', null, '★ ' + p.rating); r.style.color = '#fbbf24'; foot.appendChild(r); }
+    if (p.cal) { const cl = el('span'); cl.appendChild(icon('i-calendar')); cl.firstChild.style.cssText = 'width:12px;height:12px;vertical-align:-1px'; cl.append(' ' + K.d.short(K.d.parse(p.cal.date))); cl.title = 'En el calendario'; foot.appendChild(cl); }
+    foot.appendChild(el('span', 'grow'));
+    if (!S.q.trash) {
+      const cp = el('button', 'btn tiny pr-copy'); cp.type = 'button'; cp.append(icon('i-copy'), document.createTextNode('Copiar'));
+      cp.addEventListener('click', (e) => { e.stopPropagation(); copyPrompt(p.id); });
+      foot.appendChild(cp);
+    } else foot.appendChild(el('span', null, 'Borrado ' + K.ago(p.deletedAt)));
+    body.appendChild(foot);
+    c.appendChild(body);
+    activate(c, p);
+    return c;
+  }
+
+  function row(p) {
+    const r = el('article', 'pr-row'); r.style.setProperty('--c', colorOf(p)); r.tabIndex = 0;
+    const th = el('div', 'th'); if (p.cover) { const im = el('img'); im.loading = 'lazy'; im.alt = ''; im.src = imgUrl(p.id, p.cover, true); th.appendChild(im); } else th.appendChild(icon((KIND[p.kind] || KIND.otro)[1]));
+    const mid = el('div'); mid.style.minWidth = 0;
+    const h = el('h3'); h.append(document.createTextNode(p.title));
+    if (p.favorite) { const s = icon('i-star-fill'); s.style.cssText = 'width:14px;height:14px;color:#fbbf24;margin-left:6px;vertical-align:-1px'; h.appendChild(s); }
+    const sn = el('p'); sn.textContent = p.snippet.replace(/\s+/g, ' ');
+    const chips = el('div', 'k-chips'); chips.style.marginTop = '6px';
+    const cat = catBy(p.category); if (cat) { const ch = el('span', 'k-chip'); ch.style.setProperty('--c', cat.color); ch.textContent = `${cat.emoji || ''} ${cat.name}`.trim(); chips.appendChild(ch); }
+    p.labels.slice(0, 4).forEach(l => { const ch = K.labelChip(l); if (ch) chips.appendChild(ch); });
+    mid.append(h, sn, chips);
+    const side = el('div', 'side');
+    if (p.model) side.appendChild(el('span', 'k-chip', p.model));
+    side.appendChild(el('span', 'pr-badge ' + p.status, STATUS[p.status]));
+    if (p.rating) { const rr = el('span', null, '★ ' + p.rating); rr.style.color = '#fbbf24'; side.appendChild(rr); }
+    side.appendChild(el('span', null, K.ago(p.updatedAt)));
+    if (S.selMode) { const ck = el('span', 'cal-check' + (S.sel.has(p.id) ? ' on' : '')); ck.style.setProperty('--c', '#6366f1'); ck.appendChild(icon('i-check')); side.prepend(ck); }
+    r.append(th, mid, side);
+    activate(r, p);
+    return r;
+  }
+
+  function activate(node, p) {
+    const go = (e) => {
+      if (S.selMode) { e.preventDefault(); toggleSel(p.id, node); return; }
+      openDetail(p.id);
+    };
+    node.addEventListener('click', go);
+    node.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(e); });
+    node.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      K.menu({ x: e.clientX, y: e.clientY }, S.q.trash ? [
+        { label: 'Restaurar', icon: 'i-restore', onClick: () => bulk([p.id], 'restore') },
+        { label: 'Borrar para siempre', icon: 'i-trash', danger: true, onClick: () => purge([p.id]) },
+      ] : [
+        { label: 'Abrir', icon: 'i-external', onClick: () => openDetail(p.id) },
+        { label: 'Copiar prompt', icon: 'i-copy', onClick: () => copyPrompt(p.id) },
+        { label: 'Editar…', icon: 'i-pencil', onClick: () => openEditor(p.id) },
+        { label: 'Duplicar', icon: 'i-stack', onClick: () => duplicar(p.id) },
+        { label: p.pinned ? 'Desfijar' : 'Fijar arriba', icon: 'i-pin', onClick: () => patch(p.id, { pinned: !p.pinned }) },
+        '-', { label: 'Enviar a la papelera', icon: 'i-trash', danger: true, onClick: () => bulk([p.id], 'delete') },
+      ]);
+    });
+  }
+
+  /* ---------- Selección múltiple ---------- */
+  function toggleSel(id) { if (S.sel.has(id)) S.sel.delete(id); else S.sel.add(id); render(); }
+  function renderSelbar() {
+    const b = R.selbar; b.textContent = '';
+    if (!S.selMode || !S.sel.size) { b.hidden = true; return; }
+    b.hidden = false;
+    const ids = () => [...S.sel];
+    const btn = (label, ic, fn, cls) => { const x = el('button', 'btn sm' + (cls ? ' ' + cls : '')); x.type = 'button'; x.append(icon(ic), el('span', null, label)); x.addEventListener('click', (e) => fn(x, e)); b.appendChild(x); };
+    b.appendChild(el('span', 'n', `${S.sel.size} seleccionado${S.sel.size === 1 ? '' : 's'}`));
+    btn('Todos', 'i-check', () => { S.items.forEach(i => S.sel.add(i.id)); render(); });
+    if (S.q.trash) {
+      btn('Restaurar', 'i-restore', () => bulk(ids(), 'restore'));
+      btn('Borrar', 'i-trash', () => purge(ids()), 'danger');
+    } else {
+      btn('Categoría', 'i-folder', (x) => K.menu(x, [{ label: 'Sin categoría', onClick: () => bulk(ids(), 'category', '') }, '-', ...S.M.categories.map(c => ({ label: `${c.emoji || ''} ${c.name}`, dot: c.color, onClick: () => bulk(ids(), 'category', c.id) }))]));
+      btn('Etiqueta', 'i-tag', (x) => K.menu(x, K.labels.list.length ? [{ head: 'Añadir' }, ...K.labels.list.map(l => ({ label: l.name, dot: l.color, onClick: () => bulk(ids(), 'addLabel', l.id) })), '-', { head: 'Quitar' }, ...K.labels.list.map(l => ({ label: l.name, dot: l.color, onClick: () => bulk(ids(), 'removeLabel', l.id) }))] : [{ head: 'Aún no hay etiquetas' }]));
+      btn('Lista', 'i-stack', (x) => K.menu(x, S.M.lists.length ? S.M.lists.map(l => ({ label: `${l.emoji || ''} ${l.name}`, dot: l.color, onClick: () => bulk(ids(), 'addList', l.id) })) : [{ head: 'Crea una lista primero' }]));
+      btn('Estado', 'i-check-square', (x) => K.menu(x, Object.entries(STATUS).map(([k, n]) => ({ label: n, onClick: () => bulk(ids(), 'status', k) }))));
+      btn('Favorito', 'i-star', () => bulk(ids(), 'favorite', true));
+      btn('Papelera', 'i-trash', () => bulk(ids(), 'delete'), 'danger');
+    }
+    btn('', 'i-x', () => { S.sel.clear(); S.selMode = false; render(); }, 'ghost');
+  }
+  async function bulk(ids, op, value) {
+    try {
+      const r = await K.post('/api/prompts/bulk', { ids, op, value });
+      K.toast(`${r.changed} prompt${r.changed === 1 ? '' : 's'} actualizado${r.changed === 1 ? '' : 's'}`);
+      S.sel.clear(); K.bus.emit('prompts'); load();
+    } catch (e) { K.fail(e); }
+  }
+  async function purge(ids) {
+    if (!await K.confirm(`Se borrar${ids.length === 1 ? 'á este prompt' : 'án ' + ids.length + ' prompts'} para siempre, con sus imágenes.`, { ok: 'Borrar', danger: true })) return;
+    try { await K.post('/api/prompts/bulk', { ids, op: 'delete', purge: true }); S.sel.clear(); K.bus.emit('prompts'); load(); } catch (e) { K.fail(e); }
+  }
+  async function patch(id, campos) { try { await K.put('/api/prompts/' + id, campos); K.bus.emit('prompts'); load(); } catch (e) { K.fail(e); } }
+  async function duplicar(id) { try { await K.post(`/api/prompts/${id}/duplicate`); K.toast('Prompt duplicado'); K.bus.emit('prompts'); load(); } catch (e) { K.fail(e); } }
+
+  /* ---------- Copiar (con variables) ---------- */
+  const varsDe = (txt) => [...new Set((txt.match(/\{\{([^{}\n]{1,40})\}\}/g) || []).map(v => v.slice(2, -2).trim()))];
+  async function copyPrompt(id, full) {
+    try {
+      const p = full || await K.get('/api/prompts/' + id);
+      const vars = varsDe(p.body + ' ' + p.negative);
+      if (vars.length) { fillVars(p, vars); return; }
+      await finishCopy(p, p.body);
+    } catch (e) { K.fail(e); }
+  }
+  async function finishCopy(p, texto) {
+    const ok = await K.copy(texto);
+    K.toast(ok ? 'Prompt copiado' : 'No se pudo copiar');
+    try { await K.post(`/api/prompts/${p.id}/use`); } catch {}
+  }
+  function fillVars(p, vars) {
+    const w = el('div', 'var-form'); const ins = {};
+    const out = el('pre'); out.style.cssText = 'white-space:pre-wrap;margin:0;padding:12px;border-radius:12px;background:rgba(4,7,15,.6);border:1px solid var(--line);font:inherit;font-size:13.5px;max-height:200px;overflow:auto';
+    const calc = () => p.body.replace(/\{\{([^{}\n]{1,40})\}\}/g, (m, n) => (ins[n.trim()] && ins[n.trim()].value) || m);
+    vars.forEach(v => {
+      const l = el('label', 'field tight'); l.appendChild(el('span', null, v));
+      const i = el('input'); i.placeholder = `Valor de ${v}`; ins[v] = i; i.addEventListener('input', () => { out.textContent = calc(); }); l.appendChild(i); w.appendChild(l);
+    });
+    w.appendChild(el('div', 'k-faint', 'Resultado')); w.lastChild.style.fontSize = '11px'; w.appendChild(out); out.textContent = p.body;
+    K.modal({ title: 'Rellenar variables', sub: p.title, cls: 'wide', content: w, actions: [
+      { label: 'Copiar sin rellenar', onClick: () => finishCopy(p, p.body) },
+      { label: 'Copiar resultado', primary: true, onClick: () => finishCopy(p, calc()) },
+    ] });
+    setTimeout(() => ins[vars[0]].focus(), 40);
+  }
+
+  /* ---------- Ficha ---------- */
+  async function openDetail(id) {
+    let p;
+    try { p = await K.get('/api/prompts/' + id); } catch (e) { K.fail(e); return; }
+    const idx = S.items.findIndex(i => i.id === id);
+    const root = el('div', 'pd');
+    let cur = 0;
+    // Galería
+    const gal = el('div', 'pd-gal');
+    if (p.images.length) {
+      const main = el('div', 'pd-main'); const im = el('img'); im.alt = p.title; main.appendChild(im);
+      const cap = el('div', 'cap'); main.appendChild(cap);
+      const thumbs = el('div', 'pd-thumbs');
+      const show = (i) => {
+        cur = (i + p.images.length) % p.images.length; const x = p.images[cur];
+        im.src = imgUrl(p.id, x.id); cap.textContent = x.caption || ''; cap.hidden = !x.caption;
+        thumbs.querySelectorAll('button').forEach((b, k) => b.classList.toggle('on', k === cur));
+      };
+      p.images.forEach((x, i) => { const b = el('button'); b.type = 'button'; const t = el('img'); t.src = imgUrl(p.id, x.id, true); t.alt = ''; b.appendChild(t); b.addEventListener('click', () => show(i)); thumbs.appendChild(b); });
+      if (p.images.length > 1) {
+        for (const [cls, d, rot] of [['l', -1, true], ['r', 1, false]]) { const a = el('button', 'arrow ' + cls); a.type = 'button'; const ic = icon('i-caret'); if (rot) ic.style.transform = 'rotate(180deg)'; a.appendChild(ic); a.addEventListener('click', () => show(cur + d)); main.appendChild(a); }
+      }
+      im.addEventListener('click', () => window.open(imgUrl(p.id, p.images[cur].id), '_blank', 'noopener'));
+      gal.append(main); if (p.images.length > 1) gal.appendChild(thumbs);
+      show(Math.max(0, p.images.findIndex(x => x.id === p.cover)));
+    } else {
+      const e = el('div', 'k-empty'); const em = el('div', 'em'); em.appendChild(icon((KIND[p.kind] || KIND.otro)[1])); e.append(em, el('p', null, 'Sin imágenes de muestra'));
+      if (!p.deletedAt) { const b = el('button', 'btn sm', 'Añadir imágenes'); b.type = 'button'; b.addEventListener('click', () => { m.close(); openEditor(p.id); }); e.appendChild(b); }
+      gal.appendChild(e);
+    }
+
+    // Información
+    const info = el('div', 'pd-info');
+    const top = el('div', 'k-row'); top.style.cssText = 'justify-content:space-between;align-items:flex-start;flex-wrap:nowrap';
+    const h2 = el('h2', null, p.title);
+    const x = el('button', 'btn ghost icon'); x.type = 'button'; x.appendChild(icon('i-x')); x.addEventListener('click', () => m.close());
+    top.append(h2, x); info.appendChild(top);
+
+    const chips = el('div', 'k-chips');
+    const cat = catBy(p.category); if (cat) { const c = el('span', 'k-chip btnlike'); c.style.setProperty('--c', cat.color); c.textContent = `${cat.emoji || ''} ${cat.name}`.trim(); c.addEventListener('click', () => { m.close(); resetNav(); S.q.category = cat.id; load(); }); chips.appendChild(c); }
+    const kc = el('span', 'k-chip'); kc.style.setProperty('--c', '#64748b'); kc.append(icon((KIND[p.kind] || KIND.otro)[1]), document.createTextNode((KIND[p.kind] || KIND.otro)[0])); kc.firstChild.style.cssText = 'width:12px;height:12px'; chips.appendChild(kc);
+    const sc = el('span', 'k-chip'); sc.style.setProperty('--c', { borrador: '#94a3b8', probando: '#f59e0b', final: '#22c55e', archivado: '#64748b' }[p.status]); sc.textContent = STATUS[p.status]; chips.appendChild(sc);
+    if (p.model) { const mc = el('span', 'k-chip'); mc.style.setProperty('--c', '#06b6d4'); mc.textContent = p.model; chips.appendChild(mc); }
+    p.lists.forEach(id2 => { const l = listBy(id2); if (l) { const c = el('span', 'k-chip btnlike'); c.style.setProperty('--c', l.color); c.textContent = `${l.emoji || '📌'} ${l.name}`; c.addEventListener('click', () => { m.close(); resetNav(); S.q.list = l.id; load(); }); chips.appendChild(c); } });
+    info.appendChild(chips);
+    if (p.labels.length) info.appendChild(K.labelChips(p.labels, { onClick: (l) => { m.close(); S.labels.clear(); S.labels.add(l.id); load(); } }));
+
+    const meta = el('div', 'pd-meta');
+    const st = K.stars(p.rating, async (v) => { try { await K.put('/api/prompts/' + p.id, { rating: v }); p.rating = v; K.bus.emit('prompts'); load(); } catch (e) { K.fail(e); } }, { readonly: !!p.deletedAt });
+    meta.appendChild(st);
+    const fav = el('span'); fav.style.cursor = 'pointer';
+    const pintaFav = () => { fav.replaceChildren(icon(p.favorite ? 'i-star-fill' : 'i-star'), document.createTextNode(p.favorite ? 'Favorito' : 'Marcar favorito')); fav.style.color = p.favorite ? '#fbbf24' : ''; };
+    pintaFav(); fav.addEventListener('click', async () => { try { await K.put('/api/prompts/' + p.id, { favorite: !p.favorite }); p.favorite = !p.favorite; pintaFav(); K.bus.emit('prompts'); load(); } catch (e) { K.fail(e); } });
+    if (!p.deletedAt) meta.appendChild(fav);
+    const dd = el('span'); dd.append(icon('i-clock'), document.createTextNode(`Creado ${K.d.short(new Date(p.createdAt))}`)); meta.appendChild(dd);
+    if (p.updatedAt - p.createdAt > 60000) { const u = el('span'); u.textContent = `Editado ${K.ago(p.updatedAt)}`; meta.appendChild(u); }
+    if (p.uses) { const u = el('span'); u.textContent = `Usado ${p.uses} vez${p.uses === 1 ? '' : 'ces'}`.replace('veces', 'veces'); meta.appendChild(u); }
+    info.appendChild(meta);
+
+    // Calendario
+    const calRow = el('div', 'k-row');
+    if (p.cal) {
+      const cb = el('button', 'btn sm'); cb.type = 'button'; cb.append(icon('i-calendar'), el('span', null, `En el calendario: ${K.d.short(K.d.parse(p.cal.date))}${p.cal.time ? ' ' + p.cal.time : ''}`));
+      cb.addEventListener('click', () => { m.close(); switchTab('calendar'); K.calendar.goto(K.d.parse(p.cal.date), 'month'); });
+      calRow.appendChild(cb);
+    }
+    if (!p.deletedAt) {
+      const cc = el('button', 'btn ghost sm'); cc.type = 'button'; cc.append(icon('i-pencil'), el('span', null, p.cal ? 'Cambiar fecha' : 'Añadir al calendario'));
+      cc.addEventListener('click', () => editCalDate(p, m));
+      calRow.appendChild(cc);
+    }
+    info.appendChild(calRow);
+
+    // Acciones
+    const acts = el('div', 'pd-actions');
+    if (p.deletedAt) {
+      const r = el('button', 'btn primary', 'Restaurar'); r.type = 'button'; r.addEventListener('click', async () => { m.close(); await bulk([p.id], 'restore'); });
+      const d = el('button', 'btn danger', 'Borrar para siempre'); d.type = 'button'; d.addEventListener('click', () => { m.close(); purge([p.id]); });
+      acts.append(r, d);
+    } else {
+      const cp = el('button', 'btn primary'); cp.type = 'button'; cp.append(icon('i-copy'), el('span', null, varsDe(p.body).length ? 'Copiar…' : 'Copiar prompt')); cp.addEventListener('click', () => copyPrompt(p.id, p));
+      const ed = el('button', 'btn'); ed.type = 'button'; ed.append(icon('i-pencil'), el('span', null, 'Editar')); ed.addEventListener('click', () => { m.close(); openEditor(p.id); });
+      const mo = el('button', 'btn ghost icon'); mo.type = 'button'; mo.appendChild(icon('i-dots'));
+      mo.addEventListener('click', () => K.menu(mo, [
+        { label: 'Duplicar', icon: 'i-stack', onClick: async () => { m.close(); await duplicar(p.id); } },
+        { label: p.pinned ? 'Desfijar' : 'Fijar arriba', icon: 'i-pin', onClick: async () => { m.close(); await patch(p.id, { pinned: !p.pinned }); } },
+        { label: 'Copiar con el negativo', icon: 'i-copy', onClick: async () => { await K.copy(p.body + (p.negative ? `\n\nNegative prompt: ${p.negative}` : '')); K.toast('Copiado'); } },
+        '-', { label: 'Enviar a la papelera', icon: 'i-trash', danger: true, onClick: async () => { m.close(); await bulk([p.id], 'delete'); } },
+      ], { align: 'end' }));
+      acts.append(cp, ed, mo);
+    }
+    info.appendChild(acts);
+
+    const bloque = (titulo, texto, cls) => {
+      const b = el('div', 'pd-blk ' + (cls || '')); const h = el('header'); h.appendChild(el('span', null, titulo));
+      const c = el('button', 'btn ghost tiny'); c.type = 'button'; c.append(icon('i-copy'), document.createTextNode('Copiar')); c.addEventListener('click', async () => { K.toast((await K.copy(texto)) ? 'Copiado' : 'No se pudo copiar'); }); h.appendChild(c);
+      const pre = el('pre'); pre.appendChild(conVars(texto)); b.append(h, pre); return b;
+    };
+    if (p.body) info.appendChild(bloque('Prompt', p.body));
+    if (p.negative) info.appendChild(bloque('Prompt negativo', p.negative, 'neg'));
+    const pk = Object.entries(p.params || {});
+    if (pk.length) { const b = el('div', 'pd-blk'); const h = el('header'); h.appendChild(el('span', null, 'Parámetros')); const dl = el('dl', 'pd-params'); pk.forEach(([k, v]) => dl.append(el('dt', null, k), el('dd', null, v))); b.append(h, dl); info.appendChild(b); }
+    if (p.notes) info.appendChild(bloque('Notas', p.notes));
+    if (p.source) { const a = /^https?:\/\//i.test(p.source) ? (() => { const l = el('a', null, p.source); l.href = p.source; l.target = '_blank'; l.rel = 'noopener noreferrer'; l.style.cssText = 'color:var(--accent-text);word-break:break-all'; return l; })() : el('span', null, p.source); const d = el('div', 'pd-meta'); d.append(icon('i-link'), document.createTextNode('Fuente: '), a); info.appendChild(d); }
+    if (p.versions && p.versions.length) {
+      const det = el('details'); const sm = el('summary', null, `Historial (${p.versions.length} versiones)`); sm.style.cssText = 'cursor:pointer;color:var(--muted);font-size:13px'; det.appendChild(sm);
+      const vl = el('div', 'pd-vers');
+      p.versions.forEach(v => { const b = el('button'); b.type = 'button'; b.append(el('span', null, v.title), el('span', 'k-faint', K.ago(v.at))); b.addEventListener('click', () => { m.close(); openEditor(p.id, { restore: v }); }); vl.appendChild(b); });
+      det.appendChild(vl); info.appendChild(det);
+    }
+    root.append(gal, info);
+    const m = K.modal({ cls: 'xl flush', content: root, bare: true });
+    // Flechas para pasar al anterior/siguiente de la lista
+    const nav = (e) => {
+      if (!document.body.contains(root) || e.target.closest('input,textarea')) { if (!document.body.contains(root)) document.removeEventListener('keydown', nav); return; }
+      if (!['ArrowLeft', 'ArrowRight'].includes(e.key) || idx < 0 || document.querySelectorAll('.overlay').length > 1) return;
+      const n = S.items[idx + (e.key === 'ArrowRight' ? 1 : -1)]; if (n) { m.close(); openDetail(n.id); }
+    };
+    document.addEventListener('keydown', nav);
+  }
+
+  function editCalDate(p, parentModal) {
+    const f = K.calField({ value: p.cal ? { date: p.cal.date, time: p.cal.time, calendarId: 'prompts' } : null, defaultCalendar: 'prompts', label: 'Mostrar en el calendario' });
+    K.modal({ title: 'Fecha en el calendario', sub: p.title, content: f, actions: [{ label: 'Cancelar' }, { label: 'Guardar', primary: true, onClick: async () => {
+      try { const v = f.get(); await K.put('/api/prompts/' + p.id, { calendar: v }); K.bus.emit('prompts'); K.bus.emit('calendar'); parentModal.close(); load(); openDetail(p.id); } catch (e) { K.fail(e); return false; }
+    } }] });
+  }
+
+  /* ---------- Editor ---------- */
+  async function openEditor(id, extra = {}) {
+    await Promise.all([K.loadLabels(), K.loadCalendars()]).catch(() => {});
+    let p = null;
+    if (id) { try { p = await K.get('/api/prompts/' + id); } catch (e) { K.fail(e); return; } }
+    const nuevo = !p;
+    if (extra.restore && p) { p = { ...p, title: extra.restore.title, body: extra.restore.body, negative: extra.restore.negative }; K.toast('Versión anterior cargada: pulsa Guardar para aplicarla'); }
+    const d = p || { title: '', body: '', negative: '', notes: '', kind: 'imagen', status: 'borrador', model: '', language: '', source: '', rating: 0, favorite: false, category: S.q.category && S.q.category !== '__none' ? S.q.category : '', labels: [...S.labels], lists: S.q.list ? [S.q.list] : [], params: {}, images: [], color: '', cal: null };
+
+    const root = el('div', 'pe-grid');
+    const left = el('div'); const right = el('div');
+    const fld = (label, node, tight) => { const l = el('label', 'field' + (tight ? ' tight' : '')); l.append(el('span', null, label), node); return l; };
+    const title = el('input'); title.value = d.title; title.maxLength = 200; title.placeholder = 'Nombre descriptivo del prompt';
+    title.style.cssText = 'font-size:18px;font-weight:650';
+    const body = el('textarea', 'pe-textarea'); body.value = d.body; body.placeholder = 'Escribe el prompt. Usa {{variable}} para huecos que rellenarás al copiar.'; body.rows = 9;
+    const tb = el('div', 'pe-toolbar');
+    const bv = el('button', 'btn tiny', '{{ }} Variable'); bv.type = 'button'; bv.addEventListener('click', () => { const s = body.selectionStart, e2 = body.selectionEnd; const sel = body.value.slice(s, e2) || 'variable'; body.setRangeText(`{{${sel}}}`, s, e2, 'select'); body.focus(); upd(); });
+    const cnt = el('span', 'k-faint'); cnt.style.cssText = 'font-size:12px;margin-left:auto;align-self:center';
+    const upd = () => { const v = varsDe(body.value); cnt.textContent = `${body.value.length} caracteres${v.length ? ` · ${v.length} variable${v.length === 1 ? '' : 's'}` : ''}`; };
+    body.addEventListener('input', upd); upd();
+    tb.append(bv, cnt);
+    const neg = el('textarea', 'pe-textarea'); neg.value = d.negative; neg.rows = 3; neg.style.minHeight = '70px'; neg.placeholder = 'Qué evitar (opcional)';
+    const notes = el('textarea'); notes.value = d.notes; notes.rows = 3; notes.placeholder = 'Resultados, trucos, qué funcionó…';
+    left.append(fld('Título', title), fld('Prompt', body, true), tb, fld('Prompt negativo', neg), fld('Notas', notes));
+
+    // Parámetros
+    const paramsBox = el('div', 'pe-params');
+    const paramsList = Object.entries(d.params || {});
+    const pintaParams = () => {
+      paramsBox.textContent = '';
+      paramsList.forEach((kv, i) => {
+        const r = el('div', 'pr-p'); const k = el('input'); k.placeholder = 'p. ej. ar'; k.value = kv[0]; const v = el('input'); v.placeholder = '16:9'; v.value = kv[1];
+        k.addEventListener('input', () => { kv[0] = k.value; }); v.addEventListener('input', () => { kv[1] = v.value; });
+        const x2 = el('button', 'btn ghost icon'); x2.type = 'button'; x2.appendChild(icon('i-x')); x2.addEventListener('click', () => { paramsList.splice(i, 1); pintaParams(); });
+        r.append(k, v, x2); paramsBox.appendChild(r);
+      });
+      const add = el('button', 'btn tiny'); add.type = 'button'; add.append(icon('i-plus'), document.createTextNode('Añadir parámetro')); add.addEventListener('click', () => { paramsList.push(['', '']); pintaParams(); });
+      paramsBox.appendChild(add);
+    };
+    pintaParams();
+    left.appendChild(fld('Parámetros (seed, steps, cfg, aspect ratio…)', paramsBox));
+
+    // Derecha: clasificación
+    const catSel = el('select'); const o0 = el('option', null, 'Sin categoría'); o0.value = ''; catSel.appendChild(o0);
+    const addCat = (par, dep) => S.M.categories.filter(c => (c.parent || '') === par).forEach(c => { const o = el('option', null, '  '.repeat(dep) + `${c.emoji || ''} ${c.name}`.trim()); o.value = c.id; catSel.appendChild(o); addCat(c.id, dep + 1); });
+    addCat('', 0); catSel.value = d.category || '';
+    const kindSel = el('select'); Object.entries(KIND).forEach(([k, [n]]) => { const o = el('option', null, n); o.value = k; kindSel.appendChild(o); }); kindSel.value = d.kind;
+    const statSel = el('select'); Object.entries(STATUS).forEach(([k, n]) => { const o = el('option', null, n); o.value = k; statSel.appendChild(o); }); statSel.value = d.status;
+    const model = el('input'); model.value = d.model; model.setAttribute('list', 'pr-models'); model.placeholder = 'Midjourney, ChatGPT, Claude…'; model.maxLength = 60;
+    const dl = el('datalist'); dl.id = 'pr-models'; S.M.models.forEach(x2 => { const o = el('option'); o.value = x2; dl.appendChild(o); });
+    const lang = el('input'); lang.value = d.language; lang.placeholder = 'es, en…'; lang.maxLength = 30;
+    const row2 = el('div', 'k-2'); row2.append(fld('Tipo', kindSel, true), fld('Estado', statSel, true));
+    const row3 = el('div', 'k-2'); row3.append(fld('Modelo / herramienta', model, true), fld('Idioma', lang, true));
+    const lp = K.labelPicker({ selected: d.labels });
+    const rating = d.rating; let rate = rating; const stars = K.stars(rate, (v) => { rate = v; });
+    let fav = !!d.favorite; const favSw = el('label', 'k-switch'); const favCk = el('input'); favCk.type = 'checkbox'; favCk.checked = fav; favSw.append(favCk, el('span', 'track'), el('span', null, 'Favorito')); favCk.addEventListener('change', () => { fav = favCk.checked; });
+    const color = K.colorPicker({ value: d.color || '', allowNone: true });
+    const src = el('input'); src.value = d.source; src.placeholder = 'https://… (de dónde lo sacaste)'; src.maxLength = 500;
+
+    // Listas
+    const listsBox = el('div', 'k-chips'); const listSel = new Set(d.lists || []);
+    const pintaListas = () => { listsBox.textContent = ''; S.M.lists.forEach(l => { const c = el('span', 'k-chip btnlike' + (listSel.has(l.id) ? '' : ' is-off')); c.style.setProperty('--c', l.color); c.textContent = `${l.emoji || '📌'} ${l.name}`; c.addEventListener('click', () => { if (listSel.has(l.id)) listSel.delete(l.id); else listSel.add(l.id); pintaListas(); }); listsBox.appendChild(c); }); if (!S.M.lists.length) listsBox.appendChild(el('span', 'k-faint', 'Aún no hay listas: crea una desde la barra lateral')); };
+    pintaListas();
+
+    // Calendario
+    const calF = K.calField({ value: d.cal ? { date: d.cal.date, time: d.cal.time, calendarId: 'prompts' } : null, defaultCalendar: 'prompts', label: 'Poner fecha de subida en el calendario', hint: 'Aparecerá como evento y podrás abrir el prompt desde el calendario.' });
+
+    right.append(fld('Categoría', catSel, true), row2, row3, fld('Etiquetas', lp, true), fld('Listas', listsBox, true));
+    const rr = el('div', 'k-row'); rr.style.margin = '4px 0 14px'; rr.append(stars, favSw); right.appendChild(rr);
+    right.append(fld('Color de la tarjeta', color, true), fld('Fuente', src, true), dl, fld('Calendario', calF, true));
+
+    // Imágenes
+    const imgs = (d.images || []).map(i => ({ ...i, key: i.id }));   // existentes
+    let cover = d.cover || (imgs[0] && imgs[0].id) || '';
+    const removed = [];
+    const maxI = S.M.limits.images;
+    const imgBox = el('div', 'pe-imgs');
+    let dragKey = null;
+    const addFiles = (files) => {
+      const arr = [...files].filter(f => /^image\//.test(f.type));
+      if (!arr.length) return;
+      const libre = maxI - imgs.length;
+      if (arr.length > libre) K.toast(`Máximo ${maxI} imágenes por prompt`);
+      arr.slice(0, Math.max(0, libre)).forEach(f => imgs.push({ key: 'n' + Math.random().toString(36).slice(2), file: f, url: URL.createObjectURL(f), caption: '' }));
+      pintaImgs();
+    };
+    const pintaImgs = () => {
+      imgBox.textContent = '';
+      imgs.forEach((im) => {
+        const t = el('div', 'pe-img' + (cover === im.key ? ' cover' : '')); t.draggable = true;
+        const i = el('img'); i.alt = ''; i.src = im.file ? im.url : imgUrl(d.id, im.id, true); t.appendChild(i);
+        const tools = el('div', 'tools');
+        const star = el('button'); star.type = 'button'; star.title = 'Usar como portada'; star.appendChild(icon(cover === im.key ? 'i-star-fill' : 'i-star')); star.addEventListener('click', () => { cover = im.key; pintaImgs(); });
+        const cap = el('button'); cap.type = 'button'; cap.title = 'Pie de foto'; cap.appendChild(icon('i-pencil')); cap.addEventListener('click', async () => { const v = await K.ask('Pie de foto', { value: im.caption || '', placeholder: 'Qué muestra esta imagen' }); if (v !== null) { im.caption = v; } });
+        const del = el('button'); del.type = 'button'; del.title = 'Quitar'; del.appendChild(icon('i-trash')); del.addEventListener('click', () => { imgs.splice(imgs.indexOf(im), 1); if (!im.file) removed.push(im.id); if (cover === im.key) cover = imgs[0] ? imgs[0].key : ''; pintaImgs(); });
+        tools.append(star, cap, del); t.appendChild(tools);
+        t.addEventListener('dragstart', (e) => { dragKey = im.key; e.dataTransfer.setData('text/plain', 'img'); });
+        t.addEventListener('dragover', (e) => { if (dragKey) { e.preventDefault(); t.classList.add('over'); } });
+        t.addEventListener('dragleave', () => t.classList.remove('over'));
+        t.addEventListener('drop', (e) => { if (!dragKey) return; e.preventDefault(); e.stopPropagation(); const a = imgs.findIndex(x => x.key === dragKey), b = imgs.indexOf(im); if (a >= 0 && a !== b) { const [mv] = imgs.splice(a, 1); imgs.splice(b, 0, mv); } dragKey = null; pintaImgs(); });
+        t.addEventListener('dragend', () => { dragKey = null; });
+        imgBox.appendChild(t);
+      });
+      if (imgs.length < maxI) {
+        const add = el('button', 'pe-add'); add.type = 'button'; add.append(icon('i-image-plus'), document.createTextNode(`${imgs.length}/${maxI}`));
+        const fi = el('input'); fi.type = 'file'; fi.accept = 'image/*'; fi.multiple = true; fi.hidden = true; fi.addEventListener('change', () => { addFiles(fi.files); fi.value = ''; });
+        add.addEventListener('click', () => fi.click());
+        add.addEventListener('dragover', (e) => { if (!dragKey) { e.preventDefault(); add.classList.add('drag'); } });
+        add.addEventListener('dragleave', () => add.classList.remove('drag'));
+        add.addEventListener('drop', (e) => { e.preventDefault(); add.classList.remove('drag'); addFiles(e.dataTransfer.files); });
+        imgBox.append(add, fi);
+      }
+    };
+    pintaImgs();
+    const imgNote = el('div', 'k-faint', S.M.canImages ? `Hasta ${maxI} imágenes. Se convierten a WebP y se reducen a ${S.M.limits.imageMax}px como máximo. Puedes arrastrarlas o pegarlas (Ctrl+V).` : 'El servidor no tiene "sharp": no se pueden subir imágenes.');
+    imgNote.style.cssText = 'font-size:11.5px;margin-top:6px';
+    const imgField = el('div', 'field'); imgField.append(el('span', null, 'Imágenes de muestra'), imgBox, imgNote);
+    right.insertBefore(imgField, right.firstChild);
+    root.addEventListener('paste', (e) => { const fs = [...(e.clipboardData ? e.clipboardData.files : [])]; if (fs.some(f => /^image\//.test(f.type))) { e.preventDefault(); addFiles(fs); } });
+    root.addEventListener('dragover', (e) => { if (!dragKey && e.dataTransfer.types.includes('Files')) e.preventDefault(); });
+    root.addEventListener('drop', (e) => { if (!dragKey && e.dataTransfer.files.length) { e.preventDefault(); addFiles(e.dataTransfer.files); } });
+
+    root.append(left, right);
+
+    const guardar = async (h) => {
+      if (!title.value.trim() && !body.value.trim()) { K.toast('Escribe al menos un título o el prompt'); return false; }
+      const params2 = {}; paramsList.forEach(([k, v]) => { if (k.trim()) params2[k.trim()] = v; });
+      const campos = {
+        title: title.value, body: body.value, negative: neg.value, notes: notes.value, category: catSel.value, kind: kindSel.value,
+        status: statSel.value, model: model.value, language: lang.value, source: src.value, rating: rate, favorite: fav,
+        labels: lp.get(), lists: [...listSel], color: color.get(), params: params2,
+      };
+      const cal = calF.get();
+      if (nuevo) { if (cal) campos.calendar = cal; } else campos.calendar = cal;   // al editar, null quita el evento
+      h.buttons.save.disabled = true;
+      try {
+        let pid = id;
+        if (nuevo) { const r = await K.post('/api/prompts', campos); pid = r.prompt.id; } else await K.put('/api/prompts/' + id, campos);
+        // Imágenes: primero las quitadas, luego las nuevas, y al final orden, pies y portada
+        for (const rid of removed) await K.del(`/api/prompts/${pid}/images/${rid}`);
+        const nuevas = imgs.filter(i => i.file);
+        let serverImgs = null;
+        if (nuevas.length) {
+          const fd = new FormData(); nuevas.forEach(i => fd.append('images', i.file, i.file.name));
+          const res = await api(`${BASE}/api/prompts/${pid}/images`, { method: 'POST', body: fd });
+          const j = await res.json(); if (!res.ok) throw new Error(j.error || 'No se pudieron subir las imágenes');
+          if (j.failed && j.failed.length) K.toast(`No se pudieron procesar: ${j.failed.join(', ')}`);
+          serverImgs = j.images;
+          const idsNuevos = serverImgs.slice(serverImgs.length - nuevas.length - (j.failed ? j.failed.length : 0)).map(x => x.id);
+          nuevas.forEach((n, k) => { if (idsNuevos[k]) { n.id = idsNuevos[k]; } });
+        }
+        if (imgs.length) {
+          const finalIds = imgs.map(i => i.id).filter(Boolean);
+          const caps = {}; imgs.forEach(i => { if (i.id) caps[i.id] = i.caption || ''; });
+          const cov = imgs.find(i => i.key === cover);
+          await K.put(`/api/prompts/${pid}/images`, { order: finalIds, captions: caps, cover: cov ? cov.id : '' });
+        }
+        imgs.forEach(i => { if (i.url) URL.revokeObjectURL(i.url); });
+        K.bus.emit('prompts'); if (cal || (p && p.cal)) K.bus.emit('calendar');
+        K.toast(nuevo ? 'Prompt guardado' : 'Cambios guardados');
+        await load();
+      } catch (e) { K.fail(e); h.buttons.save.disabled = false; return false; }
+    };
+    const m = K.modal({ title: nuevo ? 'Nuevo prompt' : 'Editar prompt', sub: nuevo ? 'Guarda tu prompt con todo su contexto' : '', cls: 'xl', content: root, dismiss: false,
+      actions: [{ label: 'Cancelar', onClick: async () => { if ((title.value !== d.title || body.value !== d.body) && !await K.confirm('Hay cambios sin guardar. ¿Descartarlos?', { ok: 'Descartar', danger: true })) return false; } },
+        { id: 'save', label: nuevo ? 'Guardar prompt' : 'Guardar cambios', primary: true, onClick: guardar }] });
+    if (nuevo) setTimeout(() => title.focus(), 40);
+  }
+
+  /* ---------- Importar ---------- */
+  function openImport() {
+    const w = el('div');
+    w.appendChild(el('p', 'k-muted', 'Importa un archivo JSON exportado desde aquí, o pega varios prompts separados por una línea con tres guiones (---).'));
+    w.lastChild.style.cssText = 'font-size:13.5px;margin:0 0 12px';
+    const fi = el('input'); fi.type = 'file'; fi.accept = '.json,application/json,.txt,.md';
+    const ta = el('textarea'); ta.rows = 8; ta.placeholder = 'Primer prompt…\n---\nSegundo prompt…';
+    const cat = el('select'); const o0 = el('option', null, 'Sin categoría'); o0.value = ''; cat.appendChild(o0); S.M.categories.forEach(c => { const o = el('option', null, c.name); o.value = c.name; cat.appendChild(o); });
+    const k = el('select'); Object.entries(KIND).forEach(([id2, [n]]) => { const o = el('option', null, n); o.value = id2; k.appendChild(o); });
+    const fR = el('div', 'k-2'); const a = el('label', 'field tight'); a.append(el('span', null, 'Categoría (pegado)'), cat); const b = el('label', 'field tight'); b.append(el('span', null, 'Tipo (pegado)'), k); fR.append(a, b);
+    const f1 = el('label', 'field'); f1.append(el('span', null, 'Archivo'), fi);
+    const f2 = el('label', 'field'); f2.append(el('span', null, 'O pegar texto'), ta);
+    w.append(f1, f2, fR);
+    K.modal({ title: 'Importar prompts', content: w, cls: 'wide', actions: [{ label: 'Cancelar' }, { label: 'Importar', primary: true, onClick: async () => {
+      try {
+        let lista = [];
+        if (fi.files[0]) {
+          const txt = await fi.files[0].text();
+          if (/\.json$/i.test(fi.files[0].name)) { const j = JSON.parse(txt); lista = Array.isArray(j) ? j : j.prompts || []; }
+          else lista = txt.split(/^\s*---\s*$/m).map(s => s.trim()).filter(Boolean).map(s => ({ title: s.split('\n')[0].slice(0, 80), body: s, kind: k.value, category: cat.value }));
+        }
+        if (ta.value.trim()) lista.push(...ta.value.split(/^\s*---\s*$/m).map(s => s.trim()).filter(Boolean).map(s => ({ title: s.split('\n')[0].slice(0, 80), body: s, kind: k.value, category: cat.value })));
+        if (!lista.length) { K.toast('No hay nada que importar'); return false; }
+        let total = 0;
+        for (let i = 0; i < lista.length; i += 1000) { const r = await K.post('/api/prompts/import', { prompts: lista.slice(i, i + 1000) }); total += r.created; }
+        K.toast(`${total} prompts importados`); K.bus.emit('prompts'); K.bus.emit('labels'); await load();
+      } catch (e) { K.fail(e); return false; }
+    } }] });
+  }
+
+  /* ---------- Registro ---------- */
+  K.registerView('prompts', {
+    async open() {
+      if (!S.built) build();
+      await K.loadLabels().catch(() => {});
+      load();
+    },
+    close() { S.selMode = false; S.sel.clear(); },
+  });
+  K.bus.on('labels', () => { if (S.built && !$('view-prompts').hidden) load(); });
+  K.openers.prompt = (id) => { switchTab('prompts'); setTimeout(() => openDetail(id), 60); };
+  K.prompts = { open: (id) => K.openers.prompt(id), newPrompt: () => { switchTab('prompts'); openEditor(null); } };
+})();
