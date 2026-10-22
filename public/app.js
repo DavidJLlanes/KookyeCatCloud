@@ -520,6 +520,7 @@ function conectaEventos() {
   const es = new EventSource(`${BASE}/api/events?cid=${encodeURIComponent(CID)}`, { withCredentials: true });
   LIVE.es = es;
   es.addEventListener('files', avisoDeCambio);
+  es.addEventListener('clip', () => { if (window.K && K.clip) K.clip.aviso(); });
   es.addEventListener('hola', () => { if (LIVE.abierta) avisoDeCambio(); LIVE.abierta = true; });   // al reconectar, por si se perdió algún aviso
   es.onerror = () => { if (es.readyState === 2) { LIVE.es = null; LIVE.abierta = false; } };          // cerrada del todo (p. ej. sin sesión)
 }
@@ -556,6 +557,11 @@ function showApp() {
   refresh();
   bloquearApp();
   reiniciarPinIdle();
+  // Viene del "Compartir" de Android o del atajo de la app: se abre directamente el portapapeles
+  if (location.hash === '#clip') {
+    try { history.replaceState(null, '', location.pathname + location.search); } catch { /* sin historial */ }
+    switchTab('clip');
+  }
 }
 
 async function checkSession() {
@@ -2024,6 +2030,30 @@ async function deleteSelected() {
 /* ---------------------------------------------------------------
    Papelera
 --------------------------------------------------------------- */
+/* Los días hasta el vaciado automático son un ajuste del usuario; valen para archivos, notas y prompts */
+const TRASH_OPC = [[0, 'Nunca'], [7, '7 días'], [14, '14 días'], [30, '30 días'], [60, '60 días'], [90, '90 días'], [180, '180 días']];
+function textoTrash(dias) {
+  return dias ? `Los elementos se borran solos pasados ${dias} días` : 'Los elementos no se borran solos: vacía la papelera cuando quieras';
+}
+function pintaAjusteTrash(dias) {
+  $('trash-note').textContent = textoTrash(dias);
+  const sel = $('trash-days');
+  if (!sel.options.length) {
+    TRASH_OPC.forEach(([v, n]) => sel.appendChild(new Option(n, String(v))));
+    sel.addEventListener('change', async () => {
+      try {
+        const res = await api(BASE + '/api/trash/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ days: Number(sel.value) }) });
+        const d = await res.json();
+        if (!res.ok) { showToast(d.error || 'No se pudo guardar'); return; }
+        $('trash-note').textContent = textoTrash(d.days);
+        showToast(d.days ? `Se vaciará solo tras ${d.days} días` : 'La papelera ya no se vaciará sola');
+        loadTrash();
+      } catch { showToast('Error de conexión'); }
+    });
+  }
+  sel.value = String(dias);
+}
+
 async function loadTrash() {
   const box = $('trash-list');
   box.className = 'list';
@@ -2032,7 +2062,7 @@ async function loadTrash() {
   try {
     const res = await api(BASE + '/api/trash');
     const data = await res.json();
-    $('trash-note').textContent = `Los elementos se borran solos pasados ${data.ttlDays} días`;
+    pintaAjusteTrash(data.ttlDays);
     box.textContent = '';
     if (!data.items.length) {
       box.className = '';
@@ -2669,7 +2699,7 @@ async function abrirPapeleraNotas() {
     const res = await api(BASE + '/api/notes-trash');
     const data = await res.json();
     NT.papelera = data.items || [];
-    $('notes-trash-sub').textContent = `Se borran solas pasados ${data.ttlDays} días`;
+    $('notes-trash-sub').textContent = data.ttlDays ? `Se borran solas pasados ${data.ttlDays} días` : 'No se borran solas';
     caja.textContent = '';
     // Solo se muestra el elemento raíz de cada borrado: sus hijos vuelven con él
     const grupos = NT.papelera.filter(t => t.id === t.grupo);

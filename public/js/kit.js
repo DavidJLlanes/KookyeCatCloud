@@ -425,8 +425,8 @@ K.open = function (tipo, ref, extra) {
   if (f) f(ref, extra);
 };
 K.registerView = (name, view) => { window.KCC.views[name] = view; };
-K.srcIcon = { prompt: 'i-sparkle', note: 'i-note', file: 'i-folder' };
-K.srcName = { prompt: 'Prompt', note: 'Nota', file: 'Archivo' };
+K.srcIcon = { prompt: 'i-sparkle', note: 'i-note', file: 'i-folder', contact: 'i-contact' };
+K.srcName = { prompt: 'Prompt', note: 'Nota', file: 'Archivo', contact: 'Contacto' };
 
 // Al iniciar sesión se precargan etiquetas y calendarios para que los selectores salgan al instante
 K.preload = function () { K.loadLabels().catch(() => {}); K.loadCalendars().catch(() => {}); };

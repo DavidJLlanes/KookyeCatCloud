@@ -17,6 +17,8 @@ const createEvents = require('./lib/events');
 const createLabels = require('./lib/labels');
 const createCalendar = require('./lib/calendar');
 const createPrompts = require('./lib/prompts');
+const createClip = require('./lib/clip');
+const { readJson, updateJson, kccDir } = require('./lib/store');
 const createContacts = require('./lib/contacts');
 const createNotesExtra = require('./lib/notes-extra');
 const createVersions = require('./lib/versions');
@@ -63,6 +65,9 @@ const THUMBS_DIR = process.env.THUMBS_DIR || path.join(APP_DIR, '.thumbs');
 const THUMB_SIZE = 480;
 const TRASH_DIR = '.trash';                                    // dentro de la carpeta de cada usuario
 const TRASH_TTL_DAYS = Number(process.env.TRASH_TTL_DAYS || 30);
+const TRASH_SWEEP_HOURS = Number(process.env.TRASH_SWEEP_HOURS || 6);   // cada cuánto se revisan las papeleras de todos
+// Días que aguanta cada usuario lo que borra (0 = nunca se vacía sola). Lo elige él en Papelera.
+const PAPELERA_OPCIONES = [0, 7, 14, 30, 60, 90, 180];
 const SEARCH_LIMIT = 300;
 const BATCH_LIMIT = 500;
 // Enlaces: de subida (otros te dejan archivos) y de descarga (mandas tú algo).
@@ -272,8 +277,9 @@ const calendarMod = createCalendar({
 const promptsMod = createPrompts({
   express, multer, sharp, userRoot, sendError, registrarActividad,
   calendar: calendarMod.core, labels: labelsMod,
+  papeleraDias: (user) => papeleraDias(user),
 });
-const contactsMod = createContacts({ express, sharp, userRoot, sendError, registrarActividad, labels: labelsMod });
+const contactsMod = createContacts({ express, sharp, userRoot, sendError, registrarActividad, labels: labelsMod, calendar: calendarMod.core });
 
 // Versiones de archivos de texto (se crea aquí porque WebDAV y las rutas de archivos la usan)
 const versionsMod = createVersions({
@@ -302,6 +308,13 @@ const vaultMod = createVault({
 
 // Avisos en directo a las pestañas abiertas (ver lib/events.js)
 const eventsMod = createEvents({ userRoot: (u) => userRoot(u) });
+
+// Portapapeles compartido entre dispositivos (texto y archivos temporales) y destino del "Compartir" de Android
+const clipMod = createClip({
+  express, multer, userRoot, sendError, registrarActividad, events: eventsMod,
+  resolveFor: (u, rel) => resolveFor(u, rel), freeName,
+  alCambiarArchivos: (user, dir, req) => eventsMod.cambio(dir, String(req.get('x-kcc-client') || '').slice(0, 40).replace(/[^\w-]/g, '')),
+});
 
 const root = express();
 root.set('trust proxy', 1); // detrás de Nginx: necesario para que req.ip sea la IP real
@@ -332,7 +345,7 @@ const jsonMedio = express.json({ limit: '2mb' });
 const jsonGrande = express.json({ limit: '30mb' });
 app.use((req, res, next) => {
   if (req.path === '/api/prompts/import') return jsonGrande(req, res, next);
-  if (/^\/api\/(notes|text|prompts|calendar|labels)(\/|$)/.test(req.path)) return jsonMedio(req, res, next);
+  if (/^\/api\/(notes|text|prompts|calendar|labels|clip)(\/|$)/.test(req.path)) return jsonMedio(req, res, next);
   return jsonPequeno(req, res, next);
 });
 app.use(cookieParser());
@@ -372,7 +385,7 @@ function enviaPlantilla(res, nombre, tipo) {
     texto = fs.readFileSync(archivo, 'utf8');
     if (BASE_PATH) {
       texto = nombre.endsWith('.json')
-        ? texto.replace(/("(?:id|start_url|scope|src)": ")\//g, `$1${BASE_PATH}/`)
+        ? texto.replace(/("(?:id|start_url|scope|src|action|url)": ")\//g, `$1${BASE_PATH}/`)
         : texto.replace(/((?:href|src)=")\/(?!\/)/g, `$1${BASE_PATH}/`);
     }
     if (nombre.endsWith('.html')) {
@@ -448,6 +461,29 @@ app.use('/api', (req, res, next) => {
   }
   next();
 });
+
+/* Destino del menú "Compartir" de Android (Web Share Target, ver manifest.json). El navegador manda un POST con
+   multipart: título, texto, enlace y archivos. Todo va al portapapeles compartido; luego se abre la app ahí.
+   Si no hay sesión se manda a la portada (no se puede guardar nada a nombre de nadie). */
+app.post('/share-target',
+  (req, res, next) => auth(req, { status: () => ({ json: () => res.redirect(303, `${BASE_PATH}/`) }) }, next),
+  clipMod.core.sube,
+  async (req, res) => {
+    try {
+      const b = req.body || {};
+      const partes = [b.title, b.text, b.url].map(x => String(x || '').trim()).filter(Boolean);
+      // Muchas apps repiten el enlace dentro del texto: no se pone dos veces
+      const texto = partes.filter((p, i) => !partes.some((q, j) => j !== i && q.length > p.length && q.includes(p))).join('\n');
+      await clipMod.core.agrega(req.user, { texto, archivos: clipMod.core.deMulter(req.files), device: clipMod.core.dispositivoDe(req.get('user-agent')) });
+      clipMod.core.avisa(req.user, null);
+      registrarActividad(req, 'compartir_android', { files: (req.files || []).length });
+      res.redirect(303, `${BASE_PATH}/#clip`);
+    } catch (err) {
+      await clipMod.core.limpiaTemporales(req.files);
+      const msg = String(err.message || 'Error').replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+      res.status(err.status || 400).type('html').send(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:system-ui;padding:24px;background:#0b1020;color:#eaf0ff"><h2>No se pudo guardar lo compartido</h2><p>${msg}</p><p><a style="color:#9db4ff" href="${BASE_PATH}/">Abrir KookyeCatCloud</a></p>`);
+    }
+  });
 app.get('/api/events', auth, eventsMod.manejador);
 
 function adminOnly(req, res, next) {
@@ -653,9 +689,16 @@ async function trashItem(user, relPath) {
   });
   await writeTrash(user, entries);
 }
+const prefsFile = (user) => path.join(kccDir(userRoot(user)), 'prefs.json');
+async function papeleraDias(user) {
+  const p = await readJson(prefsFile(user), {});
+  return PAPELERA_OPCIONES.includes(p.trashDays) ? p.trashDays : TRASH_TTL_DAYS;
+}
 async function purgeExpired(user) {
   const entries = await readTrash(user);
-  const cutoff = Date.now() - TRASH_TTL_DAYS * 86400000;
+  const dias = await papeleraDias(user);
+  if (!dias) return entries;
+  const cutoff = Date.now() - dias * 86400000;
   const expired = entries.filter(e => e.deletedAt < cutoff);
   if (!expired.length) return entries;
   for (const e of expired) {
@@ -2197,10 +2240,27 @@ app.post('/api/batch', auth, async (req, res) => {
 app.get('/api/trash', auth, async (req, res) => {
   try {
     const entries = await purgeExpired(req.user);
-    res.json({ items: entries, ttlDays: TRASH_TTL_DAYS });
+    res.json({ items: entries, ttlDays: await papeleraDias(req.user) });
   } catch (err) {
     sendError(res, err);
   }
+});
+
+// Cuántos días se conserva lo borrado antes de vaciarse solo (papelera de archivos, notas y prompts)
+app.get('/api/trash/settings', auth, async (req, res) => {
+  try { res.json({ days: await papeleraDias(req.user), options: PAPELERA_OPCIONES, sweepHours: TRASH_SWEEP_HOURS }); }
+  catch (err) { sendError(res, err); }
+});
+app.put('/api/trash/settings', auth, async (req, res) => {
+  try {
+    const days = Number(req.body && req.body.days);
+    if (!PAPELERA_OPCIONES.includes(days)) return res.status(400).json({ error: 'Valor no válido' });
+    await updateJson(prefsFile(req.user), {}, (p) => { p.trashDays = days; });
+    registrarActividad(req, 'papelera_ajuste', { days });
+    // Se aplica ya, sin esperar al siguiente barrido
+    await barridoUsuario(req.user);
+    res.json({ ok: true, days });
+  } catch (err) { sendError(res, err); }
 });
 
 app.post('/api/trash/restore', auth, async (req, res) => {
@@ -2668,6 +2728,7 @@ async function actualizarNota(req, res) {
     await writeNotes(req.user, data);
     if (cal !== undefined) await calendarMod.core.sincronizaOrigen(req.user, 'note', item.id, item.title, cal);
     else if (title !== undefined && item.cal) await calendarMod.core.renombraOrigen(req.user, 'note', item.id, item.title);
+    if (title !== undefined) await calendarMod.core.renombraVinculos(req.user, 'note', item.id, item.title).catch(() => {});
     res.json({ ok: true, item });
   } catch (err) { sendError(res, err); }
 }
@@ -2706,11 +2767,13 @@ app.delete('/api/notes/:id', auth, async (req, res) => {
 
 async function purgarNotasCaducadas(user) {
   const data = await readNotes(user);
-  const corte = Date.now() - TRASH_TTL_DAYS * 86400000;
+  const dias = await papeleraDias(user);
+  if (!dias) return data;
+  const corte = Date.now() - dias * 86400000;
   const caducadas = (data.trash || []).filter(t => t.deletedAt < corte);
   if (!caducadas.length) return data;
   for (const t of caducadas) {
-    if (t.type === 'note') await fsp.rm(notaTrashFile(user, t.id), { force: true });
+    if (t.type === 'note') { await fsp.rm(notaTrashFile(user, t.id), { force: true }); await calendarMod.core.quitaVinculos(user, 'note', t.id).catch(() => {}); }
   }
   data.trash = (data.trash || []).filter(t => t.deletedAt >= corte);
   await writeNotes(user, data);
@@ -2720,7 +2783,7 @@ async function purgarNotasCaducadas(user) {
 app.get('/api/notes-trash', auth, async (req, res) => {
   try {
     const data = await purgarNotasCaducadas(req.user);
-    res.json({ items: data.trash || [], ttlDays: TRASH_TTL_DAYS });
+    res.json({ items: data.trash || [], ttlDays: await papeleraDias(req.user) });
   } catch (err) { sendError(res, err); }
 });
 
@@ -2761,7 +2824,7 @@ app.delete('/api/notes-trash/:id', auth, async (req, res) => {
     if (!entrada) return res.status(404).json({ error: 'No está en la papelera' });
     const grupo = (data.trash || []).filter(t => t.grupo === entrada.grupo);
     for (const t of grupo) {
-      if (t.type === 'note') await fsp.rm(notaTrashFile(req.user, t.id), { force: true });
+      if (t.type === 'note') { await fsp.rm(notaTrashFile(req.user, t.id), { force: true }); await calendarMod.core.quitaVinculos(req.user, 'note', t.id).catch(() => {}); }
     }
     const ids = new Set(grupo.map(t => t.id));
     data.trash = (data.trash || []).filter(t => !ids.has(t.id));
@@ -2774,7 +2837,7 @@ app.delete('/api/notes-trash', auth, async (req, res) => {
   try {
     const data = await readNotes(req.user);
     for (const t of data.trash || []) {
-      if (t.type === 'note') await fsp.rm(notaTrashFile(req.user, t.id), { force: true });
+      if (t.type === 'note') { await fsp.rm(notaTrashFile(req.user, t.id), { force: true }); await calendarMod.core.quitaVinculos(req.user, 'note', t.id).catch(() => {}); }
     }
     const n = (data.trash || []).length;
     data.trash = [];
@@ -2793,6 +2856,7 @@ const DATOS_APP = [
   { id: 'prompts',  nombre: 'Prompts' },
   { id: 'contacts', nombre: 'Contactos' },
   { id: 'versions', nombre: 'Versiones' },
+  { id: 'clip',     nombre: 'Portapapeles' },
   { id: 'vault',    nombre: 'Caja fuerte' },
   { id: 'datos',    nombre: 'Calendario y ajustes' },
 ];
@@ -2825,6 +2889,7 @@ async function datosApp(user) {
         if (h.name === 'prompts') await suma('prompts', hp);
         else if (h.name === 'contacts.json' || h.name === 'contact-photos') await suma('contacts', hp);
         else if (h.name === 'versions') await suma('versions', hp);
+        else if (h.name === 'clip') await suma('clip', hp);
         else await suma('datos', hp);
       }
     } else await suma('datos', ruta);
@@ -2876,6 +2941,26 @@ app.get('/api/stats', auth, async (req, res) => {
   }
 });
 
+/* ---------------- Vaciado programado de las papeleras ----------------
+   Hasta ahora lo caducado solo se borraba al abrir la papelera. Este barrido lo hace por su cuenta, para
+   todos los usuarios, al arrancar y cada TRASH_SWEEP_HOURS horas: archivos, notas y prompts. */
+async function barridoUsuario(user) {
+  await purgeExpired(user);
+  await purgarNotasCaducadas(user);
+  await promptsMod.core.limpiaPapelera(user);
+  await clipMod.core.caduca(user);
+}
+async function barridoPapeleras() {
+  for (const u of loadUsers()) {
+    try { await barridoUsuario({ username: u.username, role: u.role }); }
+    catch (err) { console.warn(`Barrido de papelera (${u.username}):`, err.message); }
+  }
+}
+if (TRASH_SWEEP_HOURS > 0) {
+  setTimeout(barridoPapeleras, 2 * 60 * 1000).unref();
+  setInterval(barridoPapeleras, TRASH_SWEEP_HOURS * 3600 * 1000).unref();
+}
+
 /* ---------------- Módulos: etiquetas, calendario y prompts ---------------- */
 const limpiaRel = (p) => String(p || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
 
@@ -2902,6 +2987,7 @@ app.use('/api', passkeysMod.router);
 app.use('/api/labels', auth, labelsMod.router);
 app.use('/api/calendar', auth, calendarMod.router);
 app.use('/api/prompts', auth, promptsMod.router);
+app.use('/api/clip', auth, clipMod.router);
 app.use('/api/contacts', auth, contactsMod.router);
 calendarMod.core.registraOrigen('prompt', (user, id, ev) => promptsMod.core.setCal(user, id, ev));
 calendarMod.core.registraOrigen('note', async (user, id, ev) => {

@@ -48,10 +48,10 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [x] ~~Estadísticas: modelos y herramientas más usados, prompts favoritos.~~ Hecho: menú ⋯ → Estadísticas.
 
 ### Productividad
-- [ ] Recordatorios y tareas vinculados a notas o contactos.
-- [ ] Papelera con vaciado programado.
-- [ ] Portapapeles compartido entre dispositivos, con envío rápido de texto o archivos del móvil al PC.
-- [ ] Compartir desde el móvil: que la PWA aparezca en el menú "Compartir" de Android para subir contenido.
+- [x] ~~Recordatorios y tareas vinculados a notas o contactos.~~ Hecho: botón Recordar en notas y Recordatorio en contactos (varios por elemento, con o sin fecha).
+- [x] ~~Papelera con vaciado programado.~~ Hecho: días por usuario en Papelera y barrido en segundo plano (`TRASH_SWEEP_HOURS`).
+- [x] ~~Portapapeles compartido entre dispositivos, con envío rápido de texto o archivos del móvil al PC.~~ Hecho: pestaña Portapapeles con aviso en directo.
+- [x] ~~Compartir desde el móvil: que la PWA aparezca en el menú "Compartir" de Android para subir contenido.~~ Hecho (solo Android/Chrome; en iPhone, Atajos con token).
 
 ### Seguridad y administración
 - [ ] Cuotas por usuario con avisos.
@@ -65,5 +65,5 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 
 ## Prioridad sugerida
 1. Copias de seguridad desde la propia app.
-2. Compartir desde el móvil.
+2. ~~Compartir desde el móvil.~~ Hecho.
 3. ~~Importar metadatos de ComfyUI en prompts.~~ Hecho.

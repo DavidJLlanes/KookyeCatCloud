@@ -917,6 +917,9 @@
   .act-row .when{font-size:11.5px;color:var(--faint);flex-shrink:0;}
 
   /* ---------- Álbumes ---------- */
+  .trash-auto{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;margin:10px 0 2px;font-size:13px;color:var(--muted);}
+  .trash-auto select{width:auto;min-width:130px;}
+  #trash-days-hint{font-size:12px;color:var(--faint);}
   .album-tile{position:relative;display:flex;flex-direction:column;border-radius:var(--r);overflow:hidden;
     background:var(--glass);border:1px solid var(--line);cursor:pointer;transition:.25s var(--ease);}
   .album-tile:hover{transform:translateY(-3px);box-shadow:var(--sh-2);}
@@ -1141,6 +1144,7 @@
       <button class="tab" data-view="calendar"><svg class="ico"><use href="#i-calendar"/></svg><span>Calendario</span></button>
       <button class="tab" data-view="prompts"><svg class="ico"><use href="#i-sparkle"/></svg><span>Prompts</span></button>
       <button class="tab" data-view="contacts"><svg class="ico"><use href="#i-contact"/></svg><span>Contactos</span></button>
+      <button class="tab" data-view="clip"><svg class="ico"><use href="#i-copy"/></svg><span>Portapapeles</span></button>
       <span class="tabs-label">Biblioteca</span>
       <button class="tab" data-view="colecciones"><svg class="ico"><use href="#i-star"/></svg><span>Colecciones</span></button>
       <button class="tab" data-view="map"><svg class="ico"><use href="#i-pin"/></svg><span>Mapa</span></button>
@@ -1210,6 +1214,7 @@
   <!-- ---- Vista prompts ---- -->
   <main class="wrap kcc-view" id="view-prompts" hidden></main>
   <main class="wrap kcc-view" id="view-contacts" hidden></main>
+  <main class="wrap kcc-view" id="view-clip" hidden></main>
 
   <!-- ---- Caja fuerte ---- -->
   <main class="wrap kcc-view" id="view-vault" hidden></main>
@@ -1276,6 +1281,11 @@
         <p id="trash-note">Los elementos se borran solos pasados 30 días</p>
       </div>
       <button class="btn" id="btn-empty-trash"><svg class="ico"><use href="#i-trash"/></svg><span class="lbl">Vaciar</span></button>
+    </div>
+    <div class="trash-auto">
+      <label for="trash-days">Vaciar solo lo borrado tras</label>
+      <select id="trash-days" aria-label="Días hasta el vaciado automático de la papelera"></select>
+      <span id="trash-days-hint">Vale para archivos, notas y prompts</span>
     </div>
     <div id="trash-list"></div>
   </main>
@@ -1512,6 +1522,7 @@
       <button data-view="calendar"><svg class="ico"><use href="#i-calendar"/></svg>Agenda</button>
       <button data-view="prompts"><svg class="ico"><use href="#i-sparkle"/></svg>Prompts</button>
       <button data-view="contacts"><svg class="ico"><use href="#i-contact"/></svg>Contactos</button>
+      <button data-view="clip"><svg class="ico"><use href="#i-copy"/></svg>Clip</button>
       <button data-view="colecciones"><svg class="ico"><use href="#i-star"/></svg>Colec.</button>
       <button data-view="map"><svg class="ico"><use href="#i-pin"/></svg>Mapa</button>
       <button data-view="vault"><svg class="ico"><use href="#i-lock"/></svg>Caja</button>
@@ -1739,6 +1750,8 @@
 <script src="/js/calendar-extra.js"></script>
 <script src="/js/prompts.js"></script>
 <script src="/js/prompts-extra.js"></script>
+<script src="/js/vinculos.js"></script>
+<script src="/js/clip.js"></script>
 <script src="/js/contacts.js"></script>
 <script src="/js/fotos.js"></script>
 <script src="/js/filecal.js"></script>

@@ -937,6 +937,12 @@
       K.modal({ title: 'Fecha de la nota', sub: it.title, content: f, actions: [{ label: 'Cancelar' }, { label: 'Guardar', primary: true, onClick: async () => { await guardaProps({ calendar: f.get() }); } }] });
     });
     props.append(ic, co, pin, cal);
+    if (it.type === 'note' && K.vinculos) {
+      const rec = el('button', 'btn ghost sm'); rec.type = 'button'; rec.title = 'Recordatorios y tareas de esta nota';
+      rec.append(icon('i-bell'), document.createTextNode(' Recordar'));
+      rec.addEventListener('click', () => K.vinculos.abrir('note', it.id, it.title));
+      props.appendChild(rec);
+    }
     if (it.cal) { const go = el('button', 'btn ghost sm'); go.type = 'button'; go.appendChild(icon('i-external')); go.title = 'Ver en el calendario'; go.addEventListener('click', () => { switchTab('calendar'); K.calendar.goto(K.d.parse(it.cal.date), 'month'); }); props.appendChild(go); }
     K.loadLabels().then(() => {
       const lp = K.labelPicker({ selected: it.labels || [], onChange: K.debounce((ids) => { if (NT.abierta === it.id) guardaProps({ labels: ids }); }, 400) });

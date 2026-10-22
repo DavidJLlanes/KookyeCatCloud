@@ -84,6 +84,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 📅 **Calendario** | Mes, semana, día y agenda con calendarios de colores, repetición y recordatorios. |
 | ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables, imágenes de muestra, comparación de versiones, estadísticas y creación desde PNG de ComfyUI / Automatic1111. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
+| 📋 **Portapapeles compartido** | Deja texto o archivos desde un dispositivo y recógelos desde otro al instante. En Android, la app aparece en el menú «Compartir». |
 | ⚡ **Actualización en directo** | La lista de archivos se refresca sola cuando llega algo por un enlace de subida o desde otro dispositivo, sin consultas periódicas. |
 | 🔎 **Todo conectado** | Buscador global (Ctrl+K) y fechas de calendario para lo que subes o creas. |
 | 🫆 **Huella y Face ID** | Entra sin contraseña con la biometría de tu móvil u ordenador (passkeys). |
@@ -783,6 +784,60 @@ API rechaza cualquier ruta que lo contenga, así que a `.trash` solo se llega po
 
 Al restaurar (o al subir) nunca se sobrescribe: si el nombre ya está ocupado se añade `_1`, `_2`…
 
+### Vaciado programado
+
+Cada usuario elige en **Papelera** cuánto aguanta lo que borra: nunca, 7, 14, 30, 60, 90 o 180
+días (por defecto `TRASH_TTL_DAYS`). El ajuste vale para las tres papeleras: archivos, notas y
+prompts. Además de purgarse al abrirlas, el servidor las revisa **por su cuenta**, para todos los
+usuarios, al arrancar y cada `TRASH_SWEEP_HOURS` horas (6 por defecto; `0` lo desactiva), así que lo
+caducado desaparece aunque nadie entre. Al cambiar el ajuste se aplica en el acto. Se guarda en
+`<usuario>/.kcc/prefs.json`.
+
+## Recordatorios y tareas en notas y contactos
+
+En cada nota (botón **Recordar** de sus propiedades) y en cada contacto (botón **Recordatorio**) se abre
+una ventana con sus recordatorios y tareas. Puedes añadir tantos como quieras:
+
+- **Recordatorio**: con fecha y hora y un aviso (a la hora, 10 min, 1 h o 1 día antes). Avisa como
+  cualquier evento del calendario (notificación del navegador mientras la app está abierta).
+- **Tarea**: con fecha o **sin fecha**, que se marca como hecha desde la propia ventana.
+
+Son eventos normales del calendario con un campo `link` (`{ type: 'note' | 'contact', ref, title }`), así que
+se ven en el calendario con el icono de la nota o del contacto, y al abrir uno hay un enlace para volver a
+su origen. `GET /api/calendar/by-link?type=…&ref=…` los lista. Si renombras la nota o el contacto, el
+título se actualiza en sus recordatorios; si borras el contacto, o vacías la nota de la papelera, se
+borran con él. Una nota que solo está en la papelera conserva los suyos por si la restauras.
+
+Es distinto de la **fecha de la nota** (arriba): esa es un único evento que representa a la nota;
+los recordatorios vinculados son ilimitados e independientes.
+
+## Portapapeles compartido y «Compartir» de Android
+
+La pestaña **Portapapeles** es un buzón por usuario para pasar cosas entre dispositivos sin correos ni
+chats: escribes o pegas un texto, o adjuntas (o arrastras, o pegas con Ctrl+V) archivos, y aparece al
+instante en tus otros dispositivos con un botón de **Copiar** o **Descargar**. Una imagen se ve en miniatura
+y **Guardar en Archivos** la copia tal cual (sin tocar su resolución) a la carpeta `Recibidos`.
+
+- Es **temporal**: lo que no fijes caduca a las `CLIP_TTL_HOURS` horas (48). Fijar un elemento (📌) lo
+  conserva. Se limpia también con el barrido en segundo plano.
+- Topes: `CLIP_MAX_MB` por archivo (100), `CLIP_TOTAL_MB` por usuario (500), 10 archivos por envío y 200 000
+  caracteres por texto. Los archivos se escriben a disco mientras se suben, nunca se cargan en memoria.
+- Los cambios llegan por el mismo canal de avisos en directo (evento `clip`): con la pestaña cerrada
+  sale un aviso, con ella abierta la lista se actualiza sola.
+- Los datos viven en `<usuario>/.kcc/clip/` y cuentan en el almacenamiento (categoría *Portapapeles*).
+- Si pasas archivos grandes por Nginx, `client_max_body_size` debe admitirlos.
+
+**Android (Chrome)**: al instalar la app como PWA aparece en el menú **Compartir** de cualquier otra
+aplicación. Lo que compartas (texto, enlaces, fotos, vídeos, PDF…) va directamente al portapapeles y se
+abre la app en esa pestaña (`POST /share-target`). Si ya la tenías instalada, Android actualiza el
+manifiesto por su cuenta en uno o dos días; para forzarlo, desinstálala e instálala de nuevo. También hay un
+atajo al portapapeles al mantener pulsado el icono.
+
+**iPhone**: Safari no permite que una web aparezca en «Compartir». Alternativa con la app **Atajos**: una
+acción *Obtener contenido de URL* con método POST a `https://tu-dominio/cloud/api/clip/text` (cuerpo JSON
+`{"text": "…"}`) o a `/api/clip/files` (formulario con el campo `files`), con la cabecera
+`Authorization: Bearer <token>` — el token se crea en **Cuenta → Tokens de aplicación**.
+
 ## Actualización en directo
 
 La lista de archivos se actualiza sola cuando cambia algo desde otro sitio: un archivo que llega
@@ -961,7 +1016,9 @@ indique; reinicia el servicio tras cambiarlas.
 | `ADMIN_PASSWORD` | aleatoria | Contraseña del admin en el **primer** arranque |
 | `INSECURE_COOKIES` | — | `1` solo en desarrollo con `http://localhost` |
 | `MAX_UPLOAD_BYTES` | 5 GB | Tamaño máximo por archivo |
-| `TRASH_TTL_DAYS` | 30 | Días en la papelera |
+| `TRASH_TTL_DAYS` | 30 | Días en la papelera por defecto (cada usuario puede cambiarlo) |
+| `TRASH_SWEEP_HOURS` | 6 | Cada cuántas horas se vacían las papeleras caducadas en segundo plano (0 = nunca) |
+| `CLIP_MAX_MB` / `CLIP_TOTAL_MB` / `CLIP_TTL_HOURS` | 100 / 500 / 48 | Portapapeles: tope por archivo, tope por usuario y caducidad |
 | `LINK_MAX_FILES` / `LINK_MAX_BYTES` / `LINK_IP_HOURLY` | 50 / 2 GB / 200 | Límites de los enlaces de subida |
 | `NOTES_LIMIT` / `NOTE_MAX_CHARS` | 5000 / 500000 | Límites de notas |
 | `CONTACTS_LIMIT` | 10000 | Contactos máximos por usuario |
@@ -1020,6 +1077,7 @@ lib/
   holidays.js        Festivos de España calculados (sin servicios externos)
   prompts.js         Biblioteca de prompts e imágenes WebP
   comfy.js           Lee los metadatos de los PNG de ComfyUI y Automatic1111
+  clip.js            Portapapeles compartido entre dispositivos y destino de «Compartir»
   contacts.js        Contactos: API, búsqueda, importación y exportación vCard
   vcard.js           Lectura y escritura de vCard 3.0
   notes-extra.js     Imágenes, menciones, backlinks, plantillas y exportación de notas
@@ -1029,7 +1087,7 @@ lib/
   webauthn.js        Passkeys sin dependencias (CBOR propio)
 public/
   index.html, app.js Aplicación (JavaScript vanilla)
-  js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
+  js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, recordatorios vinculados, portapapeles, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
   css/               Estilos de los módulos
   sw.js, manifest.json  PWA
   vendor/            Leaflet alojado en local

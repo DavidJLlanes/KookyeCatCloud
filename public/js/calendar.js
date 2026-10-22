@@ -318,6 +318,7 @@
     p.style.setProperty('--c', evColor(e));
     if (e.kind === 'task') p.appendChild(icon(e.done ? 'i-check-square' : 'i-list-check', 'src'));
     else if (e.source) p.appendChild(icon(K.srcIcon[e.source.type] || 'i-link', 'src'));
+    else if (e.link) p.appendChild(icon(K.srcIcon[e.link.type] || 'i-link', 'src'));
     if (showTime && !isSpan(e)) p.appendChild(el('span', 'h', timeTxt(e)));
     p.appendChild(el('span', 't', (contL ? '◂ ' : '') + e.title + (contR ? ' ▸' : '')));
     p.title = `${e.title}\n${rangeTxt(e)}`;
@@ -652,6 +653,7 @@
         const meta = el('span', 'meta');
         if (e.location) meta.appendChild(el('span', null, '📍 ' + e.location));
         if (e.source) { const s = el('span', 'k-chip'); s.style.setProperty('--c', evColor(e)); s.append(icon(K.srcIcon[e.source.type]), document.createTextNode(K.srcName[e.source.type])); s.firstChild.style.cssText = 'width:12px;height:12px'; meta.appendChild(s); }
+        if (e.link) { const s = el('span', 'k-chip'); s.style.setProperty('--c', evColor(e)); s.append(icon(K.srcIcon[e.link.type]), document.createTextNode(e.link.title || K.srcName[e.link.type])); s.firstChild.style.cssText = 'width:12px;height:12px'; meta.appendChild(s); }
         (e.labels || []).forEach(l => { const c = K.labelChip(l); if (c) meta.appendChild(c); });
         it.appendChild(meta);
         it.addEventListener('click', () => openEvent(e));
@@ -828,6 +830,14 @@
       const s = el('div', 'ev-source');
       s.append(icon(K.srcIcon[ev.source.type] || 'i-link'), el('span', null, `${K.srcName[ev.source.type]}: ${ev.source.title || ev.source.ref}`), el('span', 'k-grow'), icon('i-external'));
       s.addEventListener('click', () => { m.close(); K.open(ev.source.type, ev.source.ref); });
+      root.appendChild(s);
+    }
+
+    // Recordatorio o tarea colgado de una nota o de un contacto
+    if (ev && ev.link) {
+      const s = el('div', 'ev-source');
+      s.append(icon(K.srcIcon[ev.link.type] || 'i-link'), el('span', null, `${K.srcName[ev.link.type]}: ${ev.link.title || ev.link.ref}`), el('span', 'k-grow'), icon('i-external'));
+      s.addEventListener('click', () => { m.close(); K.open(ev.link.type, ev.link.ref); });
       root.appendChild(s);
     }
 

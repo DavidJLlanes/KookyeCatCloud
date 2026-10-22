@@ -5,7 +5,7 @@ const CACHE = 'kookyecatcloud-shell-' + BUILD;
 const BASE = new URL(self.registration.scope).pathname.replace(/\/+$/, '');
 const SHELL = ['/', '/app.js', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-maskable-512.png',
   '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/css/modules.css', '/css/notes.css', '/js/kit.js', '/js/zoom.js', '/js/calendar.js',
-  '/js/ics.js', '/js/calendar-extra.js', '/js/prompts.js', '/js/prompts-extra.js', '/js/contacts.js', '/js/fotos.js', '/js/notes.js', '/js/notes-extra.js', '/js/filecal.js', '/js/versions.js', '/js/vault.js', '/js/shares.js', '/js/passkeys.js', '/js/updates.js', '/js/omni.js'].map(p => BASE + p);
+  '/js/ics.js', '/js/calendar-extra.js', '/js/prompts.js', '/js/prompts-extra.js', '/js/vinculos.js', '/js/clip.js', '/js/contacts.js', '/js/fotos.js', '/js/notes.js', '/js/notes-extra.js', '/js/filecal.js', '/js/versions.js', '/js/vault.js', '/js/shares.js', '/js/passkeys.js', '/js/updates.js', '/js/omni.js'].map(p => BASE + p);
 // La página pública de los enlaces no se cachea: /u/<id> siempre debe consultar al servidor
 
 self.addEventListener('install', e => {

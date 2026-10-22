@@ -266,6 +266,9 @@
     const accion = (ic, txt, href, cls) => { const a = el('a', 'btn ' + (cls || '')); a.href = href; a.append(icon(ic), el('span', null, txt)); return a; };
     if (c.phones[0]) acts.appendChild(accion('i-phone', 'Llamar', telHref(c.phones[0].value)));
     if (c.emails[0]) acts.appendChild(accion('i-mail', 'Correo', 'mailto:' + encodeURIComponent(c.emails[0].value).replace(/%40/g, '@')));
+    const rem = el('button', 'btn'); rem.type = 'button'; rem.append(icon('i-bell'), el('span', null, 'Recordatorio'));
+    rem.addEventListener('click', () => K.vinculos && K.vinculos.abrir('contact', c.id, nombre(c)));
+    acts.appendChild(rem);
     const ed = el('button', 'btn primary'); ed.type = 'button'; ed.append(icon('i-pencil'), el('span', null, 'Editar'));
     ed.addEventListener('click', () => { m.close(); openEditor(c.id); });
     const mo = el('button', 'btn ghost icon'); mo.type = 'button'; mo.appendChild(icon('i-dots')); mo.setAttribute('aria-label', 'Más acciones');
