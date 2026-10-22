@@ -14,7 +14,7 @@
   };
   const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
-  const S = { built: false, items: [], loaded: false, q: '', label: '', fav: false, sort: 'first', max: 10000 };
+  const S = { sel: new Set(), selMode: false, built: false, items: [], loaded: false, q: '', label: '', fav: false, sort: 'first', max: 10000 };
   const R = {};
   try { S.sort = localStorage.getItem('kcc-ct-sort') || 'first'; } catch { /* sin almacenamiento */ }
 
@@ -114,12 +114,15 @@
     for (const [val, txt] of [['first', 'Ordenar por nombre'], ['last', 'Ordenar por apellido']]) { const o = el('option', null, txt); o.value = val; sort.appendChild(o); }
     sort.value = S.sort;
     const count = el('span', 'pr-count');
-    tools.append(railBtn, sort, count);
+    const selb = el('button', 'btn sm'); selb.type = 'button'; selb.append(icon('i-check-square'), el('span', null, 'Seleccionar'));
+    selb.addEventListener('click', () => { S.selMode = !S.selMode; if (!S.selMode) S.sel.clear(); selb.classList.toggle('is-on', S.selMode); render(); });
+    const barra = el('div', 'ct-selbar'); barra.hidden = true;
+    tools.append(railBtn, sort, selb, count);
     const content = el('div', 'ct-content');
-    main.append(tools, content);
+    main.append(tools, barra, content);
     wrap.append(rail, main);
     v.append(head, wrap);
-    Object.assign(R, { sub, rail, content, count, si, wrap });
+    Object.assign(R, { sub, rail, content, count, si, wrap, barra, selb });
 
     si.addEventListener('input', K.debounce(() => { S.q = si.value.trim(); render(); }, 150));
     sort.addEventListener('change', () => { S.sort = sort.value; try { localStorage.setItem('kcc-ct-sort', S.sort); } catch { /* sin almacenamiento */ } render(); });
@@ -203,8 +206,14 @@
     fav.addEventListener('click', async (e) => { e.stopPropagation(); await alternaFav(c); });
     r.append(quien, el('span', 'ct-col', (c.emails[0] || {}).value || ''), el('span', 'ct-col', (c.phones[0] || {}).value || ''), el('span', 'ct-col', principal(c)), fav);
     if ((c.labels || []).length) { const ch = K.labelChips(c.labels.slice(0, 3)); ch.classList.add('ct-chips'); nm.appendChild(ch); }
-    r.addEventListener('click', () => openDetail(c.id));
-    r.addEventListener('keydown', (e) => { if (e.key === 'Enter') openDetail(c.id); });
+    if (S.selMode) {
+      r.classList.add('sel-mode'); if (S.sel.has(c.id)) r.classList.add('is-sel');
+      const ck = el('span', 'cal-check' + (S.sel.has(c.id) ? ' on' : '')); ck.style.setProperty('--c', '#6366f1'); ck.appendChild(icon('i-check'));
+      quien.prepend(ck);
+    }
+    const abre = () => { if (S.selMode) { if (S.sel.has(c.id)) S.sel.delete(c.id); else S.sel.add(c.id); render(); } else openDetail(c.id); };
+    r.addEventListener('click', abre);
+    r.addEventListener('keydown', (e) => { if (e.key === 'Enter') abre(); });
     return r;
   }
 
@@ -215,6 +224,7 @@
     const total = S.items.length;
     R.sub.textContent = total ? `${total} contacto${total === 1 ? '' : 's'}` : 'Tu agenda';
     R.count.textContent = lista.length !== total ? `${lista.length} de ${total}` : '';
+    pintaSel(lista);
     const c = R.content; c.textContent = '';
     if (!S.loaded) { c.appendChild(el('p', 'k-faint', 'Cargando…')); return; }
     if (!lista.length) { c.appendChild(vacio(total > 0)); return; }
@@ -230,6 +240,29 @@
       cuerpo.appendChild(fila(ct));
     }
     c.appendChild(frag);
+  }
+
+  function pintaSel(lista) {
+    const b = R.barra; b.textContent = '';
+    S.sel = new Set([...S.sel].filter(id => S.items.some(i => i.id === id)));
+    if (!S.selMode) { b.hidden = true; return; }
+    b.hidden = false;
+    b.appendChild(el('span', 'n', `${S.sel.size} seleccionado${S.sel.size === 1 ? '' : 's'}`));
+    const btn = (txt, ic, fn, cls) => { const x = el('button', 'btn sm ' + (cls || '')); x.type = 'button'; x.appendChild(icon(ic)); if (txt) x.appendChild(el('span', null, txt)); x.addEventListener('click', fn); b.appendChild(x); return x; };
+    btn('Todos', 'i-check', () => { (lista || filtrados()).forEach(c => S.sel.add(c.id)); render(); });
+    btn('Ninguno', 'i-x', () => { S.sel.clear(); render(); });
+    b.appendChild(el('span', 'grow'));
+    const del = btn('Eliminar', 'i-trash', eliminaSel, 'danger'); del.disabled = !S.sel.size;
+  }
+  async function eliminaSel() {
+    const ids = [...S.sel]; if (!ids.length) return;
+    if (!(await K.confirm(`${ids.length} contacto${ids.length === 1 ? '' : 's'} se eliminará${ids.length === 1 ? '' : 'n'} para siempre.`, { ok: 'Eliminar', danger: true, title: 'Eliminar contactos' }))) return;
+    try {
+      const r = await K.post('/api/contacts/bulk-delete', { ids });
+      const set = new Set(ids);
+      S.items = S.items.filter(x => !set.has(x.id)); S.sel.clear(); S.selMode = false; R.selb.classList.remove('is-on');
+      K.toast(`${r.borrados} contacto${r.borrados === 1 ? '' : 's'} eliminado${r.borrados === 1 ? '' : 's'}`); render();
+    } catch (e) { K.fail(e); }
   }
 
   async function alternaFav(c) {
@@ -529,7 +562,7 @@
       load();
       if (R.si && S.q === '') R.si.value = '';
     },
-    close() { /* nada que soltar */ },
+    close() { S.selMode = false; S.sel.clear(); if (R.selb) R.selb.classList.remove('is-on'); },
   });
   K.bus.on('labels', () => { if (S.built && !$('view-contacts').hidden) load(); else S.loaded = false; });
   K.openers.contact = (id) => { switchTab('contacts'); const ir = () => openDetail(id); S.loaded ? setTimeout(ir, 60) : setTimeout(ir, 400); };

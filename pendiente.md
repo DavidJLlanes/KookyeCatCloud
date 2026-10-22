@@ -10,7 +10,7 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [ ] Revisar el Nginx de `patineteleon.es`: nombre de servidor duplicado (`conflicting server name`).
 
 ### Pronto
-- [ ] Contactos: selección múltiple (borrar o etiquetar varios), fusión de duplicados y cumpleaños en el calendario.
+- [ ] Contactos: etiquetar varios a la vez (el borrado en bloque ya está hecho), fusión de duplicados y cumpleaños en el calendario.
 - [ ] Importar los contactos reales desde Google Contacts o iCloud (`.vcf`) y comprobar etiquetas y fotos.
 - [ ] Extender las actualizaciones en directo (SSE) a notas, prompts y contactos.
 - [ ] Cuota de almacenamiento por usuario con aviso y límite.
@@ -36,7 +36,7 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [x] ~~Descarga de álbumes en ZIP y álbumes compartibles con enlace.~~ Hecho: botones ZIP y Compartir en cada álbum.
 
 ### Contactos
-- [ ] Fusión de duplicados y selección múltiple.
+- [ ] Fusión de duplicados. (Selección múltiple y borrado en bloque: hecho.)
 - [ ] Cumpleaños en el calendario con recordatorio.
 - [ ] Historial por contacto: notas, archivos vinculados y fecha del último contacto.
 - [ ] Enlace de "mi tarjeta": página pública del contacto con código QR.

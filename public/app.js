@@ -2342,6 +2342,8 @@ const NT = {
   guardando: null,
   sucia: false,
   arrastrada: null,
+  selMode: false,
+  sel: new Set(),
 };
 
 function guardarAbiertas() {
@@ -2373,7 +2375,37 @@ function coincide(item) {
   return hijosDe(item.id).some(coincide);
 }
 
+function pintaSelNotas() {
+  const b = $('notes-selbar');
+  NT.sel = new Set([...NT.sel].filter(id => NT.items.some(i => i.id === id)));
+  b.textContent = '';
+  $('btn-notes-select').classList.toggle('on', NT.selMode);
+  if (!NT.selMode) { b.hidden = true; return; }
+  b.hidden = false;
+  b.appendChild(el('span', 'n', `${NT.sel.size} seleccionada${NT.sel.size === 1 ? '' : 's'}`));
+  const btn = (txt, fn, cls) => { const x = el('button', 'btn sm ' + (cls || ''), txt); x.type = 'button'; x.addEventListener('click', fn); b.appendChild(x); return x; };
+  btn('Todas', () => { NT.items.filter(coincide).forEach(i => NT.sel.add(i.id)); renderNotes(); });
+  btn('Ninguna', () => { NT.sel.clear(); renderNotes(); });
+  b.appendChild(el('span', 'grow'));
+  btn('Eliminar', borrarNotasSel, 'danger').disabled = !NT.sel.size;
+}
+
+async function borrarNotasSel() {
+  const ids = [...NT.sel]; if (!ids.length) return;
+  if (!confirm(`¿Eliminar ${ids.length} elemento${ids.length === 1 ? '' : 's'}? Las carpetas se llevan lo que contienen. Van a la papelera.`)) return;
+  try {
+    const res = await post(BASE + '/api/notes-bulk-delete', { ids });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || 'No se pudo eliminar'); return; }
+    showToast(`${data.borrados} elemento${data.borrados === 1 ? '' : 's'} eliminado${data.borrados === 1 ? '' : 's'}`);
+    NT.sel.clear(); NT.selMode = false;
+    await loadNotes(true); refrescarContadorPapeleraNotas();
+    if (NT.abierta && !NT.items.some(i => i.id === NT.abierta)) cerrarNota();
+  } catch { showToast('Error de conexión'); }
+}
+
 function renderNotes() {
+  pintaSelNotas();
   const caja = $('notes-tree');
   caja.textContent = '';
   const raiz = hijosDe('').filter(coincide);
@@ -2427,7 +2459,13 @@ function filaNota(item, nivel) {
   mas.addEventListener('click', e => { e.stopPropagation(); menuNota(e.clientX, e.clientY, item); });
   row.appendChild(mas);
 
+  if (NT.selMode) {
+    row.classList.add('sel-mode'); if (NT.sel.has(item.id)) row.classList.add('is-sel');
+    const ck = el('span', 'cal-check' + (NT.sel.has(item.id) ? ' on' : '')); ck.style.setProperty('--c', '#6366f1'); ck.appendChild(icon('i-check'));
+    row.insertBefore(ck, row.firstChild);
+  }
   row.addEventListener('click', () => {
+    if (NT.selMode) { NT.sel.has(item.id) ? NT.sel.delete(item.id) : NT.sel.add(item.id); renderNotes(); return; }
     if (item.type === 'folder') {
       NT.abiertas.has(item.id) ? NT.abiertas.delete(item.id) : NT.abiertas.add(item.id);
       guardarAbiertas();
@@ -3826,6 +3864,7 @@ $('btn-create-share').addEventListener('click', crearCompartir);
 $('btn-copy-share').addEventListener('click', () => copiarTexto($('share-url').textContent, 'Enlace copiado'));
 $('sel-zip').addEventListener('click', () => descargarZip(selectedItems().map(i => i.rel)));
 $('btn-notes-trash').addEventListener('click', abrirPapeleraNotas);
+$('btn-notes-select').addEventListener('click', () => { NT.selMode = !NT.selMode; if (!NT.selMode) NT.sel.clear(); renderNotes(); });
 $('btn-empty-notes-trash').addEventListener('click', vaciarPapeleraNotas);
 
 $('action-move').addEventListener('click', () => {

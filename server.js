@@ -2740,6 +2740,37 @@ app.post('/api/notes/:id', auth, notesBody, actualizarNota);
 // Los .md de las notas eliminadas se guardan aparte hasta que caduquen
 const notaTrashFile = (user, id) => path.join(notesRoot(user), 'trash', `${id}.md`);
 
+// Borra (a la papelera) varias notas o carpetas de golpe: { ids: [...] }
+app.post('/api/notes-bulk-delete', auth, express.json({ limit: '1mb' }), async (req, res) => {
+  try {
+    const ids = (req.body || {}).ids;
+    if (!Array.isArray(ids) || !ids.length || ids.length > 5000) return res.status(400).json({ error: 'Selección no válida' });
+    const data = await readNotes(req.user);
+    const pedidas = new Set(ids.map(String));
+    const raices = data.items.filter(i => pedidas.has(i.id));
+    if (!raices.length) return res.status(404).json({ error: 'No encontradas' });
+    await fsp.mkdir(path.join(notesRoot(req.user), 'trash'), { recursive: true });
+    const cuando = Date.now();
+    data.trash = data.trash || [];
+    const quitados = new Set();
+    for (const raiz of raices) {
+      if (quitados.has(raiz.id)) continue;       // ya salió con una carpeta padre
+      for (const f of [raiz, ...descendientes(data.items, raiz.id)]) {
+        if (quitados.has(f.id)) continue;
+        quitados.add(f.id);
+        if (f.type === 'note') {
+          try { await fsp.rename(notaFile(req.user, f.id), notaTrashFile(req.user, f.id)); } catch {}
+        }
+        data.trash.unshift({ ...f, deletedAt: cuando, grupo: raiz.id });
+        if (f.cal) await calendarMod.core.quitaOrigen(req.user, 'note', f.id);
+      }
+    }
+    data.items = data.items.filter(i => !quitados.has(i.id));
+    await writeNotes(req.user, data);
+    res.json({ ok: true, borrados: quitados.size });
+  } catch (err) { sendError(res, err); }
+});
+
 app.delete('/api/notes/:id', auth, async (req, res) => {
   try {
     const data = await readNotes(req.user);

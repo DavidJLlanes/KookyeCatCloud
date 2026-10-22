@@ -793,6 +793,13 @@ usuarios, al arrancar y cada `TRASH_SWEEP_HOURS` horas (6 por defecto; `0` lo de
 caducado desaparece aunque nadie entre. Al cambiar el ajuste se aplica en el acto. Se guarda en
 `<usuario>/.kcc/prefs.json`.
 
+## Borrado masivo
+
+Archivos y Prompts ya permitían seleccionar varios elementos. **Contactos** y **Notas** tienen ahora el
+botón **Seleccionar**: marcas los que quieras (o *Todos*) y pulsas **Eliminar**. Los contactos se borran
+para siempre (`POST /api/contacts/bulk-delete`); las notas y carpetas van a la papelera de notas
+(`POST /api/notes-bulk-delete`), y una carpeta se lleva todo lo que contiene.
+
 ## Recordatorios y tareas en notas y contactos
 
 En cada nota (botón **Recordar** de sus propiedades) y en cada contacto (botón **Recordatorio**) se abre

@@ -102,3 +102,12 @@
 .tpl-card b{font-size:14.5px;} .tpl-card small{color:var(--faint);font-size:12px;line-height:1.4;}
 .tpl-card .del{position:absolute;right:8px;top:6px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:var(--muted);}
 .tpl-card .del:hover{background:var(--danger-soft);color:#ffb3bd;}
+
+/* Selección múltiple */
+.notes-selbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 4px;font-size:13px;}
+.notes-selbar .n{font-weight:700;padding:0 4px;}
+.notes-selbar .grow{flex:1;}
+.notes-selbar .btn.danger{color:#ef4444;}
+.nrow.sel-mode .cal-check{margin-right:6px;}
+.nrow.is-sel{background:var(--brand-soft);}
+#btn-notes-select.on{color:var(--brand);}
