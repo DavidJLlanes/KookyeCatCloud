@@ -437,8 +437,8 @@
       title: K.d.long(dia), sub: evs.length ? `${evs.length} elemento${evs.length === 1 ? '' : 's'}` : '', content: w, cls: 'wide',
       actions: [
         { label: 'Cerrar' },
-        { label: 'Añadir tarea', onClick: () => openEvent(null, { date: dia, allDay: true, kind: 'task' }) },
-        { label: 'Añadir evento', primary: true, onClick: () => openEvent(null, { date: dia }) },
+        { label: '+ Tarea', onClick: () => openEvent(null, { date: dia, allDay: true, kind: 'task' }) },
+        { label: '+ Evento', primary: true, onClick: () => openEvent(null, { date: dia }) },
       ],
     });
   }

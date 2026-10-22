@@ -998,6 +998,30 @@
     .notes.editando .notes-side{display:none;}
     .notes:not(.editando) .notes-editor{display:none;}
     #view-map{height:calc(100dvh - var(--header-h) - var(--safe-top) - var(--mobilenav-h));}
+    /* Barra de selección: cuadrícula de botones grandes con el texto debajo del icono
+       (antes eran 8 botones apretados en una fila que se desplazaba de lado) */
+    .selbar{width:calc(100% - 20px);bottom:calc(var(--mobilenav-h, 72px) + 10px + var(--safe-bottom));
+      display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px;overflow:visible;max-height:46dvh;overflow-y:auto;}
+    .selbar .n{grid-column:1 / -1;margin:0;padding:2px 44px 2px 4px;font-size:14px;align-self:center;}
+    .selbar .btn{flex-direction:column;gap:3px;min-height:54px;padding:8px 2px;font-size:11.5px;line-height:1.15;border-radius:14px;}
+    .selbar .btn .ico{width:21px;height:21px;}
+    .selbar .btn .lbl{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .selbar #sel-cancel{position:absolute;top:6px;right:6px;min-height:40px;width:40px;padding:0;}
+    .selbar #sel-delete{color:#ff8b94;grid-column:span 2;}
+    body .pr-selbar{width:calc(100% - 20px);max-width:none;bottom:calc(var(--mobilenav-h, 72px) + 10px + var(--safe-bottom));
+      display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px;overflow:visible;max-height:46dvh;overflow-y:auto;}
+    body .pr-selbar .n{grid-column:1 / -1;padding:2px 44px 2px 4px;font-size:14px;}
+    body .pr-selbar .btn{flex-direction:column;gap:3px;min-height:54px;padding:8px 2px;font-size:11.5px;line-height:1.15;border-radius:14px;}
+    body .pr-selbar .btn .ico{width:21px;height:21px;}
+    body .pr-selbar .btn.ghost{position:absolute;top:6px;right:6px;min-height:40px;width:40px;padding:0;}
+    body .ct-selbar .btn,body .notes-selbar .btn{min-height:44px;padding:8px 14px;}
+    /* Zonas táctiles de al menos 40 px (antes varias medían 30-34 px y costaba acertar) */
+    .chip{min-height:40px;}
+    #btn-grid,#btn-list{min-width:42px;min-height:40px;}
+    .seg button{min-height:40px;}
+    .ct-fav{min-width:42px;min-height:42px;}
+    .tile .dots{min-width:38px;min-height:38px;}
+    .crumbs .current,.crumbs a,.crumbs button{min-height:40px;display:inline-flex;align-items:center;}
     .solo-movil{display:grid;}
   }
   @media (min-width:821px){
