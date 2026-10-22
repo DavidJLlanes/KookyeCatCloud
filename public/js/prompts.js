@@ -672,15 +672,30 @@
     const x = el('button', 'btn ghost icon'); x.type = 'button'; x.appendChild(icon('i-x')); x.addEventListener('click', () => m.close());
     top.append(h2, x); info.appendChild(top);
 
-    const chips = el('div', 'k-chips');
-    const cat = catBy(p.category); if (cat) { const c = el('span', 'k-chip btnlike'); c.style.setProperty('--c', cat.color); c.textContent = `${cat.emoji || ''} ${cat.name}`.trim(); c.addEventListener('click', () => { m.close(); resetNav(); S.q.category = cat.id; load(); }); chips.appendChild(c); }
-    const kc = el('span', 'k-chip'); kc.style.setProperty('--c', '#64748b'); kc.append(icon((KIND[p.kind] || KIND.otro)[1]), document.createTextNode((KIND[p.kind] || KIND.otro)[0])); kc.firstChild.style.cssText = 'width:12px;height:12px'; chips.appendChild(kc);
-    const sc = el('span', 'k-chip'); sc.style.setProperty('--c', { borrador: '#94a3b8', probando: '#f59e0b', final: '#22c55e', archivado: '#64748b' }[p.status]); sc.textContent = STATUS[p.status]; chips.appendChild(sc);
-    if (p.model) { const mc = el('span', 'k-chip'); mc.style.setProperty('--c', '#06b6d4'); mc.textContent = p.model; chips.appendChild(mc); }
-    if (p.tool) { const tc = el('span', 'k-chip'); tc.style.setProperty('--c', '#8b5cf6'); tc.textContent = 'Herramienta: ' + p.tool; chips.appendChild(tc); }
-    p.lists.forEach(id2 => { const l = listBy(id2); if (l) { const c = el('span', 'k-chip btnlike'); c.style.setProperty('--c', l.color); c.textContent = `${l.emoji || '📌'} ${l.name}`; c.addEventListener('click', () => { m.close(); resetNav(); S.q.list = l.id; load(); }); chips.appendChild(c); } });
-    info.appendChild(chips);
-    if (p.labels.length) info.appendChild(K.labelChips(p.labels, { onClick: (l) => { m.close(); S.labels.clear(); S.labels.add(l.id); load(); } }));
+    // Propiedades con título; cada valor es un botón que cierra la ficha y filtra la biblioteca
+    const props = el('div', 'pd-props');
+    const filtra = (fn) => () => { m.close(); resetNav(); S.labels.clear(); fn(); load(); };
+    const valor = (txt, color, fn, ic) => {
+      const c = el('button', 'k-chip btnlike pd-val'); c.type = 'button'; c.style.setProperty('--c', color);
+      if (ic) { const i = icon(ic); i.style.cssText = 'width:13px;height:13px'; c.appendChild(i); }
+      c.appendChild(document.createTextNode(txt)); c.title = 'Ver los prompts con este valor';
+      c.addEventListener('click', filtra(fn)); return c;
+    };
+    const fila = (titulo, nodos) => {
+      if (!nodos.length) return;
+      const r = el('div', 'pd-prop'); r.appendChild(el('span', 'pd-pk', titulo));
+      const v = el('div', 'k-chips pd-pv'); nodos.forEach(n => v.appendChild(n)); r.appendChild(v); props.appendChild(r);
+    };
+    const cat = catBy(p.category);
+    fila('Categoría', cat ? [valor(`${cat.emoji || ''} ${cat.name}`.trim(), cat.color, () => { S.q.category = cat.id; })] : []);
+    fila('Listas', (p.lists || []).map(listBy).filter(Boolean).map(l => valor(`${l.emoji || '📌'} ${l.name}`, l.color, () => { S.q.list = l.id; })));
+    const kd = KIND[p.kind] || KIND.otro;
+    fila('Tipo', [valor(kd[0], '#64748b', () => { S.q.kind = p.kind; }, kd[1])]);
+    fila('Estado', [valor(STATUS[p.status] || p.status, { borrador: '#94a3b8', probando: '#f59e0b', final: '#22c55e', archivado: '#64748b' }[p.status] || '#64748b', () => { S.q.status = p.status; })]);
+    fila('Modelo', p.model ? [valor(p.model, '#06b6d4', () => { S.q.model = p.model; }, 'i-server')] : []);
+    fila('Herramienta', p.tool ? [valor(p.tool, '#8b5cf6', () => { S.q.tool = p.tool; }, 'i-sparkle')] : []);
+    fila('Etiquetas', (p.labels || []).map(id => K.labels.by[id]).filter(Boolean).map(l => valor(l.name, l.color, () => { S.labels.add(l.id); })));
+    info.appendChild(props);
 
     const meta = el('div', 'pd-meta');
     const st = K.stars(p.rating, async (v) => { try { await K.put('/api/prompts/' + p.id, { rating: v }); p.rating = v; K.bus.emit('prompts'); load(); } catch (e) { K.fail(e); } }, { readonly: !!p.deletedAt });
