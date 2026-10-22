@@ -30,9 +30,28 @@
   .app > main.wrap#view-notes,.app > main.wrap.kcc-view{max-width:none;}
 }
 @media (max-width:820px){
-  .mobilenav .inner{overflow-x:auto;scrollbar-width:none;}
+  /* Barra inferior: iconos y texto más grandes y zonas táctiles de al menos 44 px */
+  .mobilenav .inner{overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity;overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;padding:0 6px;}
   .mobilenav .inner::-webkit-scrollbar{display:none;}
-  .mobilenav button{flex:0 0 auto;min-width:66px;padding-left:6px;padding-right:6px;}
+  .mobilenav button{flex:0 0 auto;min-width:78px;min-height:60px;justify-content:center;gap:5px;padding:8px 8px 7px;
+    font-size:12px;letter-spacing:.01em;scroll-snap-align:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  .mobilenav button svg.ico{width:26px;height:26px;stroke-width:1.8;}
+  .mobilenav button.is-active{background:color-mix(in srgb,var(--accent-text) 12%,transparent);border-radius:14px;}
+  .mobilenav .inner{gap:2px;padding-top:4px;}
+  /* Objetivos táctiles cómodos en el resto de la interfaz */
+  .icon-btn{width:44px;height:44px;}
+  .btn{min-height:44px;}
+  .btn.sm{min-height:40px;}
+  .btn.icon{min-width:44px;}
+  .tab,.pr-link{min-height:44px;}
+  .ct-row{padding:12px;}
+  .ct-fav{padding:10px;}
+  .ct-fav .ico{width:22px;height:22px;}
+  .app{padding-bottom:calc(96px + var(--safe-bottom));}
+}
+@media (max-width:360px){
+  .mobilenav button{min-width:70px;}
 }
 
 /* ---------- Componentes compartidos ---------- */

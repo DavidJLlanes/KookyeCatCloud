@@ -548,6 +548,12 @@ function switchTab(tab) {
   document.querySelectorAll('.tab, .mobilenav button').forEach(b => {
     b.classList.toggle('is-active', b.dataset.view === tab);
   });
+  // En la barra inferior (que se desliza) la pestaña activa debe quedar a la vista
+  const navAct = document.querySelector('.mobilenav button.is-active');
+  if (navAct && navAct.offsetParent) {
+    const inner = navAct.parentElement;
+    inner.scrollTo({ left: navAct.offsetLeft - (inner.clientWidth - navAct.offsetWidth) / 2, behavior: 'smooth' });
+  }
   if (tab !== 'files') exitSelectMode();
   if (tab !== 'notes') guardarAhora();          // salir de Notas no debe perder lo escrito
   if (tab === 'notes') { loadNotes(true); refrescarContadorPapeleraNotas(); }
