@@ -1378,6 +1378,43 @@ app.get('/s/:id', (req, res) => {
   enviaPlantilla(res, 'share.html', 'html');
 });
 
+/* --- Enlace público de solo lectura a uno o varios prompts (con los fragmentos ya sustituidos) --- */
+app.post('/api/prompts-share', auth, jsonMedio, async (req, res) => {
+  try {
+    const ids = [...new Set((Array.isArray(req.body.ids) ? req.body.ids : []).map(String))].slice(0, 100);
+    if (!ids.length) return res.status(400).json({ error: 'Elige al menos un prompt' });
+    const lista = await promptsMod.core.paraCompartir(req.user, ids);
+    if (!lista.length) return res.status(404).json({ error: 'Los prompts no existen' });
+    const d = Number(req.body.days);
+    const entrada = {
+      id: crypto.randomBytes(16).toString('hex'), kind: 'prompts', owner: req.user.username,
+      label: String(req.body.title || '').slice(0, 80) || (lista.length === 1 ? lista[0].title : `${lista.length} prompts`),
+      ids: lista.map(x => x.id), createdAt: Date.now(), expiresAt: d > 0 ? Date.now() + d * 86400000 : null, views: 0,
+    };
+    const links = loadLinks(); links.unshift(entrada); saveLinks(links);
+    registrarActividad(req, 'prompts_compartidos', { n: lista.length });
+    res.json({ ok: true, link: { id: entrada.id, label: entrada.label, expiresAt: entrada.expiresAt, count: lista.length } });
+  } catch (err) { sendError(res, err); }
+});
+app.get('/api/public/prompts/:id', async (req, res) => {
+  try {
+    if (!publicAllowed(req.ip)) return res.status(429).json({ error: 'Demasiadas peticiones desde tu conexión' });
+    const links = loadLinks();
+    const link = links.find(l => l.id === req.params.id && l.kind === 'prompts');
+    if (!link) return res.status(404).json({ error: 'Este enlace no existe' });
+    if (linkExpired(link)) return res.status(410).json({ error: 'Este enlace ha caducado' });
+    const owner = ownerOf(link);
+    if (!owner) return res.status(410).json({ error: 'Este enlace ya no está disponible' });
+    const prompts = await promptsMod.core.paraCompartir(owner, link.ids);
+    if (!prompts.length) return res.status(410).json({ error: 'Estos prompts ya no están disponibles' });
+    link.views = (link.views || 0) + 1; saveLinks(links);
+    res.json({ label: link.label, expiresAt: link.expiresAt, prompts: prompts.map(({ id, ...resto }) => resto) });
+  } catch (err) { sendError(res, err); }
+});
+app.get('/p/:id', (req, res) => {
+  enviaPlantilla(res, 'prompts-share.html', 'html');
+});
+
 app.post('/api/uploadlinks', auth, (req, res) => {
   try {
     const { path: rel, label, days } = req.body || {};
