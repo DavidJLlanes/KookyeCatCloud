@@ -7,8 +7,9 @@
 (function () {
   const KIND = {
     imagen: ['Imagen', 'i-image'], texto: ['Texto', 'i-doc'], codigo: ['Código', 'i-bars'], video: ['Vídeo', 'i-play'],
-    audio: ['Audio', 'i-music'], agente: ['Agente', 'i-sparkle'], otro: ['Otro', 'i-stack'],
+    audio: ['Audio', 'i-music'], agente: ['Agente', 'i-sparkle'], fragmento: ['Fragmento', 'i-tag'], otro: ['Otro', 'i-stack'],
   };
+  const PRO = () => (K.prompts && K.prompts.pro) || null;
   const STATUS = { borrador: 'Borrador', probando: 'Probando', final: 'Final', archivado: 'Archivado' };
   const SORTS = [['updated', 'Modificados recientemente'], ['created', 'Más nuevos'], ['oldest', 'Más antiguos'], ['title', 'Título A-Z'],
     ['rating', 'Mejor valorados'], ['uses', 'Más usados']];
@@ -129,6 +130,15 @@
     const nav = el('div', 'pr-nav'); s.append(h, nav); return [s, nav];
   }
 
+  async function guardaVista() {
+    const q = S.q;
+    const filtros = ['q', 'category', 'list', 'kind', 'status', 'model', 'tool', 'fav', 'minRating', 'images', 'cal', 'from', 'to', 'trash', 'sort'];
+    const guardado = {}; filtros.forEach(k => { if (q[k]) guardado[k] = q[k]; });
+    if (Object.keys(guardado).length <= 1 && !S.labels.size) { K.toast('Aplica primero una búsqueda o algún filtro'); return; }
+    const name = await K.ask('Nombre de la vista', { placeholder: 'p. ej. Prompts finales de Claude' });
+    if (!name) return;
+    try { await K.post('/api/prompts/views', { name, q: guardado, labels: [...S.labels] }); await loadMeta(); renderRail(); K.toast('Vista guardada'); } catch (e) { K.fail(e); }
+  }
   function renderRail() {
     const rail = R.rail; const f = S.M.facets; const q = S.q;
     rail.textContent = '';
@@ -143,6 +153,16 @@
       link({ ic: 'i-trash', name: 'Papelera', n: f.trash, on: q.trash, onClick: () => { resetNav(); q.trash = true; load(); } }),
     );
     rail.appendChild(s1);
+
+    // Vistas guardadas: una combinación de búsqueda y filtros a un clic
+    const [sv, nv] = section('Vistas guardadas', { title: 'Guardar la búsqueda y los filtros actuales', fn: guardaVista });
+    (S.M.views || []).forEach(v => nv.appendChild(link({
+      ic: 'i-search', name: v.name, on: false,
+      onClick: () => { resetNav(); S.q.q = ''; Object.assign(S.q, v.q || {}); S.labels = new Set(v.labels || []); if (R.si) R.si.value = S.q.q || ''; load(); },
+      menu: (a) => K.menu(a, [{ label: 'Borrar vista', icon: 'i-trash', danger: true, onClick: async () => { try { await K.del('/api/prompts/views/' + v.id); await loadMeta(); renderRail(); } catch (e) { K.fail(e); } } }], { align: 'end' }),
+    })));
+    if (!(S.M.views || []).length) { const p = el('p', 'k-faint', 'Filtra o busca y pulsa + para guardar la combinación'); p.style.cssText = 'font-size:12.5px;padding:4px 8px'; nv.appendChild(p); }
+    rail.appendChild(sv);
 
     // Categorías en árbol
     const [s2, n2] = section('Categorías', { title: 'Nueva categoría', fn: () => editCategory(null) });
@@ -495,6 +515,10 @@
       btn('Lista', 'i-stack', (x) => K.menu(x, S.M.lists.length ? S.M.lists.map(l => ({ label: `${l.emoji || ''} ${l.name}`, dot: l.color, onClick: () => bulk(ids(), 'addList', l.id) })) : [{ head: 'Crea una lista primero' }]));
       btn('Estado', 'i-check-square', (x) => K.menu(x, Object.entries(STATUS).map(([k, n]) => ({ label: n, onClick: () => bulk(ids(), 'status', k) }))));
       btn('Favorito', 'i-star', () => bulk(ids(), 'favorite', true));
+      if (PRO()) {
+        btn('Exportar', 'i-download', () => PRO().exportar(ids(), null));
+        btn('Compartir', 'i-link', () => PRO().compartir(ids()));
+      }
       btn('Papelera', 'i-trash', () => bulk(ids(), 'delete'), 'danger');
     }
     btn('', 'i-x', () => { S.sel.clear(); S.selMode = false; render(); }, 'ghost');
@@ -538,7 +562,7 @@
     for (const t of textos) {
       for (const m of String(t || '').matchAll(RE_VAR)) {
         const v = leeVar(m[1]);
-        if (!v.nombre) continue;
+        if (!v.nombre || v.nombre.startsWith('@')) continue;   // {{@fragmento}} no es una variable
         const prev = mapa.get(v.nombre);
         if (!prev) mapa.set(v.nombre, v);
         else {
@@ -558,8 +582,12 @@
 
   async function copyPrompt(id, full) {
     try {
-      const p = full || await K.get('/api/prompts/' + id);
-      const vars = parseVars(p.body, p.negative);
+      const orig = full || await K.get('/api/prompts/' + id);
+      // Los fragmentos {{@nombre}} se sustituyen por su texto antes de pedir las variables
+      const pro = PRO();
+      const ex = pro ? (t) => pro.expande(t) : async (t) => t;
+      const p = { ...orig, body: await ex(orig.body), negative: await ex(orig.negative), system: await ex(orig.system) };
+      const vars = parseVars(p.body, p.negative, p.system);
       if (vars.length) { fillVars(p, vars); return; }
       await finishCopy(p, p.body);
     } catch (e) { K.fail(e); }
@@ -586,10 +614,12 @@
       const pre = el('pre'); pre.style.cssText = 'white-space:pre-wrap;margin:0;padding:12px;border-radius:12px;background:rgba(4,7,15,.6);border:1px solid var(--line);font:inherit;font-size:13.5px;max-height:180px;overflow:auto;word-break:break-word';
       b.append(t, pre); return [b, pre];
     };
+    const [bSys, outSys] = caja('Mensaje de sistema');
     const [bBody, outBody] = caja('Resultado');
     const [bNeg, outNeg] = caja('Prompt negativo');
     const pinta = () => {
       const v = valores();
+      bSys.hidden = !p.system; outSys.textContent = rellena(p.system, v);
       outBody.textContent = rellena(p.body, v);
       bNeg.hidden = !p.negative; outNeg.textContent = rellena(p.negative, v);
       // Se marcan los huecos todavía sin rellenar
@@ -619,12 +649,13 @@
       c.addEventListener('input', pinta); c.addEventListener('change', pinta);
       l.appendChild(c); w.appendChild(l);
     });
-    w.append(bBody, bNeg);
+    w.append(bSys, bBody, bNeg);
     pinta();
     const recuerda = () => { try { localStorage.setItem(clave, JSON.stringify(valores())); } catch {} };
     const acciones = [
       { label: 'Restablecer', close: false, onClick: () => { vars.forEach(v => { ins[v.nombre].value = v.def; }); try { localStorage.removeItem(clave); } catch {} pinta(); return false; } },
     ];
+    if (p.system) acciones.push({ label: 'Copiar sistema', onClick: async () => { recuerda(); await finishCopy(p, rellena(p.system, valores()), 'Mensaje de sistema copiado'); } });
     if (p.negative) acciones.push({ label: 'Copiar negativo', onClick: async () => { recuerda(); await finishCopy(p, rellena(p.negative, valores()), 'Negativo copiado'); } });
     acciones.push({ label: 'Copiar prompt', primary: true, onClick: async () => { recuerda(); await finishCopy(p, rellena(p.body, valores())); } });
     K.modal({ title: 'Rellenar variables', sub: p.title, cls: 'wide', content: w, actions: acciones });
@@ -707,6 +738,7 @@
     if (!p.deletedAt) meta.appendChild(fav);
     const dd = el('span'); dd.append(icon('i-clock'), document.createTextNode(`Creado ${K.d.short(new Date(p.createdAt))}`)); meta.appendChild(dd);
     if (p.updatedAt - p.createdAt > 60000) { const u = el('span'); u.textContent = `Editado ${K.ago(p.updatedAt)}`; meta.appendChild(u); }
+    if (PRO() && (p.body || p.system)) { const t = el('span', null, `≈ ${PRO().tokens((p.system || '') + (p.body || '')).toLocaleString('es')} tokens`); t.title = 'Estimación aproximada (unos 4 caracteres por token)'; meta.appendChild(t); }
     if (p.uses) { const u = el('span'); u.textContent = `Usado ${p.uses} vez${p.uses === 1 ? '' : 'ces'}`.replace('veces', 'veces'); meta.appendChild(u); }
     info.appendChild(meta);
 
@@ -737,7 +769,13 @@
       mo.addEventListener('click', () => K.menu(mo, [
         { label: 'Duplicar', icon: 'i-stack', onClick: async () => { m.close(); await duplicar(p.id); } },
         { label: p.pinned ? 'Desfijar' : 'Fijar arriba', icon: 'i-pin', onClick: async () => { m.close(); await patch(p.id, { pinned: !p.pinned }); } },
-        { label: 'Copiar con el negativo', icon: 'i-copy', onClick: async () => { await K.copy(p.body + (p.negative ? `\n\nNegative prompt: ${p.negative}` : '')); K.toast('Copiado'); } },
+        { label: p.negative ? 'Copiar con el negativo' : 'Copiar sistema + mensaje', icon: 'i-copy', onClick: async () => {
+          const ex = PRO() ? PRO().expande : async (t) => t;
+          const b = await ex(p.body), n = await ex(p.negative), s = await ex(p.system);
+          await K.copy((s ? s + '\n\n' : '') + b + (n ? `\n\nNegative prompt: ${n}` : '')); K.toast('Copiado');
+        } },
+        { label: 'Exportar…', icon: 'i-download', onClick: () => PRO() && PRO().exportar([p.id]) },
+        { label: 'Compartir con enlace…', icon: 'i-link', onClick: () => PRO() && PRO().compartir([p.id]) },
         '-', { label: 'Enviar a la papelera', icon: 'i-trash', danger: true, onClick: async () => { m.close(); await bulk([p.id], 'delete'); } },
       ], { align: 'end' }));
       acts.append(cp, ed, mo);
@@ -757,11 +795,24 @@
       const c = el('button', 'btn ghost tiny'); c.type = 'button'; c.append(icon('i-copy'), document.createTextNode('Copiar')); c.addEventListener('click', async () => { K.toast((await K.copy(texto)) ? 'Copiado' : 'No se pudo copiar'); }); h.appendChild(c);
       const pre = el('pre'); pre.appendChild(conVars(texto, true)); b.append(h, pre); return b;
     };
-    if (p.body) info.appendChild(bloque('Prompt', p.body));
+    const pro = PRO();
+    if (p.system) info.appendChild(bloque('Mensaje de sistema', p.system));
+    if (p.body) info.appendChild(bloque(pro ? pro.etiquetaCuerpo(p.kind) : 'Prompt', p.body));
     if (p.negative) info.appendChild(bloque('Prompt negativo', p.negative, 'neg'));
+    if (pro && !p.deletedAt && S.M.comfy && p.kind === 'imagen' && p.body) {
+      const cb = el('button', 'btn sm'); cb.type = 'button'; cb.append(icon('i-play'), el('span', null, 'Generar en ComfyUI'));
+      cb.addEventListener('click', async () => {
+        const pv = parseVars(p.body, p.negative);
+        const txt = await pro.expande(p.body), neg = await pro.expande(p.negative);
+        if (pv.length) { K.toast('Rellena las variables copiando el prompt; ComfyUI usará el texto tal cual'); }
+        cb.disabled = true; await pro.generarComfy(p, txt, neg); cb.disabled = false;
+      });
+      info.appendChild(cb);
+    }
     const pk = Object.entries(p.params || {});
     if (pk.length) { const b = el('div', 'pd-blk'); const h = el('header'); h.appendChild(el('span', null, 'Parámetros')); const dl = el('dl', 'pd-params'); pk.forEach(([k, v]) => dl.append(el('dt', null, k), el('dd', null, v))); b.append(h, dl); info.appendChild(b); }
     if (p.notes) info.appendChild(bloque('Notas', p.notes));
+    if (pro) pro.seccionesDetalle(p, info, () => m.close());
     if (p.source) { const a = /^https?:\/\//i.test(p.source) ? (() => { const l = el('a', null, p.source); l.href = p.source; l.target = '_blank'; l.rel = 'noopener noreferrer'; l.style.cssText = 'color:var(--accent-text);word-break:break-all'; return l; })() : el('span', null, p.source); const d = el('div', 'pd-meta'); d.append(icon('i-link'), document.createTextNode('Fuente: '), a); info.appendChild(d); }
     if (p.versions && p.versions.length) {
       const det = el('details'); const sm = el('summary', null, `Historial (${p.versions.length} versiones)`); sm.style.cssText = 'cursor:pointer;color:var(--muted);font-size:13px'; det.appendChild(sm);
@@ -802,8 +853,8 @@
     let p = null;
     if (id) { try { p = await K.get('/api/prompts/' + id); } catch (e) { K.fail(e); return; } }
     const nuevo = !p;
-    if (extra.restore && p) { p = { ...p, title: extra.restore.title, body: extra.restore.body, negative: extra.restore.negative }; K.toast('Versión anterior cargada: pulsa Guardar para aplicarla'); }
-    const d = p || { title: '', body: '', negative: '', notes: '', kind: 'imagen', status: 'borrador', model: '', tool: '', language: '', source: '', rating: 0, favorite: false, category: S.q.category && S.q.category !== '__none' ? S.q.category : '', labels: [...S.labels], lists: S.q.list ? [S.q.list] : [], params: {}, images: [], color: '', cal: null };
+    if (extra.restore && p) { p = { ...p, title: extra.restore.title, body: extra.restore.body, negative: extra.restore.negative, system: extra.restore.system !== undefined ? extra.restore.system : p.system }; K.toast('Versión anterior cargada: pulsa Guardar para aplicarla'); }
+    const d = p || { title: '', body: '', negative: '', system: '', chain: [], outputs: [], notes: '', kind: 'imagen', status: 'borrador', model: '', tool: '', language: '', source: '', rating: 0, favorite: false, category: S.q.category && S.q.category !== '__none' ? S.q.category : '', labels: [...S.labels], lists: S.q.list ? [S.q.list] : [], params: {}, images: [], color: '', cal: null };
 
     const root = el('div', 'pe-grid');
     const left = el('div'); const right = el('div');
@@ -830,18 +881,36 @@
     ]));
     const cnt = el('span', 'k-faint'); cnt.style.cssText = 'font-size:12px;margin-left:auto;align-self:center';
     const vistaVars = el('div', 'k-chips'); vistaVars.style.margin = '2px 0 8px';
+    const pro = PRO();
+    const bf = el('button', 'btn tiny', '@ Fragmento ▾'); bf.type = 'button';
+    bf.addEventListener('click', () => pro && pro.menuFragmentos(bf, (t) => { body.setRangeText(t, body.selectionStart, body.selectionEnd, 'end'); body.focus(); upd(); }));
     const upd = () => {
-      const v = parseVars(body.value, neg.value);
-      cnt.textContent = `${body.value.length} caracteres${v.length ? ` · ${v.length} variable${v.length === 1 ? '' : 's'}` : ''}`;
+      const v = parseVars(body.value, neg.value, sys.value);
+      const tk = pro ? pro.tokens(sys.value + body.value) : 0;
+      cnt.textContent = `${body.value.length} caracteres${tk ? ` · ≈ ${tk.toLocaleString('es')} tokens` : ''}${v.length ? ` · ${v.length} variable${v.length === 1 ? '' : 's'}` : ''}`;
       vistaVars.textContent = '';
       v.forEach(x => { const c = el('span', 'k-chip'); c.style.setProperty('--c', x.opciones.length ? '#a855f7' : '#06b6d4'); c.textContent = x.nombre + (x.opciones.length ? ` ▾ ${x.opciones.length}` : x.def ? ` = ${x.def}` : '') + (x.tipo ? ` (${x.tipo})` : ''); vistaVars.appendChild(c); });
     };
     body.addEventListener('input', upd);
-    tb.append(bv, cnt);
+    tb.append(bv, bf, cnt);
     const neg = el('textarea', 'pe-textarea'); neg.value = d.negative; neg.rows = 3; neg.style.minHeight = '70px'; neg.placeholder = 'Qué evitar (opcional)';
-    neg.addEventListener('input', upd); upd();
+    const sys = el('textarea', 'pe-textarea'); sys.value = d.system || ''; sys.rows = 4; sys.placeholder = 'Rol e instrucciones permanentes (opcional). Admite {{variables}} y {{@fragmentos}}.';
+    sys.addEventListener('input', upd); neg.addEventListener('input', upd); upd();
     const notes = el('textarea'); notes.value = d.notes; notes.rows = 3; notes.placeholder = 'Resultados, trucos, qué funcionó…';
-    left.append(fld('Título', title), fld('Prompt', body, true), tb, vistaVars, fld('Prompt negativo', neg), fld('Notas', notes));
+    const fSys = fld('Mensaje de sistema', sys), fBody = fld('Prompt', body, true), fNeg = fld('Prompt negativo', neg);
+    const btnPlant = el('button', 'btn tiny', 'Plantilla ▾'); btnPlant.type = 'button';
+    btnPlant.addEventListener('click', () => pro && pro.menuPlantillas(btnPlant, kindSel.value, async (t) => {
+      if ((body.value.trim() || sys.value.trim()) && !await K.confirm('Se sustituirá el texto actual por la plantilla.', { ok: 'Usar plantilla' })) return;
+      kindSel.value = t.kind; aplicaTipo(); sys.value = t.system; body.value = t.body; if (!title.value.trim()) title.value = t.n; upd();
+    }));
+    tb.insertBefore(btnPlant, bv);
+    const salidasEd = pro ? pro.salidasEditor(d.outputs, true) : null;
+    const cadenaEd = pro ? pro.cadenaEditor(d.chain, id) : null;
+    const fSal = salidasEd ? fld('Resultados de ejemplo (por modelo, con valoración)', salidasEd.node) : null;
+    const fCad = cadenaEd ? fld('Cadena de prompts (se ejecutan uno tras otro)', cadenaEd.node) : null;
+    left.append(fld('Título', title), fSys, fBody, tb, vistaVars, fNeg, fld('Notas', notes));
+    if (fSal) left.appendChild(fSal);
+    if (fCad) left.appendChild(fCad);
 
     // Parámetros
     const paramsBox = el('div', 'pe-params');
@@ -849,7 +918,7 @@
     const pintaParams = () => {
       paramsBox.textContent = '';
       paramsList.forEach((kv, i) => {
-        const r = el('div', 'pr-p'); const k = el('input'); k.placeholder = 'p. ej. ar'; k.value = kv[0]; const v = el('input'); v.placeholder = '16:9'; v.value = kv[1];
+        const r = el('div', 'pr-p'); const k = el('input'); k.placeholder = 'p. ej. ar'; k.setAttribute('list', 'pe-pk'); k.value = kv[0]; const v = el('input'); v.placeholder = '16:9'; v.value = kv[1];
         k.addEventListener('input', () => { kv[0] = k.value; }); v.addEventListener('input', () => { kv[1] = v.value; });
         const x2 = el('button', 'btn ghost icon'); x2.type = 'button'; x2.appendChild(icon('i-x')); x2.addEventListener('click', () => { paramsList.splice(i, 1); pintaParams(); });
         r.append(k, v, x2); paramsBox.appendChild(r);
@@ -865,6 +934,17 @@
     const addCat = (par, dep) => S.M.categories.filter(c => (c.parent || '') === par).forEach(c => { const o = el('option', null, '  '.repeat(dep) + `${c.emoji || ''} ${c.name}`.trim()); o.value = c.id; catSel.appendChild(o); addCat(c.id, dep + 1); });
     addCat('', 0); catSel.value = d.category || '';
     const kindSel = el('select'); Object.entries(KIND).forEach(([k, [n]]) => { const o = el('option', null, n); o.value = k; kindSel.appendChild(o); }); kindSel.value = d.kind;
+    // La ficha se adapta al tipo: negativo solo en imagen/vídeo/audio, mensaje de sistema en texto/código/agente…
+    const dlPk = el('datalist'); dlPk.id = 'pe-pk';
+    const aplicaTipo = () => {
+      const k = kindSel.value; const c = pro ? pro.campos(k) : { sistema: true, negativo: true, cadena: true, resultados: true };
+      fSys.hidden = !c.sistema && !sys.value.trim();
+      fNeg.hidden = !c.negativo && !neg.value.trim();
+      if (fSal) fSal.hidden = !c.resultados; if (fCad) fCad.hidden = !c.cadena;
+      fBody.firstChild.textContent = pro ? pro.etiquetaCuerpo(k) : 'Prompt';
+      dlPk.textContent = ''; (pro ? pro.paramSugeridos(k) : []).forEach(x2 => { const o = el('option'); o.value = x2; dlPk.appendChild(o); });
+    };
+    kindSel.addEventListener('change', aplicaTipo); aplicaTipo();
     const statSel = el('select'); Object.entries(STATUS).forEach(([k, n]) => { const o = el('option', null, n); o.value = k; statSel.appendChild(o); }); statSel.value = d.status;
     const model = el('input'); model.value = d.model; model.setAttribute('list', 'pr-models'); model.placeholder = 'GPT-5, Claude, FLUX, SDXL…'; model.maxLength = 60;
     const dl = el('datalist'); dl.id = 'pr-models'; S.M.models.forEach(x2 => { const o = el('option'); o.value = x2; dl.appendChild(o); });
@@ -890,7 +970,7 @@
 
     right.append(fld('Categoría', catSel, true), row2, row3, row3b, fld('Etiquetas', lp, true), fld('Listas', listsBox, true));
     const rr = el('div', 'k-row'); rr.style.margin = '4px 0 14px'; rr.append(stars, favSw); right.appendChild(rr);
-    right.append(fld('Color de la tarjeta', color, true), fld('Fuente', src, true), dl, dlt, fld('Calendario', calF, true));
+    right.append(fld('Color de la tarjeta', color, true), fld('Fuente', src, true), dl, dlt, dlPk, fld('Calendario', calF, true));
 
     // Imágenes
     const imgs = (d.images || []).map(i => ({ ...i, key: i.id }));   // existentes
@@ -952,7 +1032,14 @@
         title: title.value, body: body.value, negative: neg.value, notes: notes.value, category: catSel.value, kind: kindSel.value,
         status: statSel.value, model: model.value, tool: tool.value, language: lang.value, source: src.value, rating: rate, favorite: fav,
         labels: lp.get(), lists: [...listSel], color: color.get(), params: params2,
+        system: sys.value,
       };
+      if (salidasEd) campos.outputs = salidasEd.get();
+      if (cadenaEd) campos.chain = cadenaEd.get();
+      // Aviso si ya existe algo muy parecido (solo al crear o si cambió el texto)
+      if (pro && kindSel.value !== 'fragmento' && (nuevo || body.value !== d.body) && body.value.trim().length > 30) {
+        if (!await pro.confirmaParecidos({ title: title.value, body: body.value, excludeId: id || undefined })) return false;
+      }
       const cal = calF.get();
       if (nuevo) { if (cal) campos.calendar = cal; } else campos.calendar = cal;   // al editar, null quita el evento
       h.buttons.save.disabled = true;
@@ -1038,6 +1125,7 @@
     extraMenu: (K.prompts && K.prompts.extraMenu) || [],
     reload: () => { K.bus.emit('prompts'); return load(); },
     detail: (id) => openDetail(id),
+    copiar: (id) => copyPrompt(id),
     filtrar: (campo, valor) => { S.q[campo] = valor; load(); },
   });
 })();

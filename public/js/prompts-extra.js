@@ -3,7 +3,7 @@
    Se engancha a prompts.js a través de K.prompts (menú "⋯" y bloque Historial del detalle). */
 (function () {
   if (!window.K || !K.prompts) return;
-  const KIND = { imagen: 'Imagen', texto: 'Texto', codigo: 'Código', video: 'Vídeo', audio: 'Audio', agente: 'Agente', otro: 'Otro' };
+  const KIND = { imagen: 'Imagen', texto: 'Texto', codigo: 'Código', video: 'Vídeo', audio: 'Audio', agente: 'Agente', fragmento: 'Fragmento', otro: 'Otro' };
   const STATUS = { borrador: 'Borrador', probando: 'Probando', final: 'Final', archivado: 'Archivado' };
   const num = (n) => Number(n || 0).toLocaleString('es-ES');
   const mb = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
