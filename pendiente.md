@@ -46,6 +46,7 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [x] ~~Importar metadatos de ComfyUI directamente desde el PNG (workflow, seed, modelo).~~ Hecho (también Automatic1111/Forge): menú ⋯ → Crear desde imágenes.
 - [x] ~~Plantillas con variables, por ejemplo `{sujeto}` y `{estilo}`, que rellenan el texto.~~ Ya existía con `{{variable}}` (valor por defecto, listas, texto largo, número y fecha).
 - [x] ~~Estadísticas: modelos y herramientas más usados, prompts favoritos.~~ Hecho: menú ⋯ → Estadísticas.
+- [x] ~~Prompts de cualquier tipo: mensaje de sistema, fragmentos, resultados con valoración y comparación, cadenas, plantillas, tokens, vistas guardadas, parecidos, exportar, compartir y envío a ComfyUI.~~ Hecho: ver «Prompts que no son de imagen» en el README.
 
 ### Productividad
 - [x] ~~Recordatorios y tareas vinculados a notas o contactos.~~ Hecho: botón Recordar en notas y Recordatorio en contactos (varios por elemento, con o sin fecha).

@@ -569,6 +569,38 @@ memoria y cada prompt es un archivo propio).
 - **Importar / exportar** en JSON (hasta 5000 por importación), o pegando texto con prompts
   separados por una línea `---`.
 
+### Prompts que no son de imagen
+
+La ficha se adapta al **tipo** (Imagen, Texto, Código, Vídeo, Audio, Agente, Fragmento, Otro):
+
+- **Mensaje de sistema** (texto, código, agente, otro) además del mensaje de usuario; el prompt
+  negativo solo aparece en imagen, vídeo y audio; los parámetros sugieren nombres según el tipo
+  (`temperature`, `seed`, `fps`…). Una **estimación de tokens** (≈ 4 caracteres por token) se ve
+  al editar y en la ficha.
+- **Plantillas de inicio**: rol-tarea-contexto-formato, resumir, razonar paso a paso, extraer JSON,
+  reescribir, revisión de código, agente con herramientas y descripción de imagen.
+- **Fragmentos reutilizables**: crea prompts de tipo *Fragmento* (roles, reglas, estilos) y úsalos en
+  cualquier otro con `{{@nombre-del-titulo}}`. Se sustituyen al copiar, exportar y compartir
+  (hasta 3 niveles). El botón **@ Fragmento** del editor los inserta.
+- **Rellenar y copiar**: las `{{variables}}` también valen en el mensaje de sistema; el formulario
+  muestra sistema y usuario y copia cada uno por separado.
+- **Resultados guardados**: por prompt, hasta 30 respuestas con modelo, entrada de prueba,
+  valoración y marca de **la mejor**; botón **Comparar** para verlas en columnas.
+- **Cadenas**: un prompt puede enlazar hasta 20 pasos; **Ejecutar cadena** los muestra uno a uno
+  para copiarlos en orden.
+- **Parecidos**: al guardar avisa si ya existe un prompt con ≥ 60 % de palabras en común, y la ficha
+  lista los parecidos.
+- **Vistas guardadas**: en la barra lateral, `+` guarda la búsqueda y los filtros actuales con un nombre.
+- **Exportar** (menú ⋯, ficha o selección): JSON (reimportable), Markdown o *instrucciones
+  personalizadas* (texto listo para ChatGPT, Proyectos de Claude, GPTs o Gems).
+- **Compartir con enlace**: página pública de solo lectura `/p/<id>` (sin iniciar sesión) con botón de
+  copiar por bloque; caduca en 7/30/90 días o nunca, se revoca desde el mismo diálogo y tiene límite
+  de peticiones. Se comparten texto, parámetros y notas, no las imágenes ni los resultados.
+- **Enviar a ComfyUI** (opcional): con `COMFY_URL` definida, el menú ⋯ → *Workflow de ComfyUI…*
+  guarda un workflow (formato API) con marcadores `%PROMPT%`, `%NEGATIVE%`, `%SEED%` y
+  `%P:parametro%`; en la ficha de un prompt de imagen, **Generar en ComfyUI** añade el resultado
+  como imagen del propio prompt. Tiempo máximo: `COMFY_TIMEOUT_S` (240 s por defecto).
+
 ## Contactos
 
 Agenda personal al estilo de Google Contacts, en la pestaña **Contactos** (barra lateral en el
