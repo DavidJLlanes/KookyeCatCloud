@@ -242,7 +242,7 @@
     let n = 0; ids.forEach(i => { n += S.M.facets.category[i] || 0; }); return n;
   }
 
-  async function editCategory(c, parent) {
+  async function editCategory(c, parent, alGuardar) {
     const nm = el('input'); nm.value = c ? c.name : ''; nm.maxLength = 60; nm.placeholder = 'Nombre';
     const em = el('button', 'btn'); em.type = 'button'; let emoji = c ? c.emoji : '📁'; em.textContent = emoji || '＋'; em.style.fontSize = '20px';
     em.addEventListener('click', () => K.emojiPicker(em, (e) => { emoji = e; em.textContent = e || '＋'; }));
@@ -259,6 +259,7 @@
         const body = { name: nm.value, emoji, color: col.get(), parent: par.value };
         if (c) await K.put('/api/prompts/categories/' + c.id, body); else await K.post('/api/prompts/categories', body);
         K.bus.emit('prompts'); await load();
+        if (alGuardar) alGuardar(body.name);
       } catch (e) { K.fail(e); return false; }
     } }] });
     setTimeout(() => nm.focus(), 30);
@@ -930,9 +931,22 @@
     left.appendChild(fld('Parámetros (seed, steps, cfg, aspect ratio…)', paramsBox));
 
     // Derecha: clasificación
-    const catSel = el('select'); const o0 = el('option', null, 'Sin categoría'); o0.value = ''; catSel.appendChild(o0);
-    const addCat = (par, dep) => S.M.categories.filter(c => (c.parent || '') === par).forEach(c => { const o = el('option', null, '  '.repeat(dep) + `${c.emoji || ''} ${c.name}`.trim()); o.value = c.id; catSel.appendChild(o); addCat(c.id, dep + 1); });
-    addCat('', 0); catSel.value = d.category || '';
+    const catSel = el('select');
+    const llenaCats = (valor) => {
+      catSel.textContent = '';
+      const o0 = el('option', null, 'Sin categoría'); o0.value = ''; catSel.appendChild(o0);
+      const addCat = (par, dep) => S.M.categories.filter(c => (c.parent || '') === par).forEach(c => { const o = el('option', null, '  '.repeat(dep) + `${c.emoji || ''} ${c.name}`.trim()); o.value = c.id; catSel.appendChild(o); addCat(c.id, dep + 1); });
+      addCat('', 0);
+      const on = el('option', null, '＋ Nueva categoría…'); on.value = '__new'; catSel.appendChild(on);
+      catSel.value = valor || '';
+    };
+    llenaCats(d.category);
+    let catPrev = catSel.value;
+    catSel.addEventListener('change', () => {
+      if (catSel.value !== '__new') { catPrev = catSel.value; return; }
+      catSel.value = catPrev;
+      editCategory(null, '', (nombre) => { const nueva = S.M.categories.find(c => c.name === nombre); llenaCats(nueva ? nueva.id : catPrev); catPrev = catSel.value; });
+    });
     const kindSel = el('select'); Object.entries(KIND).forEach(([k, [n]]) => { const o = el('option', null, n); o.value = k; kindSel.appendChild(o); }); kindSel.value = d.kind;
     // La ficha se adapta al tipo: negativo solo en imagen/vídeo/audio, mensaje de sistema en texto/código/agente…
     const dlPk = el('datalist'); dlPk.id = 'pe-pk';
