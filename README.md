@@ -83,7 +83,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 📝 **Notas tipo Notion** | Editor de bloques con carpetas, colores, etiquetas y enlaces internos. |
 | 🛒 **Lista de la compra** | Catálogo y compras compartidos, cantidades, categorías e imágenes con recorte cuadrado. |
 | 📅 **Calendario** | Mes, semana, día y agenda con calendarios de colores, repetición y recordatorios. |
-| ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables, imágenes de muestra, comparación de versiones, estadísticas y creación desde PNG de ComfyUI / Automatic1111. |
+| ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables, imágenes de muestra, comparación de versiones, estadísticas y creación desde metadatos de imágenes de ComfyUI / Automatic1111. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
 | 📋 **Portapapeles compartido** | Deja texto o archivos desde un dispositivo y recógelos desde otro al instante. En Android, la app aparece en el menú «Compartir». |
 | ⚡ **Actualización en directo** | La lista de archivos se refresca sola cuando llega algo por un enlace de subida o desde otro dispositivo, sin consultas periódicas. |
@@ -559,6 +559,9 @@ memoria y cada prompt es un archivo propio).
   CFG, sampler, scheduler, tamaño, LoRA y otros parámetros. La imagen queda de muestra (WebP) y el
   nombre del archivo como fuente. Si un editor o una red social eliminó los metadatos, la imagen se
   salta. Los workflows solo se leen como datos; nunca se ejecutan.
+  También se leen los nodos personalizados `AcademiaSD_PositivePrompt` y `AcademiaSD_NegativePrompt`;
+  los valores de pasos y CFG conectados mediante `AcademiaSD_SwitchAny` se toman de su entrada de
+  datos, evitando confundirlos con el selector. El JSON del grafo no se usa como texto del prompt.
 - Al adjuntar una imagen con metadatos compatibles en el editor, se completan los campos vacíos.
   Los modelos y herramientas admiten valores propios:
   puedes guardarlos con **Añadir a opciones** y seguirán en las sugerencias para futuros prompts.
@@ -567,9 +570,16 @@ memoria y cada prompt es un archivo propio).
   herramienta, modelo, tipo y estado filtran la biblioteca al pulsarlas.
 - **Vistas** en tarjetas, lista o **tablero por estado** (arrastrando entre columnas), orden por
   fecha, título, valoración o uso, filtros combinables, **selección múltiple** con acciones en
-  lote y **papelera** con restauración.
+  lote y **papelera** con restauración. En las tarjetas, la fecha vinculada al calendario se mantiene
+  en una sola línea; el chip del modelo se reduce cuando falta espacio.
 - **Ficha con propiedades**: categoría, listas, tipo, estado, modelo, herramienta y etiquetas van
   en filas con su título, y cada valor es un botón que filtra la biblioteca por él.
+- **Ficha adaptable a móvil y escritorio**: en pantallas amplias, la galería y los detalles se
+  muestran en dos columnas con desplazamiento independiente; en móvil y pantallas estrechas,
+  se apilan y se desplaza la ficha completa, con el cierre flotante siempre accesible.
+  El prompt, el negativo, las propiedades y los parámetros conservan su altura completa,
+  sin comprimirse ni quedar recortados. Los bloques de texto no añaden desplazamiento interno,
+  y los títulos, modelos y parámetros largos se ajustan al ancho disponible.
 - **Importar / exportar** en JSON (hasta 5000 por importación), o pegando texto con prompts
   separados por una línea `---`.
 
@@ -1119,7 +1129,7 @@ lib/
   ical.js            Feed iCal (RFC 5545) de solo lectura
   holidays.js        Festivos de España calculados (sin servicios externos)
   prompts.js         Biblioteca de prompts e imágenes WebP
-  comfy.js           Lee los metadatos de los PNG de ComfyUI y Automatic1111
+  comfy.js           Lee metadatos de generación: ComfyUI, Automatic1111 / Forge, JSON y EXIF/XMP
   clip.js            Portapapeles compartido entre dispositivos y destino de «Compartir»
   contacts.js        Contactos: API, búsqueda, importación y exportación vCard
   vcard.js           Lectura y escritura de vCard 3.0
