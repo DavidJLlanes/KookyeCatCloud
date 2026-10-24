@@ -23,8 +23,11 @@
 .shop-check.checked{color:#fff;background:var(--brand);border-color:transparent;}
 .shop-product-image{width:52px;height:52px;flex:none;overflow:hidden;border-radius:12px;background:var(--surface-2);display:grid;place-items:center;color:var(--faint);}
 .shop-product-image .ico{width:21px;height:21px;}
+.shop-product-image.no-image{background:var(--brand-soft);color:var(--accent-text);}
+.shop-product-initial{font-size:27px;line-height:1;font-weight:800;letter-spacing:-.06em;user-select:none;}
 .shop-product-image img{display:block;width:100%;height:100%;object-fit:cover;}
 .shop-product-image.large{width:100%;height:auto;aspect-ratio:1;border-radius:15px;}
+.shop-product-image.large .shop-product-initial{font-size:clamp(48px,16vw,112px);}
 .shop-entry-info{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px;}
 .shop-entry-info strong{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .shop-entry-info small{font-size:12px;}

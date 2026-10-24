@@ -47,8 +47,13 @@
   }
   function productVisual(p, large = false) {
     const box = el('div', 'shop-product-image' + (large ? ' large' : ''));
-    if (p.hasImage) { const img = el('img'); img.src = imageUrl(p.id); img.alt = `Imagen de ${p.name}`; img.loading = 'lazy'; img.addEventListener('error', () => { box.classList.add('no-image'); img.remove(); }); box.appendChild(img); }
-    else { box.classList.add('no-image'); box.appendChild(icon('i-image')); }
+    const showInitial = () => {
+      box.classList.add('no-image'); box.textContent = '';
+      const initial = Array.from(String(p.name || '').trim())[0]?.toLocaleUpperCase('es') || '?';
+      box.appendChild(el('span', 'shop-product-initial', initial));
+    };
+    if (p.hasImage) { const img = el('img'); img.src = imageUrl(p.id); img.alt = `Imagen de ${p.name}`; img.loading = 'lazy'; img.addEventListener('error', showInitial); box.appendChild(img); }
+    else showInitial();
     return box;
   }
   function productMeta(p) { return [p.category, p.unit].filter(Boolean).join(' · '); }
