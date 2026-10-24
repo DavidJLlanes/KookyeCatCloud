@@ -11,11 +11,11 @@
   /* ---------- Crear prompts desde imágenes ---------- */
   function desdeImagenes() {
     const w = el('div');
-    const p = el('p', 'k-muted', 'Elige imágenes PNG generadas con ComfyUI o Automatic1111 / Forge. Se lee el workflow o los parámetros que llevan dentro y se crea un prompt por imagen, con su texto, negativo, modelo, semilla, pasos, LoRA… y la imagen como muestra.');
+    const p = el('p', 'k-muted', 'Elige imágenes generadas por ComfyUI, Automatic1111 / Forge u otras herramientas compatibles. Se leen los metadatos disponibles y se crea un prompt por imagen con su texto, negativo, modelo, semilla, pasos, LoRA… y la imagen como muestra.');
     p.style.cssText = 'font-size:13.5px;margin:0 0 12px';
-    const fi = el('input'); fi.type = 'file'; fi.multiple = true; fi.accept = 'image/png';
+    const fi = el('input'); fi.type = 'file'; fi.multiple = true; fi.accept = 'image/*';
     const f1 = el('label', 'field'); f1.append(el('span', null, 'Imágenes (hasta 20 a la vez)'), fi);
-    const nota = el('p', 'k-faint', 'Las imágenes que pasaron por una red social o se guardaron como JPG/WebP suelen haber perdido esos datos y se saltarán.');
+    const nota = el('p', 'k-faint', 'Los metadatos dependen de la herramienta y del formato. Si una red social o un editor los eliminó, se importará la imagen solo si conserva datos compatibles.');
     nota.style.cssText = 'font-size:12.5px;margin:8px 0 0';
     w.append(p, f1, nota);
     K.modal({ title: 'Crear prompts desde imágenes', content: w, actions: [{ label: 'Cancelar' }, { label: 'Importar', primary: true, onClick: async () => {

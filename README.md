@@ -552,15 +552,15 @@ memoria y cada prompt es un archivo propio).
 - **Historial** de versiones del texto (las 30 últimas) para volver atrás, y **Comparar versiones**:
   eliges dos versiones (o la actual) y se marcan por palabras lo quitado y lo añadido en título, prompt
   y prompt negativo.
-- **Crear desde imágenes de ComfyUI / Automatic1111** (menú ⋯): eliges hasta 20 PNG y se crea un prompt
-  por imagen leyendo los metadatos que llevan dentro. De **ComfyUI** se sigue el workflow desde el
-  muestreador (KSampler, SamplerCustom, Flux…) hasta los nodos de texto y el cargador del modelo:
-  prompt, negativo, modelo, semilla, pasos, CFG, sampler, scheduler, tamaño y LoRA. De **Automatic1111 /
-  Forge** se lee el bloque `parameters`. La imagen queda de muestra (WebP) y el nombre del archivo como
-  fuente. Los PNG sin datos (pasados por redes sociales, JPG…) se saltan. Solo se lee JSON: no se
-  ejecuta nada del workflow.
-- Al adjuntar un PNG generado con ComfyUI o Automatic1111 en el editor, también se leen sus metadatos
-  y se completan los campos que estén vacíos. Los modelos y herramientas admiten valores propios:
+- **Crear desde imágenes de ComfyUI / Automatic1111** (menú ⋯): eliges hasta 20 imágenes y se crea un
+  prompt por imagen leyendo sus metadatos compatibles. De **ComfyUI** se interpreta el workflow API o
+  visual; de **Automatic1111 / Forge** se lee `parameters`. También se reconocen algunos formatos JSON
+  de otras herramientas y metadatos EXIF/XMP. Se recuperan prompt, negativo, modelo, semilla, pasos,
+  CFG, sampler, scheduler, tamaño, LoRA y otros parámetros. La imagen queda de muestra (WebP) y el
+  nombre del archivo como fuente. Si un editor o una red social eliminó los metadatos, la imagen se
+  salta. Los workflows solo se leen como datos; nunca se ejecutan.
+- Al adjuntar una imagen con metadatos compatibles en el editor, se completan los campos vacíos.
+  Los modelos y herramientas admiten valores propios:
   puedes guardarlos con **Añadir a opciones** y seguirán en las sugerencias para futuros prompts.
 - **Estadísticas** (menú ⋯): totales, valoración media, los más copiados, los que no usas, creados por
   mes y reparto por herramienta, modelo, tipo, estado, categoría, etiqueta y lista. Las filas de

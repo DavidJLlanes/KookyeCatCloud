@@ -1022,28 +1022,36 @@
       accepted.forEach(f => imgs.push({ key: 'n' + Math.random().toString(36).slice(2), file: f, url: URL.createObjectURL(f), caption: '' }));
       pintaImgs();
       metadataTask = metadataTask.then(async () => {
-        for (const f of accepted.filter(x => x.type === 'image/png' || /\.png$/i.test(x.name)).slice(0, 5)) {
+        let applied = false, found = false;
+        const candidates = accepted.filter(x => /^image\//.test(x.type) || /\.(png|jpe?g|webp|avif|heic|heif|tiff?)$/i.test(x.name)).slice(0, maxI);
+        for (const f of candidates) {
           try {
             const fd = new FormData(); fd.append('image', f, f.name);
             const response = await api(`${BASE}/api/prompts/read-image-metadata`, { method: 'POST', body: fd });
             const result = await response.json(); if (!response.ok) throw new Error(result.error || 'No se pudieron leer los metadatos');
-            const meta = result.metadata; if (!meta) continue;
+            const meta = result.metadata; if (!meta) continue; found = true;
             let changed = false;
-            if (!title.value.trim()) { title.value = (body.value.trim() || meta.body || '').replace(/\s+/g, ' ').trim().slice(0, 60) || f.name.replace(/\.png$/i, ''); changed = true; }
+            if (!title.value.trim()) { title.value = (body.value.trim() || meta.body || '').replace(/\s+/g, ' ').trim().slice(0, 60) || f.name.replace(/\.[^.]+$/, ''); changed = true; }
             if (!body.value.trim() && meta.body) { body.value = meta.body; changed = true; }
             if (!neg.value.trim() && meta.negative) { neg.value = meta.negative; changed = true; }
             if (!model.value.trim() && meta.model) { model.value = meta.model; model.dispatchEvent(new Event('input')); changed = true; }
             if (!tool.value.trim() && meta.tool) { tool.value = meta.tool; tool.dispatchEvent(new Event('input')); changed = true; }
             if (!src.value.trim()) { src.value = f.name; changed = true; }
-            const existing = new Set(paramsList.map(([k]) => k.trim().toLocaleLowerCase()));
-            Object.entries(meta.params || {}).forEach(([k, v]) => { if (k && !existing.has(k.trim().toLocaleLowerCase())) { paramsList.push([k, String(v)]); existing.add(k.trim().toLocaleLowerCase()); changed = true; } });
+            Object.entries(meta.params || {}).forEach(([k, v]) => {
+              if (!k || v == null || String(v).trim() === '') return;
+              const key = k.trim().toLocaleLowerCase();
+              const index = paramsList.findIndex(([oldKey]) => oldKey.trim().toLocaleLowerCase() === key);
+              if (index < 0) { paramsList.push([k, String(v)]); changed = true; }
+              else if (!String(paramsList[index][1] == null ? '' : paramsList[index][1]).trim()) { paramsList[index][1] = String(v); changed = true; }
+            });
             if (changed) {
               kindSel.value = 'imagen'; aplicaTipo(); pintaParams(); upd();
-              K.toast('Metadatos del PNG aplicados a los campos vacíos');
+              applied = true;
             }
-            break;
           } catch (e) { console.warn('No se pudieron leer los metadatos de la imagen:', e); }
         }
+        if (applied) K.toast('Metadatos de imagen aplicados a los campos vacíos');
+        else if (candidates.length && !found) K.toast('La imagen no contiene metadatos de generación compatibles');
       });
       return metadataTask;
     };
@@ -1075,7 +1083,7 @@
       }
     };
     pintaImgs();
-    const imgNote = el('div', 'k-faint', S.M.canImages ? `Hasta ${maxI} imágenes. Se convierten a WebP y se reducen a ${S.M.limits.imageMax}px como máximo. Al añadir un PNG de ComfyUI o Automatic1111 se leen sus metadatos y se rellenan los campos vacíos. Puedes arrastrarlas o pegarlas (Ctrl+V).` : 'El servidor no tiene "sharp": no se pueden subir imágenes.');
+    const imgNote = el('div', 'k-faint', S.M.canImages ? `Hasta ${maxI} imágenes. Se convierten a WebP y se reducen a ${S.M.limits.imageMax}px como máximo. Al añadir una imagen con metadatos compatibles, se rellenan los campos vacíos automáticamente. Puedes arrastrarlas o pegarlas (Ctrl+V).` : 'El servidor no tiene "sharp": no se pueden subir imágenes.');
     imgNote.style.cssText = 'font-size:11.5px;margin-top:6px';
     const imgField = el('div', 'field'); imgField.append(el('span', null, 'Imágenes de muestra'), imgBox, imgNote);
     right.insertBefore(imgField, right.firstChild);
