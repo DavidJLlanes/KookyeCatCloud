@@ -513,15 +513,24 @@ select option{background:#111a2b;color:var(--text);}
 .pd-vers{display:flex;flex-direction:column;gap:6px;padding:10px;}
 .pd-vers button{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--glass);color:var(--text);font:inherit;font-size:13px;cursor:pointer;text-align:left;}
 .pd-vers button:hover{background:var(--glass-2);}
+.prompt-detail-modal{display:flex;flex-direction:column;max-height:calc(100dvh - 40px - var(--safe-top) - var(--safe-bottom));min-height:0;overflow:hidden;}
+.prompt-detail-modal > .modal-body{flex:1 1 auto;min-height:0;max-height:none;overflow:hidden;margin:0;padding:0;}
+.prompt-detail-modal > .pd{flex:1 1 auto;min-height:0;overflow:hidden;}
+.prompt-detail-modal .pd{height:100%;min-height:0;}
+.prompt-detail-modal .pd-gal,.prompt-detail-modal .pd-info{min-height:0;max-height:none;overscroll-behavior:contain;}
+.prompt-detail-modal .pd-blk pre{max-height:none;overflow:visible;}
 @media (max-width:860px){
   .pd{grid-template-columns:1fr;}
   .pd-gal,.pd-info{max-height:none;overflow:visible;}
   .pd-gal{padding:14px;}
   .pd-info{padding:18px 16px 22px;}
   .pd-info h2{font-size:21px;}
-  /* La ficha entera ocupa como mucho la pantalla y se desplaza por dentro del modal */
-  .modal.flush{max-height:calc(100dvh - 40px - var(--safe-top) - var(--safe-bottom));overflow-y:auto;overflow-x:hidden;
+  /* En pantallas estrechas se desplaza la ficha entera, sin scrolls anidados. */
+  .prompt-detail-modal{flex:none;max-height:calc(100dvh - 40px - var(--safe-top) - var(--safe-bottom));overflow-y:auto;overflow-x:hidden;
     -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+  .prompt-detail-modal > .modal-body{flex:none;overflow:visible;}
+  .prompt-detail-modal > .pd{flex:none;overflow:visible;}
+  .prompt-detail-modal .pd{height:auto;}
 }
 
 /* Editor de prompt */

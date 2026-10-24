@@ -829,6 +829,7 @@
     }
     root.append(gal, info);
     const m = K.modal({ cls: 'xl flush', content: root, bare: true });
+    m.el.classList.add('prompt-detail-modal');
     // Cerrar flotante para móvil (en escritorio el CSS lo oculta y vale el de la cabecera)
     const xw = el('div', 'pd-xwrap'); const xb = el('button'); xb.type = 'button'; xb.setAttribute('aria-label', 'Cerrar'); xb.appendChild(icon('i-x'));
     xb.addEventListener('click', () => m.close()); xw.appendChild(xb); m.el.insertBefore(xw, m.el.firstChild);
