@@ -559,6 +559,9 @@ memoria y cada prompt es un archivo propio).
   Forge** se lee el bloque `parameters`. La imagen queda de muestra (WebP) y el nombre del archivo como
   fuente. Los PNG sin datos (pasados por redes sociales, JPG…) se saltan. Solo se lee JSON: no se
   ejecuta nada del workflow.
+- Al adjuntar un PNG generado con ComfyUI o Automatic1111 en el editor, también se leen sus metadatos
+  y se completan los campos que estén vacíos. Los modelos y herramientas admiten valores propios:
+  puedes guardarlos con **Añadir a opciones** y seguirán en las sugerencias para futuros prompts.
 - **Estadísticas** (menú ⋯): totales, valoración media, los más copiados, los que no usas, creados por
   mes y reparto por herramienta, modelo, tipo, estado, categoría, etiqueta y lista. Las filas de
   herramienta, modelo, tipo y estado filtran la biblioteca al pulsarlas.
