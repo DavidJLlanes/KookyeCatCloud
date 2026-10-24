@@ -2,12 +2,26 @@
 (function () {
   const root = document.getElementById('view-shopping');
   if (!root) return;
-  const S = { data: { products: [], entries: [], categories: [] }, tab: 'pending', query: '', built: false, loading: false };
+  const S = { data: { products: [], entries: [], categories: [] }, tab: 'pending', query: '', layouts: { pending: 'list', bought: 'list', catalog: 'grid' }, built: false, loading: false };
+  try { S.layouts = { ...S.layouts, ...JSON.parse(localStorage.getItem('kcc-shop-layouts') || '{}') }; } catch {}
   const imageUrl = id => `${BASE}/api/shopping/products/${id}/image?v=${(S.data.products.find(p => p.id === id) || {}).updatedAt || 0}`;
   const esc = s => String(s || '');
   const byId = id => S.data.products.find(p => p.id === id);
   const matching = (p) => !S.query || `${p.name} ${p.category} ${p.unit}`.toLocaleLowerCase('es').includes(S.query.toLocaleLowerCase('es'));
   const fmt = n => Number(n) === Math.floor(Number(n)) ? String(Number(n)) : String(Number(n)).replace('.', ',');
+  function boughtGroups() {
+    const groups = new Map();
+    S.data.entries.filter(e => e.status === 'bought' && byId(e.productId)).forEach(entry => {
+      const group = groups.get(entry.productId) || { productId: entry.productId, quantity: 0, boughtAt: 0, entries: [] };
+      group.quantity = Math.round((group.quantity + (Number(entry.quantity) || 0)) * 1000) / 1000; group.boughtAt = Math.max(group.boughtAt, entry.boughtAt || 0); group.entries.push(entry); groups.set(entry.productId, group);
+    });
+    return [...groups.values()].sort((a, b) => b.boughtAt - a.boughtAt);
+  }
+  function setLayout(layout) {
+    S.layouts[S.tab] = layout;
+    try { localStorage.setItem('kcc-shop-layouts', JSON.stringify(S.layouts)); } catch {}
+    paint();
+  }
   function load() {
     if (S.loading) return S.loading;
     S.loading = K.get('/api/shopping').then(data => { S.data = data; S.data.products ||= []; S.data.entries ||= []; S.data.categories ||= []; S.built = true; paint(); }).catch(K.fail).finally(() => { S.loading = false; });
@@ -32,10 +46,15 @@
     input.addEventListener('input', () => { S.query = input.value; paint(); const next = root.querySelector('.shop-search input'); if (next) { next.focus(); next.setSelectionRange(next.value.length, next.value.length); } });
     search.appendChild(input); bar.appendChild(search);
     const tabs = el('div', 'shop-tabs', null); tabs.setAttribute('role', 'tablist');
-    [['pending', 'Pendientes', S.data.entries.filter(e => e.status === 'pending').length], ['bought', 'Comprados', S.data.entries.filter(e => e.status === 'bought').length], ['catalog', 'Productos', S.data.products.length]].forEach(([key, label, count]) => {
+    [['pending', 'Pendientes', S.data.entries.filter(e => e.status === 'pending').length], ['bought', 'Comprados', boughtGroups().length], ['catalog', 'Productos', S.data.products.length]].forEach(([key, label, count]) => {
       const b = el('button', S.tab === key ? 'is-active' : '', `${label} · ${count}`); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', S.tab === key ? 'true' : 'false'); b.addEventListener('click', () => { S.tab = key; paint(); }); tabs.appendChild(b);
     });
-    bar.appendChild(tabs); page.appendChild(bar);
+    bar.appendChild(tabs);
+    const switcher = el('div', 'shop-view-switch'); switcher.setAttribute('role', 'group'); switcher.setAttribute('aria-label', 'Formato de visualización');
+    [['list', 'i-list', 'Lista'], ['grid', 'i-grid', 'Cuadrícula']].forEach(([layout, iconName, label]) => {
+      const b = el('button', S.layouts[S.tab] === layout ? 'is-active' : ''); b.type = 'button'; b.title = label; b.setAttribute('aria-label', label); b.setAttribute('aria-pressed', S.layouts[S.tab] === layout ? 'true' : 'false'); b.appendChild(icon(iconName)); b.addEventListener('click', () => setLayout(layout)); switcher.appendChild(b);
+    });
+    bar.appendChild(switcher); page.appendChild(bar);
     const content = el('div', 'shop-content');
     if (S.tab === 'catalog') paintCatalog(content); else paintEntries(content, S.tab);
     page.appendChild(content); root.appendChild(page);
@@ -58,26 +77,39 @@
   }
   function productMeta(p) { return [p.category, p.unit].filter(Boolean).join(' · '); }
   function paintEntries(parent, status) {
-    const entries = S.data.entries.filter(e => e.status === status && byId(e.productId) && matching(byId(e.productId)))
-      .sort((a, b) => (status === 'bought' ? (b.boughtAt || 0) - (a.boughtAt || 0) : (a.createdAt || 0) - (b.createdAt || 0)));
+    const entries = (status === 'bought' ? boughtGroups() : S.data.entries.filter(e => e.status === status && byId(e.productId)).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)))
+      .filter(entry => matching(byId(entry.productId)));
     if (!entries.length) return emptyState(parent, status === 'pending' ? 'Todo al día' : 'Aún no hay compras guardadas', status === 'pending' ? 'Añade productos o recupera algo de los comprados.' : 'Cuando marques algo como comprado, lo encontrarás aquí para repetirlo.', status === 'pending');
-    const list = el('div', 'shop-entry-list');
+    const layout = S.layouts[status];
+    const list = el('div', `shop-entry-list ${layout === 'grid' ? 'is-grid' : 'is-list'}`);
     entries.forEach(entry => {
       const p = byId(entry.productId); const row = el('article', `shop-entry ${status === 'bought' ? 'is-bought' : ''}`);
       const check = el('button', 'shop-check' + (status === 'bought' ? ' checked' : '')); check.type = 'button'; check.title = status === 'pending' ? 'Marcar como comprado' : 'Compra guardada'; check.setAttribute('aria-label', check.title); check.appendChild(icon('i-check'));
       if (status === 'pending') check.addEventListener('click', async () => { try { await K.put('/api/shopping/entries/' + entry.id, { status: 'bought' }); await load(); } catch (e) { K.fail(e); } }); else check.disabled = true;
-      row.append(check, productVisual(p));
+      const main = el('div', 'shop-entry-main'); main.append(check, productVisual(p));
       const info = el('div', 'shop-entry-info'); const name = el('strong', null, p.name); const meta = productMeta(p); info.append(name); if (meta) info.appendChild(el('small', 'k-muted', meta));
-      row.appendChild(info);
+      main.appendChild(info); row.appendChild(main);
+      const actions = el('div', 'shop-entry-actions');
       if (status === 'pending') {
         const qty = el('input', 'shop-quantity'); qty.type = 'number'; qty.min = '0.001'; qty.step = 'any'; qty.max = '100000'; qty.value = entry.quantity; qty.setAttribute('aria-label', `Cantidad de ${p.name}`);
-        qty.addEventListener('change', async () => { try { await K.put('/api/shopping/entries/' + entry.id, { quantity: qty.value }); await load(); } catch (e) { K.fail(e); } }); row.appendChild(qty);
+        qty.addEventListener('change', async () => { try { await K.put('/api/shopping/entries/' + entry.id, { quantity: qty.value }); await load(); } catch (e) { K.fail(e); } }); actions.appendChild(qty);
       } else {
-        row.appendChild(el('span', 'shop-bought-qty', `${fmt(entry.quantity)}${p.unit ? ' ' + p.unit : ''}`));
-        const again = button('Añadir otra vez', 'i-restore', async () => { try { await K.post('/api/shopping/entries', { productId: p.id, quantity: p.defaultQuantity || entry.quantity }); S.tab = 'pending'; await load(); } catch (e) { K.fail(e); } }, 'btn sm shop-again'); row.appendChild(again);
+        const qtyLabel = `${fmt(entry.quantity)}${p.unit ? ' ' + p.unit : ''}`;
+        const qty = el('span', 'shop-bought-qty', entry.entries.length > 1 ? `${qtyLabel} · ${entry.entries.length} compras` : qtyLabel); qty.title = entry.entries.length > 1 ? `Total de ${entry.entries.length} compras guardadas` : 'Cantidad comprada'; actions.appendChild(qty);
+        const again = button('Añadir otra vez', 'i-restore', async () => { try { await K.post('/api/shopping/entries', { productId: p.id, quantity: p.defaultQuantity || entry.quantity }); S.tab = 'pending'; await load(); } catch (e) { K.fail(e); } }, 'btn sm shop-again'); again.setAttribute('aria-label', `Añadir ${p.name} otra vez`); actions.appendChild(again);
       }
       const remove = el('button', 'icon-btn shop-remove'); remove.type = 'button'; remove.title = 'Quitar de esta lista'; remove.setAttribute('aria-label', 'Quitar de esta lista'); remove.appendChild(icon('i-x'));
-      remove.addEventListener('click', async () => { try { await K.del('/api/shopping/entries/' + entry.id); await load(); } catch (e) { K.fail(e); } }); row.appendChild(remove);
+      if (status === 'bought') { remove.title = `Quitar todas las compras guardadas de ${p.name}`; remove.setAttribute('aria-label', remove.title); }
+      remove.addEventListener('click', async () => {
+        try {
+          if (status === 'bought') {
+            if (!await K.confirm(`Se eliminarán todas las compras guardadas de “${p.name}”.`, { ok: 'Eliminar compras', danger: true })) return;
+            await K.del(`/api/shopping/products/${p.id}/purchases`);
+          }
+          else await K.del('/api/shopping/entries/' + entry.id);
+          await load();
+        } catch (e) { K.fail(e); }
+      }); actions.appendChild(remove); row.appendChild(actions);
       list.appendChild(row);
     });
     parent.appendChild(list);
@@ -85,7 +117,8 @@
   function paintCatalog(parent) {
     const products = S.data.products.filter(matching).sort((a, b) => a.name.localeCompare(b.name, 'es'));
     if (!products.length) return emptyState(parent, 'Tu catálogo está vacío', 'Guarda productos para reutilizarlos con sus cantidades, unidades e imágenes.', true);
-    const grid = el('div', 'shop-product-grid');
+    const layout = S.layouts.catalog;
+    const grid = el('div', `shop-product-grid ${layout === 'list' ? 'is-list' : 'is-grid'}`);
     products.forEach(p => {
       const card = el('article', 'shop-product-card'); card.appendChild(productVisual(p, true));
       const body = el('div', 'shop-card-body'); const h = el('h3', null, p.name); body.appendChild(h);
