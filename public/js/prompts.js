@@ -961,12 +961,31 @@
     kindSel.addEventListener('change', aplicaTipo); aplicaTipo();
     const statSel = el('select'); Object.entries(STATUS).forEach(([k, n]) => { const o = el('option', null, n); o.value = k; statSel.appendChild(o); }); statSel.value = d.status;
     const model = el('input'); model.value = d.model; model.setAttribute('list', 'pr-models'); model.placeholder = 'GPT-5, Claude, FLUX, SDXL…'; model.maxLength = 60;
-    const dl = el('datalist'); dl.id = 'pr-models'; S.M.models.forEach(x2 => { const o = el('option'); o.value = x2; dl.appendChild(o); });
+    const dl = el('datalist'); dl.id = 'pr-models';
     const tool = el('input'); tool.value = d.tool || ''; tool.setAttribute('list', 'pr-tools'); tool.placeholder = 'Midjourney, ComfyUI, Cursor…'; tool.maxLength = 60;
-    const dlt = el('datalist'); dlt.id = 'pr-tools'; (S.M.tools || []).forEach(x2 => { const o = el('option'); o.value = x2; dlt.appendChild(o); });
+    const dlt = el('datalist'); dlt.id = 'pr-tools';
+    const syncOptionLists = () => {
+      dl.textContent = ''; (S.M.models || []).forEach(x2 => { const o = el('option'); o.value = x2; dl.appendChild(o); });
+      dlt.textContent = ''; (S.M.tools || []).forEach(x2 => { const o = el('option'); o.value = x2; dlt.appendChild(o); });
+    };
+    const optionField = (label, input, type) => {
+      const wrap = el('div', 'field tight'); wrap.appendChild(el('span', null, label)); wrap.appendChild(input);
+      const known = () => (type === 'model' ? S.M.models : S.M.tools).some(x => x.toLocaleLowerCase() === input.value.trim().toLocaleLowerCase());
+      const add = el('button', 'btn tiny ghost', '＋ Añadir a opciones'); add.type = 'button'; add.hidden = !input.value.trim() || known();
+      input.addEventListener('input', () => { add.hidden = !input.value.trim() || known(); });
+      add.addEventListener('click', async () => {
+        try {
+          const result = await K.post('/api/prompts/options', { [type]: input.value });
+          S.M.models = result.models; S.M.tools = result.tools; syncOptionLists(); add.hidden = true;
+          K.toast(`${label} añadido a las opciones`);
+        } catch (e) { K.fail(e); }
+      });
+      wrap.appendChild(add); return wrap;
+    };
+    syncOptionLists();
     const lang = el('input'); lang.value = d.language; lang.placeholder = 'es, en…'; lang.maxLength = 30;
     const row2 = el('div', 'k-2'); row2.append(fld('Tipo', kindSel, true), fld('Estado', statSel, true));
-    const row3 = el('div', 'k-2'); row3.append(fld('Modelo', model, true), fld('Herramienta', tool, true));
+    const row3 = el('div', 'k-2'); row3.append(optionField('Modelo', model, 'model'), optionField('Herramienta', tool, 'tool'));
     const row3b = el('div', 'k-2'); row3b.append(fld('Idioma', lang, true));
     const lp = K.labelPicker({ selected: d.labels });
     const rating = d.rating; let rate = rating; const stars = K.stars(rate, (v) => { rate = v; });
@@ -993,13 +1012,40 @@
     const maxI = S.M.limits.images;
     const imgBox = el('div', 'pe-imgs');
     let dragKey = null;
+    let metadataTask = Promise.resolve();
     const addFiles = (files) => {
       const arr = [...files].filter(f => /^image\//.test(f.type));
       if (!arr.length) return;
       const libre = maxI - imgs.length;
       if (arr.length > libre) K.toast(`Máximo ${maxI} imágenes por prompt`);
-      arr.slice(0, Math.max(0, libre)).forEach(f => imgs.push({ key: 'n' + Math.random().toString(36).slice(2), file: f, url: URL.createObjectURL(f), caption: '' }));
+      const accepted = arr.slice(0, Math.max(0, libre));
+      accepted.forEach(f => imgs.push({ key: 'n' + Math.random().toString(36).slice(2), file: f, url: URL.createObjectURL(f), caption: '' }));
       pintaImgs();
+      metadataTask = metadataTask.then(async () => {
+        for (const f of accepted.filter(x => x.type === 'image/png' || /\.png$/i.test(x.name)).slice(0, 5)) {
+          try {
+            const fd = new FormData(); fd.append('image', f, f.name);
+            const response = await api(`${BASE}/api/prompts/read-image-metadata`, { method: 'POST', body: fd });
+            const result = await response.json(); if (!response.ok) throw new Error(result.error || 'No se pudieron leer los metadatos');
+            const meta = result.metadata; if (!meta) continue;
+            let changed = false;
+            if (!title.value.trim()) { title.value = (body.value.trim() || meta.body || '').replace(/\s+/g, ' ').trim().slice(0, 60) || f.name.replace(/\.png$/i, ''); changed = true; }
+            if (!body.value.trim() && meta.body) { body.value = meta.body; changed = true; }
+            if (!neg.value.trim() && meta.negative) { neg.value = meta.negative; changed = true; }
+            if (!model.value.trim() && meta.model) { model.value = meta.model; model.dispatchEvent(new Event('input')); changed = true; }
+            if (!tool.value.trim() && meta.tool) { tool.value = meta.tool; tool.dispatchEvent(new Event('input')); changed = true; }
+            if (!src.value.trim()) { src.value = f.name; changed = true; }
+            const existing = new Set(paramsList.map(([k]) => k.trim().toLocaleLowerCase()));
+            Object.entries(meta.params || {}).forEach(([k, v]) => { if (k && !existing.has(k.trim().toLocaleLowerCase())) { paramsList.push([k, String(v)]); existing.add(k.trim().toLocaleLowerCase()); changed = true; } });
+            if (changed) {
+              kindSel.value = 'imagen'; aplicaTipo(); pintaParams(); upd();
+              K.toast('Metadatos del PNG aplicados a los campos vacíos');
+            }
+            break;
+          } catch (e) { console.warn('No se pudieron leer los metadatos de la imagen:', e); }
+        }
+      });
+      return metadataTask;
     };
     const pintaImgs = () => {
       imgBox.textContent = '';
@@ -1029,7 +1075,7 @@
       }
     };
     pintaImgs();
-    const imgNote = el('div', 'k-faint', S.M.canImages ? `Hasta ${maxI} imágenes. Se convierten a WebP y se reducen a ${S.M.limits.imageMax}px como máximo. Puedes arrastrarlas o pegarlas (Ctrl+V).` : 'El servidor no tiene "sharp": no se pueden subir imágenes.');
+    const imgNote = el('div', 'k-faint', S.M.canImages ? `Hasta ${maxI} imágenes. Se convierten a WebP y se reducen a ${S.M.limits.imageMax}px como máximo. Al añadir un PNG de ComfyUI o Automatic1111 se leen sus metadatos y se rellenan los campos vacíos. Puedes arrastrarlas o pegarlas (Ctrl+V).` : 'El servidor no tiene "sharp": no se pueden subir imágenes.');
     imgNote.style.cssText = 'font-size:11.5px;margin-top:6px';
     const imgField = el('div', 'field'); imgField.append(el('span', null, 'Imágenes de muestra'), imgBox, imgNote);
     right.insertBefore(imgField, right.firstChild);
@@ -1040,6 +1086,9 @@
     root.append(left, right);
 
     const guardar = async (h) => {
+      h.buttons.save.disabled = true;
+      await metadataTask.catch(e => console.warn('No se pudieron completar los metadatos de la imagen:', e));
+      h.buttons.save.disabled = false;
       if (!title.value.trim() && !body.value.trim()) { K.toast('Escribe al menos un título o el prompt'); return false; }
       const params2 = {}; paramsList.forEach(([k, v]) => { if (k.trim()) params2[k.trim()] = v; });
       const campos = {
@@ -1079,6 +1128,10 @@
           const cov = imgs.find(i => i.key === cover);
           await K.put(`/api/prompts/${pid}/images`, { order: finalIds, captions: caps, cover: cov ? cov.id : '' });
         }
+        try {
+          const options = await K.post('/api/prompts/options', { model: model.value, tool: tool.value });
+          S.M.models = options.models; S.M.tools = options.tools;
+        } catch (e) { console.warn('No se pudieron actualizar las opciones guardadas de modelos y herramientas:', e); }
         imgs.forEach(i => { if (i.url) URL.revokeObjectURL(i.url); });
         K.bus.emit('prompts'); if (cal || (p && p.cal)) K.bus.emit('calendar');
         K.toast(nuevo ? 'Prompt guardado' : 'Cambios guardados');
