@@ -21,6 +21,7 @@ const createClip = require('./lib/clip');
 const { readJson, updateJson, kccDir } = require('./lib/store');
 const createContacts = require('./lib/contacts');
 const createNotesExtra = require('./lib/notes-extra');
+const createShopping = require('./lib/shopping');
 const createVersions = require('./lib/versions');
 const createVault = require('./lib/vault');
 const createShares = require('./lib/shares');
@@ -280,6 +281,7 @@ const promptsMod = createPrompts({
   papeleraDias: (user) => papeleraDias(user),
 });
 const contactsMod = createContacts({ express, sharp, userRoot, sendError, registrarActividad, labels: labelsMod, calendar: calendarMod.core });
+const shoppingMod = createShopping({ express, multer, sharp, dataRoot: DATA_ROOT, sendError, registrarActividad });
 
 // Versiones de archivos de texto (se crea aquí porque WebDAV y las rutas de archivos la usan)
 const versionsMod = createVersions({
@@ -345,7 +347,7 @@ const jsonMedio = express.json({ limit: '2mb' });
 const jsonGrande = express.json({ limit: '30mb' });
 app.use((req, res, next) => {
   if (req.path === '/api/prompts/import') return jsonGrande(req, res, next);
-  if (/^\/api\/(notes|text|prompts|calendar|labels|clip)(\/|$)/.test(req.path)) return jsonMedio(req, res, next);
+  if (/^\/api\/(notes|text|prompts|calendar|labels|clip|shopping)(\/|$)/.test(req.path)) return jsonMedio(req, res, next);
   return jsonPequeno(req, res, next);
 });
 app.use(cookieParser());
@@ -3088,6 +3090,7 @@ app.use('/api/calendar', auth, calendarMod.router);
 app.use('/api/prompts', auth, promptsMod.router);
 app.use('/api/clip', auth, clipMod.router);
 app.use('/api/contacts', auth, contactsMod.router);
+app.use('/api/shopping', auth, shoppingMod);
 calendarMod.core.registraOrigen('prompt', (user, id, ev) => promptsMod.core.setCal(user, id, ev));
 calendarMod.core.registraOrigen('note', async (user, id, ev) => {
   const data = await readNotes(user);

@@ -81,6 +81,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 🔗 **Compartir fácilmente** | Crea enlaces de subida y descarga con caducidad y contraseña opcional para las descargas. |
 | 💻 **Acceso con WebDAV** | Conecta tu nube desde el explorador o una app compatible. |
 | 📝 **Notas tipo Notion** | Editor de bloques con carpetas, colores, etiquetas y enlaces internos. |
+| 🛒 **Lista de la compra** | Catálogo y compras compartidos, cantidades, categorías e imágenes con recorte cuadrado. |
 | 📅 **Calendario** | Mes, semana, día y agenda con calendarios de colores, repetición y recordatorios. |
 | ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables, imágenes de muestra, comparación de versiones, estadísticas y creación desde PNG de ComfyUI / Automatic1111. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
@@ -1119,6 +1120,7 @@ lib/
   clip.js            Portapapeles compartido entre dispositivos y destino de «Compartir»
   contacts.js        Contactos: API, búsqueda, importación y exportación vCard
   vcard.js           Lectura y escritura de vCard 3.0
+  shopping.js        Lista y catálogo compartidos con imágenes WebP de 300 × 300
   notes-extra.js     Imágenes, menciones, backlinks, plantillas y exportación de notas
   versions.js        Historial de versiones de archivos de texto
   vault.js           Caja fuerte cifrada (AES-256-GCM + scrypt)
