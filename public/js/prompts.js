@@ -438,7 +438,7 @@
     const foot = el('div', 'pr-foot');
     if (p.model || p.tool) foot.appendChild(el('span', 'model', [p.model, p.tool].filter(Boolean).join(' · ')));
     if (p.rating) { const r = el('span', null, '★ ' + p.rating); r.style.color = '#fbbf24'; foot.appendChild(r); }
-    if (p.cal) { const cl = el('span'); cl.appendChild(icon('i-calendar')); cl.firstChild.style.cssText = 'width:12px;height:12px;vertical-align:-1px'; cl.append(' ' + K.d.short(K.d.parse(p.cal.date))); cl.title = 'En el calendario'; foot.appendChild(cl); }
+    if (p.cal) { const cl = el('span', 'pr-date'); cl.appendChild(icon('i-calendar')); cl.firstChild.style.cssText = 'width:12px;height:12px;vertical-align:-1px;flex:none'; cl.append(' ' + K.d.short(K.d.parse(p.cal.date))); cl.title = 'En el calendario'; foot.appendChild(cl); }
     foot.appendChild(el('span', 'grow'));
     if (!S.q.trash) {
       const cp = el('button', 'btn tiny pr-copy'); cp.type = 'button'; cp.append(icon('i-copy'), document.createTextNode('Copiar'));
