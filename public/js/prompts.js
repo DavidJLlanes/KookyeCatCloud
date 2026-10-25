@@ -5,10 +5,20 @@
    papelera, importación/exportación y fecha vinculada al calendario.
 --------------------------------------------------------------- */
 (function () {
-  const KIND = {
-    imagen: ['Imagen', 'i-image'], texto: ['Texto', 'i-doc'], codigo: ['Código', 'i-bars'], video: ['Vídeo', 'i-play'],
-    audio: ['Audio', 'i-music'], agente: ['Agente', 'i-sparkle'], fragmento: ['Fragmento', 'i-tag'], otro: ['Otro', 'i-stack'],
-  };
+  const KIND_BASE = [
+    { id: 'imagen', name: 'Imagen', icon: 'i-image' }, { id: 'texto', name: 'Texto', icon: 'i-doc' },
+    { id: 'codigo', name: 'Código', icon: 'i-bars' }, { id: 'video', name: 'Vídeo', icon: 'i-play' },
+    { id: 'audio', name: 'Audio', icon: 'i-music' }, { id: 'agente', name: 'Agente', icon: 'i-sparkle' },
+    { id: 'fragmento', name: 'Fragmento', icon: 'i-tag' }, { id: 'otro', name: 'Otro', icon: 'i-stack' },
+  ];
+  const KIND_ICONS = [
+    ['i-image', 'Imagen'], ['i-doc', 'Documento'], ['i-bars', 'Código'], ['i-play', 'Vídeo'], ['i-music', 'Audio'],
+    ['i-sparkle', 'Destello'], ['i-tag', 'Etiqueta'], ['i-stack', 'Capas'], ['i-folder', 'Carpeta'], ['i-note', 'Nota'],
+    ['i-server', 'Servidor'], ['i-monitor', 'Pantalla'], ['i-globe', 'Web'], ['i-mail', 'Correo'], ['i-calendar', 'Calendario'],
+    ['i-palette', 'Paleta'], ['i-activity', 'Actividad'], ['i-cloud', 'Nube'], ['i-key', 'Llave'], ['i-link', 'Enlace'],
+    ['i-shield', 'Escudo'], ['i-user', 'Usuario'], ['i-users', 'Usuarios'], ['i-zip', 'Archivo ZIP'], ['i-check', 'Correcto'],
+    ['i-star', 'Estrella'], ['i-pin', 'Fijado'], ['i-cart', 'Compra'],
+  ];
   const PRO = () => (K.prompts && K.prompts.pro) || null;
   const STATUS = { borrador: 'Borrador', probando: 'Probando', final: 'Final', archivado: 'Archivado' };
   const SORTS = [['updated', 'Modificados recientemente'], ['created', 'Más nuevos'], ['oldest', 'Más antiguos'], ['title', 'Título A-Z'],
@@ -22,6 +32,8 @@
   try { S.view = localStorage.getItem('kcc-pr-view') || 'grid'; S.q.sort = localStorage.getItem('kcc-pr-sort') || 'updated'; } catch {}
   const R = {};
   const imgUrl = (pid, iid, thumb) => `${BASE}/api/prompts/${pid}/img/${iid}${thumb ? '?thumb=1' : ''}`;
+  const kindDefs = () => (S.M && Array.isArray(S.M.kindDefs) ? S.M.kindDefs : KIND_BASE);
+  const kindBy = (id) => kindDefs().find(k => k.id === id) || { id, name: id || 'Otro', icon: 'i-stack' };
   const catBy = (id) => (S.M ? S.M.categories.find(c => c.id === id) : null);
   const listBy = (id) => (S.M ? S.M.lists.find(c => c.id === id) : null);
   const colorOf = (p) => p.color || (catBy(p.category) && catBy(p.category).color) || 'transparent';
@@ -96,6 +108,7 @@
     mas.addEventListener('click', () => K.menu(mas, [
       { label: 'Importar prompts…', icon: 'i-upload', onClick: openImport },
       { label: 'Exportar todo (JSON)', icon: 'i-download', onClick: () => { location.href = BASE + '/api/prompts/export/all'; } },
+      { label: 'Editar nombres e iconos de tipos…', icon: 'i-palette', onClick: manageKinds },
       ...((K.prompts && K.prompts.extraMenu) || []),
       '-', { label: 'Gestionar etiquetas…', icon: 'i-tag', onClick: () => K.manageLabels() },
     ], { align: 'end' }));
@@ -149,7 +162,7 @@
       link({ ic: 'i-sparkle', name: 'Todos los prompts', n: f.total, on: noFilter && !q.kind && !q.status && !q.model && !q.tool, onClick: () => { resetNav(); load(); } }),
       link({ ic: 'i-star-fill', name: 'Favoritos', n: f.favorites, on: q.fav, onClick: () => { resetNav(); q.fav = true; load(); } }),
       link({ ic: 'i-image', name: 'Con imágenes', n: f.withImages, on: q.images === '1' && !q.trash, onClick: () => { resetNav(); q.images = '1'; load(); } }),
-      link({ ic: 'i-inbox', name: 'Sin categoría', n: f.noCategory, on: q.category === '__none', onClick: () => { resetNav(); q.category = '__none'; load(); } }),
+      link({ ic: 'i-inbox', name: 'Sin categoría', n: f.noCategory, on: q.category === '__none', onClick: () => { const k = q.category === '__none'; q.category = k ? '' : '__none'; q.list = ''; q.fav = false; q.images = ''; q.trash = false; load(); } }),
       link({ ic: 'i-trash', name: 'Papelera', n: f.trash, on: q.trash, onClick: () => { resetNav(); q.trash = true; load(); } }),
     );
     rail.appendChild(s1);
@@ -171,7 +184,7 @@
         const total = countTree(c.id);
         n2.appendChild(link({
           emoji: c.emoji, color: c.color, name: c.name, n: total, depth, on: q.category === c.id,
-          onClick: () => { const k = q.category === c.id; resetNav(); q.category = k ? '' : c.id; load(); },
+          onClick: () => { const k = q.category === c.id; q.category = k ? '' : c.id; q.list = ''; q.fav = false; q.images = ''; q.trash = false; load(); },
           menu: (a) => K.menu(a, [
             { label: 'Editar…', icon: 'i-pencil', onClick: () => editCategory(c) },
             { label: 'Añadir subcategoría…', icon: 'i-plus', onClick: () => editCategory(null, c.id) },
@@ -196,9 +209,9 @@
     rail.appendChild(s3);
 
     // Tipo
-    const [s4, n4] = section('Tipo');
-    Object.entries(KIND).forEach(([k, [name, ic]]) => { if (f.kind[k]) n4.appendChild(link({ ic, name, n: f.kind[k], on: q.kind === k, onClick: () => { q.kind = q.kind === k ? '' : k; load(); } })); });
-    if (n4.children.length) rail.appendChild(s4);
+    const [s4, n4] = section('Tipo', { title: 'Editar nombres e iconos de los tipos', fn: manageKinds });
+    kindDefs().forEach(k => { if (f.kind[k.id]) n4.appendChild(link({ ic: k.icon, name: k.name, n: f.kind[k.id], on: q.kind === k.id, onClick: () => { q.kind = q.kind === k.id ? '' : k.id; load(); }, menu: a => K.menu(a, [{ label: 'Editar nombre e icono…', icon: 'i-pencil', onClick: () => editKind(k) }], { align: 'end' }) })); });
+    rail.appendChild(s4);
 
     // Estado
     const [s5, n5] = section('Estado');
@@ -240,6 +253,49 @@
     const ids = new Set([id]); let grow = true;
     while (grow) { grow = false; for (const c of S.M.categories) if (c.parent && ids.has(c.parent) && !ids.has(c.id)) { ids.add(c.id); grow = true; } }
     let n = 0; ids.forEach(i => { n += S.M.facets.category[i] || 0; }); return n;
+  }
+
+  function selectorIcono(anchor, inicial, alElegir) {
+    const g = el('div', 'pk-icon-grid');
+    KIND_ICONS.forEach(([id, nombre]) => {
+      const b = el('button', 'pk-icon' + (id === inicial ? ' is-on' : '')); b.type = 'button'; b.title = nombre; b.setAttribute('aria-label', nombre);
+      b.appendChild(icon(id)); b.addEventListener('click', () => { pop.close(); alElegir(id); }); g.appendChild(b);
+    });
+    const pop = K.pop(anchor, g, { width: 308 });
+  }
+
+  function manageKinds() {
+    const w = el('div', 'pk-kinds');
+    const campos = kindDefs().map(kind => {
+      const row = el('div', 'pk-kind-row');
+      const pick = el('button', 'btn ghost icon pk-icon-current'); pick.type = 'button'; pick.title = `Cambiar icono de ${kind.name}`; pick.appendChild(icon(kind.icon));
+      let icono = kind.icon; pick.addEventListener('click', () => selectorIcono(pick, icono, v => { icono = v; pick.replaceChildren(icon(v)); }));
+      const name = el('input'); name.value = kind.name; name.maxLength = 60; name.setAttribute('aria-label', `Nombre del tipo ${kind.name}`);
+      row.append(pick, name); w.appendChild(row); return { id: kind.id, name, get icon() { return icono; } };
+    });
+    K.modal({ title: 'Tipos de prompt', sub: 'Personaliza el nombre y el icono que aparecen en la biblioteca. Los prompts guardados conservan su tipo.', content: w, cls: 'wide', actions: [
+      { label: 'Cancelar' }, { label: 'Guardar', primary: true, onClick: async () => {
+        try {
+          const r = await K.put('/api/prompts/kinds', { kinds: campos.map(k => ({ id: k.id, name: k.name.value, icon: k.icon })) });
+          S.M.kindDefs = r.kinds; await load();
+        } catch (e) { K.fail(e); return false; }
+      } },
+    ] });
+  }
+
+  function editKind(kind) {
+    const name = el('input'); name.value = kind.name; name.maxLength = 60;
+    const pick = el('button', 'btn ghost icon pk-icon-current'); pick.type = 'button'; pick.title = 'Cambiar icono'; pick.appendChild(icon(kind.icon));
+    let icono = kind.icon; pick.addEventListener('click', () => selectorIcono(pick, icono, v => { icono = v; pick.replaceChildren(icon(v)); }));
+    const row = el('div', 'pk-kind-row'); row.append(pick, name);
+    K.modal({ title: `Editar tipo: ${kind.name}`, content: row, cls: 'wide', actions: [
+      { label: 'Cancelar' }, { label: 'Guardar', primary: true, onClick: async () => {
+        try {
+          const kinds = kindDefs().map(k => k.id === kind.id ? { id: k.id, name: name.value, icon: icono } : k);
+          const r = await K.put('/api/prompts/kinds', { kinds }); S.M.kindDefs = r.kinds; await load();
+        } catch (e) { K.fail(e); return false; }
+      } },
+    ] });
   }
 
   async function editCategory(c, parent, alGuardar) {
@@ -293,6 +349,19 @@
   function openFilters(anchor) {
     const q = S.q;
     const w = el('div'); w.style.cssText = 'padding:6px;display:flex;flex-direction:column;gap:12px;width:290px';
+    const tipo = el('label', 'field tight'); tipo.appendChild(el('span', null, 'Tipo de prompt'));
+    const tipoSel = el('select');
+    const allKinds = el('option', null, 'Todos los tipos'); allKinds.value = ''; tipoSel.appendChild(allKinds);
+    kindDefs().forEach(k => { const o = el('option', null, k.name); o.value = k.id; tipoSel.appendChild(o); });
+    tipoSel.value = q.kind; tipoSel.addEventListener('change', () => { q.kind = tipoSel.value; load(); }); tipo.appendChild(tipoSel);
+    const categoria = el('label', 'field tight'); categoria.appendChild(el('span', null, 'Categoría'));
+    const categoriaSel = el('select');
+    const allCategories = el('option', null, 'Todas las categorías'); allCategories.value = ''; categoriaSel.appendChild(allCategories);
+    const noCategory = el('option', null, 'Sin categoría'); noCategory.value = '__none'; categoriaSel.appendChild(noCategory);
+    const addCats = (parent, depth) => S.M.categories.filter(c => (c.parent || '') === parent).forEach(c => {
+      const o = el('option', null, `${'　'.repeat(depth)}${c.emoji || ''} ${c.name}`.trim()); o.value = c.id; categoriaSel.appendChild(o); addCats(c.id, depth + 1);
+    });
+    addCats('', 0); categoriaSel.value = q.category; categoriaSel.addEventListener('change', () => { q.category = categoriaSel.value; load(); }); categoria.appendChild(categoriaSel);
     const f1 = el('div'); f1.append(el('div', 'head', 'Valoración mínima'));
     const st = K.stars(q.minRating, (v) => { q.minRating = v; load(); }); st.style.padding = '2px 8px'; f1.appendChild(st);
     const f2 = el('div'); f2.appendChild(el('div', 'head', 'Imágenes'));
@@ -309,7 +378,7 @@
     const sw = el('label', 'k-switch'); const ck = el('input'); ck.type = 'checkbox'; ck.checked = q.cal; sw.append(ck, el('span', 'track'), el('span', null, 'Solo con fecha en el calendario'));
     ck.addEventListener('change', () => { q.cal = ck.checked; load(); }); f4.appendChild(sw);
     const clear = el('button', 'btn sm', 'Limpiar todos los filtros'); clear.type = 'button'; clear.addEventListener('click', () => { clearAll(); p.close(); });
-    w.append(f1, f2, f3, f4, clear);
+    w.append(tipo, categoria, f1, f2, f3, f4, clear);
     const p = K.pop(anchor, w, { width: 310 });
   }
   function clearAll() {
@@ -367,9 +436,10 @@
     const a = R.active; a.textContent = ''; const q = S.q;
     const chip = (txt, fn, color) => { const c = el('span', 'k-chip btnlike'); c.style.setProperty('--c', color || '#6366f1'); c.append(el('span', null, txt), el('span', null, ' ×')); c.addEventListener('click', fn); a.appendChild(c); };
     if (q.q) chip(`“${q.q}”`, () => { q.q = ''; R.si.value = ''; load(); });
-    if (q.category && q.category !== '__none' && catBy(q.category)) chip(`${catBy(q.category).emoji || ''} ${catBy(q.category).name}`, () => { q.category = ''; load(); }, catBy(q.category).color);
+    if (q.category === '__none') chip('Sin categoría', () => { q.category = ''; load(); });
+    else if (q.category && catBy(q.category)) chip(`${catBy(q.category).emoji || ''} ${catBy(q.category).name}`, () => { q.category = ''; load(); }, catBy(q.category).color);
     if (q.list && listBy(q.list)) chip(`Lista: ${listBy(q.list).name}`, () => { q.list = ''; load(); }, listBy(q.list).color);
-    if (q.kind) chip(`Tipo: ${KIND[q.kind][0]}`, () => { q.kind = ''; load(); });
+    if (q.kind) chip(`Tipo: ${kindBy(q.kind).name}`, () => { q.kind = ''; load(); });
     if (q.status) chip(`Estado: ${STATUS[q.status]}`, () => { q.status = ''; load(); });
     if (q.model) chip(`Modelo: ${q.model}`, () => { q.model = ''; load(); });
     if (q.tool) chip(`Herramienta: ${q.tool}`, () => { q.tool = ''; load(); });
@@ -416,7 +486,7 @@
     c.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', p.id));
     const cover = el('div', 'pr-cover');
     if (p.cover) { const im = el('img'); im.loading = 'lazy'; im.alt = ''; im.src = imgUrl(p.id, p.cover, true); cover.appendChild(im); }
-    else { const ph = el('div', 'ph'); ph.appendChild(icon((KIND[p.kind] || KIND.otro)[1])); cover.appendChild(ph); }
+    else { const ph = el('div', 'ph'); ph.appendChild(icon(kindBy(p.kind).icon)); cover.appendChild(ph); }
     const badges = el('div', 'pr-badges'); badges.appendChild(el('span', 'pr-badge ' + p.status, STATUS[p.status] || p.status)); cover.appendChild(badges);
     if (p.images.length > 1) { const n = el('span', 'nimg'); n.append(icon('i-image'), document.createTextNode(String(p.images.length))); cover.appendChild(n); }
     if (p.pinned) { const pin = el('span', 'pr-pin'); pin.appendChild(icon('i-pin-fill')); cover.appendChild(pin); }
@@ -453,7 +523,7 @@
 
   function row(p) {
     const r = el('article', 'pr-row'); r.style.setProperty('--c', colorOf(p)); r.tabIndex = 0;
-    const th = el('div', 'th'); if (p.cover) { const im = el('img'); im.loading = 'lazy'; im.alt = ''; im.src = imgUrl(p.id, p.cover, true); th.appendChild(im); } else th.appendChild(icon((KIND[p.kind] || KIND.otro)[1]));
+    const th = el('div', 'th'); if (p.cover) { const im = el('img'); im.loading = 'lazy'; im.alt = ''; im.src = imgUrl(p.id, p.cover, true); th.appendChild(im); } else th.appendChild(icon(kindBy(p.kind).icon));
     const mid = el('div'); mid.style.minWidth = 0;
     const h = el('h3'); h.append(document.createTextNode(p.title));
     if (p.favorite) { const s = icon('i-star-fill'); s.style.cssText = 'width:14px;height:14px;color:#fbbf24;margin-left:6px;vertical-align:-1px'; h.appendChild(s); }
@@ -693,7 +763,7 @@
       gal.append(main); if (p.images.length > 1) gal.appendChild(thumbs);
       show(Math.max(0, p.images.findIndex(x => x.id === p.cover)));
     } else {
-      const e = el('div', 'k-empty'); const em = el('div', 'em'); em.appendChild(icon((KIND[p.kind] || KIND.otro)[1])); e.append(em, el('p', null, 'Sin imágenes de muestra'));
+      const e = el('div', 'k-empty'); const em = el('div', 'em'); em.appendChild(icon(kindBy(p.kind).icon)); e.append(em, el('p', null, 'Sin imágenes de muestra'));
       if (!p.deletedAt) { const b = el('button', 'btn sm', 'Añadir imágenes'); b.type = 'button'; b.addEventListener('click', () => { m.close(); openEditor(p.id); }); e.appendChild(b); }
       gal.appendChild(e);
     }
@@ -722,8 +792,8 @@
     const cat = catBy(p.category);
     fila('Categoría', cat ? [valor(`${cat.emoji || ''} ${cat.name}`.trim(), cat.color, () => { S.q.category = cat.id; })] : []);
     fila('Listas', (p.lists || []).map(listBy).filter(Boolean).map(l => valor(`${l.emoji || '📌'} ${l.name}`, l.color, () => { S.q.list = l.id; })));
-    const kd = KIND[p.kind] || KIND.otro;
-    fila('Tipo', [valor(kd[0], '#64748b', () => { S.q.kind = p.kind; }, kd[1])]);
+    const kd = kindBy(p.kind);
+    fila('Tipo', [valor(kd.name, '#64748b', () => { S.q.kind = p.kind; }, kd.icon)]);
     fila('Estado', [valor(STATUS[p.status] || p.status, { borrador: '#94a3b8', probando: '#f59e0b', final: '#22c55e', archivado: '#64748b' }[p.status] || '#64748b', () => { S.q.status = p.status; })]);
     fila('Modelo', p.model ? [valor(p.model, '#06b6d4', () => { S.q.model = p.model; }, 'i-server')] : []);
     fila('Herramienta', p.tool ? [valor(p.tool, '#8b5cf6', () => { S.q.tool = p.tool; }, 'i-sparkle')] : []);
@@ -948,7 +1018,7 @@
       catSel.value = catPrev;
       editCategory(null, '', (nombre) => { const nueva = S.M.categories.find(c => c.name === nombre); llenaCats(nueva ? nueva.id : catPrev); catPrev = catSel.value; });
     });
-    const kindSel = el('select'); Object.entries(KIND).forEach(([k, [n]]) => { const o = el('option', null, n); o.value = k; kindSel.appendChild(o); }); kindSel.value = d.kind;
+    const kindSel = el('select'); kindDefs().forEach(k => { const o = el('option', null, k.name); o.value = k.id; kindSel.appendChild(o); }); kindSel.value = d.kind;
     // La ficha se adapta al tipo: negativo solo en imagen/vídeo/audio, mensaje de sistema en texto/código/agente…
     const dlPk = el('datalist'); dlPk.id = 'pe-pk';
     const aplicaTipo = () => {
@@ -1161,7 +1231,7 @@
     const fi = el('input'); fi.type = 'file'; fi.accept = '.json,application/json,.txt,.md';
     const ta = el('textarea'); ta.rows = 8; ta.placeholder = 'Primer prompt…\n---\nSegundo prompt…';
     const cat = el('select'); const o0 = el('option', null, 'Sin categoría'); o0.value = ''; cat.appendChild(o0); S.M.categories.forEach(c => { const o = el('option', null, c.name); o.value = c.name; cat.appendChild(o); });
-    const k = el('select'); Object.entries(KIND).forEach(([id2, [n]]) => { const o = el('option', null, n); o.value = id2; k.appendChild(o); });
+    const k = el('select'); kindDefs().forEach(kind => { const o = el('option', null, kind.name); o.value = kind.id; k.appendChild(o); });
     const fR = el('div', 'k-2'); const a = el('label', 'field tight'); a.append(el('span', null, 'Categoría (pegado)'), cat); const b = el('label', 'field tight'); b.append(el('span', null, 'Tipo (pegado)'), k); fR.append(a, b);
     const f1 = el('label', 'field'); f1.append(el('span', null, 'Archivo'), fi);
     const f2 = el('label', 'field'); f2.append(el('span', null, 'O pegar texto'), ta);
@@ -1196,6 +1266,8 @@
   K.openers.prompt = (id) => { switchTab('prompts'); setTimeout(() => openDetail(id), 60); };
   // prompts-extra.js cuelga de aquí sus entradas de menú, la comparación de versiones y las estadísticas
   K.prompts = Object.assign(K.prompts || {}, {
+    kindLabel: (id) => kindBy(id).name,
+    kindIcon: (id) => kindBy(id).icon,
     open: (id) => K.openers.prompt(id),
     newPrompt: () => { switchTab('prompts'); openEditor(null); },
     extraMenu: (K.prompts && K.prompts.extraMenu) || [],

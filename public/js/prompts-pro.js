@@ -8,7 +8,6 @@
   const PRO = {};
   const pr = () => K.prompts;
 
-  const KIND_NOMBRE = { imagen: 'Imagen', texto: 'Texto', codigo: 'Código', video: 'Vídeo', audio: 'Audio', agente: 'Agente', fragmento: 'Fragmento', otro: 'Otro' };
 
   /* ---------- Utilidades ---------- */
   // Estimación gruesa: ~4 caracteres por token en español e inglés. Sirve para ver el orden de magnitud, no para facturar.
@@ -111,7 +110,7 @@
       if (!r.items.length) { caja.appendChild(el('p', 'k-faint', 'Nada coincide')); return; }
       r.items.forEach(it => {
         const b = el('button', 'po-pick'); b.type = 'button';
-        b.append(el('b', null, it.title), el('span', 'k-faint', KIND_NOMBRE[it.kind] || it.kind));
+        b.append(el('b', null, it.title), el('span', 'k-faint', pr().kindLabel(it.kind)));
         b.addEventListener('click', () => { m.close(); alElegir(it); });
         caja.appendChild(b);
       });
