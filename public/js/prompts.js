@@ -37,7 +37,8 @@
     const byId = new Map(saved.filter(k => k && typeof k === 'object' && typeof k.id === 'string').map(k => [k.id, k]));
     return KIND_BASE.map(base => {
       const k = byId.get(base.id);
-      const name = k && typeof k.name === 'string' && k.name.trim() ? k.name.trim() : base.name;
+      const storedName = k && typeof k.name === 'string' ? k.name.trim() : '';
+      const name = storedName && !/^(?:false|true|null|undefined)$/i.test(storedName) ? storedName : base.name;
       const icono = k && KIND_ICONS.some(([id]) => id === k.icon) ? k.icon : base.icon;
       return { ...base, name, icon: icono };
     });
