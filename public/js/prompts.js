@@ -32,7 +32,16 @@
   try { S.view = localStorage.getItem('kcc-pr-view') || 'grid'; S.q.sort = localStorage.getItem('kcc-pr-sort') || 'updated'; } catch {}
   const R = {};
   const imgUrl = (pid, iid, thumb) => `${BASE}/api/prompts/${pid}/img/${iid}${thumb ? '?thumb=1' : ''}`;
-  const kindDefs = () => (S.M && Array.isArray(S.M.kindDefs) ? S.M.kindDefs : KIND_BASE);
+  const kindDefs = () => {
+    const saved = S.M && Array.isArray(S.M.kindDefs) ? S.M.kindDefs : [];
+    const byId = new Map(saved.filter(k => k && typeof k === 'object' && typeof k.id === 'string').map(k => [k.id, k]));
+    return KIND_BASE.map(base => {
+      const k = byId.get(base.id);
+      const name = k && typeof k.name === 'string' && k.name.trim() ? k.name.trim() : base.name;
+      const icono = k && KIND_ICONS.some(([id]) => id === k.icon) ? k.icon : base.icon;
+      return { ...base, name, icon: icono };
+    });
+  };
   const kindBy = (id) => kindDefs().find(k => k.id === id) || { id, name: id || 'Otro', icon: 'i-stack' };
   const catBy = (id) => (S.M ? S.M.categories.find(c => c.id === id) : null);
   const listBy = (id) => (S.M ? S.M.lists.find(c => c.id === id) : null);
