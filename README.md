@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/cover-kookyecatcloud.png" alt="KookyeCatCloud — Tus archivos y fotos. Siempre contigo." width="100%">
+  <img src="docs/assets/cover-kookyecatcloud.webp" alt="KookyeCatCloud — Tus archivos y fotos. Siempre contigo." width="100%">
 </p>
 
 <h1 align="center">KookyeCatCloud</h1>
