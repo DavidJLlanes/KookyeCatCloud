@@ -394,13 +394,13 @@
   function ajusta() {
     if (!R.cv) return;
     const wrap = R.zona; const dpr = Math.min(3, window.devicePixelRatio || 1); R.dpr = dpr;
-    const anchoLado = window.innerWidth < 420 ? 50 : window.innerWidth < 560 ? 64 : 96;
-    const libreAncho = Math.min(wrap.clientWidth || 380, 760) - anchoLado * 2 - 16;
+    const anchoLado = window.innerWidth < 420 ? 42 : window.innerWidth < 560 ? 52 : 80;
+    const libreAncho = (wrap.clientWidth || 380) - anchoLado * 2 - 8;
     const arriba = R.zona.getBoundingClientRect().top;
     const hud = R.zona.querySelector('.tt-hud');
-    const abajo = (R.panelInf ? R.panelInf.offsetHeight : 150) + (hud ? hud.offsetHeight : 54) + 20 + (window.innerWidth <= 900 ? 78 : 24);
+    const abajo = (R.panelInf ? R.panelInf.offsetHeight : 130) + (hud ? hud.offsetHeight : 45) + 14;
     const libreAlto = window.innerHeight - arriba - abajo;
-    celda = Math.max(14, Math.min(34, Math.floor(Math.min(libreAncho / COLS, libreAlto / (ROWS - HID)))));
+    celda = Math.max(12, Math.min(48, Math.floor(Math.min(libreAncho / COLS, libreAlto / (ROWS - HID)))));
     R.cv.style.width = celda * COLS + 'px'; R.cv.style.height = celda * (ROWS - HID) + 'px';
     R.cv.width = Math.round(celda * COLS * dpr); R.cv.height = Math.round(celda * (ROWS - HID) * dpr);
     R.zona.style.setProperty('--lado', anchoLado + 'px');
@@ -524,17 +524,10 @@
 
   function build() {
     const v = $('view-tetris'); v.textContent = '';
-    const head = el('div', 'kv-head');
-    const t = el('div'); const sub = el('p', 'sub', 'Partidas de 3 minutos'); t.append(el('h2', null, 'Tetris'), sub);
-    const logros = el('button', 'btn'); logros.type = 'button'; logros.append(G.gi('trophy', 'gi-sm'), el('span', 'lbl', 'Logros'));
-    logros.addEventListener('click', () => switchTab('logros'));
-    const bMus = el('button', 'btn ghost icon tt-snd'); bMus.type = 'button'; bMus.textContent = '♪'; bMus.setAttribute('aria-label', 'Música');
-    const bEfe = el('button', 'btn ghost icon tt-snd'); bEfe.type = 'button'; bEfe.textContent = '🔊'; bEfe.setAttribute('aria-label', 'Efectos de sonido');
-    const pintaSnd = () => { bMus.classList.toggle('off', !AU.musica); bMus.title = AU.musica ? 'Música: sí' : 'Música: no'; bEfe.classList.toggle('off', !AU.efectos); bEfe.title = AU.efectos ? 'Efectos: sí' : 'Efectos: no'; };
-    bMus.addEventListener('click', () => { AU.musica = !AU.musica; guardaAudio(); pintaSnd(); audioInit(); });
-    bEfe.addEventListener('click', () => { AU.efectos = !AU.efectos; guardaAudio(); pintaSnd(); audioInit(); sfx('aviso'); });
-    pintaSnd();
-    head.append(t, el('span', 'grow'), bMus, bEfe, logros);
+    const head = el('div', 'tt-gamebar');
+    const salir = el('button', 'tt-salir', '← Salir a la app'); salir.type = 'button';
+    salir.addEventListener('click', () => switchTab('files'));
+    head.appendChild(salir);
 
     const zona = el('div', 'tt-zona');
     const hudBar = el('div', 'tt-hud');
@@ -579,7 +572,7 @@
     panelInf.append(barraPod, ctl);
     zona.append(hudBar, fila, panelInf);
     v.append(head, zona);
-    Object.assign(R, { zona, cv, ctx, ov, aviso: avisoEl, pts, tiempo, lineas, nivel, holdCv, nextCvs, energia, poderes, chipDoble, chipHielo, panelInf, sub });
+    Object.assign(R, { zona, cv, ctx, ov, aviso: avisoEl, pts, tiempo, lineas, nivel, holdCv, nextCvs, energia, poderes, chipDoble, chipHielo, panelInf });
     gestos(fila);
     addEventListener('resize', () => { if (S.abierta) ajusta(); });
     document.addEventListener('visibilitychange', () => { if (document.hidden) pausa(); });
@@ -643,6 +636,7 @@
     async open() {
       if (!S.built) build();
       S.abierta = true;
+      document.body.classList.add('tt-inmersivo');
       setTimeout(ajusta, 0);
       if (!G.state) await G.load();
       if (!g || g.estado === 'fin') { g = null; muestraInicio(); } else if (g.estado === 'juego') pausa();
@@ -651,7 +645,7 @@
       setTimeout(ajusta, 80);
     },
     close() {
-      S.abierta = false; paraRepeticiones();
+      S.abierta = false; document.body.classList.remove('tt-inmersivo'); paraRepeticiones();
       if (g && g.estado === 'juego') pausa();
       cancelAnimationFrame(raf); raf = 0;
       clearInterval(tickMus); tickMus = 0; if (mus) { mus.pause(); volAct = 0; }
