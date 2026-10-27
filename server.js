@@ -442,6 +442,14 @@ function enviaPlantilla(res, nombre, tipo) {
     }
     plantillas.set(nombre, { texto, mtime });
   }
+  // Las imágenes OG necesitan URL absoluta y el prefijo real de despliegue.
+  if (nombre === 'index.html') {
+    const proto = (res.req.headers['x-forwarded-proto'] || res.req.protocol || 'https').toString().split(',')[0].trim();
+    const host = res.req.get('host');
+    const origin = proto + '://' + host;
+    texto = texto.replaceAll('__KCC_OG_URL__', origin + BASE_PATH + '/og-image.jpg')
+      .replaceAll('__KCC_PAGE_URL__', origin + BASE_PATH + '/');
+  }
   res.type(tipo).send(texto);
 }
 app.get('/manifest.json', (req, res) => enviaPlantilla(res, 'manifest.json', 'application/manifest+json'));
