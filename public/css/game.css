@@ -169,3 +169,29 @@
 .tt-fila{touch-action:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
 .tt-btn{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;height:60px;}
 .tt-btn.on{background:var(--accent-strong);transform:scale(.96);}
+
+/* Tetris inmersivo: sin navegación de la aplicación mientras se juega. */
+body.tt-inmersivo .topbar,body.tt-inmersivo .mobilenav,body.tt-inmersivo .mobile-nav,body.tt-inmersivo .bottom-nav,body.tt-inmersivo .tabbar{display:none!important}
+body.tt-inmersivo #view-tetris{position:fixed!important;inset:0;z-index:1000;overflow:auto;overscroll-behavior:contain;background:var(--bg-deep);max-width:none!important;width:100%!important;margin:0!important;padding:calc(env(safe-area-inset-top,0px) + 6px) 8px calc(env(safe-area-inset-bottom,0px) + 8px)!important}
+body.tt-inmersivo .tt-zona{max-width:none;gap:6px}
+body.tt-inmersivo .tt-gamebar{width:100%;display:flex;justify-content:flex-end}
+body.tt-inmersivo .tt-salir{border:1px solid var(--line-2);background:rgba(255,255,255,.08);color:var(--text);border-radius:10px;padding:7px 13px;font:inherit;font-weight:700;min-height:36px}
+body.tt-inmersivo .tt-hud{max-width:none;gap:5px}
+body.tt-inmersivo .tt-hud>div{padding:3px 2px;border-radius:8px}
+body.tt-inmersivo .tt-hud span{font-size:9px}
+body.tt-inmersivo .tt-hud b{font-size:15px}
+body.tt-inmersivo .tt-pausa{width:38px;border-radius:9px}
+body.tt-inmersivo .tt-fila{gap:4px}
+body.tt-inmersivo .tt-lado{gap:4px}
+body.tt-inmersivo .tt-caja,body.tt-inmersivo .tt-energia{padding:3px 2px;border-radius:8px}
+body.tt-inmersivo .tt-caja span,body.tt-inmersivo .tt-energia span{font-size:8px}
+body.tt-inmersivo .tt-inf{max-width:none;gap:5px}
+body.tt-inmersivo .tt-poderes{justify-content:center;gap:5px}
+body.tt-inmersivo .tt-poder{border-radius:9px;padding:4px;min-height:34px}
+body.tt-inmersivo .tt-ctl{display:flex;justify-content:center;gap:5px}
+body.tt-inmersivo .tt-btn{width:min(15vw,60px);height:min(15vw,60px);aspect-ratio:1;border-radius:9px;flex:none;padding:0}
+body.tt-inmersivo .tt-ov{padding:5px}
+body.tt-inmersivo .tt-ov-c{gap:6px}
+body.tt-inmersivo .tt-ov h3{font-size:16px}
+body.tt-inmersivo .tt-ayuda{font-size:11px}
+@media(max-width:420px){body.tt-inmersivo .tt-zona{gap:4px}body.tt-inmersivo .tt-btn{width:15vw;height:15vw}body.tt-inmersivo .tt-poder .gi{width:19px;height:19px}}
