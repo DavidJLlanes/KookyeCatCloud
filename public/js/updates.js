@@ -31,10 +31,17 @@
 
   let reg = null;
   navigator.serviceWorker.ready.then((r) => { reg = r; }).catch(() => {});
-  const busca = () => { if (reg) reg.update().catch(() => {}); };
+  // Como máximo una comprobación automática cada 30 minutos por dispositivo.
+  // La petición al service worker utiliza validación HTTP condicional.
+  let ultimaBusqueda = 0;
+  const busca = (forzar = false) => {
+    if (!reg || document.hidden || (!forzar && Date.now() - ultimaBusqueda < 30 * 60000)) return;
+    ultimaBusqueda = Date.now();
+    reg.update().catch(() => {});
+  };
   document.addEventListener('visibilitychange', () => { if (!document.hidden) busca(); });
   window.addEventListener('online', busca);
-  setInterval(busca, 30 * 60000);
+  setInterval(() => busca(), 30 * 60000);
 
   /* ---------- Tarjeta "Acerca de" en Cuenta ---------- */
   function tarjeta() {
