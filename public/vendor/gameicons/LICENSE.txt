@@ -1,0 +1,8 @@
+Iconos de https://game-icons.net (repositorio https://github.com/game-icons/icons),
+licencia Creative Commons Attribution 3.0 (CC BY 3.0): https://creativecommons.org/licenses/by/3.0/
+
+Icons made by Lorc (http://lorcblog.blogspot.com), Delapouite (http://delapouite.com)
+and Carl Olsen (https://twitter.com/unstoppableCarl), available on https://game-icons.net
+
+Se han recortado a un único sprite SVG (gameicons.svg): se les quitó el fondo negro
+y se pintan con el color del texto (currentColor). Aparte de eso no se han modificado.

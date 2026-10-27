@@ -18,6 +18,7 @@ const createLabels = require('./lib/labels');
 const createCalendar = require('./lib/calendar');
 const createPrompts = require('./lib/prompts');
 const createClip = require('./lib/clip');
+const { createGame } = require('./lib/game');
 const { readJson, updateJson, kccDir } = require('./lib/store');
 const createContacts = require('./lib/contacts');
 const createNotesExtra = require('./lib/notes-extra');
@@ -317,6 +318,51 @@ const clipMod = createClip({
   resolveFor: (u, rel) => resolveFor(u, rel), freeName,
   alCambiarArchivos: (user, dir, req) => eventsMod.cambio(dir, String(req.get('x-kcc-client') || '').slice(0, 40).replace(/[^\w-]/g, '')),
 });
+
+// Gamificación (XP, logros, retos, Tetris). Los recuentos de contenido se calculan aquí porque solo el servidor conoce todos los módulos.
+const RE_FOTO = /\.(jpe?g|png|webp|heic|heif|gif|avif|tiff?|dng|bmp)$/i;
+const cacheArchivos = new Map();   // usuario -> { t, archivos, fotos }: recorrer el disco entero es caro, se repite cada 10 min como mucho
+async function contarArchivos(user) {
+  const hit = cacheArchivos.get(user.username);
+  if (hit && Date.now() - hit.t < 600000) return hit;
+  let archivos = 0, fotos = 0, vistos = 0;
+  const pila = [userRoot(user)];
+  while (pila.length && vistos < 400000) {
+    const dir = pila.pop();
+    let lista = [];
+    try { lista = await fsp.readdir(dir, { withFileTypes: true }); } catch { continue; }
+    for (const e of lista) {
+      if (e.name.startsWith('.')) continue;
+      vistos++;
+      if (e.isDirectory()) pila.push(path.join(dir, e.name));
+      else if (e.isFile()) { archivos++; if (RE_FOTO.test(e.name)) fotos++; }
+    }
+  }
+  const v = { t: Date.now(), archivos, fotos };
+  cacheArchivos.set(user.username, v);
+  return v;
+}
+async function contarContenido(user) {
+  const raiz = kccDir(userRoot(user));
+  const [arch, notas, contactos, cal, etq, prompts] = await Promise.all([
+    contarArchivos(user),
+    readNotes(user).catch(() => ({ items: [] })),
+    readJson(path.join(raiz, 'contacts.json'), { contacts: [] }),
+    readJson(path.join(raiz, 'calendar.json'), { events: [] }),
+    readJson(path.join(raiz, 'labels.json'), { labels: [] }),
+    promptsMod.core.contar(user),
+  ]);
+  return {
+    archivos: arch.archivos, fotos: arch.fotos,
+    notas: (notas.items || []).filter(i => i.type === 'note' && !i.deletedAt && !i.trashed).length,
+    contactos: (contactos.contacts || []).filter(c => !c.deletedAt).length,
+    eventos: (cal.events || []).length,
+    etiquetas: (etq.labels || []).length,
+    prompts,
+    enlaces: loadLinks().filter(l => l.owner === user.username).length,
+  };
+}
+const gameMod = createGame({ express, userRoot, contar: contarContenido, sendError, registrarActividad });
 
 const root = express();
 root.set('trust proxy', 1); // detrás de Nginx: necesario para que req.ip sea la IP real
@@ -3089,6 +3135,7 @@ app.use('/api/labels', auth, labelsMod.router);
 app.use('/api/calendar', auth, calendarMod.router);
 app.use('/api/prompts', auth, promptsMod.router);
 app.use('/api/clip', auth, clipMod.router);
+app.use('/api/game', auth, gameMod.router);
 app.use('/api/contacts', auth, contactsMod.router);
 app.use('/api/shopping', auth, shoppingMod);
 calendarMod.core.registraOrigen('prompt', (user, id, ev) => promptsMod.core.setCal(user, id, ev));
