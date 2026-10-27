@@ -525,7 +525,8 @@
   function build() {
     const v = $('view-tetris'); v.textContent = '';
     const head = el('div', 'tt-gamebar');
-    const salir = el('button', 'tt-salir', '← Salir a la app'); salir.type = 'button';
+    const salir = el('button', 'tt-salir'); salir.type = 'button'; salir.setAttribute('aria-label', 'Salir del Tetris y volver a la aplicación');
+    salir.append(el('span', 'tt-salir-icon', '←'), el('span', null, 'Volver a la app'));
     salir.addEventListener('click', () => switchTab('files'));
     head.appendChild(salir);
 
