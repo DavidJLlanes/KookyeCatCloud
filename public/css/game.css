@@ -165,3 +165,7 @@
 .tt-snd.off{opacity:.45;text-decoration:line-through;}
 .tt-vol{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);width:100%;justify-content:center;}
 .tt-vol input{width:55%;padding:0;}
+
+.tt-fila{touch-action:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
+.tt-btn{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;height:60px;}
+.tt-btn.on{background:var(--accent-strong);transform:scale(.96);}

@@ -128,7 +128,7 @@
     rellenaCola();
     const t = tipo || g.cola.shift();
     rellenaCola();
-    g.cur = pieza(t); g.caida = 0; g.bloqueo = 0; g.reinicios = 0; g.giro = false;
+    g.cur = pieza(t); g.caida = 0; g.bloqueo = 0; g.reinicios = 0; g.giro = false; g.piezas = (g.piezas || 0) + 1;
     if (choca(g.cur)) {
       if (g.aire) {   // segundo aire: se vacían las 8 filas de abajo y se sigue
         g.aire = false; g.board.splice(ROWS - 8, 8); for (let i = 0; i < 8; i++) g.board.unshift(Array(COLS).fill(0));
@@ -394,7 +394,7 @@
   function ajusta() {
     if (!R.cv) return;
     const wrap = R.zona; const dpr = Math.min(3, window.devicePixelRatio || 1); R.dpr = dpr;
-    const anchoLado = window.innerWidth < 560 ? 64 : 96;
+    const anchoLado = window.innerWidth < 420 ? 50 : window.innerWidth < 560 ? 64 : 96;
     const libreAncho = Math.min(wrap.clientWidth || 380, 760) - anchoLado * 2 - 16;
     const arriba = R.zona.getBoundingClientRect().top;
     const hud = R.zona.querySelector('.tt-hud');
@@ -410,7 +410,7 @@
 
   /* ---------- Entrada ---------- */
   const reps = new Map();
-  function repite(clave, fn, primero = 160, cada = 52) {
+  function repite(clave, fn, primero = 150, cada = 45) {
     if (reps.has(clave)) return;
     fn();
     const r = { t: setTimeout(() => { r.i = setInterval(fn, cada); }, primero) };
@@ -447,36 +447,71 @@
   addEventListener('keydown', (e) => teclado(e, true));
   addEventListener('keyup', (e) => teclado(e, false));
 
-  function gestos(cv) {
+  /* Táctil: el dedo arrastra la pieza (posición absoluta, no por pasos acumulados, así no se pierde ni se pasa),
+     arrastrar hacia abajo la baja al ritmo del dedo, un golpe rápido hacia abajo la suelta, hacia arriba la reserva
+     y un toque la gira. Funciona en todo el área de juego, no solo sobre el tablero. */
+  function gestos(area) {
     let gs = null;
-    cv.addEventListener('pointerdown', (e) => {
-      if (!enJuego()) return;
-      cv.setPointerCapture(e.pointerId);
-      gs = { x: e.clientX, y: e.clientY, t: performance.now(), ax: e.clientX, ay: e.clientY, movido: false };
+    const vib = (n) => { try { if (navigator.vibrate) navigator.vibrate(n); } catch { /* sin vibración */ } };
+    const rebasa = (x, y) => { gs.ax = x; gs.ay = y; gs.col0 = g.cur ? g.cur.x : 0; gs.pieza = g.cur ? g.cur.t + ':' + g.piezas : ''; gs.cae = false; };
+    area.addEventListener('pointerdown', (e) => {
+      if (gs || !enJuego() || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      e.preventDefault();
+      try { area.setPointerCapture(e.pointerId); } catch { /* ya no está */ }
+      const enHold = !!(R.holdCv && e.target === R.holdCv);
+      gs = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), movido: false, hold: enHold, mues: [[performance.now(), e.clientY]], ejeX: false };
+      rebasa(e.clientX, e.clientY);
     });
-    cv.addEventListener('pointermove', (e) => {
-      if (!gs || !enJuego()) return;
-      const paso = celda * 0.85;
-      const dx = e.clientX - gs.ax;
-      if (Math.abs(dx) >= paso) { const n = Math.trunc(dx / paso); for (let i = 0; i < Math.abs(n); i++) mueve(Math.sign(n)); gs.ax += n * paso; gs.movido = true; }
-      const dy = e.clientY - gs.ay;
-      if (dy >= paso) { const n = Math.floor(dy / paso); for (let i = 0; i < n; i++) baja(); gs.ay += n * paso; gs.movido = true; }
+    area.addEventListener('pointermove', (e) => {
+      if (!gs || e.pointerId !== gs.id || gs.hold) return;
+      if (!enJuego()) return;
+      if (gs.pieza !== g.cur.t + ':' + g.piezas) rebasa(e.clientX, e.clientY);   // salió otra pieza: se sigue desde donde está el dedo
+      if (gs.cae) return;
+      const ahora = performance.now();
+      gs.lx = e.clientX; gs.ly = e.clientY;
+      gs.mues.push([ahora, e.clientY]); while (gs.mues.length > 1 && ahora - gs.mues[0][0] > 90) gs.mues.shift();
+      const dx = e.clientX - gs.ax, dy = e.clientY - gs.ay;
+      // zona muerta: un toque tembloroso no debe mover la pieza
+      if (!gs.movido && Math.hypot(e.clientX - gs.x, e.clientY - gs.y) < 9) return;
+      gs.movido = true;
+      // columna objetivo según el dedo (con un poco de histéresis para que no baile entre dos columnas)
+      const pasos = dx / celda, entero = Math.trunc(pasos), resto = Math.abs(pasos - entero);
+      const objetivo = gs.col0 + entero + (resto > 0.62 ? Math.sign(pasos) : 0);
+      let guarda = 12;
+      while (g.cur.x !== objetivo && guarda-- > 0) {
+        const antes = g.cur.x; mueve(Math.sign(objetivo - g.cur.x));
+        if (g.cur.x === antes) break;   // pared o bloque
+      }
+      // bajar con el dedo: un paso por cada ~0,8 celda, con más margen para no bajar sin querer al mover de lado
+      const pasoY = celda * 0.8, extra = Math.abs(dx) > celda * 1.2 ? celda * 0.5 : 0;
+      if (dy > pasoY + extra) { const n = Math.floor((dy - extra) / pasoY); let k = 0; for (let i = 0; i < n; i++) if (baja()) k++; gs.ay += n * pasoY; if (k) gs.bajo = true; }
+      else if (dy < -pasoY * 1.5) gs.ay = Math.max(gs.ay, e.clientY + pasoY * 1.5);   // si sube, se vuelve a contar desde ahí
     });
     const suelta = (e) => {
-      if (!gs) return; const s = gs; gs = null;
-      if (!enJuego()) return;
-      const dt = performance.now() - s.t, dy = e.clientY - s.y, dx = e.clientX - s.x;
-      if (!s.movido && dt < 280 && Math.abs(dx) < 12 && Math.abs(dy) < 12) gira(1);
-      else if (dy > celda * 3 && dy / Math.max(dt, 1) > 0.7 && Math.abs(dx) < dy) cae();
+      if (!gs || e.pointerId !== gs.id) return; const s = gs; gs = null;
+      try { area.releasePointerCapture(e.pointerId); } catch { /* da igual */ }
+      if (e.type === 'pointercancel' || !enJuego()) return;
+      const dt = performance.now() - s.t, dx = (s.lx ?? e.clientX) - s.x, dy = (s.ly ?? e.clientY) - s.y;
+      if (s.hold) { if (!s.movido && dt < 400) { reserva(); vib(10); } return; }
+      if (s.cae) return;
+      if (!s.movido && dt < 300) { gira(1); return; }
+      // golpe rápido: velocidad en los últimos ~90 ms
+      const m0 = s.mues[0], m1 = s.mues[s.mues.length - 1], v = (m1[1] - m0[1]) / Math.max(1, m1[0] - m0[0]);
+      const enMovimiento = performance.now() - m1[0] < 80;   // si el dedo se paró antes de soltar, no es un golpe
+      if (enMovimiento && v > 0.7 && dy > celda * 1.5 && Math.abs(dx) < Math.abs(dy) * 1.2) { cae(); vib(14); }
+      else if (enMovimiento && v < -0.7 && dy < -celda * 2 && Math.abs(dx) < Math.abs(dy)) { reserva(); vib(10); }
     };
-    cv.addEventListener('pointerup', suelta); cv.addEventListener('pointercancel', () => { gs = null; });
-    cv.addEventListener('contextmenu', (e) => e.preventDefault());
+    area.addEventListener('pointerup', suelta); area.addEventListener('pointercancel', suelta);
+    area.addEventListener('lostpointercapture', (e) => { if (gs && e.pointerId === gs.id) gs = null; });
+    area.addEventListener('contextmenu', (e) => e.preventDefault());
+    area.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
   }
 
   function boton(txt, cls, onDown, onUp, etiqueta) {
     const b = el('button', 'tt-btn ' + (cls || ''), txt); b.type = 'button'; if (etiqueta) b.setAttribute('aria-label', etiqueta);
-    b.addEventListener('pointerdown', (e) => { e.preventDefault(); onDown(e); });
-    if (onUp) { ['pointerup', 'pointerleave', 'pointercancel'].forEach(n => b.addEventListener(n, onUp)); }
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch { /* ya no está */ } b.classList.add('on'); onDown(e); });
+    const fuera = (e) => { b.classList.remove('on'); if (onUp) onUp(e); };
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => b.addEventListener(n, fuera));
     b.addEventListener('contextmenu', (e) => e.preventDefault());
     return b;
   }
@@ -545,7 +580,7 @@
     zona.append(hudBar, fila, panelInf);
     v.append(head, zona);
     Object.assign(R, { zona, cv, ctx, ov, aviso: avisoEl, pts, tiempo, lineas, nivel, holdCv, nextCvs, energia, poderes, chipDoble, chipHielo, panelInf, sub });
-    gestos(cv);
+    gestos(fila);
     addEventListener('resize', () => { if (S.abierta) ajusta(); });
     document.addEventListener('visibilitychange', () => { if (document.hidden) pausa(); });
     window.addEventListener('blur', () => { if (g && g.estado === 'juego') pausa(); });
@@ -576,7 +611,7 @@
     rng.addEventListener('input', () => { AU.vol = +rng.value; guardaAudio(); }); vol.appendChild(rng); c.appendChild(vol);
     const det = el('details'); det.appendChild(el('summary', null, 'Controles y potenciadores'));
     const ctl = el('p', 'k-faint tt-ayuda');
-    ctl.textContent = 'Táctil: arrastra para mover, toca para girar, desliza hacia abajo para bajar y haz un gesto rápido para soltar. Teclado: ← → mover, ↑ o X girar, Z girar al revés, ↓ bajar, espacio soltar, C reserva, 1-7 potenciadores, P pausa.';
+    ctl.textContent = 'Táctil: arrastra para mover la pieza, toca para girar, arrastra hacia abajo para bajar, golpe rápido hacia abajo para soltar y hacia arriba para reservar (o toca la Reserva). Teclado: ← → mover, ↑ o X girar, Z girar al revés, ↓ bajar, espacio soltar, C reserva, 1-7 potenciadores, P pausa.';
     det.append(ctl); listaPoderes(det);
     const cred = el('p', 'k-faint tt-ayuda', 'Música de Kevin MacLeod (FreePD), dominio público CC0.'); det.appendChild(cred); c.appendChild(det);
   }
