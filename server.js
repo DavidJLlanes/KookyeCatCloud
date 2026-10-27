@@ -459,21 +459,29 @@ app.get('/manifest.json', (req, res) => enviaPlantilla(res, 'manifest.json', 'ap
 // acordarse de subir ningún número a mano.
 const APP_VERSION = require('./package.json').version;
 const ARRANQUE = Date.now();
-let buildCache = { t: 0, id: '' };
+// Firma inmutable por proceso: el despliegue reinicia Node para activar el nuevo commit.
+// Prioridad: BUILD_ID del despliegue, HEAD de Git (lectura única), versión del paquete.
 function buildId() {
-  if (Date.now() - buildCache.t < 300000 && buildCache.id) return buildCache.id;
-  const h = crypto.createHash('sha1').update(APP_VERSION);
-  const recorre = (dir) => {
-    for (const e of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
-      const p = path.join(dir, e.name);
-      if (e.isDirectory()) { if (e.name !== 'vendor') recorre(p); }
-      else { const st = fs.statSync(p); h.update(`${p.slice(PUBLIC_DIR.length)}:${st.size}:${Math.floor(st.mtimeMs)};`); }
-    }
-  };
-  try { recorre(PUBLIC_DIR); } catch { /* sin public */ }
-  buildCache = { t: Date.now(), id: h.digest('hex').slice(0, 10) };
-  return buildCache.id;
+  return BUILD_ID;
 }
+function readGitHead() {
+  try {
+    const dot = path.join(__dirname, '.git');
+    const gitDir = fs.statSync(dot).isDirectory() ? dot : path.resolve(__dirname, fs.readFileSync(dot, 'utf8').trim().replace(/^gitdir:\\s*/, ''));
+    const head = fs.readFileSync(path.join(gitDir, 'HEAD'), 'utf8').trim();
+    if (/^[a-f0-9]{40}$/i.test(head)) return head;
+    if (head.startsWith('ref: ')) {
+      const ref = head.slice(5).trim();
+      try { return fs.readFileSync(path.join(gitDir, ref), 'utf8').trim(); } catch {}
+      const packed = fs.readFileSync(path.join(gitDir, 'packed-refs'), 'utf8');
+      const line = packed.split('\\n').find(l => l.endsWith(' ' + ref));
+      if (line) return line.split(' ')[0];
+    }
+  } catch {}
+  return '';
+}
+const BUILD_ID = String(process.env.KCC_BUILD_ID || process.env.BUILD_ID || readGitHead() || APP_VERSION).trim().slice(0, 40);
+
 app.get('/sw.js', (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.type('application/javascript').send(fs.readFileSync(path.join(PUBLIC_DIR, 'sw.js'), 'utf8').split('__BUILD__').join(buildId()));
