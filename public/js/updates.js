@@ -9,38 +9,33 @@
 --------------------------------------------------------------- */
 (function () {
   if (!('serviceWorker' in navigator)) return;
-  // Solo se avisa si la página ya estaba controlada por un service worker: la primera instalación no es una "actualización"
-  let controlado = !!navigator.serviceWorker.controller;
-  let avisado = false, recargando = false;
-
-  function aviso() {
-    if (avisado) return; avisado = true;
-    const b = el('div', 'update-banner'); b.setAttribute('role', 'status');
-    b.append(icon('i-refresh'), el('span', null, 'Hay una versión nueva de KookyeCatCloud'));
-    const ok = el('button', 'btn primary sm', 'Actualizar'); ok.type = 'button';
-    ok.addEventListener('click', () => { recargando = true; location.reload(); });
-    const no = el('button', 'btn ghost sm', 'Luego'); no.type = 'button';
-    no.addEventListener('click', () => { b.remove(); });
-    b.append(ok, no);
-    document.body.appendChild(b);
+  // El service worker activa la nueva versión automáticamente.
+  // No interrumpir una partida de Tetris ni un formulario en edición.
+  let reg = null, ultimaBusqueda = 0, recargando = false, pendiente = false;
+  const puedeRecargar = () => !document.hidden && !document.querySelector('#view-tetris:not([hidden])') &&
+    !document.querySelector('input:focus,textarea:focus,[contenteditable="true"]:focus');
+  function aplica() {
+    if (!pendiente || recargando || !puedeRecargar()) return;
+    recargando = true;
+    location.reload();
   }
-
-  // Cada cambio de service worker que llega con la página ya controlada es una actualización.
-  // (En una primera visita, el primer cambio es solo la instalación: se anota y no se avisa.)
-  navigator.serviceWorker.addEventListener('controllerchange', () => { if (controlado && !recargando) aviso(); controlado = true; });
-
-  let reg = null;
-  navigator.serviceWorker.ready.then((r) => { reg = r; }).catch(() => {});
-  // Como máximo una comprobación automática cada 30 minutos por dispositivo.
-  // La petición al service worker utiliza validación HTTP condicional.
-  let ultimaBusqueda = 0;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    // No recargar durante la primera instalación.
+    if (!controlado) { controlado = true; return; }
+    pendiente = true;
+    aplica();
+  });
+  let controlado = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.ready.then(r => { reg = r; }).catch(() => {});
   const busca = (forzar = false) => {
+    aplica();
     if (!reg || document.hidden || (!forzar && Date.now() - ultimaBusqueda < 30 * 60000)) return;
     ultimaBusqueda = Date.now();
     reg.update().catch(() => {});
   };
   document.addEventListener('visibilitychange', () => { if (!document.hidden) busca(); });
-  window.addEventListener('online', busca);
+  window.addEventListener('online', () => busca());
+  document.addEventListener('click', () => { if (pendiente) setTimeout(aplica, 0); });
   setInterval(() => busca(), 30 * 60000);
 
   /* ---------- Tarjeta "Acerca de" en Cuenta ---------- */
@@ -67,7 +62,7 @@
       // Si hay un service worker nuevo, controllerchange mostrará el aviso; si no, estamos al día
       await new Promise(r => setTimeout(r, 2500));
       const despues = await lee();
-      if (!avisado) K.toast(antes && despues && antes.build === despues.build ? 'Ya tienes la última versión' : 'Comprobado');
+      if (!pendiente) K.toast(antes && despues && antes.build === despues.build ? 'Ya tienes la última versión' : 'Comprobado');
       b.disabled = false; b.textContent = 'Buscar actualizaciones';
     });
   }
@@ -75,5 +70,5 @@
   const previa = window.KCC.views.cuenta;
   K.registerView('cuenta', { open() { tarjeta(); if (previa && previa.open) previa.open(); }, close() { if (previa && previa.close) previa.close(); } });
 
-  K.updates = { aviso, busca };
+  K.updates = { busca };
 })();
