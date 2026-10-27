@@ -64,7 +64,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 - [Qué puedes hacer](#qué-puedes-hacer)
 - [Instalación](#instalación) — [local](#arrancar-en-local) · [VPS paso a paso](#despliegue-en-el-vps) · [dominio, subdominio o subcarpeta](#en-qué-dirección-instalarla)
-- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [contactos](#contactos), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
+- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [contactos](#contactos), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
 - [Actualizaciones](#actualizaciones)
 - [Variables de entorno](#variables-de-entorno)
 - [Seguridad](#seguridad) · [Copias de seguridad](#copias-de-seguridad) · [Estructura del proyecto](#estructura-del-proyecto) · [Solución de problemas](#solución-de-problemas)
@@ -84,7 +84,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 🛒 **Lista de la compra** | Catálogo y compras compartidos, cantidades, categorías e imágenes con recorte cuadrado. |
 | 📅 **Calendario** | Mes, semana, día y agenda con calendarios de colores, repetición y recordatorios. |
 | ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables, imágenes de muestra, comparación de versiones, estadísticas y creación desde metadatos de imágenes de ComfyUI / Automatic1111. |
-| 🏆 **Logros y Tetris** | Niveles y rangos, racha diaria, logros por cantidad de elementos y por uso, retos semanales, cosméticos y un Tetris de 3 minutos con potenciadores que se desbloquean al subir de nivel. |
+| 🏆 **Logros y Tetris** | Niveles y rangos, racha diaria, logros por cantidad de elementos y por uso, retos semanales, cosméticos y un Tetris de 3 minutos, táctil y con música, con potenciadores que se desbloquean al subir de nivel. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
 | 📋 **Portapapeles compartido** | Deja texto o archivos desde un dispositivo y recógelos desde otro al instante. En Android, la app aparece en el menú «Compartir». |
 | ⚡ **Actualización en directo** | La lista de archivos se refresca sola cuando llega algo por un enlace de subida o desde otro dispositivo, sin consultas periódicas. |
@@ -618,40 +618,144 @@ La ficha se adapta al **tipo** (Imagen, Texto, Código, Vídeo, Audio, Agente, F
 
 ## Logros y Tetris
 
-Dos pestañas nuevas, **Logros** y **Tetris**, para que usar la app tenga recompensa. Todo es personal (cada
-cuenta tiene lo suyo) y se guarda en `<usuario>/.kcc/game.json`; el servidor es quien calcula y concede los
-puntos (`lib/game.js`).
+Dos pestañas, **Logros** y **Tetris**, para que usar la app tenga recompensa. Todo es personal: cada cuenta tiene
+lo suyo, guardado en `<usuario>/.kcc/game.json`. El servidor es quien calcula y concede los puntos
+(`lib/game.js`), así que no se pueden falsear desde el navegador.
 
-- **Nivel y rango**: 100 niveles y 11 rangos (de *Novato* a *Mítico*). La experiencia (XP) sale de los
-  logros, de un bono diario, de 1 XP por minuto de uso (hasta 120 al día), de los retos semanales y del Tetris.
-- **Logros** (22 familias con 5 tramos —bronce, plata, oro, platino y diamante— más 7 especiales, algunos
-  secretos): por número de archivos, fotos, notas, prompts, contactos, eventos, etiquetas y enlaces; por
-  tiempo de uso, días activos, racha y nivel; y por Tetris (partidas, récord, líneas, Tetris, combos,
-  potenciadores y monedas). El contenido se cuenta en el servidor (los archivos se recuentan como mucho cada
-  10 minutos para no recorrer el disco a cada rato).
-- **Tiempo de uso**: la pestaña avisa cada minuto mientras está visible y hay actividad reciente; el
-  servidor no admite más tiempo del que ha pasado de verdad.
-- **Racha diaria** con **escudos**: te ganas uno cada 7 días seguidos (máximo 2) y salva la racha si te
-  saltas un día.
-- **Retos semanales**: 3 cada semana (uno de contenido, uno de uso y uno de Tetris), de dificultad según tu
-  nivel; completar los tres da un bono extra.
-- **Cosméticos** (se compran con monedas, se desbloquean por nivel o por logro): piezas del Tetris, fondos
-  del tablero, marcos de perfil y títulos.
-- **Tarjeta para compartir**: genera una imagen PNG (perfil y logros, o tu puntuación del Tetris con el
+### Cómo funciona
+
+Hay dos monedas de progreso:
+
+- **XP (experiencia)**: sube tu **nivel** (del 1 al 100) y tu **rango**.
+- **Monedas**: se ganan jugando al Tetris y con los retos, y se gastan en **cosméticos**.
+
+**Cómo ganas XP**
+
+| Fuente | Cuánto |
+| --- | --- |
+| Logros | 50 / 150 / 400 / 1000 / 2500 XP por tramo (bronce, plata, oro, platino, diamante); 100 XP por cada logro especial |
+| Primera visita de cada día | Bono de `20 + 2 × días de racha` XP (la racha cuenta hasta 30) |
+| Tiempo de uso | 1 XP por minuto con la app abierta y activa, hasta 120 XP al día |
+| Retos semanales | 120, 180 o 260 XP según la dificultad, y 300 XP más si completas los tres |
+| Partidas de Tetris | `10 + puntos / 200` XP por partida (máximo 160) |
+
+**Niveles y rangos.** La XP necesaria crece poco a poco: nivel 5 ≈ 485 XP, nivel 10 ≈ 2 100, nivel 20 ≈ 8 000,
+nivel 50 ≈ 44 000 y nivel 100 ≈ 156 000. Los rangos son: Novato (1), Aprendiz (5), Explorador (10), Organizador
+(15), Archivista (20), Curador (30), Maestro (40), Sabio (50), Gran maestro (65), Leyenda (80) y Mítico (100).
+
+### Cómo conseguir los logros
+
+Los logros están en la pestaña **Logros** y se conceden solos en cuanto cumples la condición; sale un aviso en
+pantalla. Hay 22 familias con 5 tramos cada una, y siete logros especiales.
+
+| Grupo | Logro | Qué hacer (tramos) |
+| --- | --- | --- |
+| Contenido | Coleccionista de archivos | Tener 10 · 100 · 500 · 2 000 · 10 000 archivos |
+| | Ojo de fotógrafo | Guardar 10 · 100 · 500 · 2 000 · 10 000 fotos |
+| | Cuaderno lleno | Escribir 5 · 25 · 100 · 400 · 1 500 notas |
+| | Biblioteca de prompts | Guardar 5 · 25 · 100 · 500 · 2 500 prompts |
+| | Agenda con vida | Guardar 5 · 25 · 100 · 400 · 1 500 contactos |
+| | Siempre a tiempo | Crear 5 · 25 · 100 · 400 · 1 500 eventos de calendario |
+| | Orden y etiquetas | Crear 3 · 10 · 25 · 60 · 150 etiquetas |
+| | Compartir es vivir | Crear 1 · 5 · 20 · 50 · 150 enlaces para compartir |
+| Uso | Tiempo bien invertido | Usar la app 1 · 5 · 20 · 60 · 200 horas |
+| | Hábito | Entrar 3 · 10 · 30 · 100 · 365 días distintos |
+| | Sin parar | Racha de 3 · 7 · 14 · 30 · 100 días seguidos |
+| | Ascenso | Llegar al nivel 5 · 10 · 25 · 50 · 100 |
+| | Cazador de retos | Completar 1 · 5 · 20 · 60 · 200 retos semanales |
+| | Con estilo | Tener 1 · 3 · 6 · 12 · 20 cosméticos |
+| | Presumir un poco | Compartir 1 · 3 · 10 · 30 · 100 tarjetas |
+| Tetris | Jugón | Jugar 1 · 10 · 50 · 200 · 1 000 partidas |
+| | Récord personal | 1 000 · 5 000 · 15 000 · 40 000 · 100 000 puntos en una partida |
+| | Constructor | Limpiar 50 · 500 · 2 500 · 10 000 · 50 000 líneas en total |
+| | Cuatro de golpe | Hacer 1 · 10 · 50 · 200 · 1 000 Tetris (4 líneas a la vez) |
+| | Cadena de combos | Combo de 3 · 5 · 8 · 12 · 20 |
+| | Aprendiz de mago | Usar 1 · 20 · 100 · 500 · 2 500 potenciadores |
+| | Cofre de monedas | Ganar 100 · 500 · 2 500 · 10 000 · 40 000 monedas en total |
+
+**Logros especiales** (los marcados con 🔒 son secretos hasta que los consigues):
+
+- **Primer paso**: entrar por primera vez.
+- **Todoterreno**: tener al menos un elemento en archivos, notas, prompts, contactos, calendario y etiquetas.
+- 🔒 **Noctámbulo**: usar la app entre medianoche y las 5.
+- 🔒 **Madrugador**: usarla entre las 5 y las 7.
+- 🔒 **Maratón**: pasar 3 horas en un mismo día dentro de la app.
+- 🔒 **Finde productivo**: entrar un sábado y un domingo.
+- 🔒 **Cero errores**: terminar una partida de Tetris sin que se llene el tablero y con 1 500 puntos o más.
+
+Los recuentos de contenido los hace el servidor; los archivos y fotos se vuelven a contar como mucho cada 10
+minutos para no recorrer el disco a cada rato. Si acabas de subir algo, el logro puede tardar un poco en salir.
+
+### Racha, tiempo y retos
+
+- **Tiempo de uso**: la pestaña avisa cada minuto mientras está visible y hay actividad reciente (un toque, una
+  tecla…). El servidor no admite más tiempo del que ha pasado de verdad.
+- **Racha diaria**: entrar al menos una vez al día la mantiene. Cada 7 días seguidos ganas un **escudo** (máximo
+  2) que salva la racha si te saltas un día.
+- **Retos semanales**: cada semana (de lunes a domingo) hay 3 retos, uno de contenido (subir fotos, escribir
+  notas, crear eventos…), uno de uso (minutos o días de la semana) y uno de Tetris (partidas, líneas, Tetris,
+  potenciadores o puntos). El objetivo se adapta a tu nivel. Recompensa: 120 XP y 15 monedas, 180 XP y 30
+  monedas, o 260 XP y 50 monedas; con los tres hechos, bono de **300 XP y 100 monedas**.
+- **Cosméticos**: se compran con monedas, algunos exigen cierto nivel y los marcos se desbloquean al subir de
+  nivel. Hay piezas del Tetris (Clásico, Neón, Pastel, Retro, Hielo, Lava, Oro macizo), fondos del tablero,
+  marcos de perfil y títulos. Se equipan desde la pestaña Logros.
+- **Tarjeta para compartir**: genera una imagen PNG (tu perfil y logros, o tu puntuación del Tetris con el
   tablero final) que se comparte con el menú del sistema, se descarga o se copia.
-- **Tetris** de 3 minutos (también acaba si se llena el tablero): reserva, sombra de caída, rotación con
-  empuje, T-spin, combos y Tetris consecutivos. Controles táctiles (gestos o botones) y teclado (← → ↑ ↓,
-  espacio, C, Z, 1-7 y P). Limpiar líneas carga **energía**, que se gasta en **potenciadores** (limpieza,
-  congelar, +15 s, barra, puntos x2, deshacer, rayo); además hay **pasivos** (más tiempo, cargador rápido,
-  combos mejorados, segundo aire…). Se van desbloqueando con el nivel de la app, así que cuanto más la uses,
-  más alta será la puntuación posible. Las monedas y la XP de cada partida se calculan en el servidor, que
-  rechaza resultados imposibles.
-- **Iconos**: de [game-icons.net](https://game-icons.net) (Lorc, Delapouite y Carl Olsen, licencia
-  **CC BY 3.0**). Están reunidos en `public/vendor/gameicons/gameicons.svg`, con su `LICENSE.txt`.
+
+### Tetris
+
+Partidas de **3 minutos** (también acaban si se llena el tablero). Lleva reserva, sombra de caída, giro con
+empuje contra paredes, T-spin, combos, Tetris consecutivos y tablero limpio. Cada 8 líneas sube el nivel de la
+partida y la caída se acelera.
+
+**Controles**
+
+| | Táctil | Teclado |
+| --- | --- | --- |
+| Mover | Arrastra la pieza con el dedo; sigue al dedo columna a columna | ← → |
+| Girar | Un toque | ↑ o X (Z gira al revés) |
+| Bajar | Arrastra hacia abajo | ↓ |
+| Soltar de golpe | Golpe rápido hacia abajo | Espacio |
+| Reservar | Golpe rápido hacia arriba, o tocar el cuadro de Reserva | C o Mayús |
+| Potenciador | Botones sobre los controles | 1-7 |
+| Pausa | Botón de pausa (también se pausa al salir de la pestaña) | P o Esc |
+
+En el móvil también hay botones (◀ ▶ ⟳ ▼ ⤓ ⇄) que se pueden mantener pulsados; se ocultan en el ordenador.
+El gesto vale en toda la zona de juego, no solo sobre el tablero.
+
+**Energía y potenciadores.** Limpiar líneas carga la barra de **energía** (máximo 5): 1 unidad cada 5 líneas, más
+1 extra con un Tetris o un T-spin. La energía se gasta en potenciadores, que se desbloquean con tu nivel en la app,
+así que cuanto más la uses, más alta será la puntuación posible:
+
+| Potenciador | Nivel | Energía | Efecto |
+| --- | --- | --- | --- |
+| Limpieza | 3 | 2 | Elimina las 2 filas de abajo |
+| Congelar | 5 | 1 | Detiene la caída 6 segundos |
+| +15 s | 8 | 2 | Añade 15 segundos al reloj |
+| Barra | 10 | 1 | La siguiente pieza será la barra larga |
+| Puntos x2 | 15 | 2 | Doble puntuación durante 10 segundos |
+| Deshacer | 20 | 3 | Devuelve la última pieza colocada |
+| Rayo | 25 | 2 | Borra la columna más alta |
+
+**Pasivos** (actúan solos desde que los desbloqueas): Reloj de arena (nivel 4, +10 s al empezar), Cargador
+rápido (7, energía cada 4 líneas), Maestro del combo (11, combos +50 %), Segundo aire (16, una vez por partida
+se limpian 8 filas si te quedas sin sitio), Reloj de oro (22, +20 s), Golpe cuádruple (28, Tetris +50 %) y
+Lluvia de monedas (35, +50 % de monedas).
+
+**Recompensa de cada partida**: XP `10 + puntos / 200` (máximo 160) y monedas `puntos / 500 + líneas / 10`
+(máximo 120). El servidor comprueba la partida y rechaza resultados imposibles (puntos o líneas que no caben en
+el tiempo jugado, o partidas encadenadas demasiado rápido).
+
+**Iconos**: de [game-icons.net](https://game-icons.net) (Lorc, Delapouite y Carl Olsen, licencia
+**CC BY 3.0**). Están reunidos en `public/vendor/gameicons/gameicons.svg`, con su `LICENSE.txt`.
 
 ### Música y sonido del Tetris
 
-La música son tres pistas de dominio público (CC0) de Kevin MacLeod / FreePD, en `public/audio/` (créditos en `CREDITS.txt`). Cambian según el nivel de la partida y suenan algo más rápido en los últimos 20 s. Los efectos se sintetizan con Web Audio, sin archivos. Los botones ♪ y 🔊 y el volumen se guardan en el navegador. El service worker no cachea `/audio/`.
+La música son tres pistas de dominio público (CC0) de Kevin MacLeod / FreePD, en `public/audio/` (créditos en
+`CREDITS.txt`). Cambian según el nivel de la partida (tranquila, chip y trance) y suenan algo más rápido en los
+últimos 20 s. Los efectos (mover, girar, líneas, Tetris, potenciadores, cuenta atrás y fin) se sintetizan con Web
+Audio, sin archivos. Los botones ♪ y 🔊 de la cabecera y el volumen de la pantalla de inicio se guardan en el
+navegador. El service worker no cachea `/audio/`.
 
 ## Contactos
 
@@ -1167,6 +1271,7 @@ lib/
   ical.js            Feed iCal (RFC 5545) de solo lectura
   holidays.js        Festivos de España calculados (sin servicios externos)
   prompts.js         Biblioteca de prompts e imágenes WebP
+  game.js            Logros, niveles, racha, retos semanales, cosméticos y partidas de Tetris
   comfy.js           Lee metadatos de generación: ComfyUI, Automatic1111 / Forge, JSON y EXIF/XMP
   clip.js            Portapapeles compartido entre dispositivos y destino de «Compartir»
   contacts.js        Contactos: API, búsqueda, importación y exportación vCard
@@ -1182,7 +1287,8 @@ public/
   js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, recordatorios vinculados, portapapeles, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
   css/               Estilos de los módulos
   sw.js, manifest.json  PWA
-  vendor/            Leaflet alojado en local
+  audio/             Música del Tetris (CC0) y créditos
+  vendor/            Leaflet alojado en local; game-icons.net (iconos de logros)
 deploy/              update.sh y temporizador systemd de autoactualización
 .env.example         Todas las variables de configuración
 ```
