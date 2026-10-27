@@ -461,7 +461,7 @@ const APP_VERSION = require('./package.json').version;
 const ARRANQUE = Date.now();
 let buildCache = { t: 0, id: '' };
 function buildId() {
-  if (Date.now() - buildCache.t < 5000 && buildCache.id) return buildCache.id;
+  if (Date.now() - buildCache.t < 300000 && buildCache.id) return buildCache.id;
   const h = crypto.createHash('sha1').update(APP_VERSION);
   const recorre = (dir) => {
     for (const e of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
