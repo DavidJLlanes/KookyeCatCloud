@@ -331,17 +331,8 @@ const alpha = (hex, a) => `rgba(${rgbOf(hex).join(',')},${a})`;
 // Mezcla con blanco: p es la proporción del color, el resto blanco
 const lighten = (hex, p) => `rgb(${rgbOf(hex).map(c => Math.round(c * p + 255 * (1 - p))).join(',')})`;
 
-function setFavicon(c1, c2) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
-    `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
-    `<stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/>` +
-    `</linearGradient></defs><rect width="24" height="24" rx="6" fill="url(#g)"/>` +
-    `<g transform="translate(12 12) scale(.8) translate(-12 -12)">` +
-    `<path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97 6 6 0 0 0-11.66-1.5A4 4 0 0 0 6.5 19z" fill="none" ` +
-    `stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;
-  const link = $('favicon');
-  if (link) link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
-}
+// La identidad de marca permanece fija aunque cambie la tonalidad de la interfaz.
+function setFavicon() { /* Favicon estático configurado en index.html. */ }
 
 function applyTint(id, persist) {
   const t = tintById(id);
