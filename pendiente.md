@@ -48,6 +48,12 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [x] ~~Estadísticas: modelos y herramientas más usados, prompts favoritos.~~ Hecho: menú ⋯ → Estadísticas.
 - [x] ~~Prompts de cualquier tipo: mensaje de sistema, fragmentos, resultados con valoración y comparación, cadenas, plantillas, tokens, vistas guardadas, parecidos, exportar, compartir y envío a ComfyUI.~~ Hecho: ver «Prompts que no son de imagen» en el README.
 
+### Gamificación
+- [x] ~~Experiencia gamificada: logros por número de elementos y tiempo de uso, niveles, racha, retos semanales y cosméticos.~~ Hecho: pestaña Logros.
+- [x] ~~Tetris con potenciadores ligados al progreso y tarjeta para compartir.~~ Hecho: pestaña Tetris.
+- [ ] Ranking entre los usuarios de la instancia (de momento todo es personal).
+- [ ] Sonidos y música en el Tetris.
+
 ### Productividad
 - [x] ~~Recordatorios y tareas vinculados a notas o contactos.~~ Hecho: botón Recordar en notas y Recordatorio en contactos (varios por elemento, con o sin fecha).
 - [x] ~~Papelera con vaciado programado.~~ Hecho: días por usuario en Papelera y barrido en segundo plano (`TRASH_SWEEP_HOURS`).

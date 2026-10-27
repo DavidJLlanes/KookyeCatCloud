@@ -84,6 +84,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 🛒 **Lista de la compra** | Catálogo y compras compartidos, cantidades, categorías e imágenes con recorte cuadrado. |
 | 📅 **Calendario** | Mes, semana, día y agenda con calendarios de colores, repetición y recordatorios. |
 | ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables, imágenes de muestra, comparación de versiones, estadísticas y creación desde metadatos de imágenes de ComfyUI / Automatic1111. |
+| 🏆 **Logros y Tetris** | Niveles y rangos, racha diaria, logros por cantidad de elementos y por uso, retos semanales, cosméticos y un Tetris de 3 minutos con potenciadores que se desbloquean al subir de nivel. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
 | 📋 **Portapapeles compartido** | Deja texto o archivos desde un dispositivo y recógelos desde otro al instante. En Android, la app aparece en el menú «Compartir». |
 | ⚡ **Actualización en directo** | La lista de archivos se refresca sola cuando llega algo por un enlace de subida o desde otro dispositivo, sin consultas periódicas. |
@@ -614,6 +615,39 @@ La ficha se adapta al **tipo** (Imagen, Texto, Código, Vídeo, Audio, Agente, F
   guarda un workflow (formato API) con marcadores `%PROMPT%`, `%NEGATIVE%`, `%SEED%` y
   `%P:parametro%`; en la ficha de un prompt de imagen, **Generar en ComfyUI** añade el resultado
   como imagen del propio prompt. Tiempo máximo: `COMFY_TIMEOUT_S` (240 s por defecto).
+
+## Logros y Tetris
+
+Dos pestañas nuevas, **Logros** y **Tetris**, para que usar la app tenga recompensa. Todo es personal (cada
+cuenta tiene lo suyo) y se guarda en `<usuario>/.kcc/game.json`; el servidor es quien calcula y concede los
+puntos (`lib/game.js`).
+
+- **Nivel y rango**: 100 niveles y 11 rangos (de *Novato* a *Mítico*). La experiencia (XP) sale de los
+  logros, de un bono diario, de 1 XP por minuto de uso (hasta 120 al día), de los retos semanales y del Tetris.
+- **Logros** (22 familias con 5 tramos —bronce, plata, oro, platino y diamante— más 7 especiales, algunos
+  secretos): por número de archivos, fotos, notas, prompts, contactos, eventos, etiquetas y enlaces; por
+  tiempo de uso, días activos, racha y nivel; y por Tetris (partidas, récord, líneas, Tetris, combos,
+  potenciadores y monedas). El contenido se cuenta en el servidor (los archivos se recuentan como mucho cada
+  10 minutos para no recorrer el disco a cada rato).
+- **Tiempo de uso**: la pestaña avisa cada minuto mientras está visible y hay actividad reciente; el
+  servidor no admite más tiempo del que ha pasado de verdad.
+- **Racha diaria** con **escudos**: te ganas uno cada 7 días seguidos (máximo 2) y salva la racha si te
+  saltas un día.
+- **Retos semanales**: 3 cada semana (uno de contenido, uno de uso y uno de Tetris), de dificultad según tu
+  nivel; completar los tres da un bono extra.
+- **Cosméticos** (se compran con monedas, se desbloquean por nivel o por logro): piezas del Tetris, fondos
+  del tablero, marcos de perfil y títulos.
+- **Tarjeta para compartir**: genera una imagen PNG (perfil y logros, o tu puntuación del Tetris con el
+  tablero final) que se comparte con el menú del sistema, se descarga o se copia.
+- **Tetris** de 3 minutos (también acaba si se llena el tablero): reserva, sombra de caída, rotación con
+  empuje, T-spin, combos y Tetris consecutivos. Controles táctiles (gestos o botones) y teclado (← → ↑ ↓,
+  espacio, C, Z, 1-7 y P). Limpiar líneas carga **energía**, que se gasta en **potenciadores** (limpieza,
+  congelar, +15 s, barra, puntos x2, deshacer, rayo); además hay **pasivos** (más tiempo, cargador rápido,
+  combos mejorados, segundo aire…). Se van desbloqueando con el nivel de la app, así que cuanto más la uses,
+  más alta será la puntuación posible. Las monedas y la XP de cada partida se calculan en el servidor, que
+  rechaza resultados imposibles.
+- **Iconos**: de [game-icons.net](https://game-icons.net) (Lorc, Delapouite y Carl Olsen, licencia
+  **CC BY 3.0**). Están reunidos en `public/vendor/gameicons/gameicons.svg`, con su `LICENSE.txt`.
 
 ## Contactos
 

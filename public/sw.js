@@ -4,8 +4,8 @@ const CACHE = 'kookyecatcloud-shell-' + BUILD;
 // El prefijo (subcarpeta del dominio) sale del ámbito con el que se registró el worker
 const BASE = new URL(self.registration.scope).pathname.replace(/\/+$/, '');
 const SHELL = ['/', '/app.js', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-maskable-512.png',
-  '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/css/modules.css', '/css/notes.css', '/css/shopping.css', '/js/kit.js', '/js/zoom.js', '/js/calendar.js',
-  '/js/ics.js', '/js/calendar-extra.js', '/js/prompts.js', '/js/prompts-extra.js', '/js/prompts-pro.js', '/js/vinculos.js', '/js/clip.js', '/js/contacts.js', '/js/fotos.js', '/js/notes.js', '/js/notes-extra.js', '/js/shopping.js', '/js/filecal.js', '/js/versions.js', '/js/vault.js', '/js/shares.js', '/js/passkeys.js', '/js/updates.js', '/js/omni.js'].map(p => BASE + p);
+  '/vendor/leaflet/leaflet.js', '/vendor/leaflet/leaflet.css', '/css/modules.css', '/css/notes.css', '/css/shopping.css', '/css/game.css', '/vendor/gameicons/gameicons.svg', '/js/kit.js', '/js/zoom.js', '/js/calendar.js',
+  '/js/ics.js', '/js/calendar-extra.js', '/js/prompts.js', '/js/prompts-extra.js', '/js/prompts-pro.js', '/js/game.js', '/js/tetris.js', '/js/vinculos.js', '/js/clip.js', '/js/contacts.js', '/js/fotos.js', '/js/notes.js', '/js/notes-extra.js', '/js/shopping.js', '/js/filecal.js', '/js/versions.js', '/js/vault.js', '/js/shares.js', '/js/passkeys.js', '/js/updates.js', '/js/omni.js'].map(p => BASE + p);
 // La página pública de los enlaces no se cachea: /u/<id> siempre debe consultar al servidor
 
 self.addEventListener('install', e => {
