@@ -44,6 +44,63 @@
   let g = null;                 // partida en curso (o la última terminada)
   let raf = 0, ultimo = 0, celda = 24;
   const nivelJugador = () => (G.state ? G.state.nivel : 1);
+
+  /* ---------- Sonido ----------
+     Música: 3 pistas de dominio público (public/audio/CREDITS.txt) que cambian con el nivel de la partida.
+     Efectos: sintetizados con Web Audio, sin archivos. Se recuerda lo elegido en este navegador. */
+  const AU = { musica: true, efectos: true, vol: 0.6 };
+  try { Object.assign(AU, JSON.parse(localStorage.getItem('kcc-tt-audio') || '{}')); } catch { /* sin almacenamiento */ }
+  const guardaAudio = () => { try { localStorage.setItem('kcc-tt-audio', JSON.stringify(AU)); } catch { /* da igual */ } };
+  const PISTAS = ['calma', 'chip', 'trance'];
+  let ac = null, mus = null, pistaAct = -1, volAct = 0;
+  function audioInit() {   // hay que llamarlo desde un gesto del usuario (tocar Jugar)
+    try {
+      if (!ac) { const C = window.AudioContext || window.webkitAudioContext; if (C) ac = new C(); }
+      if (ac && ac.state === 'suspended') ac.resume();
+      if (!mus) { mus = new Audio(); mus.loop = true; mus.preload = 'auto'; mus.volume = 0; }
+      if (!mus.src) { mus.src = `${BASE}/audio/${PISTAS[0]}.mp3`; pistaAct = 0; }
+      if (AU.musica && mus.paused) mus.play().catch(() => {});
+    } catch { /* el navegador no deja sonar */ }
+  }
+  function tono(f, dur, tipo = 'square', vol = 0.05, hasta = 0, retardo = 0) {
+    if (!ac || !AU.efectos || ac.state !== 'running') return;
+    const t0 = ac.currentTime + retardo, o = ac.createOscillator(), gn = ac.createGain();
+    o.type = tipo; o.frequency.setValueAtTime(f, t0); if (hasta) o.frequency.exponentialRampToValueAtTime(hasta, t0 + dur);
+    const v = vol * (0.4 + AU.vol);
+    gn.gain.setValueAtTime(0.0001, t0); gn.gain.exponentialRampToValueAtTime(v, t0 + 0.008); gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(gn); gn.connect(ac.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  function sfx(que, a, b) {
+    if (que === 'mueve') tono(1500, 0.025, 'square', 0.012);
+    else if (que === 'gira') tono(520, 0.05, 'square', 0.02, 820);
+    else if (que === 'cae') tono(170, 0.14, 'triangle', 0.09, 55);
+    else if (que === 'bloquea') tono(240, 0.05, 'triangle', 0.05, 160);
+    else if (que === 'linea') {
+      const notas = a === 4 ? [523, 659, 784, 1047, 1319] : [523, 659, 784, 1047].slice(0, Math.max(2, a + 1));
+      notas.forEach((f, i) => tono(f, 0.12, a === 4 ? 'sawtooth' : 'square', 0.05, 0, i * 0.065));
+      if (b) tono(300, 0.3, 'sawtooth', 0.04, 1200);
+    }
+    else if (que === 'poder') tono(260, 0.3, 'sawtooth', 0.05, 1300);
+    else if (que === 'aviso') tono(880, 0.09, 'square', 0.04);
+    else if (que === 'fin') [440, 370, 311, 262].forEach((f, i) => tono(f, a === 'top' ? 0.28 : 0.2, 'triangle', 0.08, 0, i * 0.17));
+  }
+  // La música sigue a la partida: suena al jugar, se apaga en pausa y cambia de pista al subir de nivel
+  function musicaTick() {
+    if (!mus) return;
+    const quiere = AU.musica && g && g.estado === 'juego' && S.abierta;
+    const pista = !g ? 0 : g.level < 4 ? 0 : g.level < 8 ? 1 : 2;
+    const objetivo = quiere ? AU.vol * 0.55 : 0;
+    if (quiere && pista !== pistaAct) {
+      if (volAct > 0.02) objetivo === 0 || (volAct = Math.max(0, volAct - 0.12));   // primero baja la pista anterior
+      if (volAct <= 0.02) { pistaAct = pista; mus.src = `${BASE}/audio/${PISTAS[pista]}.mp3`; mus.currentTime = 0; }
+    }
+    volAct += Math.max(-0.1, Math.min(0.04, objetivo - volAct));
+    mus.volume = Math.max(0, Math.min(1, volAct));
+    if (quiere && mus.paused) mus.play().catch(() => {});
+    else if (!quiere && volAct <= 0.005 && !mus.paused) mus.pause();
+    mus.playbackRate = quiere && g.tiempo <= 20 ? 1.08 : 1;   // los últimos segundos suenan un poco más rápido
+  }
+  let tickMus = 0;
   const tiene = (id) => { const p = PASIVOS.find(x => x.id === id); return !!p && p.nivel <= nivelJugador(); };
 
   /* ---------- Motor ---------- */
@@ -88,7 +145,7 @@
   }
   function mueve(dx) {
     if (!enJuego()) return;
-    if (!choca(g.cur, dx, 0)) { g.cur.x += dx; tocado(); }
+    if (!choca(g.cur, dx, 0)) { g.cur.x += dx; tocado(); sfx('mueve'); }
   }
   function gira(dir) {
     if (!enJuego()) return;
@@ -96,7 +153,7 @@
     for (const [dx, dy] of KICKS) {
       const p = { ...g.cur, r: nr, x: g.cur.x + dx, y: g.cur.y + dy };
       if (!choca(p)) {
-        g.cur = p; g.giro = true;
+        g.cur = p; g.giro = true; sfx('gira');
         if (apoyada()) { g.reinicios++; g.bloqueo = 0; }
         return;
       }
@@ -112,6 +169,7 @@
     let n = 0; while (!choca(g.cur, 0, 1)) { g.cur.y++; n++; }
     if (n) g.giro = false;
     g.score += n * 2;
+    sfx('cae');
     bloquea();
   }
   const enJuego = () => g && g.estado === 'juego' && !g.limpiando;
@@ -124,6 +182,7 @@
   }
 
   function bloquea() {
+    sfx('bloquea');
     // Copia para poder deshacer
     g.snap = { board: g.board.map(f => f.slice()), tipo: g.cur.t, score: g.score, lines: g.lines, level: g.level, combo: g.combo, b2b: g.b2b, tetrises: g.tetrises, maxCombo: g.maxCombo, tspins: g.tspins, carga: g.carga, energia: g.energia, hold: g.hold };
     const cs = celdas(g.cur);
@@ -168,6 +227,7 @@
     while (g.carga >= cada) { g.carga -= cada; g.energia = Math.min(5, g.energia + 1); }
     if (dificil) g.energia = Math.min(5, g.energia + 1);
     aviso([, '', 'DOBLE', 'TRIPLE', 'TETRIS'][n] || '', tspin ? 'T-SPIN' : '', g.combo > 0 ? `COMBO x${g.combo}` : '');
+    sfx('linea', n, tspin);
     try { if (navigator.vibrate) navigator.vibrate(n === 4 ? [20, 30, 20] : 15); } catch { /* sin vibración */ }
     aparece();
   }
@@ -197,14 +257,16 @@
       Object.assign(g, { score: s.score, lines: s.lines, level: s.level, combo: s.combo, b2b: s.b2b, tetrises: s.tetrises, maxCombo: s.maxCombo, tspins: s.tspins, carga: s.carga });
       g.hold = s.hold; g.energia -= 0; aparece(s.tipo);
     }
-    g.energia -= p.coste; g.poderes++;
+    g.energia -= p.coste; g.poderes++; sfx('poder');
     aviso(p.nombre.toUpperCase());
   }
 
   function intervalo() { return Math.max(0.045, 0.72 * Math.pow(0.82, g.level - 1)); }
   function actualiza(dt) {
     if (g.estado !== 'juego') return;
+    const antesT = Math.ceil(g.tiempo);
     g.tiempo -= dt; g.jugado += dt;
+    if (g.tiempo > 0 && Math.ceil(g.tiempo) !== antesT && Math.ceil(g.tiempo) <= 10) sfx('aviso');
     if (g.congelar > 0) g.congelar -= dt;
     if (g.doble > 0) g.doble -= dt;
     if (g.tiempo <= 0) { g.tiempo = 0; fin('tiempo'); return; }
@@ -224,7 +286,7 @@
   /* ---------- Fin de la partida ---------- */
   async function fin(motivo) {
     if (!g || g.estado === 'fin') return;
-    g.estado = 'fin'; g.limpiando = null; paraRepeticiones();
+    g.estado = 'fin'; g.limpiando = null; paraRepeticiones(); sfx('fin', motivo);
     const res = { score: g.score, lines: g.lines, level: g.level, tetrises: g.tetrises, maxCombo: g.maxCombo, powerups: g.poderes, duration: Math.round(g.jugado), ended: motivo };
     g.resultado = res; g.tablero = g.board.map(f => f.slice());
     muestraFin(null);
@@ -431,7 +493,13 @@
     const t = el('div'); const sub = el('p', 'sub', 'Partidas de 3 minutos'); t.append(el('h2', null, 'Tetris'), sub);
     const logros = el('button', 'btn'); logros.type = 'button'; logros.append(G.gi('trophy', 'gi-sm'), el('span', 'lbl', 'Logros'));
     logros.addEventListener('click', () => switchTab('logros'));
-    head.append(t, el('span', 'grow'), logros);
+    const bMus = el('button', 'btn ghost icon tt-snd'); bMus.type = 'button'; bMus.textContent = '♪'; bMus.setAttribute('aria-label', 'Música');
+    const bEfe = el('button', 'btn ghost icon tt-snd'); bEfe.type = 'button'; bEfe.textContent = '🔊'; bEfe.setAttribute('aria-label', 'Efectos de sonido');
+    const pintaSnd = () => { bMus.classList.toggle('off', !AU.musica); bMus.title = AU.musica ? 'Música: sí' : 'Música: no'; bEfe.classList.toggle('off', !AU.efectos); bEfe.title = AU.efectos ? 'Efectos: sí' : 'Efectos: no'; };
+    bMus.addEventListener('click', () => { AU.musica = !AU.musica; guardaAudio(); pintaSnd(); audioInit(); });
+    bEfe.addEventListener('click', () => { AU.efectos = !AU.efectos; guardaAudio(); pintaSnd(); audioInit(); sfx('aviso'); });
+    pintaSnd();
+    head.append(t, el('span', 'grow'), bMus, bEfe, logros);
 
     const zona = el('div', 'tt-zona');
     const hudBar = el('div', 'tt-hud');
@@ -504,10 +572,13 @@
     c.appendChild(el('p', 'tt-ayuda', s ? `Nivel ${s.nivel} · ${s.rango.nombre} · Récord ${s.tetris.mejor.toLocaleString('es')}` : 'Cargando tu progreso…'));
     const jug = el('button', 'btn primary tt-jugar', 'Jugar'); jug.type = 'button'; jug.addEventListener('click', empieza); c.appendChild(jug);
     c.appendChild(el('p', 'tt-ayuda k-faint', 'Limpia líneas para cargar energía y gastarla en potenciadores. Cuantos más niveles tengas en la app, más potenciadores desbloqueas.'));
+    const vol = el('label', 'tt-vol'); vol.append(el('span', null, 'Volumen')); const rng = el('input'); rng.type = 'range'; rng.min = '0'; rng.max = '1'; rng.step = '0.05'; rng.value = String(AU.vol);
+    rng.addEventListener('input', () => { AU.vol = +rng.value; guardaAudio(); }); vol.appendChild(rng); c.appendChild(vol);
     const det = el('details'); det.appendChild(el('summary', null, 'Controles y potenciadores'));
     const ctl = el('p', 'k-faint tt-ayuda');
     ctl.textContent = 'Táctil: arrastra para mover, toca para girar, desliza hacia abajo para bajar y haz un gesto rápido para soltar. Teclado: ← → mover, ↑ o X girar, Z girar al revés, ↓ bajar, espacio soltar, C reserva, 1-7 potenciadores, P pausa.';
-    det.append(ctl); listaPoderes(det); c.appendChild(det);
+    det.append(ctl); listaPoderes(det);
+    const cred = el('p', 'k-faint tt-ayuda', 'Música de Kevin MacLeod (FreePD), dominio público CC0.'); det.appendChild(cred); c.appendChild(det);
   }
   function muestraPausa() {
     const c = ovBase('Pausa');
@@ -531,7 +602,7 @@
       c.appendChild(sh);
     }
   }
-  function empieza() { nueva(); R.ov.hidden = true; ultimo = performance.now(); Object.keys(cache).forEach(k => delete cache[k]); R.cv.focus && R.cv.blur(); }
+  function empieza() { audioInit(); nueva(); R.ov.hidden = true; ultimo = performance.now(); Object.keys(cache).forEach(k => delete cache[k]); R.cv.focus && R.cv.blur(); }
 
   K.registerView('tetris', {
     async open() {
@@ -541,12 +612,14 @@
       if (!G.state) await G.load();
       if (!g || g.estado === 'fin') { g = null; muestraInicio(); } else if (g.estado === 'juego') pausa();
       if (!raf) { ultimo = performance.now(); raf = requestAnimationFrame(bucle); }
+      if (!tickMus) tickMus = setInterval(musicaTick, 100);
       setTimeout(ajusta, 80);
     },
     close() {
       S.abierta = false; paraRepeticiones();
       if (g && g.estado === 'juego') pausa();
       cancelAnimationFrame(raf); raf = 0;
+      clearInterval(tickMus); tickMus = 0; if (mus) { mus.pause(); volAct = 0; }
     },
   });
 })();

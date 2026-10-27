@@ -160,3 +160,8 @@
 }
 
 @media (hover:hover) and (pointer:fine){.tt-ctl{display:none}}
+
+.tt-snd{min-width:44px;justify-content:center;}
+.tt-snd.off{opacity:.45;text-decoration:line-through;}
+.tt-vol{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);width:100%;justify-content:center;}
+.tt-vol input{width:55%;padding:0;}

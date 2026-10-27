@@ -52,7 +52,7 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [x] ~~Experiencia gamificada: logros por número de elementos y tiempo de uso, niveles, racha, retos semanales y cosméticos.~~ Hecho: pestaña Logros.
 - [x] ~~Tetris con potenciadores ligados al progreso y tarjeta para compartir.~~ Hecho: pestaña Tetris.
 - [ ] Ranking entre los usuarios de la instancia (de momento todo es personal).
-- [ ] Sonidos y música en el Tetris.
+- [x] ~~Sonidos y música en el Tetris.~~ Hecho: 3 pistas CC0 de FreePD (cambian con el nivel) y efectos sintetizados con Web Audio; botones de música y efectos y volumen, guardados en el navegador.
 
 ### Productividad
 - [x] ~~Recordatorios y tareas vinculados a notas o contactos.~~ Hecho: botón Recordar en notas y Recordatorio en contactos (varios por elemento, con o sin fecha).

@@ -649,6 +649,10 @@ puntos (`lib/game.js`).
 - **Iconos**: de [game-icons.net](https://game-icons.net) (Lorc, Delapouite y Carl Olsen, licencia
   **CC BY 3.0**). Están reunidos en `public/vendor/gameicons/gameicons.svg`, con su `LICENSE.txt`.
 
+### Música y sonido del Tetris
+
+La música son tres pistas de dominio público (CC0) de Kevin MacLeod / FreePD, en `public/audio/` (créditos en `CREDITS.txt`). Cambian según el nivel de la partida y suenan algo más rápido en los últimos 20 s. Los efectos se sintetizan con Web Audio, sin archivos. Los botones ♪ y 🔊 y el volumen se guardan en el navegador. El service worker no cachea `/audio/`.
+
 ## Contactos
 
 Agenda personal al estilo de Google Contacts, en la pestaña **Contactos** (barra lateral en el

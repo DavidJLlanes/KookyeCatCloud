@@ -26,7 +26,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin !== self.location.origin) return;
   // Rutas dinámicas que nunca se cachean: API, feed iCal, WebDAV y páginas públicas de enlaces
-  if (['/api/', '/ical/', '/dav/', '/s/', '/u/'].some(p => url.pathname.startsWith(BASE + p))) return;
+  if (['/api/', '/ical/', '/dav/', '/s/', '/u/', '/audio/'].some(p => url.pathname.startsWith(BASE + p))) return;
 
   // Stale-while-revalidate: responde al instante desde caché y actualiza por detrás,
   // guardando lo nuevo para que la app siga abriendo sin red.

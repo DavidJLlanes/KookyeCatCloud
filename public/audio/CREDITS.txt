@@ -1,0 +1,10 @@
+Música del Tetris: pistas de FreePD (https://freepd.com), compuestas por Kevin MacLeod (https://incompetech.com)
+y dedicadas al dominio público (CC0 1.0). Copias recogidas del repositorio https://github.com/SoundSafari/CC0-1.0-Music
+(carpeta freepd.com), con licencia CC0-1.0.
+
+  calma.mp3   <- "Comic Game Loop - Mischief"
+  chip.mp3    <- "Bit Bit Loop"
+  trance.mp3  <- "Blippy Trance"
+
+Solo se han recodificado a MP3 de 80 kbps con el volumen normalizado y un cierre suave en calma.mp3.
+No hace falta atribución al ser CC0, pero se agradece.
