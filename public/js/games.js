@@ -273,6 +273,7 @@
       btn('Sesión', 'i-plus', () => { m.close(); setTimeout(() => sesion(g), 0); }, 'btn sm'),
       btn('Tarjeta', 'i-star', () => { m.close(); setTimeout(() => tarjetaJuego(g), 0); }, 'btn sm'),
       btn('Carátula', 'i-image', () => subePortada(g), 'btn sm'));
+    if (S.rawg) rapidas.appendChild(btn('Buscar en RAWG', 'i-search', () => { m.close(); setTimeout(() => vincula(g), 0); }, 'btn sm'));
     w.appendChild(rapidas);
     const m = K.modal({
       title: '', content: w, cls: 'wide', actions: [
@@ -281,6 +282,35 @@
         { label: 'Editar', primary: true, onClick: () => { setTimeout(() => editar(g), 0); return true; } },
       ],
     });
+  }
+  /* ---------- Buscar carátula y datos en RAWG para un juego existente ---------- */
+  function vincula(g) {
+    const w = el('div', 'gms-form'); const res = el('div', 'gms-results');
+    const s = el('label', 'search'); s.appendChild(icon('i-search'));
+    const inp = el('input'); inp.type = 'search'; inp.value = g.title; s.appendChild(inp);
+    const buscar = async () => {
+      const q = inp.value.trim(); res.textContent = ''; if (q.length < 2) return;
+      res.appendChild(el('p', 'k-muted', 'Buscando…'));
+      try {
+        const r = await K.get('/api/games/search?' + K.qs({ q })); res.textContent = '';
+        if (!r.items.length) res.appendChild(el('p', 'k-muted', 'Sin resultados. Prueba con otro nombre.'));
+        r.items.forEach(it => {
+          const row = el('button', 'gms-res'); row.type = 'button';
+          const im = el('div', 'gms-res-img'); if (it.image) { const i = el('img'); i.src = it.image; i.alt = ''; i.loading = 'lazy'; im.appendChild(i); }
+          const tx = el('div'); tx.append(el('strong', null, it.title), el('small', 'k-muted', [it.released && it.released.slice(0, 4), (it.platforms || []).slice(0, 3).join(', ')].filter(Boolean).join(' · ')));
+          row.append(im, tx);
+          row.addEventListener('click', async () => {
+            row.disabled = true;
+            try { await K.post(`/api/games/${g.id}/rawg`, { rawgId: it.rawgId }); m.close(); await load(); K.toast('Carátula y datos actualizados'); } catch (e) { row.disabled = false; K.fail(e); }
+          });
+          res.appendChild(row);
+        });
+      } catch (e) { res.textContent = ''; res.appendChild(el('p', 'k-muted', e.message || 'No se pudo buscar')); }
+    };
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); buscar(); } });
+    w.append(s, res, el('p', 'k-faint gms-attr', 'Datos de RAWG.io · se pone la carátula y solo se rellenan los campos vacíos'));
+    const m = K.modal({ title: 'Buscar en RAWG', content: w, actions: [{ label: 'Cerrar' }, { label: 'Buscar', primary: true, onClick: () => { buscar(); return false; } }] });
+    setTimeout(buscar, 50);
   }
   function sesion(g) {
     const h = el('input'); h.type = 'number'; h.min = '0.25'; h.step = '0.25'; h.value = '1'; h.inputmode = 'decimal';
