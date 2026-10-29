@@ -388,7 +388,7 @@
   async function tarjetaPerfil() {
     try {
       const { cv, x, G, rr, FUENTE, W, H, rango, usuario } = await lienzo();
-      const s = resumenStats(); const tr = await G.trazados(); const { icono, num } = G.dibujo;
+      const s = resumenStats(); const tr = await G.trazados(); const { num } = G.dibujo;
       x.textAlign = 'center'; x.fillStyle = '#fff'; x.font = `800 64px ${FUENTE}`; x.fillText(usuario || 'Jugador', W / 2, 190);
       x.fillStyle = rango.color; x.font = `600 34px ${FUENTE}`; x.fillText(`Nivel ${G.state.nivel} · ${rango.nombre}`, W / 2, 240);
       const kp = [[String(s.total), 'JUEGOS', '#22d3ee'], [String(s.jugados), 'JUGADOS', '#22c55e'], [num ? num(Math.round(s.horas)) : String(Math.round(s.horas)), 'HORAS', '#facc15'], [s.media != null ? nf(s.media) : '–', 'NOTA MEDIA', '#a855f7']];
@@ -424,10 +424,10 @@
       if (!s.top.length) { x.fillStyle = '#6f7fa8'; x.font = `500 26px ${FUENTE}`; x.fillText('Valora tus juegos para verlos aquí', 90, 960); }
       // Logros de juegos
       const L = G.state.logros || {};
-      const logr = [...(L.familias || []).filter(l => l.grupo === 'Juegos' && l.tramos > 0).map(l => ({ icono: l.icono, tramo: l.tramos })),
-        ...(L.especiales || []).filter(l => ['retro', 'plataformas', 'sesion'].includes(l.id) && l.cuando).map(l => ({ icono: l.icono, tramo: 5 }))].slice(0, 6);
+      const logr = [...(L.familias || []).filter(l => l.grupo === 'Juegos' && l.tramos > 0).map(l => ({ icono: l.icono, tramo: l.tramos, g: 'Juegos' })),
+        ...(L.especiales || []).filter(l => ['retro', 'plataformas', 'sesion'].includes(l.id) && l.cuando).map(l => ({ icono: l.icono, tramo: 5, g: 'Especiales' }))].slice(0, 6);
       x.fillStyle = '#9fb0d6'; x.font = `700 28px ${FUENTE}`; x.fillText('LOGROS DE JUEGOS', 90, 1170);
-      logr.forEach((l, i) => { icono(x, tr, l.icono, 130 + i * 160, 1235, 84, G.dibujo.TRAMO_COLOR[Math.max(0, Math.min(4, l.tramo - 1))]); });
+      logr.forEach((l, i) => { G.dibujo.medalla(x, tr, l.icono, 130 + i * 160, 1235, 100, G.dibujo.TRAMO_COLOR[Math.max(0, Math.min(4, l.tramo - 1))], l.g); });
       if (!logr.length) { x.fillStyle = '#6f7fa8'; x.font = `500 26px ${FUENTE}`; x.fillText('Añade juegos para desbloquear logros', 90, 1225); }
       x.textAlign = 'center'; x.fillStyle = '#6f7fa8'; x.font = `500 26px ${FUENTE}`; x.fillText('KookyeCatCloud', W / 2, H - 50);
       await G.muestraTarjeta(cv, 'mi-perfil-gamer.png', 'Mi perfil de jugador');

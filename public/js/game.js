@@ -227,7 +227,7 @@
         const sig = x.umbrales[x.tramos];     // próximo umbral (si lo hay)
         const t = el('article', 'gm-logro' + (x.tramos ? '' : ' bloq') + (x.tramos >= x.umbrales.length ? ' max' : ''));
         if (x.tramos) t.style.setProperty('--c', TRAMO_COLOR[x.tramos - 1]);
-        const ic = el('div', 'gm-logro-ic'); ic.appendChild(G.gi(x.icono));
+        const ic = el('div', 'gm-logro-ic'); ic.dataset.g = x.grupo; ic.appendChild(G.gi(x.icono));
         const cu = el('div', 'gm-logro-cu');
         cu.appendChild(el('b', null, x.nombre));
         const pips = el('div', 'gm-pips');
@@ -244,7 +244,7 @@
     if (S.grupo === 'todos' || S.grupo === 'Especiales') {
       s.logros.especiales.forEach(x => {
         const t = el('article', 'gm-logro esp' + (x.cuando ? '' : ' bloq')); if (x.cuando) t.style.setProperty('--c', '#f59e0b');
-        const ic = el('div', 'gm-logro-ic'); ic.appendChild(G.gi(x.cuando || !x.secreto ? x.icono : 'crystal'));
+        const ic = el('div', 'gm-logro-ic'); ic.dataset.g = 'Especiales'; ic.appendChild(G.gi(x.cuando || !x.secreto ? x.icono : 'crystal'));
         const cu = el('div', 'gm-logro-cu');
         cu.append(el('b', null, x.cuando || !x.secreto ? x.nombre : '???'), el('span', 'k-faint', x.cuando ? `${x.texto} · ${cuando(x.cuando)}` : x.texto));
         t.append(ic, cu); grid.appendChild(t);
@@ -315,6 +315,22 @@
     ctx.save(); ctx.translate(cx - tam / 2, cy - tam / 2); ctx.scale(tam / 512, tam / 512); ctx.fillStyle = color;
     ds.forEach(d => ctx.fill(new Path2D(d))); ctx.restore();
   }
+  // Medalla hexagonal (borde del color del tramo y fondo del color de la categoría) para las tarjetas
+  const GRUPO_COL = { Contenido: ['#38bdf8', '#1d4ed8'], Uso: ['#4ade80', '#047857'], Tetris: ['#22d3ee', '#6d28d9'], '2048': ['#fdba74', '#dc2626'], Breakout: ['#f9a8d4', '#9333ea'], Arcade: ['#fde047', '#ea580c'], Juegos: ['#c4b5fd', '#4338ca'], Especiales: ['#f0abfc', '#7e22ce'] };
+  function medalla(ctx, trazados, nombre, cx, cy, tam, tramo, grupo) {
+    const [g1, g2] = GRUPO_COL[grupo] || ['#94a3b8', '#475569'];
+    const hex = (r) => { ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 + i * Math.PI / 3; const px = cx + r * 0.93 * Math.cos(a), py = cy + r * Math.sin(a); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.closePath(); };
+    const r = tam / 2;
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = tam * 0.12; ctx.shadowOffsetY = tam * 0.05;
+    const borde = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r); borde.addColorStop(0, '#ffffff'); borde.addColorStop(0.35, tramo); borde.addColorStop(1, '#00000099');
+    hex(r); ctx.fillStyle = tramo; ctx.fill(); ctx.restore();
+    hex(r); ctx.fillStyle = borde; ctx.globalAlpha = 0.9; ctx.fill(); ctx.globalAlpha = 1;
+    const fondo = ctx.createLinearGradient(cx - r, cy - r, cx + r * 0.6, cy + r); fondo.addColorStop(0, g1); fondo.addColorStop(1, g2);
+    hex(r * 0.88); ctx.fillStyle = fondo; ctx.fill();
+    const br = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.5, 1, cx - r * 0.35, cy - r * 0.5, r); br.addColorStop(0, 'rgba(255,255,255,.5)'); br.addColorStop(0.5, 'transparent');
+    hex(r * 0.88); ctx.fillStyle = br; ctx.fill();
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = tam * 0.05; ctx.shadowOffsetY = tam * 0.025; icono(ctx, trazados, nombre, cx, cy, tam * 0.5, '#ffffff'); ctx.restore();
+  }
   const FUENTE = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 
   G.dibujaTarjeta = async (tipo, extra = {}) => {
@@ -383,11 +399,11 @@
       });
       // Últimos logros
       const hechos = [];
-      s.logros.familias.forEach(f => f.cuando.forEach((t, i) => { if (t) hechos.push({ t, ic: f.icono, i }); }));
-      s.logros.especiales.forEach(e => { if (e.cuando) hechos.push({ t: e.cuando, ic: e.icono, i: 2 }); });
+      s.logros.familias.forEach(f => f.cuando.forEach((t, i) => { if (t) hechos.push({ t, ic: f.icono, i, g: f.grupo }); }));
+      s.logros.especiales.forEach(e => { if (e.cuando) hechos.push({ t: e.cuando, ic: e.icono, i: 2, g: 'Especiales' }); });
       hechos.sort((a, b) => b.t - a.t);
       const ult = hechos.slice(0, 6);
-      ult.forEach((h, i) => { const cx = W / 2 - (ult.length - 1) * 70 + i * 140; x.fillStyle = 'rgba(255,255,255,.06)'; x.beginPath(); x.arc(cx, 1214, 52, 0, 7); x.fill(); icono(x, tr, h.ic, cx, 1214, 62, TRAMO_COLOR[h.i] || '#f59e0b'); });
+      ult.forEach((h, i) => { const cx = W / 2 - (ult.length - 1) * 70 + i * 140; medalla(x, tr, h.ic, cx, 1214, 108, TRAMO_COLOR[h.i] || '#f59e0b', h.g); });
     }
     x.fillStyle = '#6d7c9e'; x.font = `500 26px ${FUENTE}`; x.fillText(`${new Date().toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })} · ${location.host}`, W / 2, 1306);
     return cv;
@@ -414,7 +430,7 @@
     await G.muestraTarjeta(cv, nombre, tipo === 'tetris' ? 'Tu puntuación' : 'Tu tarjeta de logros');
   };
   // Utilidades de dibujo para otras tarjetas (Juegos, 2048, Breakout)
-  G.dibujo = { rr, icono, FUENTE, num, horas, TRAMO_COLOR };
+  G.dibujo = { rr, icono, medalla, FUENTE, num, horas, TRAMO_COLOR };
   // Lienzo base de 1080×1350 con el fondo y el marco habituales; devuelve lo necesario para seguir dibujando encima
   G.lienzo = async (subtitulo) => {
     if (!G.state) await G.load();
