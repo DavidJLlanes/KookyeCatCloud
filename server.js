@@ -3232,6 +3232,20 @@ app.get('*', (req, res) => {
   enviaPlantilla(res, 'index.html', 'html');
 });
 
+// Último recurso: cualquier error que llegue aquí (JSON mal formado, cuerpo demasiado grande, fallo inesperado)
+// se responde en JSON y sin rutas ni trazas del servidor.
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  const status = err && (err.status || err.statusCode);
+  if (err && err.type === 'entity.parse.failed') return res.status(400).json({ error: 'El cuerpo de la petición no es un JSON válido' });
+  if (err && err.type === 'entity.too.large') return res.status(413).json({ error: 'El contenido es demasiado grande' });
+  if (status && status < 500) return res.status(status).json({ error: err.expose ? err.message : 'Petición no válida' });
+  console.error('Error no controlado en', req.method, req.originalUrl, '-', err && err.stack || err);
+  res.status(500).json({ error: 'Error interno del servidor' });
+});
+// Un fallo suelto en una promesa no debe tumbar el servidor entero
+process.on('unhandledRejection', (e) => console.error('Promesa rechazada sin capturar:', e && e.stack || e));
+
 root.use(BASE_PATH || '/', app);
 
 root.listen(PORT, () => console.log(
