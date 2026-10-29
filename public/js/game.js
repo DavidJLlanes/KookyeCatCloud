@@ -171,6 +171,35 @@
 
   const cuando = (t) => new Date(t).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' });
 
+  /* ---------- Vitrina de trofeos: una copa por categoría, del color de su tramo medio ---------- */
+  const COPAS = [['Contenido', 'files', 'Copa del Archivista'], ['Uso', 'flame', 'Copa de la Constancia'], ['Tetris', 'cube', 'Copa Tetris'], ['2048', 'gem', 'Copa 2048'], ['Breakout', 'shield', 'Copa Breakout'], ['Arcade', 'archive', 'Copa Arcade'], ['Juegos', 'laurels', 'Copa del Jugador']];
+  function copaSvg(color, id) {
+    const NS = 'http://www.w3.org/2000/svg'; const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', '0 0 100 112'); svg.setAttribute('class', 'gm-copa-svg');
+    svg.innerHTML = `<defs><linearGradient id="cg${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".35" stop-color="${color}"/><stop offset="1" stop-color="${color}" stop-opacity=".55"/></linearGradient><linearGradient id="cb${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}"/><stop offset="1" stop-color="#000" stop-opacity=".6"/></linearGradient></defs>
+      <path d="M24 22H10c-2 20 7 32 20 35M76 22h14c2 20-7 32-20 35" fill="none" stroke="url(#cg${id})" stroke-width="7" stroke-linecap="round"/>
+      <path d="M22 8h56v30c0 22-13 36-28 36S22 60 22 38z" fill="url(#cg${id})" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>
+      <path d="M30 14h8v36c-5-5-8-12-8-20z" fill="#fff" opacity=".35"/>
+      <rect x="44" y="72" width="12" height="14" fill="url(#cb${id})"/>
+      <path d="M30 88h40l5 8H25z" fill="url(#cg${id})"/><rect x="22" y="96" width="56" height="12" rx="3" fill="url(#cb${id})" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>`;
+    return svg;
+  }
+  function vitrina(c) {
+    const s = G.state; const sec = el('section', 'gm-sec');
+    const h = el('h3'); h.append(G.gi('trophy', 'gi-sm'), el('span', null, 'Vitrina de trofeos')); sec.appendChild(h);
+    const est = el('div', 'gm-vitrina');
+    COPAS.forEach(([grupo, ic, nombre], i) => {
+      const fam = s.logros.familias.filter(f => f.grupo === grupo); if (!fam.length) return;
+      const tr = fam.reduce((a, f) => a + f.tramos, 0), max = fam.reduce((a, f) => a + f.umbrales.length, 0);
+      const tier = Math.min(5, Math.floor(tr / fam.length));                  // 0 = sin copa todavía
+      const col = tier ? TRAMO_COLOR[tier - 1] : '#475569';
+      const d = el('div', 'gm-copa' + (tier ? '' : ' bloq') + (tier >= 5 ? ' max' : '')); d.style.setProperty('--c', col);
+      d.title = `${nombre}: ${tr}/${max} tramos conseguidos`;
+      const cup = el('div', 'gm-copa-i'); cup.append(copaSvg(col, i), G.gi(ic)); d.appendChild(cup);
+      d.append(el('b', null, nombre), el('span', 'k-faint', tier ? `${['Bronce', 'Plata', 'Oro', 'Platino', 'Diamante'][tier - 1]} · ${tr}/${max}` : `${tr}/${max}`));
+      est.appendChild(d);
+    });
+    sec.appendChild(est); c.appendChild(sec);
+  }
   function pintaResumen(c) {
     const s = G.state;
     // Retos de la semana
@@ -204,6 +233,8 @@
       b.append(col, el('span', null, d.toLocaleDateString('es', { weekday: 'narrow' }))); barras.appendChild(b);
     }
     act.appendChild(barras); c.appendChild(act);
+
+    vitrina(c);
 
     // Contenido
     const con = el('section', 'gm-sec');

@@ -244,3 +244,15 @@ body.tt-inmersivo .tt-salir-icon{font-size:19px;line-height:1;font-weight:500}
 @keyframes gmToast{from{transform:translateY(30px) scale(.9);opacity:0}to{transform:none;opacity:1}}
 .gm-ficha.oro{background:linear-gradient(135deg,rgba(250,204,21,.18),rgba(255,255,255,.04));border-color:rgba(250,204,21,.45);}
 .gm-ficha.oro .gi{color:#facc15;filter:drop-shadow(0 0 5px rgba(250,204,21,.6));}
+
+/* Vitrina de trofeos */
+.gm-vitrina{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;padding:14px 10px 10px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(0,0,0,.18));box-shadow:inset 0 -10px 0 -4px rgba(120,80,30,.35);}
+.gm-copa{--c:#475569;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;font-size:12px;min-width:0;}
+.gm-copa b{font-size:12.5px;line-height:1.2;}
+.gm-copa-i{position:relative;width:72px;height:80px;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5)) drop-shadow(0 0 10px color-mix(in srgb,var(--c) 40%,transparent));}
+.gm-copa-svg{width:100%;height:100%;display:block;}
+.gm-copa-i .gi{position:absolute;left:50%;top:27%;width:26px;height:26px;margin-left:-13px;color:#fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));}
+.gm-copa.bloq{filter:grayscale(1);opacity:.5;}
+.gm-copa.bloq .gm-copa-i{filter:none;}
+.gm-copa.max .gm-copa-i{animation:gmBrillo 2.6s ease-in-out infinite;}
+@media (prefers-reduced-motion:reduce){.gm-copa.max .gm-copa-i{animation:none;}}

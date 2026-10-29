@@ -758,6 +758,10 @@ La música son tres pistas de dominio público (CC0) de Kevin MacLeod / FreePD, 
 Audio, sin archivos. Los botones ♪ y 🔊 de la cabecera y el volumen de la pantalla de inicio se guardan en el
 navegador. El service worker no cachea `/audio/`.
 
+### Medallas y vitrina de trofeos
+
+Cada logro es una **medalla hexagonal**: el borde indica el tramo (bronce, plata, oro, platino, diamante) y el fondo la categoría. Al conseguir uno, un aviso con su medalla aparece incluso durante las partidas. En **Logros → Resumen** hay una **vitrina de trofeos** con una copa por categoría (Archivista, Constancia, Tetris, 2048, Breakout, Arcade y Jugador) cuyo color es el tramo medio de sus logros; la copa de diamante brilla. Las tarjetas para compartir usan las mismas medallas.
+
 ### 2048 y Breakout
 
 Dos juegos más con el mismo diseño que el Tetris (pestañas **2048** y **Breakout**, pantalla completa, música y sonidos compartidos, pausa automática al salir de la pestaña). Sus partidas dan XP y monedas, cuentan para los retos y logros, y se pueden compartir como imagen (con una captura del tablero final).
