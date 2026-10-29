@@ -154,7 +154,7 @@
 }
 .modal .modal-body{max-height:calc(100dvh - 230px);overflow:auto;margin:0 -8px;padding:0 8px;}
 .modal.xl .modal-body{max-height:calc(100dvh - 180px);}
-.modal .k-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.modal .k-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;}
 @media (max-width:560px){.modal .k-2{grid-template-columns:1fr;}}
 .modal label.field.tight{margin-bottom:10px;}
 .modal textarea{resize:vertical;min-height:90px;line-height:1.5;}
@@ -165,16 +165,16 @@ select option{background:#111a2b;color:var(--text);}
 
 /* Campo "Añadir al calendario" (se reutiliza en subidas, prompts y notas) */
 .k-calfield{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--glass);}
-.k-calfield .body{display:grid;grid-template-columns:1.2fr 1fr 1.2fr;gap:10px;margin-top:12px;}
+.k-calfield .body{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.2fr);gap:10px;margin-top:12px;}
 .k-calfield .body[hidden]{display:none;}
 .upbar-cal{padding:2px 14px 10px;}
 .k-calfield.compact{padding:9px 11px;border-radius:12px;}
 .k-calfield.compact .k-switch{font-size:13px;}
-.k-calfield.compact .body{grid-template-columns:1fr 1fr;margin-top:9px;gap:8px;}
+.k-calfield.compact .body{grid-template-columns:minmax(0,1fr) minmax(0,1fr);margin-top:9px;gap:8px;}
 .k-calfield.compact .body label:last-child{grid-column:1/-1;}
 .k-calfield.compact input,.k-calfield.compact select{padding:8px 10px;font-size:13.5px;}
 .k-calfield .body label span{display:block;font-size:10.5px;font-weight:700;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px;}
-@media (max-width:560px){.k-calfield .body{grid-template-columns:1fr 1fr;}.k-calfield .body label:last-child{grid-column:1/-1;}}
+@media (max-width:560px){.k-calfield .body{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.k-calfield .body label:last-child{grid-column:1/-1;}}
 
 /* Estrellas */
 .k-stars{display:inline-flex;gap:1px;}
@@ -349,7 +349,7 @@ select option{background:#111a2b;color:var(--text);}
 .ev-dates .sep{color:var(--faint);}
 .ev-dates.allday{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);}
 .ev-dates.allday > :nth-child(2),.ev-dates.allday > :nth-child(5){display:none;}
-@media (max-width:560px){.ev-dates,.ev-dates.allday{grid-template-columns:1fr 1fr;}.ev-dates .sep{display:none;}}
+@media (max-width:560px){.ev-dates,.ev-dates.allday{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.ev-dates .sep{display:none;}}
 .ev-rem{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
 .ev-rem .k-chip button{background:none;border:none;color:inherit;cursor:pointer;padding:0 0 0 4px;}
 .ev-source{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--brand-soft);
@@ -705,7 +705,7 @@ select option{background:#111a2b;color:var(--text);}
 .ct-foot{text-align:center;font-size:12px;margin:10px 0 0;}
 /* Editor */
 .ct-form{display:flex;flex-direction:column;gap:14px;}
-.ct-form .k-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.ct-form .k-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;}
 .ct-form .field{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--muted);}
 .ct-form input,.ct-form select,.ct-form textarea{width:100%;min-width:0;}
 .ct-rep h4{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:13px;color:var(--muted);}
@@ -716,7 +716,7 @@ select option{background:#111a2b;color:var(--text);}
 .ct-adr{grid-template-columns:1fr;gap:6px;padding:8px;border:1px solid var(--line);border-radius:12px;}
 .ct-adr-h{display:flex;justify-content:space-between;align-items:center;gap:8px;}
 .ct-adr-h select{width:140px;}
-.ct-adr-g{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.ct-adr-g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;}
 .ct-adr-g input:first-child{grid-column:1/-1;}
 .ct-add{margin-top:6px;}
 .ct-favbtn.on{color:#f59e0b;}
@@ -806,7 +806,7 @@ button.st-fila:hover{background:var(--glass-2);}
 .vc-form{display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px solid var(--line);}
 .vc-form>input{width:100%;}
 .vc-rapidos{display:flex;flex-wrap:wrap;gap:6px;}
-.vc-cuando{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.vc-cuando{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;}
 .vc-cuando>label:last-child{grid-column:1/-1;}
 .vc-form .seg button{width:auto;padding:0 14px;font:inherit;font-size:13px;}
 
@@ -870,3 +870,12 @@ button.st-fila:hover{background:var(--glass-2);}
 .po-radio{display:flex;gap:10px;align-items:flex-start;padding:8px 0;cursor:pointer;font-size:14px;}
 .po-radio input{width:auto;margin-top:3px;}
 @media (max-width:640px){.po-cab{gap:6px}.po-cmp{grid-template-columns:1fr}}
+
+/* Fechas y horas: en iOS los campos nativos traen un ancho mínimo propio y se salían de su columna.
+   Se les quita ese mínimo y se evita que sus celdas de rejilla crezcan por el contenido. */
+input[type=date],input[type=time],input[type=datetime-local],input[type=month],input[type=week]{min-width:0;max-width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none;min-height:44px;text-align:left;}
+input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and-time-value,input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-width:0;margin:0;}
+.k-calfield .body>*,.vc-cuando>*,.ev-dates>*,.k-row>input[type=date],.k-row>input[type=time]{min-width:0;}
+.k-row>input[type=date],.k-row>input[type=time]{flex:1 1 0;}
+.k-calfield,.k-calfield .body,.vc-form,.vc-cuando{max-width:100%;}
+.k-2>*,.ct-adr-g>*{min-width:0;}
