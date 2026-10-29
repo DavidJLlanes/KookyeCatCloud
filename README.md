@@ -1190,7 +1190,7 @@ Cada acción relevante (subidas, borrados, movimientos, inicios de sesión, camb
 contraseña, enlaces creados, verificación en dos pasos, tokens…) queda anotada en
 `activity.log.jsonl`, una línea JSON por evento. Se ve en la pestaña **Cuenta**: cada usuario
 ve solo las suyas, y el administrador ve las de todos desde esa misma tarjeta. El archivo se
-recorta solo a `ACTIVITY_MAX` líneas.
+recorta a `ACTIVITY_MAX` líneas y borra lo que tenga más de `ACTIVITY_DIAS` días. En Cuenta y Administración se ven las 20 últimas, con las acciones iguales seguidas agrupadas («Subió archivos ×12»).
 
 ## Cómo se guardan los archivos
 
@@ -1223,7 +1223,8 @@ indique; reinicia el servicio tras cambiarlas.
 | `SHEET_MAX_ROWS` / `SHEET_MAX_COLS` | 2000 / 60 | Visor de hojas de cálculo |
 | `TILE_URL` / `TILE_ATTR` / `MAP_LIMIT` | OpenStreetMap / — / 5000 | Mapa de fotos |
 | `PHOTOS_INDEX_LIMIT` | 50000 | Fotos que recorre la línea de tiempo y los álbumes inteligentes |
-| `ACTIVITY_MAX` | 5000 | Líneas del registro de actividad |
+| `ACTIVITY_MAX` | 2000 | Líneas del registro de actividad |
+| `ACTIVITY_DIAS` | 60 | Días que se conserva el registro; lo más antiguo se borra solo |
 | `EVENTS_PER_USER` | 8 | Conexiones de avisos en directo por usuario |
 | `DUP_LIMIT` / `DU_LIMIT` | 20000 / 200000 | Topes del buscador de duplicados y del analizador de espacio |
 | `VERSIONS_KEEP` / `VERSIONS_DAYS` / `VERSIONS_MAX_BYTES` | 30 / 180 / 5 MB | Versiones de archivos de texto |

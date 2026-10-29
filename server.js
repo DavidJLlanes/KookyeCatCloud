@@ -90,7 +90,8 @@ const ALBUM_ITEMS_LIMIT = 2000;
 // Sesiones (para poder cerrarlas en remoto) y registro de actividad
 const SESSIONS_FILE = path.join(APP_DIR, 'sessions.json');
 const ACTIVITY_FILE = path.join(APP_DIR, 'activity.log.jsonl');
-const ACTIVITY_MAX = Number(process.env.ACTIVITY_MAX || 5000);
+const ACTIVITY_MAX = Number(process.env.ACTIVITY_MAX || 2000);
+const ACTIVITY_DIAS = Number(process.env.ACTIVITY_DIAS || 60);   // los registros más antiguos se borran solos
 // Buscador de duplicados: tope de archivos a examinar por si el árbol es enorme
 const DUP_LIMIT = Number(process.env.DUP_LIMIT || 20000);
 
@@ -214,14 +215,20 @@ function registrarActividad(req, accion, detalle) {
     fs.appendFile(ACTIVITY_FILE, JSON.stringify(entry) + '\n', () => {});
   } catch { /* un fallo aquí no debe tumbar la petición real */ }
 }
-setInterval(() => {
+// Poda el registro: quita lo que supera ACTIVITY_DIAS de antigüedad y recorta a ACTIVITY_MAX líneas
+function podarActividad() {
   fs.readFile(ACTIVITY_FILE, 'utf8', (err, data) => {
     if (err) return;
-    const lineas = data.split('\n').filter(Boolean);
-    if (lineas.length <= ACTIVITY_MAX) return;
-    fs.writeFile(ACTIVITY_FILE, lineas.slice(-ACTIVITY_MAX).join('\n') + '\n', () => {});
+    const desde = Date.now() - ACTIVITY_DIAS * 86400000;
+    const todas = data.split('\n').filter(Boolean);
+    let lineas = todas.filter((l) => { try { return JSON.parse(l).t >= desde; } catch { return false; } });
+    if (lineas.length > ACTIVITY_MAX) lineas = lineas.slice(-ACTIVITY_MAX);
+    if (lineas.length === todas.length) return;
+    fs.writeFile(ACTIVITY_FILE, lineas.length ? lineas.join('\n') + '\n' : '', () => {});
   });
-}, 10 * 60 * 1000).unref();
+}
+setTimeout(podarActividad, 5000).unref();
+setInterval(podarActividad, 10 * 60 * 1000).unref();
 
 /* ---------------- TOTP (RFC 6238), para la verificación en dos pasos ----------------
    Implementado a mano para no añadir una dependencia solo por esto: son

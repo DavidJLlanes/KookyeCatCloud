@@ -3522,11 +3522,18 @@ async function cargarActividad(containerId, global) {
   box.textContent = '';
   box.appendChild(el('div', 'none', 'Cargando…'));
   try {
-    const res = await api(BASE + '/api/activity?limit=' + (global ? 200 : 40));
+    const res = await api(BASE + '/api/activity?limit=' + (global ? 500 : 300));
     const data = await res.json();
     box.textContent = '';
     if (!data.items.length) { box.appendChild(el('p', 'card-sub', 'Sin actividad todavía')); return; }
+    // Las acciones iguales seguidas (y del mismo usuario) se juntan en una línea con su contador; se muestran las 20 últimas
+    const grupos = [];
     for (const e of data.items) {
+      const g = grupos[grupos.length - 1];
+      if (g && g.accion === e.accion && g.user === e.user) g.n++;
+      else grupos.push({ accion: e.accion, user: e.user, t: e.t, n: 1 });
+    }
+    for (const e of grupos.slice(0, 20)) {
       const row = el('div', 'act-row');
       const em = el('div', 'em');
       em.appendChild(icon(ICONO_ACCION[e.accion] || 'i-info'));
@@ -3537,7 +3544,7 @@ async function cargarActividad(containerId, global) {
         linea.appendChild(el('b', null, e.user || '?'));
         linea.appendChild(document.createTextNode(' — '));
       }
-      linea.appendChild(document.createTextNode(TEXTO_ACCION[e.accion] || e.accion));
+      linea.appendChild(document.createTextNode((TEXTO_ACCION[e.accion] || e.accion) + (e.n > 1 ? ` ×${e.n}` : '')));
       tx.appendChild(linea);
       row.appendChild(tx);
       row.appendChild(el('span', 'when', fmtCuando(e.t)));
