@@ -219,7 +219,8 @@
       grid(fmtL, pr),
       grid(campo('store', 'Tienda'), campo('price', 'Precio pagado (€)', 'number', { min: 0, step: 0.01, inputmode: 'decimal' })),
       grid(campo('targetPrice', 'Precio objetivo (€)', 'number', { min: 0, step: 0.01, inputmode: 'decimal' }), campo('lentTo', 'Prestado a')),
-      campo('url', 'Enlace', 'url'));
+      campo('url', 'Enlace', 'url'),
+      (() => { const i = el('input'); i.type = 'file'; i.accept = 'image/*'; f.portada = i; const l = el('label', 'gms-field'); l.append(el('span', null, g && g.cover ? 'Cambiar carátula' : 'Carátula (imagen)'), i); return l; })());
     const cal = K.calField({ value: g && g.cal ? { date: g.cal.date, time: g.cal.time, calendarId: 'juegos' } : null, label: 'Añadir la salida al calendario', hint: 'Se crea un evento en el calendario «Juegos»', defaultDate: d.released || undefined, defaultCalendar: 'juegos' });
     w.appendChild(cal);
     const modal = K.modal({
@@ -238,7 +239,12 @@
           if (!body.title) { K.toast('Escribe el título'); return false; }
           const c = cal.get(); body.calendar = c ? { date: c.date, time: c.time, calendarId: c.calendarId || 'juegos' } : null;
           if (!g && !c) delete body.calendar;
-          const r = await guardar(() => g ? K.put('/api/games/' + g.id, body) : K.post('/api/games', body));
+          const r = await guardar(async () => {
+            const res = await (g ? K.put('/api/games/' + g.id, body) : K.post('/api/games', body));
+            const img = f.portada.files[0];
+            if (img && res && res.id) { const fd = new FormData(); fd.append('image', img); const up = await fetch(`${BASE}/api/games/${res.id}/cover`, { method: 'PUT', body: fd, credentials: 'same-origin' }); if (!up.ok) K.toast('El juego se guardó, pero la carátula no se pudo subir'); }
+            return res;
+          });
           if (r) { S.tab = body.status; guarda(); pinta(); }
           return !!r;
         },
