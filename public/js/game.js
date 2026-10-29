@@ -30,25 +30,38 @@
 
   /* ---------- Estado y avisos ---------- */
   const cola = []; let mostrando = false;
+  // Aviso con medalla (logros, nivel, retos): flota sobre todo, también sobre los juegos a pantalla completa
+  function avisoRico({ icono, grupo, tramo, titulo, sub, cls }) {
+    let host = document.getElementById('gm-toast-host');
+    if (!host) { host = el('div'); host.id = 'gm-toast-host'; document.body.appendChild(host); }
+    host.textContent = '';
+    const t = el('div', 'gm-toast ' + (cls || ''));
+    const ic = el('div', 'gm-logro-ic'); ic.dataset.g = grupo || 'Especiales'; ic.style.setProperty('--c', tramo || '#f59e0b'); ic.appendChild(G.gi(icono || 'trophy'));
+    const tx = el('div', 'gm-toast-tx'); tx.append(el('small', null, sub[0]), el('b', null, titulo), el('span', null, sub[1] || ''));
+    t.append(ic, tx); host.appendChild(t);
+    clearTimeout(avisoRico.t); avisoRico.t = setTimeout(() => { host.textContent = ''; }, 2600);
+  }
+  const TIERS_N = ['Bronce', 'Plata', 'Oro', 'Platino', 'Diamante'];
+  const grupoDe = (id) => { const s = G.state && G.state.logros; if (!s) return ''; const f = s.familias.find(x => x.id === id); return f ? f.grupo : 'Especiales'; };
   function aviso(txt) {
     cola.push(txt);
     if (mostrando) return;
     mostrando = true;
-    const sig = () => { const t = cola.shift(); if (!t) { mostrando = false; return; } K.toast(t); setTimeout(sig, 2700); };
+    const sig = () => { const t = cola.shift(); if (!t) { mostrando = false; return; } if (typeof t === 'string') K.toast(t); else avisoRico(t); setTimeout(sig, 2700); };
     sig();
   }
   G.avisos = (nuevos) => {
     // Muchos logros de golpe (primera vez con contenido ya guardado) se resumen en un solo aviso
     const logros = (nuevos || []).filter(n => n.tipo === 'logro');
     if (logros.length > 3) {
-      aviso(`🏆 ${logros.length} logros desbloqueados · +${logros.reduce((a, n) => a + n.xp, 0)} XP`);
+      aviso({ icono: 'trophy', grupo: 'Especiales', tramo: '#facc15', titulo: `${logros.length} logros desbloqueados`, sub: ['Nuevos logros', `+${logros.reduce((a, n) => a + n.xp, 0)} XP`] });
       nuevos = nuevos.filter(n => n.tipo !== 'logro');
     }
     (nuevos || []).forEach(n => {
-      if (n.tipo === 'logro') aviso(`🏆 ${n.nombre} · ${n.tramo} · +${n.xp} XP`);
-      else if (n.tipo === 'nivel') aviso(`⬆️ ¡Nivel ${n.nivel}! Ahora eres ${n.rango}`);
-      else if (n.tipo === 'reto') aviso(`✅ Reto cumplido: ${n.nombre} · +${n.xp} XP · +${n.monedas} monedas`);
-      else if (n.tipo === 'semana') aviso(`🎉 ¡Semana completa! +${n.xp} XP · +${n.monedas} monedas`);
+      if (n.tipo === 'logro') { const i = TIERS_N.indexOf(n.tramo); aviso({ icono: n.icono, grupo: grupoDe(n.id), tramo: i >= 0 ? TRAMO_COLOR[i] : '#f59e0b', titulo: n.nombre, sub: ['Logro desbloqueado · ' + n.tramo, `+${n.xp} XP`], cls: i >= 3 || i < 0 ? 'oro' : '' }); }
+      else if (n.tipo === 'nivel') aviso({ icono: n.icono || 'crown', grupo: 'Uso', tramo: '#facc15', titulo: `¡Nivel ${n.nivel}!`, sub: ['Subes de nivel', `Ahora eres ${n.rango}`], cls: 'oro' });
+      else if (n.tipo === 'reto') aviso({ icono: n.icono || 'scroll', grupo: 'Uso', tramo: '#4ade80', titulo: n.nombre, sub: ['Reto cumplido', `+${n.xp} XP · +${n.monedas} monedas`] });
+      else if (n.tipo === 'semana') aviso({ icono: 'trophy', grupo: 'Arcade', tramo: '#facc15', titulo: '¡Semana completa!', sub: ['Todos los retos', `+${n.xp} XP · +${n.monedas} monedas`], cls: 'oro' });
       else if (n.tipo === 'escudo') aviso('🛡️ Un escudo ha salvado tu racha');
       else if (n.tipo === 'diario') aviso(`🔥 ${n.nombre} · +${n.xp} XP`);
     });
@@ -147,7 +160,7 @@
       ficha('flame', `${s.racha} día${s.racha === 1 ? '' : 's'}`, `Racha actual. Mejor: ${s.mejorRacha}`),
       ficha('shield', String(s.escudos), 'Escudos: salvan la racha si te saltas un día. Ganas uno cada 7 días seguidos (máximo 2)'),
       ficha('coins', num(s.monedas), 'Monedas'),
-      ficha('trophy', `${s.logros.hechos}/${s.logros.total}`, 'Logros conseguidos'),
+      (() => { const f = ficha('trophy', `${s.logros.hechos}/${s.logros.total}`, 'Logros conseguidos'); f.classList.add('oro'); return f; })(),
     );
     const acc = el('div', 'gm-acc');
     const comp = el('button', 'btn sm'); comp.type = 'button'; comp.append(icon('i-share'), el('span', null, 'Compartir'));
