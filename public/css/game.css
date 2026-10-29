@@ -172,7 +172,7 @@
 
 /* Tetris inmersivo: sin navegación de la aplicación mientras se juega. */
 body.tt-inmersivo .topbar,body.tt-inmersivo .mobilenav,body.tt-inmersivo .mobile-nav,body.tt-inmersivo .bottom-nav,body.tt-inmersivo .tabbar{display:none!important}
-body.tt-inmersivo #view-tetris{position:fixed!important;inset:0;z-index:1000;overflow:auto;overscroll-behavior:contain;background:var(--bg-deep);max-width:none!important;width:100%!important;margin:0!important;padding:calc(env(safe-area-inset-top,0px) + 6px) 8px calc(env(safe-area-inset-bottom,0px) + 8px)!important}
+body.tt-inmersivo #view-tetris,body.tt-inmersivo #view-g2048,body.tt-inmersivo #view-breakout{position:fixed!important;inset:0;z-index:1000;overflow:auto;overscroll-behavior:contain;background:var(--bg-deep);max-width:none!important;width:100%!important;margin:0!important;padding:calc(env(safe-area-inset-top,0px) + 6px) 8px calc(env(safe-area-inset-bottom,0px) + 8px)!important}
 body.tt-inmersivo .tt-zona{max-width:none;gap:6px}
 body.tt-inmersivo .tt-gamebar{width:100%;display:flex;justify-content:flex-end}
 body.tt-inmersivo .tt-salir{border:1px solid var(--line-2);background:rgba(255,255,255,.08);color:var(--text);border-radius:10px;padding:7px 13px;font:inherit;font-weight:700;min-height:36px}
@@ -202,3 +202,16 @@ body.tt-inmersivo .tt-salir{display:inline-flex;align-items:center;justify-conte
 body.tt-inmersivo .tt-salir:active{transform:scale(.97);background:rgba(255,255,255,.16)}
 body.tt-inmersivo .tt-salir:focus-visible{outline:2px solid var(--accent-text);outline-offset:3px}
 body.tt-inmersivo .tt-salir-icon{font-size:19px;line-height:1;font-weight:500}
+
+/* 2048 y Breakout comparten el diseño del Tetris */
+.ar-energia{display:flex;align-items:center;gap:8px;width:100%;max-width:var(--ancho,420px);padding:5px 8px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--line);box-sizing:border-box;}
+.ar-energia>span{font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);flex:none;}
+.ar-energia>div:first-of-type{display:flex;gap:4px;flex:none;}
+.ar-energia i{width:22px;height:8px;border-radius:3px;background:rgba(255,255,255,.12);}
+.ar-energia i.on{background:linear-gradient(90deg,#22d3ee,#a855f7);box-shadow:0 0 8px #22d3ee88;}
+.ar-chips{margin-left:auto;font-size:11px;font-weight:700;color:#facc15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ar-zona .tt-hud{max-width:var(--ancho,420px);}
+.ar-zona .tt-inf{max-width:var(--ancho,420px);}
+.ar-centro{touch-action:none;}
+.ar-zona .tt-ctl{display:flex;justify-content:center;}
+.ar-zona .tt-ctl .tt-btn{width:64px;}

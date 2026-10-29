@@ -76,3 +76,4 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 3. ~~Importar metadatos de ComfyUI en prompts.~~ Hecho.
 
 - [x] ~~Sección Juegos con estados, estadísticas, RAWG opcional, logros y tarjetas para compartir~~ Hecho: pestaña Juegos (`lib/games.js`, `public/js/games.js`), calendario «Juegos», 6 familias + 3 especiales + 2 retos, README y `RAWG_KEY`.
+- [x] ~~2048 y Breakout con el diseño del Tetris~~ Hecho: `public/js/arcade.js`, endpoint `/api/game/arcade/:juego`, 13 familias + 4 especiales + 3 títulos + 8 retos nuevos, potenciadores por nivel y tarjeta con captura.

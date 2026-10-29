@@ -102,10 +102,12 @@
   function build() {
     const v = $('view-logros'); v.textContent = '';
     const head = el('div', 'kv-head');
-    const t = el('div'); t.append(el('h2', null, 'Logros'), el('p', 'sub', 'Sube de nivel usando la app y jugando al Tetris'));
+    const t = el('div'); t.append(el('h2', null, 'Logros'), el('p', 'sub', 'Sube de nivel usando la app y jugando: Tetris, 2048 y Breakout'));
     const jugar = el('button', 'btn'); jugar.type = 'button'; jugar.append(G.gi('gamepad', 'gi-sm'), el('span', 'lbl', 'Jugar al Tetris'));
     jugar.addEventListener('click', () => switchTab('tetris'));
-    head.append(t, el('span', 'grow'), jugar);
+    const j2 = el('button', 'btn'); j2.type = 'button'; j2.append(G.gi('cube', 'gi-sm'), el('span', 'lbl', '2048')); j2.addEventListener('click', () => switchTab('g2048'));
+    const j3 = el('button', 'btn'); j3.type = 'button'; j3.append(G.gi('gamepad', 'gi-sm'), el('span', 'lbl', 'Breakout')); j3.addEventListener('click', () => switchTab('breakout'));
+    head.append(t, el('span', 'grow'), jugar, j2, j3);
     const perfil = el('section', 'gm-perfil');
     const tabs = el('div', 'gm-tabs');
     [['resumen', 'Resumen'], ['logros', 'Logros'], ['tienda', 'Tienda']].forEach(([id, n]) => {
@@ -214,7 +216,7 @@
   function pintaLogros(c) {
     const s = G.state;
     const f = el('div', 'gm-filtros');
-    ['todos', 'Contenido', 'Uso', 'Tetris', 'Juegos', 'Especiales'].forEach(g => {
+    ['todos', 'Contenido', 'Uso', 'Tetris', '2048', 'Breakout', 'Arcade', 'Juegos', 'Especiales'].forEach(g => {
       const b = el('button', 'gm-filtro' + (S.grupo === g ? ' on' : ''), g === 'todos' ? 'Todos' : g); b.type = 'button';
       b.addEventListener('click', () => { S.grupo = g; pinta(); }); f.appendChild(b);
     });
@@ -251,7 +253,7 @@
     c.appendChild(grid);
   }
 
-  const TIPOS = [['skin', 'Piezas del Tetris'], ['fondo', 'Fondos del tablero'], ['marco', 'Marcos de perfil y tarjetas'], ['titulo', 'Títulos']];
+  const TIPOS = [['skin', 'Colores de piezas, fichas y ladrillos'], ['fondo', 'Fondos del tablero'], ['marco', 'Marcos de perfil y tarjetas'], ['titulo', 'Títulos']];
   function vistaPrevia(it) {
     const p = el('div', 'gm-prev ' + it.tipo);
     if (it.tipo === 'skin') it.colores.forEach(col => { const q = el('i'); q.style.background = col; p.appendChild(q); });
@@ -262,7 +264,7 @@
   }
   function pintaTienda(c) {
     const s = G.state;
-    const cab = el('p', 'gm-monedas'); cab.append(G.gi('coins', 'gi-sm'), el('b', null, num(s.monedas)), el('span', 'k-faint', ' monedas · se ganan jugando al Tetris y con los retos semanales'));
+    const cab = el('p', 'gm-monedas'); cab.append(G.gi('coins', 'gi-sm'), el('b', null, num(s.monedas)), el('span', 'k-faint', ' monedas · se ganan jugando (Tetris, 2048, Breakout) y con los retos semanales'));
     c.appendChild(cab);
     TIPOS.forEach(([tipo, nombre]) => {
       const sec = el('section', 'gm-sec'); sec.appendChild(el('h3', null, nombre));
@@ -411,6 +413,20 @@
     const nombre = tipo === 'tetris' ? `tetris-${extra && extra.resultado ? extra.resultado.score : ''}.png` : 'mis-logros.png';
     await G.muestraTarjeta(cv, nombre, tipo === 'tetris' ? 'Tu puntuación' : 'Tu tarjeta de logros');
   };
-  // Utilidades de dibujo para otras tarjetas (Juegos)
+  // Utilidades de dibujo para otras tarjetas (Juegos, 2048, Breakout)
   G.dibujo = { rr, icono, FUENTE, num, horas, TRAMO_COLOR };
+  // Lienzo base de 1080×1350 con el fondo y el marco habituales; devuelve lo necesario para seguir dibujando encima
+  G.lienzo = async (subtitulo) => {
+    if (!G.state) await G.load();
+    const W = 1080, H = 1350;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d');
+    const rango = G.state.rango || { color: '#22d3ee', nombre: '' };
+    const f = x.createLinearGradient(0, 0, W, H); f.addColorStop(0, '#0a0f24'); f.addColorStop(1, '#060814'); x.fillStyle = f; x.fillRect(0, 0, W, H);
+    const b = x.createRadialGradient(W / 2, 420, 20, W / 2, 420, 760); b.addColorStop(0, rango.color + '40'); b.addColorStop(1, 'transparent'); x.fillStyle = b; x.fillRect(0, 0, W, H);
+    const marco = G.puesto('marco');
+    if (marco && marco.id !== 'marco-ninguno') { const g2 = x.createLinearGradient(0, 0, W, H); g2.addColorStop(0, marco.colores[0]); g2.addColorStop(1, marco.colores[1]); x.lineWidth = 16; x.strokeStyle = g2; rr(x, 18, 18, W - 36, H - 36, 46); x.stroke(); }
+    else { x.lineWidth = 3; x.strokeStyle = 'rgba(255,255,255,.12)'; rr(x, 24, 24, W - 48, H - 48, 42); x.stroke(); }
+    x.textAlign = 'center'; x.fillStyle = '#9fb0d6'; x.font = `600 32px ${FUENTE}`; x.fillText(subtitulo || 'KOOKYECATCLOUD', W / 2, 100);
+    return { cv, x, rr, FUENTE, W, H, rango, usuario: (typeof state !== 'undefined' && state.user && state.user.username) || '' };
+  };
 })();

@@ -84,7 +84,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 🛒 **Lista de la compra** | Catálogo y compras compartidos, cantidades, categorías e imágenes con recorte cuadrado. |
 | 📅 **Calendario** | Mes, semana, día y agenda con calendarios de colores, repetición y recordatorios. |
 | ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables, imágenes de muestra, comparación de versiones, estadísticas y creación desde metadatos de imágenes de ComfyUI / Automatic1111. |
-| 🏆 **Logros y Tetris** | Niveles y rangos, racha diaria, logros por cantidad de elementos y por uso, retos semanales, cosméticos y un Tetris de 3 minutos, táctil y con música, con potenciadores que se desbloquean al subir de nivel. |
+| 🏆 **Logros y Tetris** | Niveles y rangos, racha diaria, logros por cantidad de elementos y por uso, retos semanales, cosméticos y tres juegos (Tetris, 2048 y Breakout) táctiles y con música, con potenciadores que se desbloquean al subir de nivel. |
 | 🎮 **Juegos** | Colección de videojuegos con carátulas, notas, horas, lista de deseos y backlog, estadísticas, búsqueda opcional con RAWG, logros propios y tarjetas para compartir de cada juego y de tu perfil. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
 | 📋 **Portapapeles compartido** | Deja texto o archivos desde un dispositivo y recógelos desde otro al instante. En Android, la app aparece en el menú «Compartir». |
@@ -757,6 +757,24 @@ La música son tres pistas de dominio público (CC0) de Kevin MacLeod / FreePD, 
 últimos 20 s. Los efectos (mover, girar, líneas, Tetris, potenciadores, cuenta atrás y fin) se sintetizan con Web
 Audio, sin archivos. Los botones ♪ y 🔊 de la cabecera y el volumen de la pantalla de inicio se guardan en el
 navegador. El service worker no cachea `/audio/`.
+
+### 2048 y Breakout
+
+Dos juegos más con el mismo diseño que el Tetris (pestañas **2048** y **Breakout**, pantalla completa, música y sonidos compartidos, pausa automática al salir de la pestaña). Sus partidas dan XP y monedas, cuentan para los retos y logros, y se pueden compartir como imagen (con una captura del tablero final).
+
+- **2048**: desliza el dedo sobre el tablero (o usa las flechas / WASD) para unir fichas iguales. Sin límite de tiempo; la partida termina cuando no quedan movimientos o la terminas tú. Cada fusión carga energía (5 como máximo).
+- **Breakout**: arrastra el dedo (o el ratón / las flechas) para mover la pala y toca para lanzar. 3 vidas, niveles con patrones distintos, ladrillos de doble golpe a partir del nivel 3 y cápsulas que caen de algunos ladrillos. Cada ladrillo carga energía.
+- **Potenciadores** (se gastan con energía y se desbloquean con el nivel de la cuenta; teclas 1-9):
+
+| Juego | Activos (nivel · coste) | Pasivos (nivel) |
+|---|---|---|
+| 2048 | Deshacer (2 · 1), Limpiar 2 y 4 (4 · 2), Puntos x2 (8 · 2), Mezclar (11 · 2), Pausa de fichas (15 · 2), Subir (20 · 3) | Buen comienzo (5), Cargador rápido (9), Golpe de suerte (13), Segundo aire (18), Maestro de fusiones (24), Lluvia de monedas (35) |
+| Breakout | Bola lenta (3 · 1), Pala ancha (5 · 1), Multibola (8 · 2), Bola de fuego (12 · 2), Red (16 · 2), Puntos x2 (20 · 2), Vida extra (25 · 3) | Pala grande (4), Cargador rápido (7), Vida de reserva (10), Maestro del combo (14), Red de seguridad (18), Lluvia de monedas (35) |
+
+- **Logros nuevos**: 2048 (*Cuadrícula viciosa*, *Suma y sigue*, *Potencias de dos*, *Fusionista*, *Alquimista*), Breakout (*Rompe-muros*, *Demoledor*, *Pared abajo*, *Nivel tras nivel*, *Sin rasguños*, *Ingeniero de bolas*) y Arcade (*Sala de recreativas* con todas las partidas y *Jugador completo* por probar los tres juegos). Especiales: *Salón recreativo* (jugar a los tres), *¡2048!* (formar la ficha 2048), *Barrido total* (secreto: 5 niveles seguidos de Breakout sin perder una vida) y *Maestro recreativo* (secreto: 5000 puntos en cada juego). Títulos nuevos: *Señor de las potencias*, *Rompemuros* y *Rey de la recreativa*.
+- **Retos semanales**: ahora el reto de juegos puede ser de Tetris, 2048 o Breakout (partidas, fusiones, ladrillos, potenciadores o puntuación).
+- **Cosméticos**: las skins de piezas colorean también las fichas del 2048 y los ladrillos del Breakout, y los fondos cambian el tablero de los tres juegos.
+- **Antitrampas**: el servidor valida duración, movimientos, ladrillos y puntuación máxima posibles, y exige un tiempo mínimo entre partidas del mismo juego.
 
 ## Juegos
 
