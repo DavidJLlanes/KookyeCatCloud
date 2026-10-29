@@ -879,3 +879,8 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 .k-row>input[type=date],.k-row>input[type=time]{flex:1 1 0;}
 .k-calfield,.k-calfield .body,.vc-form,.vc-cuando{max-width:100%;}
 .k-2>*,.ct-adr-g>*{min-width:0;}
+
+/* Botones con texto largo: en pantallas estrechas el texto se parte en líneas en vez de salirse de la pantalla */
+.btn{max-width:100%;}
+@media (max-width:560px){button.btn:not(.icon):not(.tiny){white-space:normal;text-align:center;line-height:1.25;}}
+.card,.card .card-sub{overflow-wrap:anywhere;min-width:0;}
