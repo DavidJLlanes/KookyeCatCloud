@@ -194,7 +194,7 @@
     const con = el('section', 'gm-sec');
     const h3 = el('h3'); h3.append(G.gi('archive', 'gi-sm'), el('span', null, 'Lo que has guardado')); con.appendChild(h3);
     const grid = el('div', 'gm-rec');
-    [['archivos', 'files', 'Archivos'], ['fotos', 'photos', 'Fotos'], ['notas', 'notes', 'Notas'], ['prompts', 'prompts', 'Prompts'], ['contactos', 'contacts', 'Contactos'], ['eventos', 'calendar', 'Eventos'], ['etiquetas', 'labels', 'Etiquetas'], ['enlaces', 'share', 'Enlaces']].forEach(([k, ic, n]) => {
+    [['archivos', 'files', 'Archivos'], ['fotos', 'photos', 'Fotos'], ['notas', 'notes', 'Notas'], ['prompts', 'prompts', 'Prompts'], ['contactos', 'contacts', 'Contactos'], ['eventos', 'calendar', 'Eventos'], ['etiquetas', 'labels', 'Etiquetas'], ['enlaces', 'share', 'Enlaces'], ['juegos', 'gamepad', 'Juegos']].forEach(([k, ic, n]) => {
       const t = el('div', 'gm-rec-i'); t.append(G.gi(ic), el('b', null, num(s.recuentos[k])), el('span', 'k-faint', n)); grid.appendChild(t);
     });
     con.appendChild(grid); c.appendChild(con);
@@ -214,7 +214,7 @@
   function pintaLogros(c) {
     const s = G.state;
     const f = el('div', 'gm-filtros');
-    ['todos', 'Contenido', 'Uso', 'Tetris', 'Especiales'].forEach(g => {
+    ['todos', 'Contenido', 'Uso', 'Tetris', 'Juegos', 'Especiales'].forEach(g => {
       const b = el('button', 'gm-filtro' + (S.grupo === g ? ' on' : ''), g === 'todos' ? 'Todos' : g); b.type = 'button';
       b.addEventListener('click', () => { S.grupo = g; pinta(); }); f.appendChild(b);
     });
@@ -391,13 +391,11 @@
     return cv;
   };
 
-  G.tarjeta = async (tipo, extra) => {
-    let cv;
-    try { if (!G.state) await G.load(); cv = await G.dibujaTarjeta(tipo, extra); } catch (e) { K.fail(e); return; }
+  // Muestra una tarjeta ya dibujada con las opciones de compartir, descargar y copiar (la usan Logros, Tetris y Juegos)
+  G.muestraTarjeta = async (cv, nombre, titulo) => {
     const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
     if (!blob) { K.toast('No se pudo crear la imagen'); return; }
     const url = URL.createObjectURL(blob);
-    const nombre = tipo === 'tetris' ? `tetris-${extra && extra.resultado ? extra.resultado.score : ''}.png` : 'mis-logros.png';
     const file = new File([blob], nombre, { type: 'image/png' });
     const w = el('div', 'gm-tarjeta'); const im = el('img'); im.src = url; im.alt = 'Tarjeta para compartir'; w.appendChild(im);
     const contar = async () => { try { G.set(await K.post('/api/game/event', { type: 'tarjeta' })); } catch { /* no es crítico */ } };
@@ -405,6 +403,14 @@
     acts.push({ label: 'Descargar', onClick: async () => { const a = el('a'); a.href = url; a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); await contar(); return false; } });
     if (navigator.clipboard && window.ClipboardItem) acts.push({ label: 'Copiar', onClick: async () => { try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); K.toast('Imagen copiada'); await contar(); } catch { K.toast('No se pudo copiar la imagen'); } return false; } });
     if (navigator.canShare && navigator.canShare({ files: [file] })) acts.push({ label: 'Compartir', primary: true, onClick: async () => { try { await navigator.share({ files: [file], title: 'KookyeCatCloud' }); await contar(); } catch { /* cancelado */ } return false; } });
-    K.modal({ title: tipo === 'tetris' ? 'Tu puntuación' : 'Tu tarjeta de logros', content: w, cls: 'wide', actions: acts, onClose: () => setTimeout(() => URL.revokeObjectURL(url), 1000) });
+    K.modal({ title: titulo, content: w, cls: 'wide', actions: acts, onClose: () => setTimeout(() => URL.revokeObjectURL(url), 1000) });
   };
+  G.tarjeta = async (tipo, extra) => {
+    let cv;
+    try { if (!G.state) await G.load(); cv = await G.dibujaTarjeta(tipo, extra); } catch (e) { K.fail(e); return; }
+    const nombre = tipo === 'tetris' ? `tetris-${extra && extra.resultado ? extra.resultado.score : ''}.png` : 'mis-logros.png';
+    await G.muestraTarjeta(cv, nombre, tipo === 'tetris' ? 'Tu puntuación' : 'Tu tarjeta de logros');
+  };
+  // Utilidades de dibujo para otras tarjetas (Juegos)
+  G.dibujo = { rr, icono, FUENTE, num, horas, TRAMO_COLOR };
 })();

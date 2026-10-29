@@ -485,7 +485,7 @@
       await K.put('/api/calendar/events/' + e.id + q, { ...campos, allDay: e.allDay });
       if (e.recurring) K.toast('Solo se ha movido esta aparición');
       K.bus.emit('calendar'); S.dirty = true; load();
-      if (e.source) K.bus.emit(e.source.type === 'prompt' ? 'prompts' : e.source.type === 'note' ? 'notes' : 'files');
+      if (e.source) K.bus.emit(e.source.type === 'prompt' ? 'prompts' : e.source.type === 'note' ? 'notes' : e.source.type === 'game' ? 'games' : 'files');
     } catch (err) { K.fail(err); load(); }
   }
 
@@ -900,7 +900,7 @@
           }
           await K.put('/api/calendar/events/' + ev.id + q, body);
         }
-        K.bus.emit('calendar'); if (ev && ev.source) K.bus.emit(ev.source.type === 'prompt' ? 'prompts' : 'notes');
+        K.bus.emit('calendar'); if (ev && ev.source) K.bus.emit(ev.source.type === 'prompt' ? 'prompts' : ev.source.type === 'game' ? 'games' : 'notes');
         S.dirty = true; load();
       } catch (e) { K.fail(e); return false; }
     } });
@@ -930,7 +930,7 @@
     } else if (!await K.confirm(`¿Borrar “${ev.title}”?`, { ok: 'Borrar', danger: true })) return false;
     try {
       await K.del('/api/calendar/events/' + ev.id + q);
-      K.bus.emit('calendar'); if (ev.source) K.bus.emit(ev.source.type === 'prompt' ? 'prompts' : 'notes');
+      K.bus.emit('calendar'); if (ev.source) K.bus.emit(ev.source.type === 'prompt' ? 'prompts' : ev.source.type === 'game' ? 'games' : 'notes');
       S.dirty = true; load(); return true;
     } catch (e) { K.fail(e); return false; }
   }

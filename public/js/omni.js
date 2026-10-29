@@ -21,6 +21,7 @@
     { t: 'Ir a Archivos', i: 'i-folder', f: () => switchTab('files') },
     { t: 'Ir a Notas', i: 'i-note', f: () => switchTab('notes') },
     { t: 'Ir a la lista de la compra', i: 'i-cart', f: () => switchTab('shopping') },
+    { t: 'Ir a Juegos', i: 'i-gamepad', f: () => switchTab('games') },
     { t: 'Ir a Calendario', i: 'i-calendar', f: () => switchTab('calendar') },
     { t: 'Ir a Prompts', i: 'i-sparkle', f: () => switchTab('prompts') },
     { t: 'Ir a Contactos', i: 'i-contact', f: () => switchTab('contacts') },

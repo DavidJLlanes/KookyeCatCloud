@@ -64,7 +64,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 - [Qué puedes hacer](#qué-puedes-hacer)
 - [Instalación](#instalación) — [local](#arrancar-en-local) · [VPS paso a paso](#despliegue-en-el-vps) · [dominio, subdominio o subcarpeta](#en-qué-dirección-instalarla)
-- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [contactos](#contactos), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
+- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [juegos](#juegos), [contactos](#contactos), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
 - [Actualizaciones](#actualizaciones)
 - [Variables de entorno](#variables-de-entorno)
 - [Seguridad](#seguridad) · [Copias de seguridad](#copias-de-seguridad) · [Estructura del proyecto](#estructura-del-proyecto) · [Solución de problemas](#solución-de-problemas)
@@ -85,6 +85,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 📅 **Calendario** | Mes, semana, día y agenda con calendarios de colores, repetición y recordatorios. |
 | ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables, imágenes de muestra, comparación de versiones, estadísticas y creación desde metadatos de imágenes de ComfyUI / Automatic1111. |
 | 🏆 **Logros y Tetris** | Niveles y rangos, racha diaria, logros por cantidad de elementos y por uso, retos semanales, cosméticos y un Tetris de 3 minutos, táctil y con música, con potenciadores que se desbloquean al subir de nivel. |
+| 🎮 **Juegos** | Colección de videojuegos con carátulas, notas, horas, lista de deseos y backlog, estadísticas, búsqueda opcional con RAWG, logros propios y tarjetas para compartir de cada juego y de tu perfil. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
 | 📋 **Portapapeles compartido** | Deja texto o archivos desde un dispositivo y recógelos desde otro al instante. En Android, la app aparece en el menú «Compartir». |
 | ⚡ **Actualización en directo** | La lista de archivos se refresca sola cuando llega algo por un enlace de subida o desde otro dispositivo, sin consultas periódicas. |
@@ -756,6 +757,35 @@ La música son tres pistas de dominio público (CC0) de Kevin MacLeod / FreePD, 
 últimos 20 s. Los efectos (mover, girar, líneas, Tetris, potenciadores, cuenta atrás y fin) se sintetizan con Web
 Audio, sin archivos. Los botones ♪ y 🔊 de la cabecera y el volumen de la pantalla de inicio se guardan en el
 navegador. El service worker no cachea `/audio/`.
+
+## Juegos
+
+Pestaña **Juegos** para llevar tu colección: **Próximos**, **Deseados** (lista de deseos), **Pendientes** (backlog), **Jugando**, **Jugados** y **Abandonados**.
+
+- **Datos por juego**: título, carátula, plataformas, géneros, estudio, saga, fecha de salida, nota personal (0-10), reseña, lo mejor/lo peor, etiquetas, horas (y sesiones), fechas de inicio y fin, % completado, rejugadas, prioridad, físico/digital, tienda, precio pagado y objetivo, prestado a y enlace. Al pasar un juego a *Jugando* o *Jugado* se rellenan solas las fechas.
+- **Sesiones**: «Sesión» suma horas y mueve el juego a *Jugando* si estaba pendiente o deseado.
+- **Búsqueda automática (opcional)**: con `RAWG_KEY` en el `.env` (clave gratuita de rawg.io) se busca el juego y se rellenan título, plataformas, géneros y carátula. Sin clave se añade a mano. Las carátulas se guardan en WebP.
+- **Calendario**: la fecha de salida puede crear un evento en el calendario *Juegos* (se crea solo para todos los usuarios).
+- **Estadísticas**: juegos, jugados, horas, nota media, backlog, gasto, euros por hora, horas por género, jugados por año y mejor valorados.
+- **Exportar/importar**: JSON y CSV (compatible con hojas de cálculo). La importación evita duplicados por título y plataforma.
+- **Almacenamiento**: `<tu carpeta>/.kcc/games/data.json` y `covers/` (un JSON por usuario, sin SQLite).
+- **Compartir**: desde la ficha, **Tarjeta** crea una imagen 1080×1350 del juego (carátula, nota, horas, estado, reseña) y **Mi perfil** crea una con tus totales, géneros con más horas, mejor valorados y logros. Se descargan, copian o comparten desde el móvil.
+
+### Logros de Juegos
+
+| Logro | Cómo se consigue |
+|---|---|
+| Colección gamer | Juegos en tu colección (5 / 25 / 100 / 300 / 1000) |
+| Jugador de fondo | Juegos terminados (3 / 15 / 50 / 150 / 400) |
+| Horas de vicio | Horas registradas (10 / 100 / 500 / 2000 / 10000) |
+| Crítico de sofá | Juegos con reseña (1 / 10 / 40 / 120 / 300) |
+| Lista infinita | Juegos en deseados (3 / 15 / 40 / 100 / 250) |
+| Platino | Juegos al 100 % (1 / 5 / 20 / 60 / 150) |
+| Arqueólogo retro | Un juego anterior al año 2000 |
+| Todas las plataformas | Juegos en 5 plataformas distintas |
+| Una más y a dormir (secreto) | Una sesión de 6 horas o más |
+
+Retos semanales nuevos: añadir juegos a la colección y registrar horas jugadas.
 
 ## Contactos
 

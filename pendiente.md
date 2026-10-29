@@ -74,3 +74,5 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 1. Copias de seguridad desde la propia app.
 2. ~~Compartir desde el móvil.~~ Hecho.
 3. ~~Importar metadatos de ComfyUI en prompts.~~ Hecho.
+
+- [x] ~~Sección Juegos con estados, estadísticas, RAWG opcional, logros y tarjetas para compartir~~ Hecho: pestaña Juegos (`lib/games.js`, `public/js/games.js`), calendario «Juegos», 6 familias + 3 especiales + 2 retos, README y `RAWG_KEY`.
