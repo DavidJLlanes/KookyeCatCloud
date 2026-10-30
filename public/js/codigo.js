@@ -182,8 +182,8 @@
     if (!previsualizable()) { p.appendChild(el('p', 'k-muted cd-nota', f.lenguaje === 'xml' ? 'La vista previa del XML funciona con SVG (<svg>…).' : 'Sin contenido para previsualizar.')); return; }
     if (!S.usoPrev.has(f.id) && (abierta || window.innerWidth >= 900) && f.codigo.trim()) { S.usoPrev.add(f.id); accion('preview'); }
     if (f.lenguaje === 'html') {
-      const fr = el('iframe', 'cd-frame'); fr.setAttribute('sandbox', ''); fr.title = 'Vista previa'; fr.srcdoc = f.codigo; p.appendChild(fr);
-      p.appendChild(el('small', 'k-faint cd-nota', 'Vista previa aislada: se ven HTML y CSS; los scripts no se ejecutan.'));
+      const fr = el('iframe', 'cd-frame'); fr.setAttribute('sandbox', ''); fr.title = 'Vista previa'; fr.srcdoc = srcdocSeguro(f.codigo); p.appendChild(fr);
+      p.appendChild(el('small', 'k-faint cd-nota', 'Vista previa aislada: se ven HTML y CSS; los scripts no se ejecutan y los enlaces no navegan.'));
     } else if (f.lenguaje === 'xml') {
       const img = el('img', 'cd-svg'); img.alt = 'Vista previa SVG'; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(f.codigo); p.appendChild(img);
     } else if (f.lenguaje === 'json') {
@@ -192,6 +192,11 @@
     } else {
       const d = el('div', 'cd-md'); d.innerHTML = markdown(f.codigo); p.appendChild(d);
     }
+  }
+  // Los enlaces no pueden navegar dentro del marco aislado (se quedaría en blanco): se les quita el href y siguen viéndose como enlaces
+  function srcdocSeguro(html) {
+    const limpio = html.replace(/<a\b[^>]*>/gi, (tag) => tag.replace(/\shref\s*=\s*(["'])[^"']*\1/i, ' data-kcc="1"'));
+    return '<style>:where(a[data-kcc]){color:#0645ad;text-decoration:underline;cursor:pointer}</style>' + limpio;
   }
   // Markdown básico y seguro: todo se escapa antes de dar formato
   function markdown(src) {

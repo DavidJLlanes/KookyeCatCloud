@@ -845,7 +845,7 @@ Bases de datos propias al estilo AppFlowy: tú defines las columnas y las miras 
 Pestaña **Código** para guardar fragmentos:
 
 - **Editor** con números de línea, **colores por lenguaje** (highlight.js alojado en `public/vendor/highlightjs/`, 24 lenguajes), sangría automática, cierre de paréntesis, llaves y comillas, `Tab` / `Mayús+Tab` para sangrar bloques y `Ctrl+S` para guardar. En el móvil aparece una fila de símbolos (`{ } ( ) ; = …`). Autoguardado.
-- **Vista previa**: HTML (en un marco aislado: se ven HTML y CSS, los scripts no se ejecutan), Markdown, JSON (con validación) y SVG. En pantallas anchas va al lado del editor; en el móvil, en la pestaña «Vista previa».
+- **Vista previa**: HTML (en un marco aislado: se ven HTML y CSS, los scripts no se ejecutan y los enlaces no navegan), Markdown, JSON (con validación) y SVG. En pantallas anchas va al lado del editor; en el móvil, en la pestaña «Vista previa».
 - Título, lenguaje (con **Detectar**), etiquetas, favoritos, buscar y filtrar, **Copiar** y **Descargar** con su extensión.
 - **Un JSON por fragmento**: `<tu carpeta>/.kcc/codigo/<id>.json` (los contadores de uso van en `stats.json`). Límite: 500 fragmentos de 200 KB.
 - **Logros de Código**: 5 familias (*Taller de fragmentos*, *Líneas con sentido*, *Políglota*, *Ojo en la vista previa*, *Copia y pega*), los especiales *Trío web* y *Maratón de código*, el título *Artesano del código*, un reto semanal y la *Copa del Artesano*.
