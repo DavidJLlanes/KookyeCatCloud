@@ -86,3 +86,9 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [x] Copiar o mover entre Archivos y Código (fase 1), con deshacer de 1 minuto, previsualización, historial y logro «Mudanzas».
 - [x] Copiar o mover desde Portapapeles, Notas y Contactos a Archivos y Código (fase 2).
 - [x] Bases y Juegos en CSV, y arrastrar archivos a la pestaña Código en escritorio (fase 3). Pendiente: Código → Código.
+- [x] Gamificación revisada: Portapapeles («Copión»), especial «Caja fuerte», títulos para todos los módulos y recuentos al instante.
+- [x] Auditoría: el deshacer de Portapapeles/Notas ya no engorda ops.json; un envío que falla a medias se revierte; el icono de Mudanzas existía solo en el código.
+- [ ] Código → Código todavía no.
+- [ ] Al deshacer un movimiento, los vínculos con el calendario (Juegos, Notas, Contactos) no se restauran.
+- [ ] La previsualización de contactos con foto convierte cada foto: lenta con muchos contactos.
+- [ ] Los contadores de Mudanzas y Copión cuentan envíos y elementos sin límite de frecuencia: se pueden inflar a propósito.
