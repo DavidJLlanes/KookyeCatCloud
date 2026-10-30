@@ -307,7 +307,7 @@
   function enviaNota(it) {
     K.transferir.abre({ tipo: 'notas', ids: [it.id], titulo: it.title || 'Nota' }, { alTerminar: () => loadNotes(true) });
   }
-  // Menú contextual del árbol de notas (app.js llama a este gancho)
+  // Menú contextual del árbol de notas (la aplicación principal, js/app/, llama a este gancho)
   window.KCC.noteMenu = (menu, item) => {
     opcionCtx(menu, 'i-download', item.type === 'folder' ? 'Exportar carpeta (.zip de Markdown)' : 'Exportar a Markdown', () => exportMd(item));
     opcionCtx(menu, 'i-download', 'Exportar como texto (.txt)', () => exportTxt(item));

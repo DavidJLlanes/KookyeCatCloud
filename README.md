@@ -1551,7 +1551,9 @@ lib/
   shares.js          Compartición entre usuarios
   webauthn.js        Passkeys sin dependencias (CBOR propio)
 public/
-  index.html, app.js Aplicación (JavaScript vanilla)
+  index.html         Página única (vistas, iconos SVG y los <script> en orden)
+  js/app/*.js        Aplicación principal, troceada por áreas (antes un solo app.js): estado, markdown, tema, sesión,
+                     navegación, visores, papelera y subida, notas, enlaces, colecciones, administración, cuenta e inicio
   js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, recordatorios vinculados, portapapeles, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
   css/               Estilos de los módulos
   sw.js, manifest.json  PWA
