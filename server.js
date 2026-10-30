@@ -335,6 +335,7 @@ const vaultMod = createVault({
   express, auth: (req, res, next) => auth(req, res, next), multer, sharp, userRoot, resolveFor, sendError, registrarActividad,
   alRetirar: (user, rel) => calendarMod.core.quitaOrigenArchivo(user, limpiaRel(rel)),   // un archivo que entra en la caja deja el calendario
   maxUpload: MAX_UPLOAD_BYTES,
+  alCambiar: alCambiarContenido,
 });
 
 // Avisos en directo a las pestañas abiertas (ver lib/events.js)
@@ -383,6 +384,8 @@ async function contarExtrasApp(user) {
   try { const u = loadUsers().find(x => x.username === user.username); r.seg_2fa = u && u.twofaSecret ? 1 : 0; } catch { r.seg_2fa = 0; }
   try { const pk = await readJson(path.join(APP_DIR, 'passkeys.json'), { users: {} }); r.seg_passkeys = ((pk.users || {})[user.username] || { creds: [] }).creds.length; } catch { r.seg_passkeys = 0; }
   r.seg_capas = (r.seg_2fa ? 1 : 0) + (r.seg_passkeys ? 1 : 0);
+  // La bóveda existe cuando se ha configurado su contraseña (vault.json); su contenido va cifrado y no se cuenta
+  try { await fsp.access(path.join(userRoot(user), '.vault', 'vault.json')); r.seg_boveda = 1; } catch { r.seg_boveda = 0; }
   return r;
 }
 async function contarContenido(user) {
@@ -559,6 +562,14 @@ function auth(req, res, next) {
     return res.status(401).json({ error: 'Token inválido' });
   }
 }
+// Toda escritura correcta de la API invalida los recuentos de logros del usuario (así los logros salen al instante,
+// no con la caché de 45 s). Cubre todos los módulos sin tener que añadir el aviso en cada uno.
+app.use('/api', (req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.on('finish', () => { if (res.statusCode < 400 && req.user) { try { alCambiarContenido(req.user); } catch { /* sin logros */ } } });
+  }
+  next();
+});
 // Cuando alguien cambia archivos (subir, borrar, mover, carpetas, papelera…) se avisa a las demás
 // pestañas del mismo espacio. La pestaña que hizo el cambio manda su id y no recibe el aviso.
 const RUTAS_ARCHIVOS = /^\/(mkdir|upload|text|files|batch|trash|move|favorites|albums)(\/|$)/;
@@ -3258,6 +3269,7 @@ app.use('/api/labels', auth, labelsMod.router);
 app.use('/api/calendar', auth, calendarMod.router);
 app.use('/api/prompts', auth, promptsMod.router);
 app.use('/api/clip', auth, clipMod.router);
+modulosConLogros.push(clipMod);   // Portapapeles aporta recuentos a la gamificación (ver CLAUDE.md)
 app.use('/api/game', auth, gameMod.router);
 app.use('/api/contacts', auth, contactsMod.router);
 app.use('/api/shopping', auth, shoppingMod);

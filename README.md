@@ -774,7 +774,11 @@ Además de Archivos, Fotos, Notas, Prompts, Contactos, Calendario, Etiquetas, En
 - **Seguridad** (categoría y copa nuevas): *Fortaleza* (verificación en dos pasos y huella o Face ID) y los especiales *Doble cerradura* y *Entrada biométrica*.
 - **Especial** *Gran exposición*: un álbum con 50 fotos o más.
 - **Títulos nuevos**: *Despensa llena*, *Curador de álbumes* y *Guardián*, y dos retos semanales más (compras y favoritos).
-- Los recuentos de Compra, favoritos y álbumes se actualizan en un máximo de 45 s.
+- **Portapapeles** (*Copión*): elementos guardados en la vida de la cuenta, 5 / 25 / 100 / 300 / 1000 (no baja al caducar ni al borrar). Cuenta también para un reto semanal.
+- **Mudanzas** (título *Mudanzas completas*) y el reto semanal *Haz {n} envío(s) entre secciones*.
+- **Títulos nuevos** para Juegos (*Coleccionista*), Contactos (*Amigo de todos*), Etiquetas (*Orden perfecto*), Enlaces (*Anfitrión*), Favoritos (*Lo mejor de lo mejor*) y Portapapeles (*Copión profesional*). Ahora todos los módulos tienen al menos un título.
+- **Especial** *Caja fuerte*: configurar la bóveda con su contraseña.
+- Los recuentos se recalculan al instante tras cada cambio en la API (la caché de 45 s solo evita recalcular en las lecturas).
 
 ### 2048 y Breakout
 
