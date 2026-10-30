@@ -64,7 +64,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 - [Qué puedes hacer](#qué-puedes-hacer)
 - [Instalación](#instalación) — [local](#arrancar-en-local) · [VPS paso a paso](#despliegue-en-el-vps) · [dominio, subdominio o subcarpeta](#en-qué-dirección-instalarla)
-- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [bases](#bases), [juegos](#juegos), [contactos](#contactos), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
+- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [bases](#bases), [código](#código), [exportar JSON](#exportar-json), [juegos](#juegos), [contactos](#contactos), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
 - [Actualizaciones](#actualizaciones)
 - [Variables de entorno](#variables-de-entorno)
 - [Seguridad](#seguridad) · [Copias de seguridad](#copias-de-seguridad) · [Estructura del proyecto](#estructura-del-proyecto) · [Solución de problemas](#solución-de-problemas)
@@ -87,6 +87,8 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 🏆 **Logros y Tetris** | Niveles y rangos, racha diaria, logros por cantidad de elementos (también Compra, favoritos, álbumes, Bases y Juegos), por uso y de seguridad, retos semanales, cosméticos y tres juegos (Tetris, 2048 y Breakout) táctiles y con música, con potenciadores que se desbloquean al subir de nivel. |
 | 🎮 **Juegos** | Colección de videojuegos con carátulas, notas, horas, lista de deseos y backlog, estadísticas, búsqueda opcional con RAWG, logros propios y tarjetas para compartir de cada juego y de tu perfil. |
 | 🗂️ **Bases** | Bases de datos propias al estilo AppFlowy: columnas a tu medida (texto, número, fecha, casilla, selección, etiquetas, enlace), vistas de tabla y tablero Kanban, plantillas, exportación CSV/JSON y logros propios. Cada base es su propio JSON. |
+| </> **Código** | Fragmentos de código con editor de colores por lenguaje (HTML, CSS, JS, Python, PHP, SQL, Bash…), números de línea, vista previa de HTML, Markdown, JSON y SVG, etiquetas, favoritos, copiar y descargar. Cada fragmento es su propio JSON y tiene logros. |
+| 📤 **Exportar JSON** | Botón en la barra superior que exporta los datos de la sección abierta; ZIP con todos los JSON de la app para administración. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
 | 📋 **Portapapeles compartido** | Deja texto o archivos desde un dispositivo y recógelos desde otro al instante. En Android, la app aparece en el menú «Compartir». |
 | ⚡ **Actualización en directo** | La lista de archivos se refresca sola cuando llega algo por un enlace de subida o desde otro dispositivo, sin consultas periódicas. |
@@ -838,6 +840,22 @@ Bases de datos propias al estilo AppFlowy: tú defines las columnas y las miras 
 - **Logros de Bases**: 5 familias (Arquitecto de datos, Registro tras registro, Esquema a medida, Maestro del tablero, Tarea cumplida), 2 especiales (Esquema completo, Gran biblioteca), el título «Arquitecto de datos», 2 retos y la Copa del Arquitecto.
 - Convención para módulos futuros (JSON propio y gamificación obligatoria): ver `CLAUDE.md`.
 
+## Código
+
+Pestaña **Código** para guardar fragmentos:
+
+- **Editor** con números de línea, **colores por lenguaje** (highlight.js alojado en `public/vendor/highlightjs/`, 24 lenguajes), sangría automática, cierre de paréntesis, llaves y comillas, `Tab` / `Mayús+Tab` para sangrar bloques y `Ctrl+S` para guardar. En el móvil aparece una fila de símbolos (`{ } ( ) ; = …`). Autoguardado.
+- **Vista previa**: HTML (en un marco aislado: se ven HTML y CSS, los scripts no se ejecutan), Markdown, JSON (con validación) y SVG. En pantallas anchas va al lado del editor; en el móvil, en la pestaña «Vista previa».
+- Título, lenguaje (con **Detectar**), etiquetas, favoritos, buscar y filtrar, **Copiar** y **Descargar** con su extensión.
+- **Un JSON por fragmento**: `<tu carpeta>/.kcc/codigo/<id>.json` (los contadores de uso van en `stats.json`). Límite: 500 fragmentos de 200 KB.
+- **Logros de Código**: 5 familias (*Taller de fragmentos*, *Líneas con sentido*, *Políglota*, *Ojo en la vista previa*, *Copia y pega*), los especiales *Trío web* y *Maratón de código*, el título *Artesano del código*, un reto semanal y la *Copa del Artesano*.
+
+## Exportar JSON
+
+- **Cada sección**: el botón ⤓ de la barra superior exporta los datos de la sección abierta (Notas, Prompts, Contactos, Calendario, Etiquetas, Compra, Juegos, Bases, Código, Logros, Portapapeles y Favoritos/álbumes). En **Cuenta → Mis datos (JSON)** están todas en una lista.
+- **Administración → Exportar todos los JSON**: un ZIP comprimido con los JSON de todos los usuarios (`usuarios/<nombre>/…`), los compartidos (`compartido/`), la lista de usuarios sin contraseñas y un `LEEME.json`. No incluye contraseñas, secretos, sesiones ni passkeys, ni los archivos subidos.
+- API: `GET /api/export/:seccion` y `GET /api/admin/export-all` (solo administradores). Código en `lib/exportar.js`.
+
 ## Tamaño del texto
 
 En **Cuenta → Tamaño del texto** puedes aumentar o reducir las letras de toda la aplicación (del 85 % al 140 %, con botones A− / A+, deslizador y «Restablecer»). Se guarda en el dispositivo y se aplica antes de pintar la página. Funciona con un único factor (`--fs`) que multiplica todas las tipografías de `public/css/` y de `index.html`: en CSS nuevo escribe `font-size:calc(13px*var(--fs,1))` en lugar de `13px`. Los campos de texto no bajan de 16 px para que iOS no haga zoom al enfocarlos. El código está en `public/js/textsize.js`.
@@ -1360,6 +1378,8 @@ lib/
   prompts.js         Biblioteca de prompts e imágenes WebP
   games.js           Colección de videojuegos, RAWG opcional y portadas
   bases.js           Bases de datos con columnas propias (un JSON por base)
+  codigo.js          Fragmentos de código (un JSON por fragmento)
+  exportar.js        Exportación de JSON por sección y ZIP completo (administración)
   game.js            Logros, niveles, racha, retos semanales, cosméticos y partidas de Tetris
   comfy.js           Lee metadatos de generación: ComfyUI, Automatic1111 / Forge, JSON y EXIF/XMP
   clip.js            Portapapeles compartido entre dispositivos y destino de «Compartir»

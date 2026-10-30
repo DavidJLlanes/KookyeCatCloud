@@ -25,6 +25,8 @@ const createNotesExtra = require('./lib/notes-extra');
 const createShopping = require('./lib/shopping');
 const createGames = require('./lib/games');
 const createBases = require('./lib/bases');
+const createCodigo = require('./lib/codigo');
+const createExportar = require('./lib/exportar');
 const createVersions = require('./lib/versions');
 const createVault = require('./lib/vault');
 const createShares = require('./lib/shares');
@@ -296,7 +298,8 @@ const alCambiarContenido = (user) => { if (typeof gameMod !== 'undefined' && gam
 const gamesMod = createGames({ express, multer, sharp, userRoot, sendError, registrarActividad, calendar: calendarMod.core, alCambiar: alCambiarContenido });
 const basesMod = createBases({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido });
 // Módulos que aportan recuentos a la gamificación: todo módulo nuevo se añade aquí (ver CLAUDE.md)
-const modulosConLogros = [gamesMod, basesMod];
+const codigoMod = createCodigo({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido });
+const modulosConLogros = [gamesMod, basesMod, codigoMod];
 
 // Versiones de archivos de texto (se crea aquí porque WebDAV y las rutas de archivos la usan)
 const versionsMod = createVersions({
@@ -425,7 +428,7 @@ const jsonMedio = express.json({ limit: '2mb' });
 const jsonGrande = express.json({ limit: '30mb' });
 app.use((req, res, next) => {
   if (req.path === '/api/prompts/import') return jsonGrande(req, res, next);
-  if (/^\/api\/(notes|text|prompts|calendar|labels|clip|shopping)(\/|$)/.test(req.path)) return jsonMedio(req, res, next);
+  if (/^\/api\/(notes|text|prompts|calendar|labels|clip|shopping|codigo)(\/|$)/.test(req.path)) return jsonMedio(req, res, next);
   return jsonPequeno(req, res, next);
 });
 app.use(cookieParser());
@@ -3188,6 +3191,8 @@ app.use('/api/contacts', auth, contactsMod.router);
 app.use('/api/shopping', auth, shoppingMod);
 app.use('/api/games', auth, gamesMod.router);
 app.use('/api/bases', auth, basesMod.router);
+app.use('/api/codigo', auth, codigoMod.router);
+app.use('/api', createExportar({ express, auth, adminOnly, userRoot, dataRoot: DATA_ROOT, loadUsers, ZipArchive, registrarActividad, sendError }).router);
 calendarMod.core.registraOrigen('prompt', (user, id, ev) => promptsMod.core.setCal(user, id, ev));
 calendarMod.core.registraOrigen('game', (user, id, ev) => gamesMod.core.setCal(user, id, ev));
 calendarMod.core.registraOrigen('note', async (user, id, ev) => {

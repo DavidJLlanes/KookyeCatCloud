@@ -79,3 +79,5 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [x] ~~2048 y Breakout con el diseño del Tetris~~ Hecho: `public/js/arcade.js`, endpoint `/api/game/arcade/:juego`, 13 familias + 4 especiales + 3 títulos + 8 retos nuevos, potenciadores por nivel y tarjeta con captura.
 
 - [x] ~~Bases de datos con columnas propias y vistas de tabla y Kanban~~ Hecho: `lib/bases.js`, `public/js/bases.js`, un JSON por base, 5 familias + 2 especiales + título + 2 retos; convención de gamificación en `CLAUDE.md`.
+
+- [x] ~~Módulo Código (editor con colores, números de línea y vista previa) y exportación de JSON por sección y completa~~ Hecho: `lib/codigo.js`, `public/js/codigo.js`, `lib/exportar.js`, `public/js/exportar.js`; 5 familias + 2 especiales + título + reto de Código.
