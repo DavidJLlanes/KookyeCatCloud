@@ -1559,7 +1559,8 @@ public/
   js/app/*.js        Aplicación principal, troceada por áreas (antes un solo app.js): estado, markdown, tema, sesión,
                      navegación, visores, papelera y subida, notas, enlaces, colecciones, administración, cuenta e inicio
   js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, recordatorios vinculados, portapapeles, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
-  css/               Estilos de los módulos
+  css/               Estilos: modules (barra lateral y componentes), calendar, prompts, sistema (versiones, caja fuerte,
+                     passkeys), contacts, complementos (retoques, van los últimos) y uno por módulo (notes, shopping…)
   sw.js, manifest.json  PWA
   audio/             Música del Tetris (CC0) y créditos
   vendor/            Leaflet alojado en local; game-icons.net (iconos de logros)

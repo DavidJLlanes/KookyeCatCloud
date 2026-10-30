@@ -47,10 +47,11 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     const a = await req('GET', '/'); igual(a.s, 200); cierto(a.t.includes('docexport.js'), 'index sin docexport.js');
     igual((await req('GET', '/sw.js')).s, 200); igual((await req('GET', '/js/docexport.js')).s, 200);
   });
-  await prueba('todos los <script> del index existen y están en el service worker', async () => {
+  await prueba('todos los <script> y hojas de estilo del index existen y están en el service worker', async () => {
     const html = (await req('GET', '/')).t, sw = (await req('GET', '/sw.js')).t;
     const srcs = [...html.matchAll(/<script src="([^"]+)"/g)].map(m => m[1].replace(/^\/?/, '/'));
     cierto(srcs.length > 30, 'pocos scripts: ' + srcs.length);
+    srcs.push(...[...html.matchAll(/<link rel="stylesheet" href="(\/[^"]+)"/g)].map(m => m[1]));
     for (const u of srcs) { igual((await req('GET', u)).s, 200, u); cierto(sw.includes("'" + u + "'"), 'falta en sw.js: ' + u); }
   });
   await prueba('sin sesión no se accede', async () => { igual((await req('GET', '/api/files')).s, 401); });
