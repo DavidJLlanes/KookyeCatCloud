@@ -125,6 +125,7 @@
     K.menu(anchor, [
       { label: 'Renombrar base', onClick: renombra },
       { label: 'Exportar CSV', onClick: () => descarga('csv') }, { label: 'Exportar JSON', onClick: () => descarga('json') },
+      { label: 'Copiar o mover a…', onClick: () => K.transferir.abre({ tipo: 'bases', ids: [S.base.id], titulo: S.base.name }, { alTerminar: (r) => { if (r && r.modo === 'mover') { S.base = null; cargaLista(); } } }) },
       '-', { label: 'Eliminar base', danger: true, onClick: eliminar },
     ]);
   }

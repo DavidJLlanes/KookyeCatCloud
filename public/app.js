@@ -913,6 +913,7 @@ function haceArrastrable(node, item) {
     arrastre = state.selection.has(item.rel) ? [...state.selection] : [item.rel];
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', arrastre.join('\n'));
+    e.dataTransfer.setData('application/x-kcc-rutas', JSON.stringify(arrastre));   // para soltar en otra sección (transferir.js)
     node.classList.add('dragging');
   });
   node.addEventListener('dragend', () => {

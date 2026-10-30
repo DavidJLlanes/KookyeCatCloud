@@ -195,3 +195,6 @@
 .tr-item-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
 .tr-item-t strong{overflow-wrap:anywhere;}
 @media (max-width:899px){.tr-host{bottom:calc(96px + var(--safe-bottom,0px));}}
+
+/* Arrastrar archivos sobre la pestaña Código (transferir.js) */
+.tr-soltar{outline:2px dashed var(--accent,#7c8cff);outline-offset:2px;background:color-mix(in srgb,var(--accent,#7c8cff) 18%,transparent)!important;}

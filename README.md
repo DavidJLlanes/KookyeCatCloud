@@ -1218,13 +1218,16 @@ Desde **Código** puedes enviar el proyecto entero, una versión o solo algunos 
 - **Portapapeles**: un texto se guarda como `.txt`; un archivo o una imagen se envía tal cual.
 - **Notas**: cada nota se envía como `.md` (una carpeta envía sus notas dentro de una carpeta). Las imágenes no se incluyen: queda una nota «imagen no incluida» en su lugar. Los enlaces internos (`kcc:`) se convierten en texto plano. Al mover, la nota se quita de Notas y se puede deshacer 1 minuto.
 - **Contactos**: se envían como vCard (`.vcf`) con su foto. Al mover, los vínculos con el calendario no se restauran al deshacer.
+- **Bases**: cada base se envía como CSV (separado por «;», abre bien en Excel).
+- **Juegos**: los juegos elegidos van en un único `juegos.csv`. Al mover, sus vínculos con el calendario se quitan y no se restauran al deshacer.
+- **Arrastrar y soltar (escritorio)**: arrastra archivos de **Archivos** a la pestaña **Código** y se abre el envío con un proyecto nuevo. La pestaña se resalta mientras pasas por encima.
 
 - **Previsualización**: antes de enviar se ven los archivos, el tamaño y los avisos (por ejemplo, que las fechas y los favoritos no se conservan en Código).
 - **Deshacer durante 1 minuto**: tras cada envío aparece un aviso con cuenta atrás y el botón **Deshacer**. Pasado ese minuto ya no se puede deshacer.
 - **Historial**: en el menú ⋯ de Archivos y de un proyecto, **Historial de envíos** muestra los últimos 50 envíos, con su estado y el botón para deshacer si todavía se puede.
 - **Límites**: como en Código, máximo 1000 archivos por envío y 50 MB por proyecto. No se envían carpetas compartidas: cópialas a tus archivos antes.
 - **Mover desde Código**: solo el proyecto entero (sin versión ni selección). Lo demás se puede copiar.
-- **Pendiente**: Bases y Juegos (CSV) y arrastrar y soltar en escritorio; Código → Código todavía no.
+- **Pendiente**: Código → Código todavía no.
 - **Logro «Mudanzas»**: cada envío cuenta para la familia del mismo nombre.
 
 ## Guardar en la galería (iPhone y Android)

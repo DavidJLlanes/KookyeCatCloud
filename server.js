@@ -307,6 +307,8 @@ const transferMod = createTransferir({ express, userRoot, resuelve: (user, r, wr
     get portapapeles() { return clipMod.core; },
     get contactos() { return contactsMod.core; },
     get notas() { return notasFuente; },
+    get bases() { return basesMod.core; },
+    get juegos() { return gamesMod.core; },
   } });
 const modulosConLogros = [gamesMod, basesMod, codigoMod, transferMod];
 

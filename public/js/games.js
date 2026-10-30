@@ -272,7 +272,8 @@
     rapidas.append(
       btn('Sesión', 'i-plus', () => { m.close(); setTimeout(() => sesion(g), 0); }, 'btn sm'),
       btn('Tarjeta', 'i-star', () => { m.close(); setTimeout(() => tarjetaJuego(g), 0); }, 'btn sm'),
-      btn('Carátula', 'i-image', () => subePortada(g), 'btn sm'));
+      btn('Carátula', 'i-image', () => subePortada(g), 'btn sm'),
+      btn('Copiar o mover a…', 'i-move', () => { m.close(); setTimeout(() => K.transferir.abre({ tipo: 'juegos', ids: [g.id], titulo: g.title }, { alTerminar: () => load() }), 0); }, 'btn sm'));
     if (S.rawg) rapidas.appendChild(btn('Buscar en RAWG', 'i-search', () => { m.close(); setTimeout(() => vincula(g), 0); }, 'btn sm'));
     w.appendChild(rapidas);
     const m = K.modal({

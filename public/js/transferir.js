@@ -96,6 +96,7 @@
     dsel.addEventListener('change', () => { pintaCampos(); ver(); });
     [inCarpeta, inNombre, inSub].forEach(i => i.addEventListener('input', K.debounce(ver, 300)));
     selProy.addEventListener('change', ver);
+    if (opts.destino) dsel.value = opts.destino;
     pintaCampos();
 
     const titulo = origen.tipo === 'archivos' ? `Enviar ${origen.rutas.length > 1 ? origen.rutas.length + ' elementos' : '«' + origen.rutas[0].split('/').pop() + '»'}`
@@ -136,6 +137,28 @@
     K.modal({ title: 'Historial de envíos', sub: 'Se guardan los últimos 50. Solo se puede deshacer durante 1 minuto.', content: w, actions: [{ label: 'Cerrar' }] });
     pinta();
   }
+
+  // Arrastrar archivos de Archivos a la pestaña «Código» → proyecto nuevo con esos archivos
+  const TIPO_RUTAS = 'application/x-kcc-rutas';
+  const llevaRutas = (e) => !!e.dataTransfer && Array.from(e.dataTransfer.types || []).includes(TIPO_RUTAS);
+  function enganchaCodigo() {
+    document.querySelectorAll('[data-view="codigo"]').forEach(n => {
+      n.addEventListener('dragover', e => {
+        if (!llevaRutas(e)) return;
+        e.preventDefault(); e.dataTransfer.dropEffect = 'move'; n.classList.add('tr-soltar');
+      });
+      n.addEventListener('dragleave', () => n.classList.remove('tr-soltar'));
+      n.addEventListener('drop', e => {
+        n.classList.remove('tr-soltar');
+        if (!llevaRutas(e)) return;
+        e.preventDefault(); e.stopPropagation();
+        let rutas = []; try { rutas = JSON.parse(e.dataTransfer.getData(TIPO_RUTAS)) || []; } catch { rutas = []; }
+        if (!rutas.length) return;
+        abre({ tipo: 'archivos', rutas }, { carpeta: state.path || '', destino: 'codigo-nuevo', alTerminar: () => refresh() });
+      });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enganchaCodigo); else enganchaCodigo();
 
   K.transferir = { abre, historial };
 })();
