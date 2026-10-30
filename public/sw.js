@@ -28,6 +28,21 @@ self.addEventListener('fetch', e => {
   // Rutas dinámicas que nunca se cachean: API, feed iCal, WebDAV y páginas públicas de enlaces
   if (['/api/', '/ical/', '/dav/', '/s/', '/u/', '/audio/'].some(p => url.pathname.startsWith(BASE + p))) return;
 
+  // La página principal va primero a la red (con 2,5 s de margen) y cae a la caché sin conexión:
+  // así una versión nueva se ve al abrir y no se enseña un instante la anterior.
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      new Promise((resolve) => {
+        const t = setTimeout(() => caches.match(e.request).then(c => c && resolve(c)), 2500);
+        fetch(e.request).then(res => {
+          clearTimeout(t);
+          if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }
+          resolve(res);
+        }).catch(() => { clearTimeout(t); caches.match(e.request).then(c => c ? resolve(c) : caches.match(BASE + '/').then(r => resolve(r || Response.error()))); });
+      })
+    );
+    return;
+  }
   // Stale-while-revalidate: responde al instante desde caché y actualiza por detrás,
   // guardando lo nuevo para que la app siga abriendo sin red.
   e.respondWith(
