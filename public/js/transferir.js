@@ -28,7 +28,7 @@
   }
 
   // Diálogo «Enviar a…»
-  // origen: { tipo:'archivos', rutas:[…] } | { tipo:'codigo', id, rutas?, vid? }
+  // origen: { tipo:'archivos', rutas:[…] } | { tipo:'codigo', id, rutas?, vid? } | { tipo:'portapapeles'|'notas'|'contactos', ids:[…], titulo? }
   // opts:   { carpeta (Archivos), alTerminar(r) }
   async function abre(origen, opts = {}) {
     const w = el('div', 'tr-form');
@@ -43,21 +43,22 @@
     w.appendChild(modos);
 
     const dsel = el('select'); dsel.setAttribute('aria-label', 'Destino');
-    const opciones = origen.tipo === 'archivos'
-      ? [['archivos', 'Archivos · una carpeta'], ['codigo-nuevo', 'Código · proyecto nuevo'], ['codigo-id', 'Código · proyecto existente']]
-      : [['archivos', 'Archivos · una carpeta']];
+    const opciones = origen.tipo === 'codigo'
+      ? [['archivos', 'Archivos · una carpeta']]
+      : [['archivos', 'Archivos · una carpeta'], ['codigo-nuevo', 'Código · proyecto nuevo'], ['codigo-id', 'Código · proyecto existente']];
     opciones.forEach(([k, n]) => { const o = el('option', null, n); o.value = k; dsel.appendChild(o); });
     w.appendChild(dsel);
 
     const campos = el('div', 'tr-campos'); w.appendChild(campos);
     const inCarpeta = el('input'); inCarpeta.placeholder = 'Carpeta destino (vacío = raíz)'; inCarpeta.value = opts.carpeta || ''; inCarpeta.setAttribute('aria-label', 'Carpeta destino');
-    const inNombre = el('input'); inNombre.placeholder = 'Nombre del proyecto'; inNombre.maxLength = 120; inNombre.value = origen.tipo === 'archivos' ? (origen.rutas[0] || '').split('/').pop().replace(/\.[^.]+$/, '') : ''; inNombre.setAttribute('aria-label', 'Nombre del proyecto');
+    const defNombre = { portapapeles: 'Portapapeles', notas: 'Notas', contactos: 'Contactos' }[origen.tipo] || 'Proyecto desde Archivos';
+    const inNombre = el('input'); inNombre.placeholder = 'Nombre del proyecto'; inNombre.maxLength = 120; inNombre.value = origen.tipo === 'archivos' ? (origen.rutas[0] || '').split('/').pop().replace(/\.[^.]+$/, '') : defNombre; inNombre.setAttribute('aria-label', 'Nombre del proyecto');
     const selProy = el('select'); selProy.setAttribute('aria-label', 'Proyecto');
     const inSub = el('input'); inSub.placeholder = 'Carpeta dentro del proyecto (opcional)'; inSub.setAttribute('aria-label', 'Carpeta dentro del proyecto');
     const pv = el('div', 'tr-previa k-muted', 'Calculando…'); w.appendChild(pv);
 
     let proyectos = [];
-    if (origen.tipo === 'archivos') {
+    if (origen.tipo !== 'codigo') {
       try { proyectos = (await K.get('/api/codigo')).items; } catch { proyectos = []; }
       proyectos.forEach(p => { const o = el('option', null, p.nombre); o.value = p.id; selProy.appendChild(o); });
       if (!proyectos.length) { const o = el('option', null, 'No tienes proyectos todavía'); o.value = ''; selProy.appendChild(o); }
@@ -69,10 +70,12 @@
       else campos.append(selProy, inSub);
     };
     const cuerpo = () => {
-      const o = origen.tipo === 'archivos' ? { tipo: 'archivos', rutas: origen.rutas } : { tipo: 'codigo', id: origen.id, rutas: origen.rutas || undefined, vid: origen.vid || undefined };
+      const o = origen.tipo === 'archivos' ? { tipo: 'archivos', rutas: origen.rutas }
+        : origen.tipo === 'codigo' ? { tipo: 'codigo', id: origen.id, rutas: origen.rutas || undefined, vid: origen.vid || undefined }
+        : { tipo: origen.tipo, ids: origen.ids };
       let d;
       if (dsel.value === 'archivos') d = { tipo: 'archivos', carpeta: inCarpeta.value.trim() };
-      else if (dsel.value === 'codigo-nuevo') d = { tipo: 'codigo', nuevo: true, nombre: inNombre.value.trim() || 'Proyecto desde Archivos' };
+      else if (dsel.value === 'codigo-nuevo') d = { tipo: 'codigo', nuevo: true, nombre: inNombre.value.trim() || defNombre };
       else d = { tipo: 'codigo', id: selProy.value, carpeta: inSub.value.trim() };
       return { origen: o, destino: d, modo };
     };
@@ -95,7 +98,10 @@
     selProy.addEventListener('change', ver);
     pintaCampos();
 
-    const h = K.modal({ title: origen.tipo === 'archivos' ? `Enviar ${origen.rutas.length > 1 ? origen.rutas.length + ' elementos' : '«' + origen.rutas[0].split('/').pop() + '»'}` : 'Enviar a Archivos', content: w, actions: [
+    const titulo = origen.tipo === 'archivos' ? `Enviar ${origen.rutas.length > 1 ? origen.rutas.length + ' elementos' : '«' + origen.rutas[0].split('/').pop() + '»'}`
+      : origen.tipo === 'codigo' ? 'Enviar a Archivos'
+      : `Enviar ${origen.ids.length > 1 ? origen.ids.length + ' elementos' : '«' + (origen.titulo || origen.tipo) + '»'}`;
+    const h = K.modal({ title: titulo, content: w, actions: [
       { label: 'Cancelar' },
       { label: 'Enviar', primary: true, onClick: async () => {
         try {

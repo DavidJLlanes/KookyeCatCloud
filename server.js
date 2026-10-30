@@ -301,7 +301,13 @@ const basesMod = createBases({ express, userRoot, sendError, registrarActividad,
 // Módulos que aportan recuentos a la gamificación: todo módulo nuevo se añade aquí (ver CLAUDE.md)
 const codigoMod = createCodigo({ express, multer, ZipArchive, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido });
 // Enviar entre secciones (Archivos ⇄ Código): copiar o mover, con deshacer de 1 minuto
-const transferMod = createTransferir({ express, userRoot, resuelve: (user, r, write) => resolveFor(user, r, { write }), esCompartida: (r) => !!sharesMod.parse(r), sendError, registrarActividad, alCambiar: alCambiarContenido, codigo: codigoMod.core });
+const transferMod = createTransferir({ express, userRoot, resuelve: (user, r, write) => resolveFor(user, r, { write }), esCompartida: (r) => !!sharesMod.parse(r), sendError, registrarActividad, alCambiar: alCambiarContenido, codigo: codigoMod.core,
+  // Secciones que también pueden enviar: getters porque se crean más abajo (clipMod, contactsMod, notas)
+  fuentes: {
+    get portapapeles() { return clipMod.core; },
+    get contactos() { return contactsMod.core; },
+    get notas() { return notasFuente; },
+  } });
 const modulosConLogros = [gamesMod, basesMod, codigoMod, transferMod];
 
 // Versiones de archivos de texto (se crea aquí porque WebDAV y las rutas de archivos la usan)
@@ -2820,6 +2826,67 @@ function aplicaDecoracion(item, b) {
     item.labels = [...new Set((Array.isArray(b.labels) ? b.labels : []).map(x => String(x).slice(0, 40)))].slice(0, 30);
   }
 }
+
+// Notas como origen de «Enviar a…» (lib/transferir.js): cada nota va como .md; las imágenes no se incluyen
+const nombreNotaArchivo = (t) => String(t || '').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '_').replace(/^\.+/, '').trim().slice(0, 100) || 'sin título';
+function notasElegidas(data, ids) {
+  const sel = [], vistos = new Set();
+  for (const id of ids) {
+    const it = data.items.find(i => i.id === id);
+    if (!it) continue;
+    const grupo = it.type === 'folder' ? [it, ...descendientes(data.items, it.id)] : [it];
+    for (const g of grupo) if (!vistos.has(g.id)) { vistos.add(g.id); sel.push(g); }
+  }
+  return sel;
+}
+const notasFuente = {
+  async exporta(user, ids) {
+    const data = await readNotes(user);
+    const sel = notasElegidas(data, ids);
+    const vistos = new Set(sel.map(i => i.id));
+    const usadas = new Set(), out = [];
+    for (const it of sel.filter(i => i.type === 'note')) {
+      // Carpetas de la selección por las que pasa la nota (relativas a lo enviado)
+      const dirs = [];
+      for (let p = it.parent; p && vistos.has(p);) {
+        const f = data.items.find(x => x.id === p); if (!f) break;
+        dirs.unshift(nombreNotaArchivo(f.title)); p = f.parent;
+      }
+      const pre = dirs.length ? dirs.join('/') + '/' : '';
+      const base = nombreNotaArchivo(it.title);
+      let nombre = `${pre}${base}.md`, k = 2;
+      while (usadas.has(nombre.toLowerCase())) nombre = `${pre}${base} (${k++}).md`;
+      usadas.add(nombre.toLowerCase());
+      let body = '';
+      try { body = await fsp.readFile(notaFile(user, it.id), 'utf8'); } catch { /* nota sin cuerpo */ }
+      const md = body
+        .replace(/!\[([^\]]*)\]\(kcc:file\/[^)\s]+\)/g, (_, alt) => `*[imagen no incluida${alt ? ': ' + alt : ''}]*`)
+        .replace(/\[([^\]]*)\]\(kcc:[^)\s]+\)/g, '$1');
+      out.push({ ruta: nombre, buf: Buffer.from(`# ${it.title || 'Sin título'}\n\n${md}\n`, 'utf8') });
+    }
+    return out;
+  },
+  // Quita las notas (y las carpetas con su contenido); el cuerpo se aparta a «stg» hasta que caduque el deshacer
+  async quita(user, ids, stg) {
+    const data = await readNotes(user);
+    const snap = notasElegidas(data, ids);
+    for (const it of snap) {
+      if (it.type === 'note') { await fsp.mkdir(stg, { recursive: true }); await fsp.rename(notaFile(user, it.id), path.join(stg, it.id + '.md')).catch(() => {}); }
+      if (it.cal) await calendarMod.core.quitaOrigen(user, 'note', it.id).catch(() => {});
+    }
+    const quitar = new Set(snap.map(i => i.id));
+    data.items = data.items.filter(i => !quitar.has(i.id));
+    await writeNotes(user, data);
+    return snap;
+  },
+  async restaura(user, snap, stg) {
+    for (const it of snap) if (it.type === 'note') await fsp.rename(path.join(stg, it.id + '.md'), notaFile(user, it.id)).catch(() => {});
+    const data = await readNotes(user);
+    const ya = new Set(data.items.map(i => i.id));
+    data.items.push(...snap.filter(i => !ya.has(i.id)));
+    await writeNotes(user, data);
+  },
+};
 
 app.get('/api/notes', auth, async (req, res) => {
   try { res.json(await readNotes(req.user)); }

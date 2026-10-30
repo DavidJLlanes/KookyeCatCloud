@@ -309,6 +309,7 @@
       { label: c.favorite ? 'Quitar de favoritos' : 'Marcar como favorito', icon: c.favorite ? 'i-star-fill' : 'i-star', onClick: async () => { m.close(); await alternaFav(c); } },
       { label: 'Copiar nombre', icon: 'i-copy', onClick: async () => { K.toast((await K.copy(nombre(c))) ? 'Copiado' : 'No se pudo copiar'); } },
       { label: 'Exportar (.vcf)', icon: 'i-download', onClick: () => { location.href = BASE + '/api/contacts/export?ids=' + c.id; } },
+      { label: 'Copiar o mover a…', icon: 'i-move', onClick: () => { m.close(); K.transferir.abre({ tipo: 'contactos', ids: [c.id], titulo: nombre(c) }, { alTerminar: () => load() }); } },
       '-', { label: 'Eliminar contacto', icon: 'i-trash', danger: true, onClick: () => elimina(c, m) },
     ], { align: 'end' }));
     acts.append(ed, mo);

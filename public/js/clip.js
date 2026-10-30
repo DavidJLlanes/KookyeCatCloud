@@ -117,6 +117,7 @@
       pie.appendChild(btn('i-download', 'Descargar', () => { const a = el('a'); a.href = `${BASE}/api/clip/${i.id}/file`; document.body.appendChild(a); a.click(); a.remove(); }, 'primary'));
       pie.appendChild(btn('i-folder-plus', 'Guardar en Archivos', () => accion(async () => { const r = await K.post(`/api/clip/${i.id}/save`, {}); K.toast(`Guardado en ${r.path}`); })));
     }
+    pie.appendChild(btn('i-move', 'Copiar o mover a…', () => K.transferir.abre({ tipo: 'portapapeles', ids: [i.id], titulo: i.type === 'text' ? 'texto del portapapeles' : i.name }, { alTerminar: () => load(true) })));
     pie.appendChild(btn(i.pinned ? 'i-pin-fill' : 'i-pin', i.pinned ? 'Dejar de fijar' : 'Fijar (no caduca)', () => accion(() => K.put('/api/clip/' + i.id, { pinned: !i.pinned }))));
     pie.appendChild(btn('i-trash', 'Borrar', () => accion(() => K.del('/api/clip/' + i.id))));
     c.appendChild(pie);

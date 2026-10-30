@@ -290,10 +290,15 @@
   }
 
   /* ============ Menús y botones ============ */
+  // Enviar una nota (o una carpeta con su contenido) a Archivos o Código
+  function enviaNota(it) {
+    K.transferir.abre({ tipo: 'notas', ids: [it.id], titulo: it.title || 'Nota' }, { alTerminar: () => loadNotes(true) });
+  }
   // Menú contextual del árbol de notas (app.js llama a este gancho)
   window.KCC.noteMenu = (menu, item) => {
     opcionCtx(menu, 'i-download', item.type === 'folder' ? 'Exportar carpeta (.zip de Markdown)' : 'Exportar a Markdown', () => exportMd(item));
     opcionCtx(menu, 'i-doc', 'Exportar a PDF…', () => exportPdf(item));
+    opcionCtx(menu, 'i-move', 'Copiar o mover a…', () => enviaNota(item));
     if (item.type === 'note') opcionCtx(menu, 'i-stack', 'Guardar como plantilla…', () => guardaPlantilla(item));
   };
 
@@ -313,6 +318,7 @@
         K.menu(b, [
           { label: 'Exportar a Markdown', icon: 'i-download', onClick: () => exportMd(it) },
           { label: 'Exportar a PDF…', icon: 'i-doc', onClick: () => exportPdf(it) },
+          { label: 'Copiar o mover a…', icon: 'i-move', onClick: () => enviaNota(it) },
           '-', { label: 'Guardar como plantilla…', icon: 'i-stack', onClick: () => guardaPlantilla(it) },
         ], { align: 'end' });
       });
