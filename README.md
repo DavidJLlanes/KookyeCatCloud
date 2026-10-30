@@ -874,6 +874,7 @@ Editor estilo Notion sobre las mismas carpetas y el mismo autoguardado de siempr
 - **Bloques**: texto, títulos 1-3, listas con viñetas, numeradas y de tareas (anidables con
   Tab), citas, código, avisos de colores y separadores. Escribe **`/`** para insertar, o usa
   atajos de Markdown (`# `, `- `, `1. `, `[] `, `> `, tres comillas invertidas, `---`).
+- **Formato en móvil y táctil**: al seleccionar texto aparece la barra de formato (botones de 44 px, debajo de la selección para no chocar con el menú nativo) con negrita, cursiva, tachado, código, resaltado, enlace, Título 1-3, viñetas y tareas. Sin selección, escribe `/` para insertar bloques.
 - **Formato**: negrita, cursiva, tachado, resaltado, código y enlaces (barra flotante al
   seleccionar, o Ctrl+B / I / E / K). Arrastra el asa ⠿ para reordenar bloques.
 - **Enlaces internos**: `/Enlazar un prompt` y `/Enlazar una nota` insertan un enlace que

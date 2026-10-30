@@ -641,7 +641,7 @@
       const a = document.createElement('b'); a.textContent = s[1]; a.style.fontWeight = '600';
       const d = document.createElement('small'); d.textContent = s[2]; d.style.cssText = 'color:var(--faint);font-size:11.5px';
       tx.append(a, d); b.append(ic, tx);
-      b.addEventListener('mousedown', (ev) => { ev.preventDefault(); applySlash(s[0]); });
+      b.addEventListener('pointerdown', (ev) => { ev.preventDefault(); applySlash(s[0]); });
       slash.appendChild(b);
     });
     const r = getSelection().rangeCount ? getSelection().getRangeAt(0).getBoundingClientRect() : contentOf(w).getBoundingClientRect();
@@ -768,7 +768,7 @@
       const a = document.createElement('b'); a.textContent = it.titulo; a.style.cssText = 'font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
       const d = document.createElement('small'); d.textContent = it.sub; d.style.cssText = 'color:var(--faint);font-size:11.5px';
       tx.append(a, d); b.appendChild(tx);
-      b.addEventListener('mousedown', (ev) => { ev.preventDefault(); aplicaMencion(it); });
+      b.addEventListener('pointerdown', (ev) => { ev.preventDefault(); aplicaMencion(it); });
       mention.appendChild(b);
     });
     const r = getSelection().rangeCount ? getSelection().getRangeAt(0).getBoundingClientRect() : contentOf(w).getBoundingClientRect();
@@ -810,18 +810,24 @@
       bar = document.createElement('div'); bar.className = 'k-pop nb-bar'; bar.style.padding = '4px';
       const defs = [['B', 'Negrita (Ctrl+B)', () => { document.execCommand('bold'); }], ['I', 'Cursiva (Ctrl+I)', () => { document.execCommand('italic'); }],
         ['S', 'Tachado', () => { document.execCommand('strikeThrough'); }], ['</>', 'Código (Ctrl+E)', () => toggleTag('code')],
-        ['▮', 'Resaltar', () => toggleTag('mark')], ['🔗', 'Enlace (Ctrl+K)', () => linkSelection()]];
+        ['▮', 'Resaltar', () => toggleTag('mark')], ['🔗', 'Enlace (Ctrl+K)', () => linkSelection()],
+        ['H1', 'Título 1', () => setType(blockOf(getSelection().anchorNode), blockOf(getSelection().anchorNode).dataset.t === 'h1' ? 'p' : 'h1')],
+        ['H2', 'Título 2', () => setType(blockOf(getSelection().anchorNode), blockOf(getSelection().anchorNode).dataset.t === 'h2' ? 'p' : 'h2')],
+        ['H3', 'Título 3', () => setType(blockOf(getSelection().anchorNode), blockOf(getSelection().anchorNode).dataset.t === 'h3' ? 'p' : 'h3')],
+        ['•', 'Lista con viñetas', () => setType(blockOf(getSelection().anchorNode), 'ul')], ['☑', 'Lista de tareas', () => setType(blockOf(getSelection().anchorNode), 'todo')]];
       defs.forEach(([l, t, f]) => {
         const b = document.createElement('button'); b.type = 'button'; b.className = 'nb-bar-btn'; b.title = t; b.textContent = l;
         if (l === 'B') b.style.fontWeight = '800'; if (l === 'I') b.style.fontStyle = 'italic'; if (l === 'S') b.style.textDecoration = 'line-through';
-        b.addEventListener('mousedown', (e) => { e.preventDefault(); f(); change(); setTimeout(showBar, 0); });
+        b.addEventListener('pointerdown', (e) => { e.preventDefault(); try { f(); } catch {} change(); setTimeout(showBar, 0); });
         bar.appendChild(b);
       });
       document.body.appendChild(bar);
     }
     const r = sel.getRangeAt(0).getBoundingClientRect();
     bar.style.left = Math.max(8, Math.min(r.left + r.width / 2 - bar.offsetWidth / 2, innerWidth - bar.offsetWidth - 8)) + 'px';
-    bar.style.top = Math.max(8, r.top - bar.offsetHeight - 8) + 'px';
+    const tactil = matchMedia('(pointer:coarse)').matches;
+    // En táctil el menú nativo de copiar/pegar sale encima de la selección: la barra va debajo
+    bar.style.top = (tactil ? Math.min(innerHeight - bar.offsetHeight - 8, r.bottom + 34) : Math.max(8, r.top - bar.offsetHeight - 8)) + 'px';
   }
   function hideBar() { if (bar) { bar.remove(); bar = null; } }
   function toggleTag(tag) {

@@ -111,3 +111,6 @@
 .nrow.sel-mode .cal-check{margin-right:6px;}
 .nrow.is-sel{background:var(--brand-soft);}
 #btn-notes-select.on{color:var(--brand);}
+
+.nb-bar{flex-wrap:wrap;max-width:min(94vw,420px);}
+@media (pointer:coarse){.nb-bar-btn{min-width:44px;height:44px;font-size:15px;}}
