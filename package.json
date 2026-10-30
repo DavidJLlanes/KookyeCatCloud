@@ -6,6 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "test": "node tests/smoke.js",
     "check": "node --check server.js && node --check webdav.js && node -e \"require('fs').readdirSync('lib').forEach(f=>require('child_process').execFileSync('node',['--check','lib/'+f]))\""
   },
   "dependencies": {
