@@ -65,6 +65,17 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     cierto((await req('GET', '/api/notes/' + notaId + '/export')).s === 200, 'export md');
     cierto((await req('DELETE', '/api/notes/' + notaId)).s < 300, 'borrar');
   });
+  await prueba('notas: carpeta, papelera, restaurar y borrado múltiple', async () => {
+    const f = await req('POST', '/api/notes', { type: 'folder', title: 'Carpeta' }); igual(f.s, 200);
+    const n = await req('POST', '/api/notes', { type: 'note', title: 'Dentro', parent: f.j.item.id, body: 'palabraunica' }); igual(n.s, 200);
+    igual((await req('DELETE', '/api/notes/' + f.j.item.id)).j.borrados, 2);
+    const t = await req('GET', '/api/notes-trash'); cierto(t.j.items.filter(x => x.grupo === f.j.item.id).length === 2, 'rama en papelera');
+    igual((await req('POST', '/api/notes-trash/restore', { id: f.j.item.id })).j.restaurados, 2);
+    cierto((await req('GET', '/api/notes/' + n.j.item.id)).j.body === 'palabraunica', 'cuerpo restaurado');
+    igual((await req('POST', '/api/notes-bulk-delete', { ids: [f.j.item.id] })).j.borrados, 2);
+    igual((await req('DELETE', '/api/notes-trash')).s, 200);
+    igual((await req('GET', '/api/notes-trash')).j.items.length, 0, 'papelera vacía');
+  });
   await prueba('contactos: crear y listar', async () => {
     igual((await req('POST', '/api/contacts', { first: 'Ana', last: 'Prueba', emails: [{ value: 'a@b.es' }] })).s, 200);
     cierto(JSON.stringify((await req('GET', '/api/contacts')).j).includes('Prueba'), 'no aparece');
