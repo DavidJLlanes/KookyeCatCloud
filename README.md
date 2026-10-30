@@ -1203,6 +1203,14 @@ location = /cloud/api/events {
   Va antes del `location` general de la app. Sin él, la app funciona igual, pero los avisos llegan
   tarde o no llegan.
 
+## Guardar en la galería (iPhone y Android)
+
+En el móvil, las imágenes de Archivos y Fotos tienen **Guardar en galería** (en el menú ⋯ y en el visor, con el icono de imagen). Abre la hoja de compartir del sistema, donde eliges **Guardar imagen** en iPhone o **Galería / Fotos** en Android, así la foto acaba en el carrete y no en la carpeta de descargas.
+
+- Los HEIC del iPhone se convierten a JPG (con fecha y ubicación) antes de guardarlos.
+- En PC no hay hoja de compartir con imágenes, así que **Guardar en galería** no aparece y se usa **Descargar**.
+- En iPhone, si la hoja no se abre a la primera (el navegador exige un toque directo), la imagen queda preparada y el siguiente toque la abre.
+
 ## Descargar como ZIP
 
 `GET /api/zip?p=ruta&p=otra` empaqueta al vuelo carpetas enteras o una selección, hasta

@@ -981,6 +981,7 @@ function abrirCtx(x, y, item) {
         isVideo(item.name) ? 'Reproducir' : isAudio(item.name) ? 'Escuchar' : isDoc(item.name) ? 'Abrir' : 'Ver imagen',
         () => openLightbox(state.viewables.indexOf(item)));
       if (!item.isDir) opcionCtx(menu, 'i-download', 'Descargar', () => downloadRel(item.rel));
+      if (!item.isDir && isImage(item.name) && esMovil()) opcionCtx(menu, 'i-image', 'Guardar en galería', () => guardaEnGaleria(item.rel));
     } else {
       opcionCtx(menu, 'i-download', 'Descargar', bulkDownload);
     }
@@ -1232,6 +1233,37 @@ function selectedItems() {
   return state.items.filter(i => state.selection.has(i.rel));
 }
 
+// Guardar en la galería del móvil: se abre la hoja de compartir del sistema (iPhone «Guardar imagen»,
+// Android «Galería» / «Fotos»). En PC no hay hoja con archivos, así que se descarga como siempre.
+// En iPhone la hoja solo se abre con un toque directo: si la imagen tarda en llegar, se guarda y
+// el siguiente toque la abre sin volver a descargarla.
+const galeriaCache = new Map();
+function esMovil() {
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
+}
+async function guardaEnGaleria(rel) {
+  const nombre = rel.split('/').pop();
+  if (!esMovil() || !navigator.canShare) return downloadRel(rel);
+  try {
+    let file = galeriaCache.get(rel);
+    if (!file) {
+      const heic = /\.(heic|heif)$/i.test(nombre);
+      const r = await fetch(BASE + '/api/download?path=' + qs(rel) + (heic ? '&as=jpg' : ''), { credentials: 'same-origin' });
+      if (!r.ok) throw new Error('No se pudo preparar la imagen');
+      const blob = await r.blob();
+      const nuevo = heic ? nombre.replace(/\.(heic|heif)$/i, '.jpg') : nombre;
+      const tipos = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', avif: 'image/avif', bmp: 'image/bmp' };
+      file = new File([blob], nuevo, { type: tipos[nuevo.split('.').pop().toLowerCase()] || 'image/jpeg' });
+      galeriaCache.set(rel, file);
+    }
+    if (!navigator.canShare({ files: [file] })) { galeriaCache.delete(rel); return downloadRel(rel); }
+    await navigator.share({ files: [file], title: file.name });
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+    if (e && e.name === 'NotAllowedError') return K.toast('Pulsa otra vez «Guardar en galería»');
+    K.fail(e);
+  }
+}
 function downloadRel(rel) {
   const a = document.createElement('a');
   a.href = BASE + '/api/download?path=' + qs(rel);
@@ -1399,6 +1431,7 @@ function paintLightbox() {
   // Las hojas no se abren en pestaña: no hay PDF que enseñar, se pintan aquí
   $('lb-open').hidden = !(isPdf(item.name) || (isOffice(item.name) && !isSheet(item.name)));
   $('lb-info').hidden = !isImage(item.name);
+  $('lb-galeria').hidden = !isImage(item.name) || !esMovil();
   $('lb-exif').hidden = true;   // al cambiar de foto se cierra el panel
 
   if (isDoc(item.name)) {
@@ -4060,6 +4093,7 @@ $('btn-agrupar').addEventListener('click', () => {
 $('lb-close').addEventListener('click', closeLightbox);
 $('lb-prev').addEventListener('click', e => { e.stopPropagation(); pararSlideshow(); lbStep(-1); });
 $('lb-next').addEventListener('click', e => { e.stopPropagation(); pararSlideshow(); lbStep(1); });
+$('lb-galeria').addEventListener('click', () => { const item = state.viewables[state.lbIndex]; if (item) guardaEnGaleria(item.rel); });
 $('lb-download').addEventListener('click', () => {
   const item = state.viewables[state.lbIndex];
   if (item) downloadRel(item.rel);
