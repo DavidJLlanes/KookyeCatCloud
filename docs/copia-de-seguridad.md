@@ -15,7 +15,7 @@ sudo systemctl cat kookyecatcloud | grep -i -E "data_dir|EnvironmentFile"
 sudo grep -s "^DATA_DIR" /var/www/djl.com.es/cloud/.env
 ```
 
-Si no aparece nada, usa el valor por defecto: `/data/storage`.
+En esta instalación es `/var/lib/kookyecatcloud` (ahí está la carpeta `.kcc`). Si no aparece nada, localízala con `sudo find / -type d -name .kcc 2>/dev/null` y usa su carpeta padre.
 
 ## 2. Hacer la copia
 
@@ -25,7 +25,7 @@ Cambia `DATA` si tu `DATA_DIR` es otra ruta. Para el servicio unos segundos para
 sudo bash -c '
 set -e
 APP=/var/www/djl.com.es/cloud
-DATA=/data/storage
+DATA=/var/lib/kookyecatcloud
 B=/var/backups/kookyecatcloud/$(date +%F_%H%M)
 mkdir -p "$B"
 systemctl stop kookyecatcloud
@@ -60,7 +60,7 @@ sudo bash -c '
 set -e
 B=/var/backups/kookyecatcloud/<fecha>
 APP=/var/www/djl.com.es/cloud
-DATA=/data/storage
+DATA=/var/lib/kookyecatcloud
 systemctl stop kookyecatcloud
 
 # Guarda lo que haya ahora por si acaso
