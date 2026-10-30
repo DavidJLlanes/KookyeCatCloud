@@ -308,7 +308,7 @@ const modulosConLogros = [gamesMod, basesMod, codigoMod, transferMod];
 
 // Versiones de archivos de texto (se crea aquí porque WebDAV y las rutas de archivos la usan)
 const versionsMod = createVersions({
-  express, auth: (req, res, next) => auth(req, res, next), userRoot, resolveFor, sendError, textMax: Number(process.env.TEXT_MAX || 512 * 1024),
+  express, auth: (req, res, next) => auth(req, res, next), userRoot, resolveFor, sendError, textMax: bytesDeEntorno(process.env.TEXT_MAX, 512 * 1024),
 });
 
 // Passkeys (Face ID, huella, Windows Hello…): entrar sin contraseña. Solo se guardan claves públicas.
@@ -955,7 +955,15 @@ const AUDIO_TYPES = {
 const PREVIEW_TYPES = { ...IMAGE_TYPES, ...HEIC_TYPES, ...VIDEO_TYPES, ...AUDIO_TYPES, '.pdf': 'application/pdf' };
 // Texto plano y código: se devuelven como JSON y el cliente los pinta con textContent
 const TEXT_RE = /\.(txt|md|markdown|csv|tsv|log|json|xml|svg|yml|yaml|ini|conf|cfg|toml|env|js|mjs|cjs|ts|jsx|tsx|css|scss|less|html?|php|py|rb|go|rs|java|kt|c|h|cpp|hpp|cs|sh|bash|zsh|sql|ps1|bat|srt|vtt|gitignore|dockerfile|makefile)$/i;
-const TEXT_MAX = Number(process.env.TEXT_MAX || 512 * 1024);
+// Admite bytes ("524288") o con sufijo ("512KB", "1MB"); si el valor no vale, usa el de por defecto
+// en vez de dejar NaN, que rompía la lectura de cualquier texto.
+function bytesDeEntorno(valor, porDefecto) {
+  const m = /^\s*(\d+(?:[.,]\d+)?)\s*([kmg]?)b?\s*$/i.exec(String(valor ?? ''));
+  if (!m) return porDefecto;
+  const n = Number(m[1].replace(',', '.')) * ({ '': 1, k: 1024, m: 1024 ** 2, g: 1024 ** 3 }[m[2].toLowerCase()]);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : porDefecto;
+}
+const TEXT_MAX = bytesDeEntorno(process.env.TEXT_MAX, 512 * 1024);
 const { OFFICE_RE } = createOffice;
 
 // Mapa de fotos. El servidor de tiles es lo único externo que carga la app, así que
