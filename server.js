@@ -24,6 +24,7 @@ const createContacts = require('./lib/contacts');
 const createNotesExtra = require('./lib/notes-extra');
 const createShopping = require('./lib/shopping');
 const createGames = require('./lib/games');
+const createBases = require('./lib/bases');
 const createVersions = require('./lib/versions');
 const createVault = require('./lib/vault');
 const createShares = require('./lib/shares');
@@ -291,7 +292,11 @@ const promptsMod = createPrompts({
 });
 const contactsMod = createContacts({ express, sharp, userRoot, sendError, registrarActividad, labels: labelsMod, calendar: calendarMod.core });
 const shoppingMod = createShopping({ express, multer, sharp, dataRoot: DATA_ROOT, sendError, registrarActividad });
-const gamesMod = createGames({ express, multer, sharp, userRoot, sendError, registrarActividad, calendar: calendarMod.core });
+const alCambiarContenido = (user) => { if (typeof gameMod !== 'undefined' && gameMod) gameMod.invalida(user); };   // refresca los logros al instante
+const gamesMod = createGames({ express, multer, sharp, userRoot, sendError, registrarActividad, calendar: calendarMod.core, alCambiar: alCambiarContenido });
+const basesMod = createBases({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido });
+// Módulos que aportan recuentos a la gamificación: todo módulo nuevo se añade aquí (ver CLAUDE.md)
+const modulosConLogros = [gamesMod, basesMod];
 
 // Versiones de archivos de texto (se crea aquí porque WebDAV y las rutas de archivos la usan)
 const versionsMod = createVersions({
@@ -353,14 +358,14 @@ async function contarArchivos(user) {
 }
 async function contarContenido(user) {
   const raiz = kccDir(userRoot(user));
-  const [arch, notas, contactos, cal, etq, prompts, juegos] = await Promise.all([
+  const [arch, notas, contactos, cal, etq, prompts, extras] = await Promise.all([
     contarArchivos(user),
     readNotes(user).catch(() => ({ items: [] })),
     readJson(path.join(raiz, 'contacts.json'), { contacts: [] }),
     readJson(path.join(raiz, 'calendar.json'), { events: [] }),
     readJson(path.join(raiz, 'labels.json'), { labels: [] }),
     promptsMod.core.contar(user),
-    gamesMod.core.resumen(user).catch(() => ({})),
+    Promise.all(modulosConLogros.map(m => m.core.resumen(user).catch(() => ({})))).then(l => Object.assign({}, ...l)),
   ]);
   return {
     archivos: arch.archivos, fotos: arch.fotos,
@@ -370,7 +375,7 @@ async function contarContenido(user) {
     etiquetas: (etq.labels || []).length,
     prompts,
     enlaces: loadLinks().filter(l => l.owner === user.username).length,
-    ...juegos,
+    ...extras,
   };
 }
 const gameMod = createGame({ express, userRoot, contar: contarContenido, sendError, registrarActividad });
@@ -3166,6 +3171,7 @@ app.use('/api/game', auth, gameMod.router);
 app.use('/api/contacts', auth, contactsMod.router);
 app.use('/api/shopping', auth, shoppingMod);
 app.use('/api/games', auth, gamesMod.router);
+app.use('/api/bases', auth, basesMod.router);
 calendarMod.core.registraOrigen('prompt', (user, id, ev) => promptsMod.core.setCal(user, id, ev));
 calendarMod.core.registraOrigen('game', (user, id, ev) => gamesMod.core.setCal(user, id, ev));
 calendarMod.core.registraOrigen('note', async (user, id, ev) => {

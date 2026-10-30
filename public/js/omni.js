@@ -23,6 +23,7 @@
     { t: 'Ir a la lista de la compra', i: 'i-cart', f: () => switchTab('shopping') },
     { t: 'Jugar al 2048', i: 'i-g2048', f: () => switchTab('g2048') },
     { t: 'Jugar al Breakout', i: 'i-breakout', f: () => switchTab('breakout') },
+    { t: 'Ir a Bases', i: 'i-table', f: () => switchTab('bases') },
     { t: 'Ir a Juegos', i: 'i-gamepad', f: () => switchTab('games') },
     { t: 'Ir a Calendario', i: 'i-calendar', f: () => switchTab('calendar') },
     { t: 'Ir a Prompts', i: 'i-sparkle', f: () => switchTab('prompts') },

@@ -809,6 +809,20 @@ Pestaña **Juegos** para llevar tu colección: **Próximos**, **Deseados** (list
 
 Retos semanales nuevos: añadir juegos a la colección y registrar horas jugadas.
 
+## Bases
+
+Bases de datos propias al estilo AppFlowy: tú defines las columnas y las miras como **tabla** o como **tablero Kanban**.
+
+- Tipos de columna: texto, número, fecha, casilla, selección, etiquetas (varias opciones con color) y enlace. El tipo no se puede cambiar una vez creada la columna.
+- Plantillas: proyectos, tareas, libros, gastos, clientes o vacía. Hasta 60 bases, 30 columnas y 5000 filas por base.
+- Vistas: cada base puede tener varias (tabla o tablero agrupado por una columna de selección), con orden y un filtro. En el tablero se arrastra con el ratón o se usa el botón ⇄ en el móvil.
+- Edición directa en la tabla; pulsa el lápiz para abrir la ficha de la fila.
+- Exporta a CSV (Excel, con `;`) o JSON, e importa el JSON.
+- **Un JSON por base**: `<tu carpeta>/.kcc/bases/<id>.json`.
+- API: `/api/bases` (lista, crear, esquema, filas, `move`, exportar, importar).
+- **Logros de Bases**: 5 familias (Arquitecto de datos, Registro tras registro, Esquema a medida, Maestro del tablero, Tarea cumplida), 2 especiales (Esquema completo, Gran biblioteca), el título «Arquitecto de datos», 2 retos y la Copa del Arquitecto.
+- Convención para módulos futuros (JSON propio y gamificación obligatoria): ver `CLAUDE.md`.
+
 ## Contactos
 
 Agenda personal al estilo de Google Contacts, en la pestaña **Contactos** (barra lateral en el
