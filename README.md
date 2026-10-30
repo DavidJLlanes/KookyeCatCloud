@@ -105,6 +105,13 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 Licencia [MIT](LICENSE): úsalo, modifícalo o redistribúyelo libremente, con o sin fines
 comerciales, siempre que mantengas el aviso de copyright.
 
+
+### Capturas
+
+![Archivos con carpetas y fotos](docs/capturas/archivos.png)
+
+*Archivos: carpetas, miniaturas de fotos y filtros por tipo. Arrastra para mover y el menú ⋮ aparece en cada elemento.*
+
 ## Instalación
 
 **Requisitos:** Node.js 20.9 o superior y npm. Opcionales: `ffmpeg` (miniaturas de vídeo) y
@@ -533,6 +540,11 @@ color propio por evento.
   Outlook. El token es de 256 bits, se puede regenerar o apagar, y puedes elegir qué calendarios
   incluir. Google actualiza estos enlaces cada cierto número de horas.
 
+
+![Calendario mensual con eventos y tareas](docs/capturas/calendario.png)
+
+*Vista mensual con eventos y tareas sin fecha en la columna izquierda. Cambia entre mes, semana, día y agenda.*
+
 ## Prompts de IA
 
 Biblioteca pensada para guardar muchos prompts (aguanta decenas de miles: el índice vive en
@@ -619,6 +631,11 @@ La ficha se adapta al **tipo** (Imagen, Texto, Código, Vídeo, Audio, Agente, F
   guarda un workflow (formato API) con marcadores `%PROMPT%`, `%NEGATIVE%`, `%SEED%` y
   `%P:parametro%`; en la ficha de un prompt de imagen, **Generar en ComfyUI** añade el resultado
   como imagen del propio prompt. Tiempo máximo: `COMFY_TIMEOUT_S` (240 s por defecto).
+
+
+![Biblioteca de prompts con estados y categorías](docs/capturas/prompts.png)
+
+*Biblioteca de prompts con estado (borrador o listo), categorías y vistas guardadas.*
 
 ## Logros y Tetris
 
@@ -800,6 +817,11 @@ Dos juegos más con el mismo diseño que el Tetris (pestañas **2048** y **Break
 - **Cosméticos**: las skins de piezas colorean también las fichas del 2048 y los ladrillos del Breakout, y los fondos cambian el tablero de los tres juegos.
 - **Antitrampas**: el servidor valida duración, movimientos, ladrillos y puntuación máxima posibles, y exige un tiempo mínimo entre partidas del mismo juego.
 
+
+![Pantalla de logros con nivel, retos y vitrina de trofeos](docs/capturas/logros.png)
+
+*Nivel, retos semanales y vitrina de trofeos. Los logros se desbloquean mientras usas la app.*
+
 ## Juegos
 
 Pestaña **Juegos** para llevar tu colección: **Próximos**, **Deseados** (lista de deseos), **Pendientes** (backlog), **Jugando**, **Jugados** y **Abandonados**.
@@ -844,6 +866,11 @@ Bases de datos propias al estilo AppFlowy: tú defines las columnas y las miras 
 - **Logros de Bases**: 5 familias (Arquitecto de datos, Registro tras registro, Esquema a medida, Maestro del tablero, Tarea cumplida), 2 especiales (Esquema completo, Gran biblioteca), el título «Arquitecto de datos», 2 retos y la Copa del Arquitecto.
 - Convención para módulos futuros (JSON propio y gamificación obligatoria): ver `CLAUDE.md`.
 
+
+![Base Proyectos en vista de tablero](docs/capturas/bases.png)
+
+*Una base con vista de tablero agrupada por estado. Cada tarjeta es una fila editable.*
+
 ## Código
 
 Pestaña **Código**: proyectos al estilo GitHub, con carpetas, archivos, versiones y vista web.
@@ -887,6 +914,11 @@ Pestaña **Código**: proyectos al estilo GitHub, con carpetas, archivos, versio
 
 Nueva dependencia: `fflate` (descompresión de ZIP); tras actualizar hay que ejecutar `npm ci`.
 
+
+![Lista de proyectos de código](docs/capturas/codigo.png)
+
+*Lista de proyectos de código con archivos, versiones y vista web.*
+
 ## Exportar JSON
 
 - **Cada sección**: el botón ⤓ de la barra superior exporta los datos de la sección abierta (Notas, Prompts, Contactos, Calendario, Etiquetas, Compra, Juegos, Bases, Código, Logros, Portapapeles y Favoritos/álbumes). En **Cuenta → Mis datos (JSON)** están todas en una lista.
@@ -902,6 +934,9 @@ En **Cuenta → Apariencia** eliges el tema y el color de acento. Se guardan en 
 - **Color de acento:** azul (por defecto), esmeralda, violeta, ámbar, coral y grafito. Afecta a botones principales, pestañas activas, enlaces y el halo de fondo.
 - Todo sale de variables CSS en `:root` (`--bg`, `--surface*`, `--text`, `--muted`, `--faint`, `--line`, `--ink`, `--b1…b3`, `--accent-*`). Las superposiciones usan `color-mix(in srgb, var(--ink) N%, transparent)`, así se adaptan solas a claro y oscuro.
 - Los visores a pantalla completa (lightbox, juegos y superposiciones sobre fotos) siguen siendo oscuros en todos los temas a propósito.
+
+
+<table><tr><td align="center" width="50%"><img src="docs/capturas/apariencia.png" alt="Apariencia con tema Grafito"><br><sub>Cuenta → Apariencia con el tema Grafito y el acento azul.</sub></td><td align="center" width="50%"><img src="docs/capturas/archivos-claro.png" alt="Archivos con tema Claro"><br><sub>El mismo contenido con el tema Claro.</sub></td></tr></table>
 
 ## Tamaño del texto
 
@@ -934,6 +969,11 @@ API (`/api/contacts`, requiere sesión): `GET /`, `GET /search?q=`, `GET /export
 `POST /import` (cuerpo: texto del `.vcf`, hasta 8 MB), `GET|PUT|DELETE /:id/photo` (el `PUT` recibe la imagen tal cual, hasta 15 MB), `POST /`, `PUT /:id` y `DELETE /:id`.
 Límite de `CONTACTS_LIMIT` contactos por usuario (10000 por defecto).
 
+
+![Lista de contactos con filtros y detalle](docs/capturas/contactos.png)
+
+*Contactos ordenados por letra, con teléfono y correo a la vista y filtros por etiqueta.*
+
 ## Visor con zoom
 
 Las fotos de la galería y las imágenes de muestra de los prompts se abren en un visor a pantalla
@@ -950,6 +990,9 @@ desliza hacia los lados y centra sola la pestaña activa; el resto de botones ti
 mínima de 44 px. La página no se puede ampliar con el pellizco (la interfaz ya se adapta a cada
 pantalla) y los campos de texto usan 16 px para que iOS no haga zoom al enfocarlos; el zoom
 sigue disponible dentro del visor de fotos.
+
+
+<table><tr><td align="center" width="50%"><img src="docs/capturas/movil-archivos.png" alt="Archivos en móvil"><br><sub>Archivos en móvil: carpetas, filtros y miniaturas en cuadrícula.</sub></td><td align="center" width="50%"><img src="docs/capturas/movil-bases.png" alt="Bases en móvil"><br><sub>Bases en móvil: columnas que se desplazan en horizontal.</sub></td></tr></table>
 
 ## Notas (editor de bloques)
 
@@ -984,6 +1027,11 @@ y se restauran con su rama entera; caducan a los mismos `TRASH_TTL_DAYS` que los
 `NOTES_LIMIT` (5000) topa el número de elementos y `NOTE_MAX_CHARS` (500 000) el tamaño de una
 nota. Las rutas de notas, prompts y calendario aceptan hasta 2 MB de cuerpo (30 MB la
 importación de prompts), frente a los 100 kB del resto de la API.
+
+
+![Editor de notas con la lista a la izquierda](docs/capturas/notas.png)
+
+*Lista de notas a la izquierda y editor a la derecha, con barra de formato y datos de la nota.*
 
 ## Huella y Face ID (passkeys)
 
