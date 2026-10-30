@@ -187,10 +187,27 @@
     const b = btn('', 'i-dots', () => {
       const it = [];
       if (carpeta) it.push({ label: 'Nuevo archivo aquí', icon: 'i-plus', onClick: () => nuevoArchivo(ruta) }, { label: 'Nueva carpeta aquí', icon: 'i-folder-plus', onClick: () => nuevaCarpeta(ruta) }, { label: 'Subir aquí…', icon: 'i-upload', onClick: () => menuSubir(b, ruta) });
-      else it.push({ label: 'Descargar', icon: 'i-download', onClick: () => bajar(url('/archivo?' + q({ ruta, descargar: 1 })), nombreDe(ruta)) });
+      else {
+        it.push({ label: 'Descargar', icon: 'i-download', onClick: () => bajar(url('/archivo?' + q({ ruta, descargar: 1 })), nombreDe(ruta)) });
+        if (/\.zip$/i.test(ruta)) it.push({ label: 'Descomprimir aquí', icon: 'i-archive', onClick: () => descomprimeArchivo(ruta) });
+      }
       it.push({ label: 'Renombrar o mover', icon: 'i-move', onClick: () => mueve(ruta) }, '-', { label: 'Eliminar', icon: 'i-trash', danger: true, onClick: () => borra(ruta, carpeta) });
       K.menu(b, it);
     }, 'btn sm cd-mas'); b.setAttribute('aria-label', 'Acciones de ' + nombreDe(ruta)); return b;
+  }
+  // Descomprime un ZIP que ya está en el proyecto: lo lee, lo manda al mismo endpoint que la subida y deja el ZIP original
+  function descomprimeArchivo(ruta) {
+    const w = el('div', 'cd-form'); const l = el('label', 'bs-check'); const sr = el('input'); sr.type = 'checkbox'; sr.checked = true; l.append(sr, el('span', null, 'Quitar la carpeta raíz si todo viene dentro de una'));
+    w.append(el('p', 'k-muted', `Se descomprimirá «${nombreDe(ruta)}» en la carpeta «${carpetaDe(ruta) || 'raíz del proyecto'}». El ZIP original se conserva.`), l);
+    K.modal({ title: 'Descomprimir', content: w, actions: [{ label: 'Cancelar' }, { label: 'Descomprimir', primary: true, onClick: async () => {
+      try {
+        await guardaYa(); const r = await api(BASE + url('/archivo?' + q({ ruta })));
+        if (!r.ok) throw new Error('No se pudo leer el ZIP');
+        const f = new File([await r.blob()], nombreDe(ruta), { type: 'application/zip' });
+        const carpeta = carpetaDe(ruta); const d = await subeZip(f, { descomprimir: true, sinRaiz: sr.checked, destino: carpeta });
+        if (carpeta) S.abiertas.add(carpeta); S.p = d; pinta(); K.toast(`${d.anadidos} archivos descomprimidos`); logros();
+      } catch (e) { K.fail(e); return false; }
+    } }] });
   }
   const asigna = (d) => { S.p = d; if (S.ruta && !d.archivos[S.ruta]) { S.ruta = null; S.texto = ''; S.bin = null; S.movil = 'arbol'; } pinta(); };
   async function nuevoArchivo(base) {

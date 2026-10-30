@@ -850,6 +850,7 @@ Pestaña **Código**: proyectos al estilo GitHub, con carpetas, archivos, versio
 - **Editor** con números de línea, **colores por lenguaje** (highlight.js alojado en `public/vendor/highlightjs/`), sangría automática, cierre de paréntesis, llaves y comillas, `Tab` / `Mayús+Tab` para sangrar bloques y `Ctrl+S`. En el móvil hay una fila de símbolos (`{ } ( ) ; = …`). Autoguardado.
 - **Vista previa** de HTML, Markdown, JSON (con validación) y SVG; las imágenes se muestran y los binarios se descargan.
 - **Subir**: archivos sueltos, una **carpeta completa** o un **ZIP**. Al subir un ZIP eliges **descomprimirlo** dentro del proyecto (opcionalmente quitando la carpeta raíz) o **guardarlo tal cual**.
+- **ZIP que ya está en el proyecto**: en su menu ⋯ aparece **Descomprimir aquí** (quitando la carpeta raíz si quieres). El ZIP original se conserva.
 - **Exportar ZIP**: botón en la cabecera del proyecto (la web o el código completos) y, en cada versión, «Descargar ZIP». El botón ⤓ de la barra superior exporta el JSON de la sección.
 
 **Versiones**
