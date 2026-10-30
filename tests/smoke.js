@@ -293,6 +293,19 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     igual(u.s, 200); cierto(u.j.cambiados >= 3, 'cambiados ' + u.j.cambiados);
     igual((await req('GET', '/api/valores/nope.campo')).s, 404);
   });
+  await prueba('valores: los juegos unifican plataformas, géneros, estudio y etiquetas', async () => {
+    const a = await req('POST', '/api/games', { title: 'Juego A', status: 'jugado', platforms: ['PlayStation 5'], genres: ['Acción'], developer: 'FromSoftware', tags: ['Souls'], store: 'Steam' });
+    cierto(a.s < 300, 'crear A ' + a.s);
+    const b = await req('POST', '/api/games', { title: 'Juego B', status: 'jugado', platforms: ['playstation  5', 'PC'], genres: ['accion'], developer: 'fromsoftware', tags: ['souls', 'SOULS'], store: 'steam' });
+    cierto(b.s < 300, 'crear B ' + b.s);
+    igual(b.j.platforms[0], 'PlayStation 5'); igual(b.j.genres[0], 'Acción'); igual(b.j.developer, 'FromSoftware'); igual(b.j.store, 'Steam');
+    igual(b.j.tags.length, 1); igual(b.j.tags[0], 'Souls');
+    const f = await req('GET', '/api/valores/games.developer'); igual(f.s, 200);
+    igual(f.j.valores.filter(v => v.v.toLowerCase() === 'fromsoftware').length, 1);
+    igual(f.j.valores.find(v => v.v === 'FromSoftware').n, 2, 'uso');
+    const u = await req('POST', '/api/valores/games.platforms/fusionar', { de: ['PC'], a: 'PC (Windows)' });
+    igual(u.s, 200); igual(u.j.cambiados, 1);
+  });
   await prueba('usuarios (admin)', async () => { igual((await req('GET', '/api/users')).s, 200); });
 
   // --- Cuentas: usuarios, contraseñas, sesiones, tokens de app y 2FA ---

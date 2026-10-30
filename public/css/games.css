@@ -83,3 +83,11 @@
   .gms-actions .btn:nth-child(3){flex:0 0 44px;}
   .gms-quick .btn{flex:1 1 auto;justify-content:center;}
 }
+
+/* Chips que filtran (K.chipValor) dentro de tarjetas y ficha */
+.gms-meta,.gms-chips{display:flex;flex-wrap:wrap;gap:4px;min-width:0;}
+.gms-chips{display:inline-flex;vertical-align:middle;}
+.gms-meta .k-vchip,.gms-chips .k-vchip{max-width:100%;}
+.gms-datos dd .gms-chips{display:flex;}
+.gms-tags .k-vchip{background:var(--brand-soft);color:var(--accent-text);border-color:transparent;}
+.gms-activos{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;}

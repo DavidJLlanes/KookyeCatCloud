@@ -12,14 +12,24 @@
     ['abandonado', 'Abandonados', 'Dejados a medias'],
   ];
   const NOMBRE = Object.fromEntries(ESTADOS.map(e => [e[0], e[1]]));
-  const S = { items: [], rawg: false, tab: 'jugando', q: '', genero: '', plataforma: '', orden: 'reciente', stats: false, built: false, loading: null };
+  const S = { items: [], rawg: false, tab: 'jugando', q: '', genero: '', plataforma: '', estudio: '', saga: '', tienda: '', etiqueta: '', orden: 'reciente', stats: false, built: false, loading: null };
   try { Object.assign(S, JSON.parse(localStorage.getItem('kcc-games-ui') || '{}'), { q: '', stats: false }); } catch { /* sin preferencias */ }
   const guarda = () => { try { localStorage.setItem('kcc-games-ui', JSON.stringify({ tab: S.tab, orden: S.orden })); } catch { /* ignorar */ } };
   const portada = g => `${BASE}/api/games/${g.id}/cover?v=${g.coverV || 0}`;
   const nf = n => (Math.round(Number(n) * 10) / 10).toString().replace('.', ',');
   const eur = n => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
   const lista = s => String(s || '').split(',').map(x => x.trim()).filter(Boolean);
-  const unicos = f => [...new Set(S.items.flatMap(f))].sort((a, b) => a.localeCompare(b, 'es'));
+  // Valores sin variantes repetidas (una entrada por clave) para los selectores
+  const unicos = f => { const m = new Map(); S.items.flatMap(f).forEach(v => { const k = K.valores.clave(v); if (k && !m.has(k)) m.set(k, v); }); return [...m.values()].sort((a, b) => a.localeCompare(b, 'es')); };
+  const igual = (a, b) => K.valores.clave(a) === K.valores.clave(b);
+  // Filtros que se activan desde un valor: propiedad del juego → filtro de la vista
+  const FILTROS = { platforms: ['plataforma', 'Plataforma'], genres: ['genero', 'Género'], developer: ['estudio', 'Estudio'], series: ['saga', 'Saga'], store: ['tienda', 'Tienda'], tags: ['etiqueta', 'Etiqueta'] };
+  const coincide = (g) => (!S.genero || (g.genres || []).some(x => igual(x, S.genero)))
+    && (!S.plataforma || (g.platforms || []).some(x => igual(x, S.plataforma)))
+    && (!S.estudio || igual(g.developer, S.estudio)) && (!S.saga || igual(g.series, S.saga)) && (!S.tienda || igual(g.store, S.tienda))
+    && (!S.etiqueta || (g.tags || []).some(x => igual(x, S.etiqueta)));
+  // Chips que filtran, en línea separados por comas
+  const chips = (campo, vals, cls) => { const w = el('span', 'gms-chips ' + (cls || '')); (vals || []).forEach(v => w.appendChild(K.chipValor(campo, v))); return w; };
   const fechaTxt = d => { if (!d) return ''; const [y, m, dd] = d.split('-'); return `${dd}/${m}/${y}`; };
   const btn = (label, ic, fn, cls = 'btn') => { const b = el('button', cls); b.type = 'button'; if (ic) b.appendChild(icon(ic)); b.appendChild(el('span', null, label)); b.addEventListener('click', fn); return b; };
 
@@ -37,8 +47,7 @@
     const q = S.q.toLocaleLowerCase('es');
     const lista = S.items.filter(g => g.status === S.tab
       && (!q || `${g.title} ${g.series} ${g.developer} ${(g.tags || []).join(' ')}`.toLocaleLowerCase('es').includes(q))
-      && (!S.genero || (g.genres || []).includes(S.genero))
-      && (!S.plataforma || (g.platforms || []).includes(S.plataforma)));
+      && coincide(g));
     const cmp = {
       reciente: (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0),
       nota: (a, b) => (b.rating ?? -1) - (a.rating ?? -1),
@@ -124,6 +133,12 @@
       sel(S.plataforma, [['', 'Todas las plataformas'], ...unicos(g => g.platforms || []).map(v => [v, v])], v => { S.plataforma = v; }, 'Plataforma'),
       sel(S.orden, [['reciente', 'Recientes'], ['nota', 'Mejor nota'], ['horas', 'Más horas'], ['titulo', 'Título A-Z'], ['salida', 'Fecha de salida'], ['prioridad', 'Prioridad']], v => { S.orden = v; guarda(); }, 'Ordenar'));
     w.appendChild(bar);
+    const act = [['estudio', 'Estudio'], ['saga', 'Saga'], ['tienda', 'Tienda'], ['etiqueta', 'Etiqueta']].filter(([k]) => S[k]);
+    if (act.length) {
+      const ba = el('div', 'gms-activos');
+      act.forEach(([k, n]) => { const c = el('span', 'k-chip', `${n}: ${S[k]}`); const x = el('button', 'x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Quitar filtro'); x.addEventListener('click', () => { S[k] = ''; pinta(); }); c.appendChild(x); ba.appendChild(c); });
+      w.appendChild(ba);
+    }
     const grid = el('div', 'gms-grid'); grid.id = 'gms-grid'; w.appendChild(grid);
     queueMicrotask(pintaGrid);
     return w;
@@ -149,7 +164,7 @@
     const c = el('article', 'gms-card'); c.tabIndex = 0; c.setAttribute('role', 'button'); c.setAttribute('aria-label', g.title);
     c.appendChild(caratula(g));
     const b = el('div', 'gms-body'); b.appendChild(el('strong', null, g.title));
-    const meta = [(g.platforms || [])[0], (g.genres || [])[0]].filter(Boolean).join(' · '); if (meta) b.appendChild(el('small', 'k-muted', meta));
+    if ((g.platforms || [])[0] || (g.genres || [])[0]) { const m = el('div', 'gms-meta'); if ((g.platforms || [])[0]) m.appendChild(K.chipValor('games.platforms', g.platforms[0])); if ((g.genres || [])[0]) m.appendChild(K.chipValor('games.genres', g.genres[0])); b.appendChild(m); }
     const pie = el('div', 'gms-foot');
     if (g.rating != null) pie.appendChild(el('span', 'gms-nota', `★ ${nf(g.rating)}`));
     if (g.hours) pie.appendChild(el('span', 'k-muted', `${nf(g.hours)} h`));
@@ -210,6 +225,11 @@
       Object.entries(extra).forEach(([k, val]) => { if (k !== 'rows') i.setAttribute(k, val); });
       f[clave] = i; const l = el('label', 'gms-field'); l.append(el('span', null, etiqueta), i); return l;
     };
+    // Valores reutilizables: sugiere los ya usados y unifica variantes al guardar (K.campoValor)
+    const vcampo = (clave, etiqueta, multiple, placeholder) => {
+      const api = K.campoValor({ campo: 'games.' + clave, value: multiple ? (d[clave] || []) : (d[clave] || ''), multiple, placeholder: placeholder || '' });
+      f[clave] = api; const l = el('div', 'gms-field'); l.append(el('span', null, etiqueta), api.el); return l;
+    };
     const w = el('div', 'gms-form');
     const st = el('select'); ESTADOS.forEach(([k, n]) => { const o = el('option', null, n); o.value = k; st.appendChild(o); }); st.value = d.status; f.status = st;
     const stL = el('label', 'gms-field'); stL.append(el('span', null, 'Estado'), st);
@@ -220,16 +240,16 @@
     w.append(
       campo('title', 'Título', 'text', { maxlength: 160, required: 'true' }),
       grid(stL, campo('rating', 'Nota personal (0-10)', 'number', { min: 0, max: 10, step: 0.5, inputmode: 'decimal' })),
-      campo('platforms', 'Plataformas (separadas por comas)'), campo('genres', 'Géneros (separados por comas)'),
-      grid(campo('developer', 'Estudio'), campo('series', 'Saga')),
+      vcampo('platforms', 'Plataformas', true, 'PC, PlayStation 5, Switch…'), vcampo('genres', 'Géneros', true, 'RPG, Aventura…'),
+      grid(vcampo('developer', 'Estudio'), vcampo('series', 'Saga')),
       grid(campo('released', 'Salida', 'date'), campo('hours', 'Horas jugadas', 'number', { min: 0, step: 0.5, inputmode: 'decimal' })),
       grid(campo('started', 'Empezado', 'date'), campo('finished', 'Terminado', 'date')),
       grid(campo('percent', '% completado', 'number', { min: 0, max: 100, inputmode: 'numeric' }), campo('replays', 'Rejugadas', 'number', { min: 0, inputmode: 'numeric' })),
       campo('review', 'Reseña', 'textarea', { rows: 4, maxlength: 4000 }),
       grid(campo('pros', 'Lo mejor', 'textarea', { rows: 2 }), campo('cons', 'Lo peor', 'textarea', { rows: 2 })),
-      campo('tags', 'Etiquetas (separadas por comas)'),
+      vcampo('tags', 'Etiquetas', true),
       grid(fmtL, pr),
-      grid(campo('store', 'Tienda'), campo('price', 'Precio pagado (€)', 'number', { min: 0, step: 0.01, inputmode: 'decimal' })),
+      grid(vcampo('store', 'Tienda'), campo('price', 'Precio pagado (€)', 'number', { min: 0, step: 0.01, inputmode: 'decimal' })),
       grid(campo('targetPrice', 'Precio objetivo (€)', 'number', { min: 0, step: 0.01, inputmode: 'decimal' }), campo('lentTo', 'Prestado a')),
       campo('url', 'Enlace', 'url'),
       (() => { const i = el('input'); i.type = 'file'; i.accept = 'image/*'; f.portada = i; const l = el('label', 'gms-field'); l.append(el('span', null, g && g.cover ? 'Cambiar carátula' : 'Carátula (imagen)'), i); return l; })());
@@ -241,11 +261,11 @@
           const v = k => f[k].value;
           const body = {
             title: v('title').trim(), status: v('status'), rating: v('rating') === '' ? null : Number(v('rating')),
-            platforms: lista(v('platforms')), genres: lista(v('genres')), developer: v('developer'), series: v('series'),
+            platforms: f.platforms.get(), genres: f.genres.get(), developer: f.developer.get(), series: f.series.get(),
             released: v('released'), hours: v('hours') === '' ? 0 : Number(v('hours')), started: v('started'), finished: v('finished'),
             percent: v('percent') === '' ? 0 : Number(v('percent')), replays: v('replays') === '' ? 0 : Number(v('replays')),
-            review: v('review'), pros: v('pros'), cons: v('cons'), tags: lista(v('tags')), format: v('format'), priority: Number(v('priority')),
-            store: v('store'), price: v('price') === '' ? null : Number(v('price')), targetPrice: v('targetPrice') === '' ? null : Number(v('targetPrice')),
+            review: v('review'), pros: v('pros'), cons: v('cons'), tags: f.tags.get(), format: v('format'), priority: Number(v('priority')),
+            store: f.store.get(), price: v('price') === '' ? null : Number(v('price')), targetPrice: v('targetPrice') === '' ? null : Number(v('targetPrice')),
             lentTo: v('lentTo'), url: v('url'),
           };
           if (!body.title) { K.toast('Escribe el título'); return false; }
@@ -257,7 +277,7 @@
             if (img && res && res.id) { const fd = new FormData(); fd.append('image', img); const up = await fetch(`${BASE}/api/games/${res.id}/cover`, { method: 'PUT', body: fd, credentials: 'same-origin' }); if (!up.ok) K.toast('El juego se guardó, pero la carátula no se pudo subir'); }
             return res;
           });
-          if (r) { S.tab = body.status; guarda(); pinta(); }
+          if (r) { K.valores.cambio(); S.tab = body.status; guarda(); pinta(); }
           return !!r;
         },
       }],
@@ -270,15 +290,15 @@
     const w = el('div', 'gms-ficha');
     const top = el('div', 'gms-ficha-top'); top.appendChild(caratula(g, 'grande'));
     const info = el('div', 'gms-ficha-info');
-    info.append(el('h2', null, g.title), el('p', 'k-muted', [NOMBRE[g.status], (g.platforms || []).join(', ')].filter(Boolean).join(' · ')));
+    const sub = el('p', 'k-muted'); sub.append(NOMBRE[g.status] || ''); if ((g.platforms || []).length) { sub.append(' · '); sub.appendChild(chips('games.platforms', g.platforms)); } info.append(el('h2', null, g.title), sub);
     if (g.rating != null) info.appendChild(el('div', 'gms-nota-grande', `★ ${nf(g.rating)}/10`));
-    const datos = [['Horas', g.hours ? `${nf(g.hours)} h` : ''], ['Géneros', (g.genres || []).join(', ')], ['Estudio', g.developer], ['Saga', g.series], ['Salida', fechaTxt(g.released)], ['Empezado', fechaTxt(g.started)], ['Terminado', fechaTxt(g.finished)], ['Completado', g.percent ? g.percent + '%' : ''], ['Rejugadas', g.replays || ''], ['Formato', g.format === 'fisico' ? 'Físico' : g.format === 'digital' ? 'Digital' : ''], ['Tienda', g.store], ['Precio', g.price != null ? eur(g.price) : ''], ['Precio objetivo', g.targetPrice != null ? eur(g.targetPrice) : ''], ['Prestado a', g.lentTo]].filter(x => x[1] !== '' && x[1] != null);
-    const dl = el('dl', 'gms-datos'); datos.forEach(([k, v]) => { dl.append(el('dt', null, k), el('dd', null, String(v))); }); info.appendChild(dl);
+    const datos = [['Horas', g.hours ? `${nf(g.hours)} h` : ''], ['Géneros', (g.genres || []).length ? chips('games.genres', g.genres) : ''], ['Estudio', g.developer ? chips('games.developer', [g.developer]) : ''], ['Saga', g.series ? chips('games.series', [g.series]) : ''], ['Salida', fechaTxt(g.released)], ['Empezado', fechaTxt(g.started)], ['Terminado', fechaTxt(g.finished)], ['Completado', g.percent ? g.percent + '%' : ''], ['Rejugadas', g.replays || ''], ['Formato', g.format === 'fisico' ? 'Físico' : g.format === 'digital' ? 'Digital' : ''], ['Tienda', g.store ? chips('games.store', [g.store]) : ''], ['Precio', g.price != null ? eur(g.price) : ''], ['Precio objetivo', g.targetPrice != null ? eur(g.targetPrice) : ''], ['Prestado a', g.lentTo]].filter(x => x[1] !== '' && x[1] != null);
+    const dl = el('dl', 'gms-datos'); datos.forEach(([k, v]) => { const dd = el('dd'); if (v instanceof Node) dd.appendChild(v); else dd.textContent = String(v); dl.append(el('dt', null, k), dd); }); info.appendChild(dl);
     top.appendChild(info); w.appendChild(top);
     if (g.review) w.appendChild(el('p', 'gms-review', g.review));
     if (g.pros) w.appendChild(el('p', 'gms-pc', '👍 ' + g.pros));
     if (g.cons) w.appendChild(el('p', 'gms-pc', '👎 ' + g.cons));
-    if ((g.tags || []).length) { const t = el('div', 'gms-tags'); g.tags.forEach(x => t.appendChild(el('span', null, '#' + x))); w.appendChild(t); }
+    if ((g.tags || []).length) { const t = el('div', 'gms-tags'); g.tags.forEach(x => t.appendChild(K.chipValor('games.tags', x))); w.appendChild(t); }
     if (g.url) { const a = el('a', 'gms-link', 'Abrir enlace'); a.href = g.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; w.appendChild(a); }
     const rapidas = el('div', 'gms-quick');
     rapidas.append(
@@ -484,6 +504,18 @@
   }
 
   /* ---------- Integración ---------- */
+  // Un chip de plataforma, género, estudio, saga, tienda o etiqueta de cualquier parte filtra la colección
+  K.filtros.games = (prop, valor) => {
+    const fl = FILTROS[prop]; if (!fl) return;
+    switchTab('games');
+    load().then(() => {
+      Object.assign(S, { q: '', genero: '', plataforma: '', estudio: '', saga: '', tienda: '', etiqueta: '', stats: false });
+      S[fl[0]] = valor;
+      const n = (k) => S.items.filter(g => g.status === k && coincide(g)).length;
+      if (!n(S.tab)) { const t = ESTADOS.find(e => n(e[0])); if (t) S.tab = t[0]; }
+      guarda(); pinta();
+    });
+  };
   K.openers.game = id => { switchTab('games'); load().then(() => ficha(id)); };
   K.srcIcon.game = 'i-gamepad'; K.srcName.game = 'Juego';
   K.bus.on('games', () => { if (S.built) load(); });
