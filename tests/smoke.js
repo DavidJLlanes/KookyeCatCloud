@@ -153,6 +153,27 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     igual((await req('DELETE', `/api/albums/${id}`)).s, 200);
     igual((await req('GET', '/api/albums')).j.items.length, 0);
   });
+  await prueba('papelera de archivos: borrar, restaurar, vaciar y ajuste', async () => {
+    for (const n of ['p1.txt', 'p2.txt']) {
+      const fd = new FormData(); fd.append('files', new Blob(['x ' + n]), n);
+      igual((await fetch(BASE + '/api/upload', { method: 'POST', headers: { Cookie: cookie }, body: fd })).status, 200);
+    }
+    igual((await req('DELETE', '/api/files?path=p1.txt')).s, 200);
+    igual((await req('DELETE', '/api/files?path=p2.txt')).s, 200);
+    let t = (await req('GET', '/api/trash')).j; cierto(t.items.some(i => i.name === 'p1.txt'), 'p1 en la papelera');
+    const id = t.items.find(i => i.name === 'p1.txt').id;
+    igual((await req('POST', '/api/trash/restore', { id })).s, 200);
+    cierto((await req('GET', '/api/files?path=')).t.includes('p1.txt'), 'p1 restaurado');
+    const id2 = (await req('GET', '/api/trash')).j.items.find(i => i.name === 'p2.txt').id;
+    igual((await req('DELETE', '/api/trash/' + id2)).s, 200);
+    const aj = await req('GET', '/api/trash/settings'); igual(aj.s, 200);
+    igual((await req('PUT', '/api/trash/settings', { days: 7 })).j.days, 7);
+    igual((await req('GET', '/api/trash')).j.ttlDays, 7);
+    igual((await req('PUT', '/api/trash/settings', { days: 5 })).s, 400);
+    await req('DELETE', '/api/files?path=p1.txt');
+    cierto((await req('DELETE', '/api/trash')).j.removed >= 1, 'vaciar');
+    igual((await req('GET', '/api/trash')).j.items.length, 0);
+  });
   await prueba('usuarios (admin)', async () => { igual((await req('GET', '/api/users')).s, 200); });
   await prueba('cierre de sesión', async () => { cierto((await req('POST', '/api/logout')).s < 400, 'logout'); });
 
