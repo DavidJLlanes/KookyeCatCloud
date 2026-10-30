@@ -1533,6 +1533,7 @@ lib/
   papelera.js        Papelera de archivos: borrar, restaurar, caducidad (fábrica createPapelera)
   fotos.js           EXIF, mapa e índice de fotos (fábrica createFotos)
   office.js          Visor de Office (PDF con LibreOffice) y de hojas de cálculo (fábrica createOffice)
+  cuentas.js         Login y 2FA, usuarios, sesiones abiertas y tokens de app (fábrica createCuentas)
   notes.js           Bloc de notas: árbol, cuerpos .md y papelera (fábrica createNotes)
   calendar.js        Eventos, tareas y repetición; ganchos con notas, prompts y archivos
   ical.js            Feed iCal (RFC 5545) de solo lectura

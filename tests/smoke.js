@@ -202,6 +202,83 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     cierto([200, 500, 501].includes((await req('GET', '/api/office?path=roto.docx')).s), 'office responde');
   });
   await prueba('usuarios (admin)', async () => { igual((await req('GET', '/api/users')).s, 200); });
+
+  // --- Cuentas: usuarios, contraseñas, sesiones, tokens de app y 2FA ---
+  const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const totp = (secreto, paso = 0) => {
+    let bits = ''; for (const ch of secreto.replace(/=+$/, '')) bits += B32.indexOf(ch).toString(2).padStart(5, '0');
+    const clave = Buffer.from(bits.match(/.{8}/g).map(b => parseInt(b, 2)));
+    const c = Buffer.alloc(8); c.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000) + paso));
+    const h = require('crypto').createHmac('sha1', clave).update(c).digest(); const o = h[19] & 15;
+    return String(((h.readUInt32BE(o) & 0x7fffffff) % 1e6)).padStart(6, '0');
+  };
+  // Cliente independiente (su propia cookie), para no pisar la sesión del administrador
+  const cliente = () => {
+    const jar = {};
+    const f = async (m, u, cuerpo) => {
+      const h = { Cookie: Object.entries(jar).map(([k, v]) => `${k}=${v}`).join('; ') };
+      if (cuerpo !== undefined) h['Content-Type'] = 'application/json';
+      const r = await fetch(BASE + u, { method: m, headers: h, body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo), redirect: 'manual' });
+      for (const sc of r.headers.getSetCookie()) { const [kv] = sc.split(';'); const i = kv.indexOf('='); const v = kv.slice(i + 1); if (v) jar[kv.slice(0, i)] = v; else delete jar[kv.slice(0, i)]; }
+      const t = await r.text(); let j = null; try { j = JSON.parse(t); } catch { /* no JSON */ }
+      return { s: r.status, j, t };
+    };
+    f.jar = jar; return f;
+  };
+  await prueba('cuentas: crear, validar, cambiar contraseña y borrar usuarios', async () => {
+    igual((await req('POST', '/api/users', { username: 'ana', password: 'clave-segura-1', role: 'user' })).s, 200);
+    igual((await req('POST', '/api/users', { username: 'ana', password: 'clave-segura-1' })).s, 400, 'duplicado');
+    igual((await req('POST', '/api/users', { username: 'x y', password: 'clave-segura-1' })).s, 400, 'nombre inválido');
+    igual((await req('POST', '/api/users', { username: 'corta', password: '1' })).s, 400, 'contraseña corta');
+    cierto((await req('GET', '/api/users')).j.some(u => u.username === 'ana'), 'ana en la lista');
+    const ana = cliente();
+    igual((await ana('POST', '/api/login', { username: 'ana', password: 'clave-segura-1' })).s, 200);
+    igual((await ana('GET', '/api/me')).j.role, 'user');
+    igual((await ana('GET', '/api/users')).s, 403, 'un usuario normal no lista usuarios');
+    igual((await ana('POST', '/api/users/admin/password', { password: 'intento-malo-1' })).s, 403, 'no cambia la de otro');
+    igual((await ana('POST', '/api/users/ana/password', { password: 'otra-clave-123' })).s, 200);
+    igual((await cliente()('POST', '/api/login', { username: 'ana', password: 'clave-segura-1' })).s, 401, 'la antigua ya no vale');
+    igual((await cliente()('POST', '/api/login', { username: 'ana', password: 'otra-clave-123' })).s, 200);
+    igual((await req('DELETE', '/api/users/admin')).s, 400, 'admin no se borra');
+    igual((await req('DELETE', '/api/users/ana')).s, 200);
+    igual((await cliente()('POST', '/api/login', { username: 'ana', password: 'otra-clave-123' })).s, 401, 'borrada');
+  });
+  await prueba('cuentas: sesiones abiertas y cierre remoto', async () => {
+    const otra = cliente(); igual((await otra('POST', '/api/login', { username: 'admin', password: 'smoke-test-1' })).s, 200);
+    const l = (await req('GET', '/api/sessions')).j; cierto(l.length >= 2, 'dos sesiones'); cierto(l.some(x => x.current), 'marca la actual');
+    igual((await otra('GET', '/api/me')).s, 200);
+    const n = (await req('DELETE', '/api/sessions')).j.removed; cierto(n >= 1, 'cierra las demás');
+    igual((await otra('GET', '/api/me')).s, 401, 'la otra sesión ya no vale');
+    igual((await req('GET', '/api/me')).s, 200, 'la actual sigue');
+    igual((await req('DELETE', '/api/sessions/no-existe')).s, 404);
+  });
+  await prueba('cuentas: tokens de aplicación', async () => {
+    const c = await req('POST', '/api/apptokens', { name: 'script' }); igual(c.s, 200); cierto(c.j.token && c.j.id, 'token');
+    const l = (await req('GET', '/api/apptokens')).j; igual(l.length, 1); cierto(!('hash' in l[0]), 'el listado no incluye el hash');
+    cierto(!JSON.stringify(l).includes(c.j.token), 'el listado no revela el token');
+    igual((await req('DELETE', '/api/apptokens/' + c.j.id)).s, 200);
+    igual((await req('DELETE', '/api/apptokens/' + c.j.id)).s, 404);
+  });
+  await prueba('cuentas: verificación en dos pasos (activar, entrar con código, desactivar)', async () => {
+    igual((await req('POST', '/api/users', { username: 'bea', password: 'clave-segura-2' })).s, 200);
+    const bea = cliente(); igual((await bea('POST', '/api/login', { username: 'bea', password: 'clave-segura-2' })).s, 200);
+    igual((await bea('GET', '/api/2fa/status')).j.enabled, false);
+    const su = await bea('POST', '/api/2fa/setup'); cierto(su.j.secret && su.j.uri.startsWith('otpauth://'), 'setup');
+    igual((await bea('POST', '/api/2fa/confirm', { code: '000000' })).s, 400, 'código malo');
+    igual((await bea('POST', '/api/2fa/confirm', { code: totp(su.j.secret) })).s, 200);
+    igual((await bea('GET', '/api/2fa/status')).j.enabled, true);
+    await bea('POST', '/api/logout');
+    const b2 = cliente(); const l1 = await b2('POST', '/api/login', { username: 'bea', password: 'clave-segura-2' });
+    igual(l1.s, 200); igual(l1.j.need2fa, true); igual(b2.jar.token, undefined, 'aún sin sesión');
+    igual((await b2('GET', '/api/me')).s, 401);
+    igual((await b2('POST', '/api/login/2fa', { code: '000000' })).s, 401);
+    igual((await b2('POST', '/api/login/2fa', { code: totp(su.j.secret) })).s, 200);
+    igual((await b2('GET', '/api/me')).j.username, 'bea');
+    igual((await b2('POST', '/api/2fa/disable', { password: 'mala' })).s, 401);
+    igual((await b2('POST', '/api/2fa/disable', { password: 'clave-segura-2' })).s, 200);
+    igual((await b2('GET', '/api/2fa/status')).j.enabled, false);
+    igual((await req('DELETE', '/api/users/bea')).s, 200);
+  });
   await prueba('cierre de sesión', async () => { cierto((await req('POST', '/api/logout')).s < 400, 'logout'); });
 
   srv.kill();
