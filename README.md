@@ -64,7 +64,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 - [Qué puedes hacer](#qué-puedes-hacer)
 - [Instalación](#instalación) — [local](#arrancar-en-local) · [VPS paso a paso](#despliegue-en-el-vps) · [dominio, subdominio o subcarpeta](#en-qué-dirección-instalarla)
-- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [juegos](#juegos), [contactos](#contactos), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
+- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [bases](#bases), [juegos](#juegos), [contactos](#contactos), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
 - [Actualizaciones](#actualizaciones)
 - [Variables de entorno](#variables-de-entorno)
 - [Seguridad](#seguridad) · [Copias de seguridad](#copias-de-seguridad) · [Estructura del proyecto](#estructura-del-proyecto) · [Solución de problemas](#solución-de-problemas)
@@ -86,6 +86,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables, imágenes de muestra, comparación de versiones, estadísticas y creación desde metadatos de imágenes de ComfyUI / Automatic1111. |
 | 🏆 **Logros y Tetris** | Niveles y rangos, racha diaria, logros por cantidad de elementos y por uso, retos semanales, cosméticos y tres juegos (Tetris, 2048 y Breakout) táctiles y con música, con potenciadores que se desbloquean al subir de nivel. |
 | 🎮 **Juegos** | Colección de videojuegos con carátulas, notas, horas, lista de deseos y backlog, estadísticas, búsqueda opcional con RAWG, logros propios y tarjetas para compartir de cada juego y de tu perfil. |
+| 🗂️ **Bases** | Bases de datos propias al estilo AppFlowy: columnas a tu medida (texto, número, fecha, casilla, selección, etiquetas, enlace), vistas de tabla y tablero Kanban, plantillas, exportación CSV/JSON y logros propios. Cada base es su propio JSON. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
 | 📋 **Portapapeles compartido** | Deja texto o archivos desde un dispositivo y recógelos desde otro al instante. En Android, la app aparece en el menú «Compartir». |
 | ⚡ **Actualización en directo** | La lista de archivos se refresca sola cuando llega algo por un enlace de subida o desde otro dispositivo, sin consultas periódicas. |
@@ -764,6 +765,8 @@ Cada logro es una **medalla hexagonal**: el borde indica el tramo (bronce, plata
 
 ### 2048 y Breakout
 
+**Controles**: un deslizamiento mueve el 2048 una sola vez (levanta el dedo para el siguiente movimiento, como en el original). En los tres juegos, el botón 🔊/🔇 junto a la pausa silencia o reactiva música y efectos.
+
 Dos juegos más con el mismo diseño que el Tetris (pestañas **2048** y **Breakout**, pantalla completa, música y sonidos compartidos, pausa automática al salir de la pestaña). Sus partidas dan XP y monedas, cuentan para los retos y logros, y se pueden compartir como imagen (con una captura del tablero final).
 
 - **2048**: desliza el dedo sobre el tablero (o usa las flechas / WASD) para unir fichas iguales. Sin límite de tiempo; la partida termina cuando no quedan movimientos o la terminas tú. Cada fusión carga energía (5 como máximo).
@@ -787,6 +790,7 @@ Pestaña **Juegos** para llevar tu colección: **Próximos**, **Deseados** (list
 - **Datos por juego**: título, carátula, plataformas, géneros, estudio, saga, fecha de salida, nota personal (0-10), reseña, lo mejor/lo peor, etiquetas, horas (y sesiones), fechas de inicio y fin, % completado, rejugadas, prioridad, físico/digital, tienda, precio pagado y objetivo, prestado a y enlace. Al pasar un juego a *Jugando* o *Jugado* se rellenan solas las fechas.
 - **Sesiones**: «Sesión» suma horas y mueve el juego a *Jugando* si estaba pendiente o deseado.
 - **Búsqueda automática (opcional)**: con `RAWG_KEY` en el `.env` (clave gratuita de rawg.io) se busca el juego y se rellenan título, plataformas, géneros y carátula. Sin clave se añade a mano. Las carátulas se guardan en WebP.
+- **Carátula**: súbela desde el formulario de añadir o editar; en un juego ya existente, **Buscar en RAWG** (con `RAWG_KEY` válida) rellena carátula y datos.
 - **Calendario**: la fecha de salida puede crear un evento en el calendario *Juegos* (se crea solo para todos los usuarios).
 - **Estadísticas**: juegos, jugados, horas, nota media, backlog, gasto, euros por hora, horas por género, jugados por año y mejor valorados.
 - **Exportar/importar**: JSON y CSV (compatible con hojas de cálculo). La importación evita duplicados por título y plataforma.
@@ -1339,6 +1343,8 @@ lib/
   ical.js            Feed iCal (RFC 5545) de solo lectura
   holidays.js        Festivos de España calculados (sin servicios externos)
   prompts.js         Biblioteca de prompts e imágenes WebP
+  games.js           Colección de videojuegos, RAWG opcional y portadas
+  bases.js           Bases de datos con columnas propias (un JSON por base)
   game.js            Logros, niveles, racha, retos semanales, cosméticos y partidas de Tetris
   comfy.js           Lee metadatos de generación: ComfyUI, Automatic1111 / Forge, JSON y EXIF/XMP
   clip.js            Portapapeles compartido entre dispositivos y destino de «Compartir»
@@ -1360,6 +1366,9 @@ public/
 deploy/              update.sh y temporizador systemd de autoactualización
 .env.example         Todas las variables de configuración
 ```
+
+Las convenciones para módulos nuevos (JSON propio por módulo y gamificación obligatoria) están en
+`CLAUDE.md`.
 
 `npm run check` revisa la sintaxis de todo el código del servidor. No hay paso de build: lo que
 ves en `public/` es lo que se sirve.
