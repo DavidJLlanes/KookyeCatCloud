@@ -185,6 +185,21 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     const m = await req('GET', '/api/photomap'); igual(m.s, 200); cierto(m.j.total >= 1, 'photomap total');
     const ix = await req('GET', '/api/photoindex'); igual(ix.s, 200); cierto(ix.j.fotos.some(f => f.name === 'foto1.jpg'), 'photoindex');
   });
+  await prueba('visor de hojas de cálculo y de Office', async () => {
+    const ExcelJS = require('exceljs');
+    const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('Datos');
+    ws.addRow(['Nombre', 'Cantidad']); ws.addRow(['Café', 42]);
+    const buf = Buffer.from(await wb.xlsx.writeBuffer());
+    const fd = new FormData(); fd.append('files', new Blob([buf]), 'hoja.xlsx');
+    igual((await fetch(BASE + '/api/upload', { method: 'POST', headers: { Cookie: cookie }, body: fd })).status, 200);
+    const h = await req('GET', '/api/sheet?path=hoja.xlsx'); igual(h.s, 200);
+    igual(h.j.hojas[0].nombre, 'Datos'); igual(h.j.hojas[0].filas[1][1].t, '42'); igual(h.j.hojas[0].filas[1][1].n, true);
+    igual((await req('GET', '/api/sheet?path=a.txt')).s, 415, 'no es hoja');
+    igual((await req('GET', '/api/office?path=a.txt')).s, 415, 'no es Office');
+    const fd2 = new FormData(); fd2.append('files', new Blob(['no es un docx']), 'roto.docx');
+    await fetch(BASE + '/api/upload', { method: 'POST', headers: { Cookie: cookie }, body: fd2 });
+    cierto([200, 500, 501].includes((await req('GET', '/api/office?path=roto.docx')).s), 'office responde');
+  });
   await prueba('usuarios (admin)', async () => { igual((await req('GET', '/api/users')).s, 200); });
   await prueba('cierre de sesión', async () => { cierto((await req('POST', '/api/logout')).s < 400, 'logout'); });
 
