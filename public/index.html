@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="/css/games.css">
 <link rel="stylesheet" href="/css/bases.css">
 <script src="/js/textsize.js"></script>
+<script src="/js/viewport-fix.js"></script>
 <link rel="stylesheet" href="/css/game.css">
 <meta name="description" content="KookyeCatCloud: nube privada autoalojada para archivos, fotos, notas y calendario, con logros, retos y una experiencia gamificada.">
 <link rel="icon" id="favicon" href="/favicon.ico" sizes="any">
@@ -80,6 +81,7 @@
   *{box-sizing:border-box;}
   [hidden]{display:none !important;}
   html,body{height:100%;}
+  @supports (-webkit-touch-callout:none){ body{min-height:-webkit-fill-available;} html{min-height:-webkit-fill-available;} }
   /* Sin zoom de página: la interfaz ya se adapta a cada pantalla. pan-x pan-y desactiva el
      pellizco y el doble toque; los visores con zoom propio ponen touch-action:none en su zona */
   html{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
