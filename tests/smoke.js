@@ -201,6 +201,65 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     await fetch(BASE + '/api/upload', { method: 'POST', headers: { Cookie: cookie }, body: fd2 });
     cierto([200, 500, 501].includes((await req('GET', '/api/office?path=roto.docx')).s), 'office responde');
   });
+  const subeArchivo = async (nombre, contenido, carpeta = '') => {
+    const fd = new FormData(); fd.append('files', new Blob([contenido]), nombre);
+    return fetch(BASE + '/api/upload?path=' + encodeURIComponent(carpeta), { method: 'POST', headers: { Cookie: cookie }, body: fd });
+  };
+  const publico = async (m, u, body) => { const r = await fetch(BASE + u, { method: m, body }); const t = await r.text(); let j = null; try { j = JSON.parse(t); } catch { /* no JSON */ } return { s: r.status, j, t }; };
+  await prueba('enlace público de un archivo (con contraseña)', async () => {
+    const c = await req('POST', '/api/sharelinks', { path: 'a.txt', days: 1, password: 'pw-1234' }); igual(c.s, 200);
+    const id = c.j.link.id; cierto(!('passwordHash' in c.j.link) || c.j.link.passwordHash === undefined, 'no filtra el hash');
+    const info = await publico('GET', '/api/public/share/' + id); igual(info.s, 200); igual(info.j.protegido, true);
+    cierto(!('path' in info.j) && !('owner' in info.j), 'la ficha pública no revela ruta ni dueño');
+    igual((await publico('GET', `/api/public/share/${id}/download`)).s, 401, 'sin contraseña');
+    igual((await publico('GET', `/api/public/share/${id}/download?pw=mala`)).s, 401, 'contraseña mala');
+    const d = await publico('GET', `/api/public/share/${id}/download?pw=pw-1234`); igual(d.s, 200); igual(d.t, 'hola a.txt');
+    igual((await publico('GET', '/s/' + id)).s, 200, 'página pública');
+    igual((await publico('GET', '/api/public/share/no-existe')).s, 404);
+    const lista = (await req('GET', '/api/uploadlinks?kind=share')).j; cierto(JSON.stringify(lista).includes(id), 'sale en la lista del dueño');
+  });
+  await prueba('enlace público de una carpeta: galería sin salirse de ella', async () => {
+    await req('POST', '/api/mkdir', { path: '', name: 'Pub' });
+    igual((await subeArchivo('dentro.txt', 'dentro', 'Pub')).status, 200);
+    igual((await subeArchivo('fuera.txt', 'fuera', '')).status, 200);
+    const id = (await req('POST', '/api/sharelinks', { path: 'Pub', days: 1 })).j.link.id;
+    const l = await publico('GET', `/api/public/share/${id}/list`); igual(l.s, 200);
+    cierto(l.j.items.some(i => i.name === 'dentro.txt') && !l.j.items.some(i => i.name === 'fuera.txt'), 'solo lo de la carpeta');
+    cierto((await publico('GET', `/api/public/share/${id}/list?sub=${encodeURIComponent('..')}`)).s >= 400, 'no sube por encima');
+    cierto((await publico('GET', `/api/public/share/${id}/file?sub=${encodeURIComponent('../fuera.txt')}`)).s >= 400, 'no descarga fuera');
+    const f = await publico('GET', `/api/public/share/${id}/file?sub=dentro.txt`); igual(f.s, 200); igual(f.t, 'dentro');
+    igual((await publico('GET', `/api/public/share/${id}/view?sub=dentro.txt`)).s, 415, 'un texto no se previsualiza');
+    const z = await fetch(BASE + `/api/public/share/${id}/download`); igual(z.status, 200); igual(z.headers.get('content-type'), 'application/zip');
+    const jpg = await require('sharp')({ create: { width: 40, height: 30, channels: 3, background: '#39c' } }).jpeg().toBuffer();
+    igual((await subeArchivo('pic.jpg', jpg, 'Pub')).status, 200);
+    const l2 = await publico('GET', `/api/public/share/${id}/list`);
+    cierto(l2.j.items.find(i => i.name === 'pic.jpg').viewable === true, 'la foto es visible en la galería');
+    const th = await fetch(BASE + `/api/public/share/${id}/thumb?sub=pic.jpg`); igual(th.status, 200); igual(th.headers.get('content-type'), 'image/webp');
+    const vw = await fetch(BASE + `/api/public/share/${id}/view?sub=pic.jpg`); igual(vw.status, 200); igual(vw.headers.get('content-type'), 'image/jpeg');
+  });
+  await prueba('enlace de subida: crear, usar sin sesión y borrar', async () => {
+    const c = await req('POST', '/api/uploadlinks', { path: 'Pub', label: 'Entrega', days: 1 }); igual(c.s, 200);
+    const id = c.j.link.id;
+    const info = await publico('GET', '/api/public/link/' + id); igual(info.s, 200); igual(info.j.label, 'Entrega');
+    cierto(!('path' in info.j) && !('owner' in info.j), 'no revela ruta ni dueño');
+    const fd = new FormData(); fd.append('files', new Blob(['subido por un invitado']), 'invitado.txt');
+    const up = await fetch(BASE + `/api/public/link/${id}/upload`, { method: 'POST', body: fd }); igual(up.status, 200);
+    cierto((await req('GET', '/api/files?path=Pub')).t.includes('invitado.txt'), 'el archivo llegó a la carpeta');
+    igual((await publico('GET', '/api/public/link/' + id)).j.files, 1);
+    igual((await req('POST', '/api/uploadlinks', { path: 'no-existe', label: 'x' })).s >= 400, true, 'carpeta inexistente');
+    igual((await publico('GET', '/u/' + id)).s, 200, 'página pública');
+    igual((await req('DELETE', '/api/uploadlinks/' + id)).s, 200);
+    igual((await publico('GET', '/api/public/link/' + id)).s, 404, 'borrado');
+    igual((await req('DELETE', '/api/uploadlinks/' + id)).s, 404);
+  });
+  await prueba('prompts compartidos por enlace público', async () => {
+    igual((await req('POST', '/api/prompts-share', { ids: [] })).s, 400);
+    const c = await req('POST', '/api/prompts-share', { ids: [prompt], days: 1 }); igual(c.s, 200);
+    const p = await publico('GET', '/api/public/prompts/' + c.j.link.id); igual(p.s, 200);
+    igual(p.j.prompts.length, 1); cierto(!('id' in p.j.prompts[0]), 'no revela ids internos');
+    igual((await publico('GET', '/p/' + c.j.link.id)).s, 200, 'página pública');
+    igual((await publico('GET', '/api/public/prompts/no-existe')).s, 404);
+  });
   await prueba('usuarios (admin)', async () => { igual((await req('GET', '/api/users')).s, 200); });
 
   // --- Cuentas: usuarios, contraseñas, sesiones, tokens de app y 2FA ---
