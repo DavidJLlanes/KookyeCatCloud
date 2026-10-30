@@ -65,9 +65,11 @@
 .pr-snip{margin:0;font-size:calc(12.8px*var(--fs,1));color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
   word-break:break-word;}
 .pr-snip .var{color:var(--b3);font-weight:600;}
-.pr-foot{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:6px;font-size:calc(11.5px*var(--fs,1));color:var(--faint);}
-.pr-foot .model{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:7px;background:var(--glass-2);color:var(--muted);font-weight:650;
-  flex:0 1 auto;min-width:0;max-width:50%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pr-foot{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:8px;font-size:calc(11.5px*var(--fs,1));color:var(--faint);}
+.pr-foot .pr-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;flex:1 1 auto;min-width:0;}
+.pr-foot .model{display:inline-block;line-height:1.5;padding:2px 8px;border-radius:7px;background:var(--glass-2);color:var(--muted);font-weight:650;
+  flex:0 1 auto;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pr-foot .pr-rate{color:#fbbf24;font-weight:650;white-space:nowrap;flex:0 0 auto;}
 .pr-foot .pr-date{display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;white-space:nowrap;}
 .pr-foot .grow{flex:1 1 0;min-width:0;}
 .pr-foot .pr-copy{flex:0 0 auto;white-space:nowrap;}
@@ -201,6 +203,10 @@
   .pr-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
   .pr-body{padding:10px 11px;}
   .pr-snip{-webkit-line-clamp:2;}
+  /* Tarjeta estrecha (2 columnas): los datos arriba y el botón «Copiar» a todo el ancho, sin salirse */
+  .pr-foot{flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:8px;}
+  .pr-foot .grow{display:none;}
+  .pr-foot .pr-copy{flex:0 0 auto;width:100%;justify-content:center;}
   .pr-board{grid-template-columns:repeat(4,82vw);}
 }
 

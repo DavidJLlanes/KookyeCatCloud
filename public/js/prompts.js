@@ -516,9 +516,12 @@
     if (p.labels.length > 3) chips.appendChild(el('span', 'k-chip', `+${p.labels.length - 3}`));
     if (chips.children.length) body.appendChild(chips);
     const foot = el('div', 'pr-foot');
-    if (p.model || p.tool) foot.appendChild(el('span', 'model', [p.model, p.tool].filter(Boolean).join(' · ')));
-    if (p.rating) { const r = el('span', null, '★ ' + p.rating); r.style.color = '#fbbf24'; foot.appendChild(r); }
-    if (p.cal) { const cl = el('span', 'pr-date'); cl.appendChild(icon('i-calendar')); cl.firstChild.style.cssText = 'width:12px;height:12px;vertical-align:-1px;flex:none'; cl.append(' ' + K.d.short(K.d.parse(p.cal.date))); cl.title = 'En el calendario'; foot.appendChild(cl); }
+    // Los datos (modelo, valoración, fecha) van agrupados y pueden pasar a otra línea; el botón no se sale de la tarjeta
+    const meta = el('div', 'pr-meta');
+    if (p.model || p.tool) { const mt = [p.model, p.tool].filter(Boolean).join(' · '); const m = el('span', 'model', mt); m.title = mt; meta.appendChild(m); }
+    if (p.rating) meta.appendChild(el('span', 'pr-rate', '★ ' + p.rating));
+    if (p.cal) { const cl = el('span', 'pr-date'); cl.appendChild(icon('i-calendar')); cl.firstChild.style.cssText = 'width:12px;height:12px;vertical-align:-1px;flex:none'; cl.append(' ' + K.d.short(K.d.parse(p.cal.date))); cl.title = 'En el calendario'; meta.appendChild(cl); }
+    if (meta.children.length) foot.appendChild(meta);
     foot.appendChild(el('span', 'grow'));
     if (!S.q.trash) {
       const cp = el('button', 'btn tiny pr-copy'); cp.type = 'button'; cp.append(icon('i-copy'), document.createTextNode('Copiar'));
