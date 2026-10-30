@@ -318,6 +318,15 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     const r = await req('POST', '/api/valores/contacts.country/fusionar', { de: ['España'], a: 'Spain' });
     igual(r.s, 200); igual(r.j.cambiados, 2);
   });
+  await prueba('valores: las etiquetas de código se unifican', async () => {
+    const a = await req('POST', '/api/codigo', { nombre: 'Proyecto etq A', etiquetas: ['Diseño-Web', 'react'] });
+    cierto(a.s < 300, 'crear ' + a.s);
+    const b = await req('POST', '/api/codigo', { nombre: 'Proyecto etq B', etiquetas: ['diseno web', 'React'] });
+    cierto(b.s < 300, 'crear ' + b.s);
+    igual(b.j.etiquetas[0], a.j.etiquetas[0], 'misma etiqueta'); igual(b.j.etiquetas.length, 2);
+    const f = await req('GET', '/api/valores/codigo.etiquetas'); igual(f.s, 200);
+    igual(f.j.valores.length, 2);
+  });
   await prueba('usuarios (admin)', async () => { igual((await req('GET', '/api/users')).s, 200); });
 
   // --- Cuentas: usuarios, contraseñas, sesiones, tokens de app y 2FA ---

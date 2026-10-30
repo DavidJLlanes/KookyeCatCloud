@@ -55,19 +55,20 @@
     const s = el('label', 'search cd-search'); s.appendChild(icon('i-search')); const inp = el('input'); inp.type = 'search'; inp.placeholder = 'Buscar proyecto…'; inp.value = S.q; inp.setAttribute('aria-label', 'Buscar');
     inp.addEventListener('input', K.debounce(() => { S.q = inp.value; pintaTarjetas(); }, 150)); s.appendChild(inp); bar.appendChild(s);
     const fv = el('button', 'btn cd-favbtn' + (S.fav ? ' on' : ''), '★ Favoritos'); fv.type = 'button'; fv.addEventListener('click', () => { S.fav = !S.fav; fv.classList.toggle('on', S.fav); pintaTarjetas(); }); bar.appendChild(fv);
+    if (S.etiqueta) { const c = el('span', 'k-chip', 'Etiqueta: ' + S.etiqueta); const x = el('button', 'x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Quitar filtro'); x.addEventListener('click', () => { S.etiqueta = ''; pinta(); }); c.appendChild(x); bar.appendChild(c); }
     page.appendChild(bar);
     const g = el('div', 'cd-grid'); g.id = 'cd-grid'; page.appendChild(g); pintaTarjetas();
   }
   function pintaTarjetas() {
     const g = root.querySelector('#cd-grid'); if (!g) return; g.textContent = '';
     const b = S.q.toLocaleLowerCase('es');
-    const l = S.items.filter(i => (!S.fav || i.favorito) && (!b || (i.nombre + ' ' + i.descripcion + ' ' + i.etiquetas.join(' ')).toLocaleLowerCase('es').includes(b)));
+    const l = S.items.filter(i => (!S.fav || i.favorito) && (!S.etiqueta || i.etiquetas.some(t => K.valores.clave(t) === K.valores.clave(S.etiqueta))) && (!b || (i.nombre + ' ' + i.descripcion + ' ' + i.etiquetas.join(' ')).toLocaleLowerCase('es').includes(b)));
     if (!l.length) { const e = el('div', 'cd-empty'); e.append(el('div', 'cd-empty-i', '</>'), el('p', 'k-muted', S.items.length ? 'Ningún proyecto coincide.' : 'Aún no tienes proyectos. Crea uno o sube un ZIP con tu web.')); g.appendChild(e); return; }
     l.forEach(i => {
       const c = el('article', 'cd-card'); c.tabIndex = 0; c.setAttribute('role', 'button');
       const h = el('header'); h.append(el('strong', null, (i.favorito ? '★ ' : '') + i.nombre)); c.appendChild(h);
       if (i.descripcion) c.appendChild(el('p', 'cd-desc k-muted', i.descripcion));
-      const ch = el('div', 'cd-chips'); i.langs.forEach(x => ch.appendChild(el('span', 'cd-lang', x))); c.appendChild(ch);
+      const ch = el('div', 'cd-chips'); i.langs.forEach(x => ch.appendChild(el('span', 'cd-lang', x))); (i.etiquetas || []).forEach(x => ch.appendChild(K.chipValor('codigo.etiquetas', x))); c.appendChild(ch);
       const f = el('footer'); f.append(el('small', 'k-muted', `${i.nArchivos} archivo${i.nArchivos === 1 ? '' : 's'} · ${i.nVersiones} versión${i.nVersiones === 1 ? '' : 'es'} · ${tam(i.tam)}`), el('small', 'k-faint', fecha(i.actualizado))); c.appendChild(f);
       const go = () => abre(i.id); c.addEventListener('click', go); c.addEventListener('keydown', e => { if (e.key === 'Enter') go(); }); g.appendChild(c);
     });
@@ -193,9 +194,9 @@
   function datos() {
     const w = el('div', 'cd-form'); const n = el('input'); n.value = S.p.nombre; n.maxLength = 120; n.setAttribute('aria-label', 'Nombre');
     const d = el('input'); d.value = S.p.descripcion; d.maxLength = 300; d.placeholder = 'Descripción'; d.setAttribute('aria-label', 'Descripción');
-    const e = el('input'); e.value = (S.p.etiquetas || []).join(', '); e.placeholder = 'etiquetas, separadas por comas'; e.setAttribute('aria-label', 'Etiquetas'); w.append(n, d, e);
+    const e = K.campoValor({ campo: 'codigo.etiquetas', value: S.p.etiquetas || [], multiple: true, placeholder: 'Etiquetas' }); w.append(n, d, e.el);
     K.modal({ title: 'Proyecto', content: w, actions: [{ label: 'Cancelar' }, { label: 'Guardar', primary: true, onClick: async () => {
-      try { S.p = await K.put(url(''), { nombre: n.value, descripcion: d.value, etiquetas: e.value.split(',') }); pinta(); } catch (er) { K.fail(er); return false; } } }] });
+      try { S.p = await K.put(url(''), { nombre: n.value, descripcion: d.value, etiquetas: e.get() }); K.valores.cambio(); pinta(); } catch (er) { K.fail(er); return false; } } }] });
   }
   async function elimina() {
     if (!await K.confirm(`Se eliminará «${S.p.nombre}» con todos sus archivos y versiones.`, { ok: 'Eliminar', danger: true })) return;
@@ -558,6 +559,13 @@
       if (!S.built) await carga();
       S.p = p; entra(); switchTab('codigo');
     } catch (e) { K.fail(e); }
+  };
+  // Un chip de etiqueta de cualquier parte filtra los proyectos
+  K.filtros.codigo = (prop, valor) => {
+    if (prop !== 'etiquetas') return;
+    S.etiqueta = valor; S.q = ''; S.fav = false;
+    switchTab('codigo');
+    (async () => { if (S.p) { await guardaYa(); S.p = null; clearTimeout(S.timer); } await carga(); })();
   };
   K.registerView('codigo', { open() { if (S.p) pinta(); else carga(); }, close() { guardaYa(); } });
 })();
