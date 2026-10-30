@@ -298,7 +298,7 @@ const alCambiarContenido = (user) => { if (typeof gameMod !== 'undefined' && gam
 const gamesMod = createGames({ express, multer, sharp, userRoot, sendError, registrarActividad, calendar: calendarMod.core, alCambiar: alCambiarContenido });
 const basesMod = createBases({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido });
 // Módulos que aportan recuentos a la gamificación: todo módulo nuevo se añade aquí (ver CLAUDE.md)
-const codigoMod = createCodigo({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido });
+const codigoMod = createCodigo({ express, multer, ZipArchive, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido });
 const modulosConLogros = [gamesMod, basesMod, codigoMod];
 
 // Versiones de archivos de texto (se crea aquí porque WebDAV y las rutas de archivos la usan)
@@ -3191,6 +3191,7 @@ app.use('/api/contacts', auth, contactsMod.router);
 app.use('/api/shopping', auth, shoppingMod);
 app.use('/api/games', auth, gamesMod.router);
 app.use('/api/bases', auth, basesMod.router);
+app.use('/api/codigo-vista', codigoMod.vistaRouter); // enlaces firmados y caducan: el iframe aislado no envía cookies
 app.use('/api/codigo', auth, codigoMod.router);
 app.use('/api', createExportar({ express, auth, adminOnly, userRoot, dataRoot: DATA_ROOT, loadUsers, ZipArchive, registrarActividad, sendError }).router);
 calendarMod.core.registraOrigen('prompt', (user, id, ev) => promptsMod.core.setCal(user, id, ev));

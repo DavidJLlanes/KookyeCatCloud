@@ -4,7 +4,7 @@ Node 20 + Express 4 + JS vanilla (PWA). Respuestas al usuario en español, breve
 
 ## Cada módulo nuevo (obligatorio)
 
-1. **Su propio JSON.** Los datos viven en `<userRoot>/.kcc/<modulo>/` (un JSON por entidad, p. ej. `bases/<id>.json`, o uno por módulo si es pequeño). Usa `lib/store.js` (`readJson`, `writeJson`, `updateJson`, `newId`). Nunca mezcles datos de dos módulos en el mismo archivo.
+1. **Su propio JSON.** Los datos viven en `<userRoot>/.kcc/<modulo>/` (un JSON por entidad, p. ej. `bases/<id>.json`, o uno por módulo si es pequeño). Si el módulo guarda archivos o binarios (p. ej. `codigo/<id>/objetos/<sha256>`), el JSON solo lleva metadatos y referencias; el contenido va aparte. Usa `lib/store.js` (`readJson`, `writeJson`, `updateJson`, `newId`). Nunca mezcles datos de dos módulos en el mismo archivo.
 2. **Backend como fábrica:** `lib/<modulo>.js` exporta `create<Modulo>({express, userRoot, sendError, registrarActividad, alCambiar})` → `{router, core:{resumen(user)}}` y se monta en `server.js` con `auth`.
 3. **Gamificación siempre incluida** (no se entrega un módulo sin ella):
    - `core.resumen(user)` devuelve contadores (`<prefijo>_xxx`) y el módulo se añade a `modulosConLogros` en `server.js`.

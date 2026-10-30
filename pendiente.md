@@ -80,4 +80,5 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 
 - [x] ~~Bases de datos con columnas propias y vistas de tabla y Kanban~~ Hecho: `lib/bases.js`, `public/js/bases.js`, un JSON por base, 5 familias + 2 especiales + título + 2 retos; convención de gamificación en `CLAUDE.md`.
 
-- [x] ~~Módulo Código (editor con colores, números de línea y vista previa) y exportación de JSON por sección y completa~~ Hecho: `lib/codigo.js`, `public/js/codigo.js`, `lib/exportar.js`, `public/js/exportar.js`; 5 familias + 2 especiales + título + reto de Código.
+- [x] ~~Módulo Código (editor con colores, números de línea y vista previa) y exportación de JSON por sección y completa~~ Hecho: `lib/codigo.js`, `public/js/codigo.js`, `lib/exportar.js`, `public/js/exportar.js`.
+- [x] ~~Código como proyectos (carpetas, archivos, subida de archivos y ZIP, versiones con diff y restauración, vista web sin JavaScript)~~ Hecho: reescrito `lib/codigo.js` + `public/js/codigo.js`; 8 familias + 3 especiales + título + reto. Pendiente opcional: ramas, etiquetas de versión y búsqueda dentro de los archivos.

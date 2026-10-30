@@ -87,7 +87,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 🏆 **Logros y Tetris** | Niveles y rangos, racha diaria, logros por cantidad de elementos (también Compra, favoritos, álbumes, Bases y Juegos), por uso y de seguridad, retos semanales, cosméticos y tres juegos (Tetris, 2048 y Breakout) táctiles y con música, con potenciadores que se desbloquean al subir de nivel. |
 | 🎮 **Juegos** | Colección de videojuegos con carátulas, notas, horas, lista de deseos y backlog, estadísticas, búsqueda opcional con RAWG, logros propios y tarjetas para compartir de cada juego y de tu perfil. |
 | 🗂️ **Bases** | Bases de datos propias al estilo AppFlowy: columnas a tu medida (texto, número, fecha, casilla, selección, etiquetas, enlace), vistas de tabla y tablero Kanban, plantillas, exportación CSV/JSON y logros propios. Cada base es su propio JSON. |
-| </> **Código** | Fragmentos de código con editor de colores por lenguaje (HTML, CSS, JS, Python, PHP, SQL, Bash…), números de línea, vista previa de HTML, Markdown, JSON y SVG, etiquetas, favoritos, copiar y descargar. Cada fragmento es su propio JSON y tiene logros. |
+| </> **Código** | Proyectos tipo GitHub: carpetas y archivos, editor con colores, subida de archivos, carpetas y ZIP (con descompresión), versiones con comparación y restauración, vista web aislada sin JavaScript y descarga en ZIP. Límites: 50 MB y 1000 archivos por proyecto, 10 MB por archivo, 50 versiones. Con logros. |
 | 📤 **Exportar JSON** | Botón en la barra superior que exporta los datos de la sección abierta; ZIP con todos los JSON de la app para administración. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
 | 📋 **Portapapeles compartido** | Deja texto o archivos desde un dispositivo y recógelos desde otro al instante. En Android, la app aparece en el menú «Compartir». |
@@ -842,13 +842,45 @@ Bases de datos propias al estilo AppFlowy: tú defines las columnas y las miras 
 
 ## Código
 
-Pestaña **Código** para guardar fragmentos:
+Pestaña **Código**: proyectos al estilo GitHub, con carpetas, archivos, versiones y vista web.
 
-- **Editor** con números de línea, **colores por lenguaje** (highlight.js alojado en `public/vendor/highlightjs/`, 24 lenguajes), sangría automática, cierre de paréntesis, llaves y comillas, `Tab` / `Mayús+Tab` para sangrar bloques y `Ctrl+S` para guardar. En el móvil aparece una fila de símbolos (`{ } ( ) ; = …`). Autoguardado.
-- **Vista previa**: HTML (en un marco aislado: se ven HTML y CSS, los scripts no se ejecutan y los enlaces no navegan), Markdown, JSON (con validación) y SVG. En pantallas anchas va al lado del editor; en el móvil, en la pestaña «Vista previa».
-- Título, lenguaje (con **Detectar**), etiquetas, favoritos, buscar y filtrar, **Copiar** y **Descargar** con su extensión.
-- **Un JSON por fragmento**: `<tu carpeta>/.kcc/codigo/<id>.json` (los contadores de uso van en `stats.json`). Límite: 500 fragmentos de 200 KB.
-- **Logros de Código**: 5 familias (*Taller de fragmentos*, *Líneas con sentido*, *Políglota*, *Ojo en la vista previa*, *Copia y pega*), los especiales *Trío web* y *Maratón de código*, el título *Artesano del código*, un reto semanal y la *Copa del Artesano*.
+**Proyectos y archivos**
+- **Nuevo proyecto** (plantilla *Web básica*, *Vacío* o *Sin archivos*) o **Subir ZIP** para convertir una web comprimida en proyecto de un solo paso.
+- **Árbol de carpetas y archivos**: crear, renombrar o mover (cambiando la ruta), eliminar y descargar. En el móvil el árbol y el editor se alternan a pantalla completa.
+- **Editor** con números de línea, **colores por lenguaje** (highlight.js alojado en `public/vendor/highlightjs/`), sangría automática, cierre de paréntesis, llaves y comillas, `Tab` / `Mayús+Tab` para sangrar bloques y `Ctrl+S`. En el móvil hay una fila de símbolos (`{ } ( ) ; = …`). Autoguardado.
+- **Vista previa** de HTML, Markdown, JSON (con validación) y SVG; las imágenes se muestran y los binarios se descargan.
+- **Subir**: archivos sueltos, una **carpeta completa** o un **ZIP**. Al subir un ZIP eliges **descomprimirlo** dentro del proyecto (opcionalmente quitando la carpeta raíz) o **guardarlo tal cual**.
+- **Exportar ZIP**: botón en la cabecera del proyecto (la web o el código completos) y, en cada versión, «Descargar ZIP». El botón ⤓ de la barra superior exporta el JSON de la sección.
+
+**Versiones**
+- **Guardar versión**: una foto de todo el proyecto con un mensaje. Hasta 50 por proyecto.
+- **Ver** una versión (solo lectura), **Comparar** con el trabajo actual (archivos nuevos, eliminados y modificados, con diferencias línea a línea), **Restaurar** (antes se guarda solo una versión «Antes de restaurar…» si había cambios sin guardar), **Descargar ZIP** y **Eliminar**.
+- Las versiones comparten el contenido idéntico, así que guardar muchas apenas ocupa más.
+
+**Vista web aislada**
+- Pestaña **Vista web**: abre el `index.html` (o la página que elijas) del trabajo actual o de cualquier versión, con su CSS, imágenes y fuentes relativos.
+- **No ejecuta JavaScript** y los enlaces no navegan: va en un marco con `sandbox` y con cabecera `Content-Security-Policy: sandbox` desde el servidor. Se sirve con un enlace firmado que caduca a la hora y no depende de tu sesión.
+
+**Límites**
+
+| Qué | Límite |
+|---|---|
+| Proyectos | 100 por usuario |
+| Archivos por proyecto | 1000 |
+| Tamaño por archivo | 10 MB |
+| Tamaño por proyecto | 50 MB (cuenta el trabajo actual y todas las versiones, sin repetir contenido idéntico) |
+| Subida (archivos o ZIP) | 50 MB por envío |
+| Versiones por proyecto | 50 |
+| Editor de texto | hasta 2 MB por archivo (más grande: solo descarga) |
+| Profundidad / ruta | 12 niveles, 240 caracteres |
+
+**Seguridad de las subidas**: se rechazan rutas con `..`, absolutas o con caracteres de control (*zip-slip*); los ZIP se validan por tamaño declarado y nunca se extraen más bytes de los declarados (protección contra ZIP bomba); se ignoran `__MACOSX`, `.DS_Store` y `Thumbs.db`; los archivos nunca se ejecutan en el servidor y se sirven con `nosniff` y CSP restrictiva.
+
+**Datos (un JSON por proyecto)**: `<tu carpeta>/.kcc/codigo/<id>/proyecto.json` (metadatos, árbol y versiones) y `<id>/objetos/<sha256>` (contenido de cada archivo, por hash); los contadores de uso van en `stats.json`. Los **fragmentos de la versión anterior se convierten solos en proyectos de un archivo**. El botón ⤓ exporta los `proyecto.json`; el contenido de los archivos se descarga con **Descargar como ZIP**.
+
+**Logros de Código**: 8 familias (*Taller de proyectos*, *Árbol frondoso*, *Historia del proyecto*, *Líneas con sentido*, *Políglota*, *Descompresor*, *Ojo en la vista previa*, *Copia y pega*), los especiales *Trío web*, *Maratón de código* y *Viaje en el tiempo*, el título *Artesano del código*, un reto semanal y la *Copa del Artesano*.
+
+Nueva dependencia: `fflate` (descompresión de ZIP); tras actualizar hay que ejecutar `npm ci`.
 
 ## Exportar JSON
 
