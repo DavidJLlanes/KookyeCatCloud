@@ -9,6 +9,12 @@ window.KCC = window.KCC || { views: {} };
 /* ---------------------------------------------------------------
    Estado
 --------------------------------------------------------------- */
+const ORDENES = [
+  ['name-asc', 'Nombre A → Z'], ['name-desc', 'Nombre Z → A'],
+  ['date-desc', 'Más recientes'], ['date-asc', 'Más antiguos'],
+  ['size-desc', 'Más grandes'], ['size-asc', 'Más pequeños'],
+];
+
 const state = {
   path: '',
   user: null,
@@ -309,78 +315,112 @@ const joinPath = (dir, name) => (dir ? dir + '/' : '') + name;
 const parentOf = (p) => (p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : '');
 
 /* ---------------------------------------------------------------
-   Tonalidad del fondo
+   Apariencia: tema (superficies y texto) + color de acento.
+   Ambos se guardan en este dispositivo. El tema lo fija data-theme en <html>
+   (CSS: :root[data-theme=…]); el acento escribe --b1…--b3 y sus derivados.
 --------------------------------------------------------------- */
-// b1/b2/b3 son las tres manchas del degradado y también el degradado de marca,
-// así que la interfaz entera queda en la misma gama. base = tinte del fondo.
-const TINTS = [
-  { id: 'oceano',    name: 'Océano',    b1: '#4f7cff', b2: '#a855f7', b3: '#22d3ee', base: '#0d1730' },
-  { id: 'esmeralda', name: 'Esmeralda', b1: '#10b981', b2: '#22d3ee', b3: '#84cc16', base: '#08201c' },
-  { id: 'atardecer', name: 'Atardecer', b1: '#f97316', b2: '#ec4899', b3: '#fbbf24', base: '#241019' },
-  { id: 'violeta',   name: 'Violeta',   b1: '#8b5cf6', b2: '#d946ef', b3: '#6366f1', base: '#170f2b' },
-  { id: 'carmesi',   name: 'Carmesí',   b1: '#f43f5e', b2: '#a855f7', b3: '#fb7185', base: '#230d1a' },
-  { id: 'grafito',   name: 'Grafito',   b1: '#7c8aa5', b2: '#94a3b8', b3: '#64748b', base: '#12161f' },
+const TEMAS = [
+  { id: 'grafito', name: 'Grafito', desc: 'Neutro y sobrio', sw: ['#0b0d12', '#191d27', '#e9ecf3'] },
+  { id: 'oscuro', name: 'Océano', desc: 'Oscuro con tono azulado', sw: ['#070b16', '#16203a', '#eaf0ff'] },
+  { id: 'claro', name: 'Claro', desc: 'Fondo claro para el día', sw: ['#f2f4f9', '#ffffff', '#0f172a'] },
+  { id: 'auto', name: 'Automático', desc: 'Sigue el modo del sistema', sw: null },
 ];
-const tintById = (id) => TINTS.find(t => t.id === id) || TINTS[0];
+// b1 = acento principal; b2 y b3 completan el degradado y las manchas del fondo
+const ACENTOS = [
+  { id: 'azul', name: 'Azul', b1: '#4f7cff', b2: '#a855f7', b3: '#22d3ee' },
+  { id: 'esmeralda', name: 'Esmeralda', b1: '#10b981', b2: '#22d3ee', b3: '#84cc16' },
+  { id: 'violeta', name: 'Violeta', b1: '#8b5cf6', b2: '#d946ef', b3: '#6366f1' },
+  { id: 'ambar', name: 'Ámbar', b1: '#f59e0b', b2: '#f97316', b3: '#facc15' },
+  { id: 'coral', name: 'Coral', b1: '#f43f5e', b2: '#a855f7', b3: '#fb7185' },
+  { id: 'grafito', name: 'Grafito', b1: '#64748b', b2: '#94a3b8', b3: '#475569' },
+];
+// Migración de la antigua «tonalidad» (fc-tint) a tema + acento
+const MIGRA_TINT = { oceano: ['oscuro', 'azul'], esmeralda: ['grafito', 'esmeralda'], atardecer: ['grafito', 'ambar'], violeta: ['grafito', 'violeta'], carmesi: ['grafito', 'coral'], grafito: ['grafito', 'grafito'] };
 
-const rgbOf = (hex) => {
-  const n = parseInt(hex.slice(1), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-};
+const rgbOf = (hex) => { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
 const alpha = (hex, a) => `rgba(${rgbOf(hex).join(',')},${a})`;
-// Mezcla con blanco: p es la proporción del color, el resto blanco
-const lighten = (hex, p) => `rgb(${rgbOf(hex).map(c => Math.round(c * p + 255 * (1 - p))).join(',')})`;
+// Mezcla lineal: p = proporción de b (0…1); el resto es a
+const mezcla = (a, b, p) => { const A = rgbOf(a), B = rgbOf(b); return `rgb(${A.map((c, i) => Math.round(c * (1 - p) + B[i] * p)).join(',')})`; };
 
-// La identidad de marca permanece fija aunque cambie la tonalidad de la interfaz.
-function setFavicon() { /* Favicon estático configurado en index.html. */ }
+const leeLS = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const guardaLS = (k, v) => { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } };
+const esClaroSistema = () => !!(window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches);
+function temaElegido() {
+  const v = leeLS('kcc-theme');
+  if (v) return v;
+  const old = leeLS('fc-tint');
+  return old && MIGRA_TINT[old] ? MIGRA_TINT[old][0] : 'grafito';
+}
+function acentoElegido() {
+  const v = leeLS('kcc-accent');
+  if (v) return v;
+  const old = leeLS('fc-tint');
+  return old && MIGRA_TINT[old] ? MIGRA_TINT[old][1] : 'azul';
+}
+// Tema efectivo: «auto» se resuelve con el modo del sistema
+const temaEfectivo = (id) => (id === 'auto' ? (esClaroSistema() ? 'claro' : 'grafito') : (TEMAS.some(t => t.id === id) ? id : 'grafito'));
 
-function applyTint(id, persist) {
-  const t = tintById(id);
+function applyAccent(id, persist) {
+  const a = ACENTOS.find(x => x.id === id) || ACENTOS[0];
+  const claro = document.documentElement.dataset.theme === 'claro';
   const root = document.documentElement.style;
-  root.setProperty('--b1', t.b1);
-  root.setProperty('--b2', t.b2);
-  root.setProperty('--b3', t.b3);
-  root.setProperty('--aurora-base', t.base);
-  // Los acentos se calculan aquí y se escriben como valores literales: un color-mix()
-  // guardado en una variable que referencia otra variable no se recalcula al cambiarla,
-  // y quedaban pastillas y chips del color anterior.
-  root.setProperty('--brand-soft', alpha(t.b1, .16));
-  root.setProperty('--accent-text', lighten(t.b1, .45));
-  root.setProperty('--accent-line', alpha(t.b1, .4));
-  root.setProperty('--accent-strong', alpha(t.b1, .72));
-  root.setProperty('--glow', `0 6px 24px -6px ${alpha(t.b1, .6)}`);
-  setFavicon(t.b1, t.b2);
-  if (persist) localStorage.setItem('fc-tint', t.id);
-  document.querySelectorAll('.tint').forEach(b => b.classList.toggle('is-active', b.dataset.tint === t.id));
+  root.setProperty('--b1', a.b1);
+  root.setProperty('--b2', a.b2);
+  root.setProperty('--b3', a.b3);
+  // Fondo: un velo muy suave del acento sobre el tono base del tema
+  root.setProperty('--aurora-base', claro ? mezcla('#eef3ff', a.b1, .07) : mezcla('#0b0d12', a.b1, .1));
+  root.setProperty('--brand-soft', alpha(a.b1, claro ? .12 : .16));
+  // Texto de acento: más oscuro en el claro, más claro en los oscuros (contraste AA)
+  root.setProperty('--accent-text', claro ? mezcla('#0f172a', a.b1, .72) : mezcla('#ffffff', a.b1, .55));
+  root.setProperty('--accent-line', alpha(a.b1, .4));
+  root.setProperty('--accent-strong', alpha(a.b1, .72));
+  root.setProperty('--glow', `0 6px 24px -6px ${alpha(a.b1, .6)}`);
+  if (persist) guardaLS('kcc-accent', a.id);
+  document.querySelectorAll('.acento').forEach(b => { const on = b.dataset.acento === a.id; b.classList.toggle('is-active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
 }
 
-function renderTints() {
-  const box = $('tint-grid');
-  if (!box || box.childElementCount) return; // se pinta una sola vez
-  const current = localStorage.getItem('fc-tint') || TINTS[0].id;
-  for (const t of TINTS) {
-    const btn = el('button', 'tint');
-    btn.dataset.tint = t.id;
-    btn.title = t.name;
-    const sw = el('div', 'swatch');
-    sw.style.background = `radial-gradient(120% 100% at 50% 0%, ${t.base}, #04070f)`;
-    [t.b1, t.b2, t.b3].forEach(c => {
-      const blob = el('i');
-      blob.style.background = `radial-gradient(circle, ${c}, transparent 70%)`;
-      sw.appendChild(blob);
-    });
-    btn.appendChild(sw);
-    const mark = el('span', 'mark');
-    mark.appendChild(icon('i-check'));
-    btn.appendChild(mark);
-    btn.appendChild(el('span', 'tname', t.name));
-    if (t.id === current) btn.classList.add('is-active');
-    btn.addEventListener('click', () => {
-      applyTint(t.id, true);
-      showToast(`Tonalidad ${t.name}`);
-    });
-    box.appendChild(btn);
+function applyTheme(id, persist) {
+  const eff = temaEfectivo(id);
+  document.documentElement.dataset.theme = eff;
+  if (persist) guardaLS('kcc-theme', id);
+  applyAccent(acentoElegido(), false);   // el acento se recalcula para el tema nuevo
+  document.querySelectorAll('.tema').forEach(b => { const on = b.dataset.tema === id; b.classList.toggle('is-active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+}
+
+// Con «Automático», el tema sigue al sistema en directo
+if (window.matchMedia) matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', () => { if (temaElegido() === 'auto') applyTheme('auto', false); });
+
+function renderApariencia() {
+  const tBox = $('theme-grid'), aBox = $('accent-grid');
+  if (!tBox || !aBox || tBox.childElementCount) return;   // se pinta una sola vez
+  for (const t of TEMAS) {
+    const btn = el('button', 'tema');
+    btn.type = 'button'; btn.dataset.tema = t.id;
+    const prev = el('div', 'tema-prev');
+    if (t.sw) {
+      prev.style.background = t.sw[0];
+      const panel = el('i', 'tp-panel'); panel.style.background = t.sw[1];
+      const linea = el('i', 'tp-linea'); linea.style.background = t.sw[2];
+      const linea2 = el('i', 'tp-linea corta'); linea2.style.background = t.sw[2];
+      prev.append(panel, linea, linea2);
+    } else {
+      prev.style.background = `linear-gradient(90deg, ${TEMAS[0].sw[0]} 50%, ${TEMAS[2].sw[0]} 50%)`;
+    }
+    const info = el('span', 'tema-info');
+    info.append(el('b', null, t.name), el('small', null, t.desc));
+    btn.append(prev, info);
+    btn.addEventListener('click', () => { applyTheme(t.id, true); showToast(`Tema ${t.name}`); });
+    tBox.appendChild(btn);
   }
+  for (const a of ACENTOS) {
+    const btn = el('button', 'acento');
+    btn.type = 'button'; btn.dataset.acento = a.id; btn.title = a.name; btn.setAttribute('aria-label', `Acento ${a.name}`);
+    btn.style.setProperty('--c1', a.b1); btn.style.setProperty('--c2', a.b2);
+    btn.appendChild(icon('i-check'));
+    btn.addEventListener('click', () => { applyAccent(a.id, true); showToast(`Acento ${a.name}`); });
+    aBox.appendChild(btn);
+  }
+  applyTheme(temaElegido(), false);   // marca los activos
 }
 
 /* ---------------------------------------------------------------
@@ -542,7 +582,7 @@ function showApp() {
   $('dav-user').textContent = name;
   cargarCapacidades();       // aquí, no en checkSession: así vale entrando por el formulario
   cargarFavoritosSet();
-  $('sort-select').value = state.sort;
+  pintaOrden();
   applyViewButtons();
   aplicarBotonAgrupar();
   refresh();
@@ -598,7 +638,7 @@ function switchTab(tab) {
   if (tab === 'map') loadMap();
   if (tab === 'trash') loadTrash();
   if (tab === 'colecciones') loadColecciones();
-  if (tab === 'cuenta') { renderTints(); loadCuenta(); }
+  if (tab === 'cuenta') { renderApariencia(); loadCuenta(); }
   for (const [nombre, vista] of Object.entries(window.KCC.views)) {
     if (nombre !== tab && vista.close) vista.close();
   }
@@ -1135,19 +1175,24 @@ function buildTile(item) {
     box.appendChild(c);
   }
 
+  let inlineDots = null;
   if (state.selectMode) box.appendChild(checkbox());
   else {
     const dots = el('button', 'dots');
     dots.appendChild(icon('i-dots'));
     dots.setAttribute('aria-label', 'Opciones');
     dots.addEventListener('click', e => { e.stopPropagation(); openActions(item); });
-    box.appendChild(dots);
+    // Foto: el ⋮ flota sobre la imagen. Archivo/carpeta: va en la franja del nombre,
+    // para no tapar el icono (sobre todo en móvil, donde la baldosa es grande).
+    if (tile.classList.contains('photo')) box.appendChild(dots);
+    else inlineDots = dots;
   }
   tile.appendChild(box);
 
   const cap = el('div', 'cap');
   cap.appendChild(el('span', 'name', nombreVisible(item.name)));
   cap.appendChild(el('span', 'sz', item.isDir ? '' : fmtSize(item.size)));
+  if (inlineDots) { inlineDots.classList.add('inline'); cap.appendChild(inlineDots); }
   tile.appendChild(cap);
 
   tile.addEventListener('click', e => onItemClick(item, e));
@@ -2453,8 +2498,27 @@ async function borrarNotasSel() {
   } catch { showToast('Error de conexión'); }
 }
 
+// Panel de «ninguna nota abierta»: las 6 notas editadas más recientemente y un botón para crear
+function pintaVacio() {
+  const lista = $('nv-list'), caja = $('nv-rec');
+  if (!lista || !caja) return;
+  lista.textContent = '';
+  const recientes = NT.items.filter(i => i.type === 'note')
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)).slice(0, 6);
+  caja.hidden = !recientes.length;
+  for (const n of recientes) {
+    const b = el('button', null);
+    b.type = 'button';
+    b.append(el('span', 't', n.title || 'Nota sin título'), el('span', 'd', n.updatedAt ? fmtDate(n.updatedAt) : ''));
+    b.addEventListener('click', () => abrirNota(n.id));
+    lista.appendChild(el('li', null)).appendChild(b);
+  }
+}
+$('nv-new').addEventListener('click', () => crearNota('note', ''));
+
 function renderNotes() {
   pintaSelNotas();
+  pintaVacio();
   const caja = $('notes-tree');
   caja.textContent = '';
   const raiz = hijosDe('').filter(coincide);
@@ -3875,10 +3939,16 @@ $('folder-name-input').addEventListener('keydown', e => { if (e.key === 'Enter')
 
 $('search-input').addEventListener('input', onSearchInput);
 $('search-clear').addEventListener('click', () => { clearSearchInput(); refresh(); });
-$('sort-select').addEventListener('change', e => {
-  state.sort = e.target.value;
-  localStorage.setItem('fc-sort', state.sort);
-  render();
+function pintaOrden() {
+  const f = ORDENES.find(o => o[0] === state.sort);
+  $('sort-label').textContent = f ? f[1] : ORDENES[0][1];
+}
+$('sort-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  K.menu(e.currentTarget, ORDENES.map(([id, label]) => ({
+    label, checked: state.sort === id,
+    onClick: () => { state.sort = id; localStorage.setItem('fc-sort', id); pintaOrden(); render(); },
+  })));
 });
 $('type-chips').addEventListener('click', e => {
   const chip = e.target.closest('.chip');
@@ -4176,5 +4246,6 @@ if ('serviceWorker' in navigator) {
 }
 
 // Antes de pintar nada, para que no se vea un cambio de color al entrar
-applyTint(localStorage.getItem('fc-tint') || TINTS[0].id, false);
+applyTheme(temaElegido(), false);
+applyAccent(acentoElegido(), false);
 checkSession();

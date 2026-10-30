@@ -894,6 +894,15 @@ Nueva dependencia: `fflate` (descompresión de ZIP); tras actualizar hay que eje
 - **Administración → Exportar todos los JSON**: un ZIP comprimido con los JSON de todos los usuarios (`usuarios/<nombre>/…`), los compartidos (`compartido/`), la lista de usuarios sin contraseñas y un `LEEME.json`. No incluye contraseñas, secretos, sesiones ni passkeys, ni los archivos subidos.
 - API: `GET /api/export/:seccion` y `GET /api/admin/export-all` (solo administradores). Código en `lib/exportar.js`.
 
+## Apariencia: tema y color de acento
+
+En **Cuenta → Apariencia** eliges el tema y el color de acento. Se guardan en el dispositivo (`localStorage`) y se aplican antes de pintar la página, sin parpadeo.
+
+- **Temas:** *Grafito* (por defecto: neutro y sobrio), *Océano* (oscuro con tono azulado), *Claro* (fondo claro para el día) y *Automático* (sigue el modo del sistema operativo).
+- **Color de acento:** azul (por defecto), esmeralda, violeta, ámbar, coral y grafito. Afecta a botones principales, pestañas activas, enlaces y el halo de fondo.
+- Todo sale de variables CSS en `:root` (`--bg`, `--surface*`, `--text`, `--muted`, `--faint`, `--line`, `--ink`, `--b1…b3`, `--accent-*`). Las superposiciones usan `color-mix(in srgb, var(--ink) N%, transparent)`, así se adaptan solas a claro y oscuro.
+- Los visores a pantalla completa (lightbox, juegos y superposiciones sobre fotos) siguen siendo oscuros en todos los temas a propósito.
+
 ## Tamaño del texto
 
 En **Cuenta → Tamaño del texto** puedes aumentar o reducir las letras de toda la aplicación (del 85 % al 140 %, con botones A− / A+, deslizador y «Restablecer»). Se guarda en el dispositivo y se aplica antes de pintar la página. Funciona con un único factor (`--fs`) que multiplica todas las tipografías de `public/css/` y de `index.html`: en CSS nuevo escribe `font-size:calc(13px*var(--fs,1))` en lugar de `13px`. Los campos de texto no bajan de 16 px para que iOS no haga zoom al enfocarlos. El código está en `public/js/textsize.js`.

@@ -78,7 +78,7 @@
 .nb-table-wrap{overflow-x:auto;margin:22px 0 6px;border-radius:12px;border:1px solid var(--line);}
 .nb-table{border-collapse:collapse;width:100%;min-width:420px;font-size:.94em;}
 .nb-table th,.nb-table td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top;min-width:90px;outline:none;line-height:1.5;}
-.nb-table th{background:rgba(255,255,255,.05);font-weight:700;}
+.nb-table th{background:color-mix(in srgb,var(--ink) 5%,transparent);font-weight:700;}
 .nb-table td:focus,.nb-table th:focus{background:var(--brand-soft);box-shadow:inset 0 0 0 2px var(--accent-strong);}
 .nb-table tr > *:first-child{border-left:none;} .nb-table tr > *:last-child{border-right:none;}
 .nb-table tr:first-child > *{border-top:none;} .nb-table tr:last-child > *{border-bottom:none;}

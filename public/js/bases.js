@@ -8,6 +8,7 @@
   const OPS = { contains: 'contiene', equals: 'es igual a', not: 'no es', checked: 'marcada', unchecked: 'sin marcar', empty: 'está vacío', filled: 'tiene valor', gt: 'mayor que', lt: 'menor que' };
   const S = { lista: [], plantillas: [], base: null, vista: '', q: '', local: null, built: false, loading: null, ordenLocal: null };
   const btn = (label, ic, fn, cls = 'btn') => { const b = el('button', cls); b.type = 'button'; if (ic) b.appendChild(icon(ic)); if (label) b.appendChild(el('span', null, label)); b.addEventListener('click', fn); return b; };
+  const bsEmptyIcon = () => { const d = el('div', 'bs-empty-i'); d.appendChild(icon('i-table')); return d; };
   const col = (id) => S.base.columns.find(c => c.id === id);
   const opcion = (c, id) => (c.opciones || []).find(o => o.id === id);
   const titulo = (r) => { const c = S.base.columns.find(x => x.tipo === 'text'); return (c && r.c[c.id]) || 'Sin título'; };
@@ -36,7 +37,7 @@
     const acc = el('div', 'bs-actions');
     acc.append(btn('Importar', 'i-upload', importar), btn('Nueva base', 'i-plus', nueva, 'btn primary')); head.append(t, acc); page.appendChild(head);
     if (!S.lista.length) {
-      const e = el('div', 'bs-empty'); e.append(el('div', 'bs-empty-i', '🗂️'), el('h2', null, 'Aún no tienes bases'), el('p', 'k-muted', 'Empieza con una plantilla (proyectos, libros, gastos…) o crea una a tu gusto.'), btn('Crear la primera', 'i-plus', nueva, 'btn primary')); page.appendChild(e); return;
+      const e = el('div', 'bs-empty'); e.append(bsEmptyIcon(), el('h2', null, 'Aún no tienes bases'), el('p', 'k-muted', 'Empieza con una plantilla (proyectos, libros, gastos…) o crea una a tu gusto.'), btn('Crear la primera', 'i-plus', nueva, 'btn primary')); page.appendChild(e); return;
     }
     const grid = el('div', 'bs-cards');
     S.lista.forEach(b => {
