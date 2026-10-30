@@ -154,6 +154,12 @@
   .cd-arbol{max-height:none;}
   .cd-ver-a .btn{min-height:40px;}
 }
+@media (max-width:640px){
+  .cd-ver{flex-direction:column;align-items:stretch;gap:10px;}
+  .cd-ver-t{flex:none;width:100%;}
+  .cd-ver-a{width:100%;display:grid;grid-template-columns:1fr 1fr 1fr 44px;gap:6px;}
+  .cd-ver-a .btn{justify-content:center;padding-left:6px;padding-right:6px;}
+}
 /* Colores de código (resaltado) */
 .hljs{color:#e2e8f0;background:#0b1020;}
 .hljs-comment,.hljs-quote{color:#64748b;font-style:italic;}
