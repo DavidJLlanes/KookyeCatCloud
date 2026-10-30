@@ -113,6 +113,8 @@
       { label: p.favorito ? 'Quitar de favoritos' : 'Marcar como favorito', icon: 'i-star', onClick: async () => { try { S.p = await K.put(url(''), { favorito: !p.favorito }); pinta(); } catch (e) { K.fail(e); } } },
       { label: 'Editar nombre y descripción', icon: 'i-pencil', onClick: datos },
       { label: 'Descargar como ZIP', icon: 'i-download', onClick: async () => { await guardaYa(); bajar(url('/zip'), nombreZip()); } },
+      { label: 'Copiar o mover a Archivos…', icon: 'i-move', onClick: () => K.transferir.abre({ tipo: 'codigo', id: p.id, vid: S.ver ? S.ver.id : undefined }, { carpeta: '', alTerminar: () => { S.built && carga(); } }) },
+      { label: 'Historial de envíos…', icon: 'i-restore', onClick: () => K.transferir.historial(() => { if (S.p) abre(S.p.id); }) },
       '-', { label: 'Eliminar proyecto', icon: 'i-trash', danger: true, onClick: elimina }]), 'btn sm'); mas.setAttribute('aria-label', 'Más acciones'); acc.appendChild(mas);
     head.append(back, tit, acc); page.appendChild(head);
     const cuota = el('div', 'cd-cuota'); const pct = Math.min(100, Math.round(p.almacen / MAXB * 100));
@@ -189,6 +191,7 @@
       if (carpeta) it.push({ label: 'Nuevo archivo aquí', icon: 'i-plus', onClick: () => nuevoArchivo(ruta) }, { label: 'Nueva carpeta aquí', icon: 'i-folder-plus', onClick: () => nuevaCarpeta(ruta) }, { label: 'Subir aquí…', icon: 'i-upload', onClick: () => menuSubir(b, ruta) });
       else {
         it.push({ label: 'Descargar', icon: 'i-download', onClick: () => bajar(url('/archivo?' + q({ ruta, descargar: 1 })), nombreDe(ruta)) });
+        it.push({ label: 'Copiar o mover a Archivos…', icon: 'i-move', onClick: () => K.transferir.abre({ tipo: 'codigo', id: S.p.id, rutas: [ruta], vid: S.ver ? S.ver.id : undefined }, { carpeta: '', alTerminar: () => {} }) });
         if (/\.zip$/i.test(ruta)) it.push({ label: 'Descomprimir aquí', icon: 'i-archive', onClick: () => descomprimeArchivo(ruta) });
       }
       it.push({ label: 'Renombrar o mover', icon: 'i-move', onClick: () => mueve(ruta) }, '-', { label: 'Eliminar', icon: 'i-trash', danger: true, onClick: () => borra(ruta, carpeta) });

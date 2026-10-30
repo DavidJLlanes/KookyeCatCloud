@@ -26,6 +26,7 @@ const createShopping = require('./lib/shopping');
 const createGames = require('./lib/games');
 const createBases = require('./lib/bases');
 const createCodigo = require('./lib/codigo');
+const createTransferir = require('./lib/transferir');
 const createExportar = require('./lib/exportar');
 const createVersions = require('./lib/versions');
 const createVault = require('./lib/vault');
@@ -299,7 +300,9 @@ const gamesMod = createGames({ express, multer, sharp, userRoot, sendError, regi
 const basesMod = createBases({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido });
 // Módulos que aportan recuentos a la gamificación: todo módulo nuevo se añade aquí (ver CLAUDE.md)
 const codigoMod = createCodigo({ express, multer, ZipArchive, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido });
-const modulosConLogros = [gamesMod, basesMod, codigoMod];
+// Enviar entre secciones (Archivos ⇄ Código): copiar o mover, con deshacer de 1 minuto
+const transferMod = createTransferir({ express, userRoot, resuelve: (user, r, write) => resolveFor(user, r, { write }), esCompartida: (r) => !!sharesMod.parse(r), sendError, registrarActividad, alCambiar: alCambiarContenido, codigo: codigoMod.core });
+const modulosConLogros = [gamesMod, basesMod, codigoMod, transferMod];
 
 // Versiones de archivos de texto (se crea aquí porque WebDAV y las rutas de archivos la usan)
 const versionsMod = createVersions({
@@ -3193,6 +3196,7 @@ app.use('/api/games', auth, gamesMod.router);
 app.use('/api/bases', auth, basesMod.router);
 app.use('/api/codigo-vista', codigoMod.vistaRouter); // enlaces firmados y caducan: el iframe aislado no envía cookies
 app.use('/api/codigo', auth, codigoMod.router);
+app.use('/api/transferir', auth, transferMod.router);
 app.use('/api', createExportar({ express, auth, adminOnly, userRoot, dataRoot: DATA_ROOT, loadUsers, ZipArchive, registrarActividad, sendError }).router);
 calendarMod.core.registraOrigen('prompt', (user, id, ev) => promptsMod.core.setCal(user, id, ev));
 calendarMod.core.registraOrigen('game', (user, id, ev) => gamesMod.core.setCal(user, id, ev));

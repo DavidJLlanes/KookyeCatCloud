@@ -82,3 +82,5 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 
 - [x] ~~Módulo Código (editor con colores, números de línea y vista previa) y exportación de JSON por sección y completa~~ Hecho: `lib/codigo.js`, `public/js/codigo.js`, `lib/exportar.js`, `public/js/exportar.js`.
 - [x] ~~Código como proyectos (carpetas, archivos, subida de archivos y ZIP, versiones con diff y restauración, vista web sin JavaScript)~~ Hecho: reescrito `lib/codigo.js` + `public/js/codigo.js`; 8 familias + 3 especiales + título + reto. Pendiente opcional: ramas, etiquetas de versión y búsqueda dentro de los archivos.
+
+- [x] Copiar o mover entre Archivos y Código (fase 1), con deshacer de 1 minuto, previsualización, historial y logro «Mudanzas». Pendiente: Portapapeles, Notas y Contactos (fase 2); Bases y Juegos en CSV, y arrastrar y soltar en escritorio (fase 3).

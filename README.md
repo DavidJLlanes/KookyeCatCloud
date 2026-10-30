@@ -1204,6 +1204,22 @@ location = /cloud/api/events {
   Va antes del `location` general de la app. Sin él, la app funciona igual, pero los avisos llegan
   tarde o no llegan.
 
+## Copiar o mover entre secciones
+
+Desde **Archivos** (menú ⋯ o selección múltiple) eliges **Copiar o mover a…** y el destino:
+
+- **Archivos**: otra carpeta de tus archivos (también sirve para fotos, porque las fotos son archivos de tu nube).
+- **Código**: un proyecto nuevo (con el nombre que quieras) o uno que ya tengas, opcionalmente dentro de una carpeta del proyecto. Una carpeta o un ZIP se convierte en proyecto.
+
+Desde **Código** puedes enviar el proyecto entero, una versión o solo algunos archivos a **Archivos**, donde se crea una carpeta con el nombre del proyecto.
+
+- **Previsualización**: antes de enviar se ven los archivos, el tamaño y los avisos (por ejemplo, que las fechas y los favoritos no se conservan en Código).
+- **Deshacer durante 1 minuto**: tras cada envío aparece un aviso con cuenta atrás y el botón **Deshacer**. Pasado ese minuto ya no se puede deshacer.
+- **Historial**: en el menú ⋯ de Archivos y de un proyecto, **Historial de envíos** muestra los últimos 50 envíos, con su estado y el botón para deshacer si todavía se puede.
+- **Límites**: como en Código, máximo 1000 archivos por envío y 50 MB por proyecto. No se envían carpetas compartidas: cópialas a tus archivos antes.
+- **Mover desde Código**: solo el proyecto entero (sin versión ni selección). Lo demás se puede copiar.
+- **Logro «Mudanzas»**: cada envío cuenta para la familia del mismo nombre.
+
 ## Guardar en la galería (iPhone y Android)
 
 En el móvil, las imágenes de Archivos y Fotos tienen **Guardar en galería** (en el menú ⋯ y en el visor, con el icono de imagen). Abre la hoja de compartir del sistema, donde eliges **Guardar imagen** en iPhone o **Galería / Fotos** en Android, así la foto acaba en el carrete y no en la carpeta de descargas.
@@ -1421,6 +1437,7 @@ lib/
   games.js           Colección de videojuegos, RAWG opcional y portadas
   bases.js           Bases de datos con columnas propias (un JSON por base)
   codigo.js          Proyectos de código: carpetas, archivos, versiones y vista web (un JSON por proyecto)
+  transferir.js      Copiar o mover entre Archivos y Código, con deshacer de 1 minuto e historial
   exportar.js        Exportación de JSON por sección y ZIP completo (administración)
   game.js            Logros, niveles, racha, retos semanales, cosméticos y partidas de Tetris
   comfy.js           Lee metadatos de generación: ComfyUI, Automatic1111 / Forge, JSON y EXIF/XMP

@@ -985,6 +985,8 @@ function abrirCtx(x, y, item) {
     } else {
       opcionCtx(menu, 'i-download', 'Descargar', bulkDownload);
     }
+    if (!sobreSeleccion || rutas.length) opcionCtx(menu, 'i-move', rutas.length > 1 ? `Copiar o mover ${rutas.length} elementos a…` : 'Copiar o mover a…', () => K.transferir.abre({ tipo: 'archivos', rutas }, { carpeta: state.path, alTerminar: () => refresh() }));
+    opcionCtx(menu, 'i-restore', 'Historial de envíos…', () => K.transferir.historial(() => refresh()));
     if (!sobreSeleccion) opcionCtx(menu, 'i-share', 'Compartir enlace…', () => openShare(item));
     if (window.KCC.fileCalendar) opcionCtx(menu, 'i-calendar', 'Fecha en el calendario…', () => window.KCC.fileCalendar(rutas));
     if (window.KCC.toVault) opcionCtx(menu, 'i-lock', 'Mover a la caja fuerte…', () => window.KCC.toVault(rutas));
