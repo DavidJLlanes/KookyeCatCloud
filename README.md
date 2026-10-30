@@ -915,6 +915,16 @@ Pestaña **Código**: proyectos al estilo GitHub, con carpetas, archivos, versio
 Nueva dependencia: `fflate` (descompresión de ZIP); tras actualizar hay que ejecutar `npm ci`.
 
 
+### Vínculo con Prompts
+
+Los prompts de tipo **código** (sección Prompts) y los proyectos de **Código** se pueden vincular en los dos sentidos: el prompt guarda qué proyecto contiene su resultado y el proyecto sabe de qué prompt viene.
+
+- **Desde un prompt de código** (ficha → bloque *Resultado en Código*): **Ver** abre el proyecto, **Crear proyecto** genera uno nuevo con el prompt guardado en `prompt.md` y ya vinculado, **Vincular…** elige uno que ya tengas y la **×** quita el vínculo.
+- **Desde un proyecto** (bloque *Prompts vinculados*, bajo el título): **Ver** abre el prompt, **Crear prompt** crea un prompt de tipo código vinculado, **Vincular…** elige uno existente y la **×** quita el vínculo.
+- Un prompt admite hasta 10 proyectos y un proyecto hasta 20 prompts. Duplicar un prompt no copia sus vínculos.
+- Cada lado guarda solo los ids del otro (`prompt.codigo` en `.kcc/prompts/`, `proyecto.prompts` en `.kcc/codigo/<id>/proyecto.json`) y `lib/vinculos.js` los mantiene a la vez. Si borras uno de los dos, el vínculo sobrante se ignora y se limpia solo la próxima vez que se consulta.
+- API: `GET /api/vinculos/codigo/prompt/:id`, `GET /api/vinculos/codigo/proyecto/:id`, `GET /api/vinculos/codigo/prompts`, `POST /api/vinculos/codigo` y `/quitar` (`{promptId, proyectoId}`), `POST /api/vinculos/codigo/crear-proyecto` (`{promptId}`) y `/crear-prompt` (`{proyectoId}`).
+
 ![Lista de proyectos de código](docs/capturas/codigo.png)
 
 *Lista de proyectos de código con archivos, versiones y vista web.*

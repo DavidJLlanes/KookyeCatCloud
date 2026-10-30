@@ -198,3 +198,15 @@
 
 /* Arrastrar archivos sobre la pestaña Código (transferir.js) */
 .tr-soltar{outline:2px dashed var(--accent,#7c8cff);outline-offset:2px;background:color-mix(in srgb,var(--accent,#7c8cff) 18%,transparent)!important;}
+
+/* Prompts vinculados (ficha del proyecto) */
+.cd-vinc{margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--glass);}
+.cd-vinc-h{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.cd-vinc-h strong{font-size:calc(13.5px*var(--fs,1));font-weight:650;}
+.cd-vinc-acc{display:flex;gap:6px;flex-wrap:wrap;}
+.cd-vinc-lista{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+.cd-vinc-lista:empty{display:none;}
+.cd-vinc-fila{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 12px;border:1px solid var(--line);border-radius:10px;background:var(--glass);}
+.cd-vinc-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(13.5px*var(--fs,1));font-weight:600;}
+.cd-vinc-s{flex-shrink:0;font-size:calc(11.5px*var(--fs,1));color:var(--faint);}
+.cd-vinc-vacio{margin:8px 0 0;font-size:calc(12.5px*var(--fs,1));color:var(--faint);line-height:1.5;}

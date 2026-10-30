@@ -121,11 +121,53 @@
     const barra = el('div', 'cd-barra'); const rell = el('i'); rell.style.width = pct + '%'; if (pct > 85) rell.classList.add('alto'); barra.appendChild(rell);
     cuota.append(barra, el('small', 'k-muted', `${tam(p.almacen)} de 50 MB (incluye versiones) · ${p.nArchivos}/${p.limites.archivos} archivos · ${p.nVersiones}/${p.limites.versiones} versiones`));
     page.appendChild(cuota);
+    page.appendChild(bloquePrompts());
     const tabs = el('div', 'cd-tabs2');
     [['archivos', 'Archivos'], ['versiones', `Versiones (${p.nVersiones})`], ['web', 'Vista web']].forEach(([k, n]) => { const b = el('button', S.tab === k ? 'is-active' : '', n); b.type = 'button'; b.addEventListener('click', async () => { await guardaYa(); S.tab = k; pinta(); }); tabs.appendChild(b); });
     page.appendChild(tabs);
     const cont = el('div', 'cd-contenido'); page.appendChild(cont);
     if (S.tab === 'archivos') pintaArchivos(cont); else if (S.tab === 'versiones') pintaVersiones(cont); else pintaWeb(cont);
+  }
+  /* ---------- Prompts vinculados ---------- */
+  // Prompts de tipo código cuyo resultado está guardado en este proyecto. El vínculo va en los dos lados (lib/vinculos.js).
+  function bloquePrompts() {
+    const pr = S.p; const b = el('section', 'cd-vinc');
+    const h = el('div', 'cd-vinc-h'); h.appendChild(el('strong', null, 'Prompts vinculados'));
+    const acc = el('div', 'cd-vinc-acc'); h.appendChild(acc);
+    const lista = el('div', 'cd-vinc-lista'); b.append(h, lista);
+    let vivos = [];
+    const pinta = async () => {
+      try { vivos = (await K.get('/api/vinculos/codigo/proyecto/' + pr.id)).prompts; }
+      catch (e) { lista.textContent = ''; return; }
+      lista.textContent = '';
+      if (!vivos.length) { lista.appendChild(el('p', 'cd-vinc-vacio', 'Ningún prompt vinculado. Crea uno desde este proyecto o vincula un prompt de tipo código que ya tengas.')); return; }
+      vivos.forEach(x => {
+        const fila = el('div', 'cd-vinc-fila'); fila.appendChild(el('span', 'cd-vinc-n', x.title));
+        if (x.status) fila.appendChild(el('span', 'cd-vinc-s', x.status));
+        const ver = btn('Ver', 'i-sparkle', async () => { await guardaYa(); K.open('prompt', x.id); }, 'btn sm'); ver.setAttribute('aria-label', `Ver el prompt ${x.title}`);
+        const q = btn('', 'i-x', async () => {
+          try { await K.post('/api/vinculos/codigo/quitar', { promptId: x.id, proyectoId: pr.id }); K.toast('Vínculo quitado'); pinta(); } catch (e) { K.fail(e); }
+        }, 'btn sm ghost icon'); q.title = 'Quitar el vínculo'; q.setAttribute('aria-label', `Quitar el vínculo con ${x.title}`);
+        fila.append(ver, q); lista.appendChild(fila);
+      });
+    };
+    const nuevo = btn('Crear prompt', 'i-plus', async () => {
+      nuevo.disabled = true;
+      try { await K.post('/api/vinculos/codigo/crear-prompt', { proyectoId: pr.id }); K.toast('Prompt creado y vinculado'); K.bus.emit('prompts'); await pinta(); }
+      catch (e) { K.fail(e); } finally { nuevo.disabled = false; }
+    }, 'btn sm');
+    const vinc = btn('Vincular…', 'i-link', async () => {
+      try {
+        const todos = (await K.get('/api/vinculos/codigo/prompts')).items.filter(x => !vivos.some(v => v.id === x.id));
+        if (!todos.length) { K.toast(vivos.length ? 'No quedan más prompts de código por vincular' : 'No tienes prompts de tipo código. Crea uno con «Crear prompt»'); return; }
+        K.menu(vinc, todos.map(x => ({ label: x.title, onClick: async () => {
+          try { await K.post('/api/vinculos/codigo', { promptId: x.id, proyectoId: pr.id }); K.toast('Prompt vinculado'); K.bus.emit('prompts'); pinta(); } catch (e) { K.fail(e); }
+        } })));
+      } catch (e) { K.fail(e); }
+    }, 'btn sm');
+    acc.append(nuevo, vinc);
+    pinta();
+    return b;
   }
   const nombreZip = () => (S.p.nombre.replace(/[^\w.\- ]/g, '').trim().replace(/\s+/g, '-') || 'proyecto') + '.zip';
   function datos() {
@@ -488,5 +530,14 @@
     cierra2(); return out;
   }
 
+  // K.open('codigo', id): desde un prompt vinculado se salta directamente al proyecto
+  K.openers.codigo = async (id) => {
+    try {
+      if (S.p) await guardaYa();
+      const p = await K.get('/api/codigo/' + id);
+      if (!S.built) await carga();
+      S.p = p; entra(); switchTab('codigo');
+    } catch (e) { K.fail(e); }
+  };
   K.registerView('codigo', { open() { if (S.p) pinta(); else carga(); }, close() { guardaYa(); } });
 })();

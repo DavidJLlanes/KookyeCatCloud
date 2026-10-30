@@ -20,6 +20,7 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [ ] Pruebas automáticas de la API (crear, importar, borrar, permisos).
 - [ ] Monitorizar el servicio `kookyecatcloud` con un chequeo externo (por ejemplo UptimeRobot).
 - [ ] Prompts: las miniaturas del editor no abren el lightbox.
+- [ ] Vínculo Prompts ↔ Código: que "Copiar o mover a…" y el borrado limpien los vínculos al momento (hoy se limpian al consultar), y contar los vínculos en Logros.
 - [ ] Apariencia: revisar contraste de `--faint` y de las insignias de tipo en Claro con datos reales (hay algunos fondos de Prompts y Código que aún usan tonos oscuros fijos).
 
 ## Ideas de funcionalidades

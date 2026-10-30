@@ -26,6 +26,7 @@ const createShopping = require('./lib/shopping');
 const createGames = require('./lib/games');
 const createBases = require('./lib/bases');
 const createCodigo = require('./lib/codigo');
+const createVinculos = require('./lib/vinculos');
 const createTransferir = require('./lib/transferir');
 const createExportar = require('./lib/exportar');
 const createVersions = require('./lib/versions');
@@ -3277,6 +3278,7 @@ app.use('/api/games', auth, gamesMod.router);
 app.use('/api/bases', auth, basesMod.router);
 app.use('/api/codigo-vista', codigoMod.vistaRouter); // enlaces firmados y caducan: el iframe aislado no envía cookies
 app.use('/api/codigo', auth, codigoMod.router);
+app.use('/api/vinculos', auth, createVinculos({ express, prompts: promptsMod.core, codigo: codigoMod.core, sendError, registrarActividad }));
 app.use('/api/transferir', auth, transferMod.router);
 app.use('/api', createExportar({ express, auth, adminOnly, userRoot, dataRoot: DATA_ROOT, loadUsers, ZipArchive, registrarActividad, sendError }).router);
 calendarMod.core.registraOrigen('prompt', (user, id, ev) => promptsMod.core.setCal(user, id, ev));

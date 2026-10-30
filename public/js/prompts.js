@@ -744,6 +744,56 @@
   }
 
   /* ---------- Ficha ---------- */
+  /* ---------- Vínculo con Código ---------- */
+  // Ficha de un prompt de tipo código: proyectos de Código donde está guardado su resultado.
+  // El vínculo va en los dos lados (lib/vinculos.js), así que desde el proyecto también se llega al prompt.
+  function bloqueCodigo(p, cerrar) {
+    const b = el('div', 'pd-blk pd-vinc');
+    const h = el('header'); h.appendChild(el('span', null, 'Resultado en Código'));
+    const acc = el('div', 'pd-vinc-acc');
+    const nuevo = el('button', 'btn sm'); nuevo.type = 'button'; nuevo.append(icon('i-plus'), el('span', null, 'Crear proyecto'));
+    const vinc = el('button', 'btn sm'); vinc.type = 'button'; vinc.append(icon('i-link'), el('span', null, 'Vincular…'));
+    acc.append(nuevo, vinc); h.appendChild(acc);
+    const lista = el('div', 'pd-vinc-lista'); b.append(h, lista);
+    let vivos = [];
+    const pinta = async () => {
+      try { vivos = (await K.get('/api/vinculos/codigo/prompt/' + p.id)).proyectos; }
+      catch (e) { lista.textContent = ''; lista.appendChild(el('p', 'pd-vinc-vacio', 'No se pudieron cargar los proyectos vinculados')); return; }
+      lista.textContent = '';
+      if (!vivos.length) { lista.appendChild(el('p', 'pd-vinc-vacio', 'Todavía no hay ningún proyecto de Código vinculado. Crea uno con este prompt o vincula uno que ya tengas.')); return; }
+      vivos.forEach(x => {
+        const fila = el('div', 'pd-vinc-fila'); fila.appendChild(el('span', 'pd-vinc-n', x.nombre));
+        const ver = el('button', 'btn sm'); ver.type = 'button'; ver.append(icon('i-code'), el('span', null, 'Ver'));
+        ver.setAttribute('aria-label', `Ver el proyecto ${x.nombre}`);
+        ver.addEventListener('click', () => { cerrar(); K.open('codigo', x.id); });
+        const q = el('button', 'btn sm ghost icon'); q.type = 'button'; q.title = 'Quitar el vínculo'; q.setAttribute('aria-label', `Quitar el vínculo con ${x.nombre}`); q.appendChild(icon('i-x'));
+        q.addEventListener('click', async () => {
+          try { await K.post('/api/vinculos/codigo/quitar', { promptId: p.id, proyectoId: x.id }); K.toast('Vínculo quitado'); pinta(); } catch (e) { K.fail(e); }
+        });
+        fila.append(ver, q); lista.appendChild(fila);
+      });
+    };
+    nuevo.addEventListener('click', async () => {
+      nuevo.disabled = true;
+      try {
+        await K.post('/api/vinculos/codigo/crear-proyecto', { promptId: p.id });
+        K.toast('Proyecto creado y vinculado'); if (K.game && K.game.load) K.game.load();
+        await pinta();
+      } catch (e) { K.fail(e); } finally { nuevo.disabled = false; }
+    });
+    vinc.addEventListener('click', async () => {
+      try {
+        const todos = (await K.get('/api/codigo')).items.filter(x => !vivos.some(v => v.id === x.id));
+        if (!todos.length) { K.toast(vivos.length ? 'No quedan más proyectos por vincular' : 'Todavía no tienes proyectos en Código'); return; }
+        K.menu(vinc, todos.map(x => ({ label: x.nombre, onClick: async () => {
+          try { await K.post('/api/vinculos/codigo', { promptId: p.id, proyectoId: x.id }); K.toast('Proyecto vinculado'); pinta(); } catch (e) { K.fail(e); }
+        } })));
+      } catch (e) { K.fail(e); }
+    });
+    pinta();
+    return b;
+  }
+
   async function openDetail(id) {
     let p;
     try { p = await K.get('/api/prompts/' + id); } catch (e) { K.fail(e); return; }
@@ -894,6 +944,7 @@
     if (pk.length) { const b = el('div', 'pd-blk'); const h = el('header'); h.appendChild(el('span', null, 'Parámetros')); const dl = el('dl', 'pd-params'); pk.forEach(([k, v]) => dl.append(el('dt', null, k), el('dd', null, v))); b.append(h, dl); info.appendChild(b); }
     if (p.notes) info.appendChild(bloque('Notas', p.notes));
     if (pro) pro.seccionesDetalle(p, info, () => m.close());
+    if (p.kind === 'codigo' && !p.deletedAt) info.appendChild(bloqueCodigo(p, () => m.close()));
     if (p.source) { const a = /^https?:\/\//i.test(p.source) ? (() => { const l = el('a', null, p.source); l.href = p.source; l.target = '_blank'; l.rel = 'noopener noreferrer'; l.style.cssText = 'color:var(--accent-text);word-break:break-all'; return l; })() : el('span', null, p.source); const d = el('div', 'pd-meta'); d.append(icon('i-link'), document.createTextNode('Fuente: '), a); info.appendChild(d); }
     if (p.versions && p.versions.length) {
       const det = el('details'); const sm = el('summary', null, `Historial (${p.versions.length} versiones)`); sm.style.cssText = 'cursor:pointer;color:var(--muted);font-size:13px'; det.appendChild(sm);
