@@ -72,6 +72,24 @@
   // Calendarios en los que se puede crear algo: el de festivos es virtual y de solo lectura
   const calsEscribibles = () => K.cals.list.filter(c => !c.virtual);
 
+  // Agenda del periodo visible en Markdown: eventos y tareas por día
+  function agendaMd() {
+    const [a, b] = currentRange();
+    const lista = visibleEvents().slice().sort((x, y) => evStart(x) - evStart(y));
+    const titulo = `Calendario · ${K.d.short(a)} – ${K.d.short(b)}`;
+    if (!lista.length) return { titulo, md: '' };
+    const L = [`# ${titulo}`]; let dia = '';
+    for (const e of lista) {
+      const d = K.d.long(evStart(e));
+      if (d !== dia) { dia = d; L.push('', `## ${d}`, ''); }
+      const hora = e.allDay ? 'Todo el día' : (K.d.same(evStart(e), evEnd(e)) ? `${K.d.hm(evStart(e))} – ${K.d.hm(evEnd(e))}` : rangeTxt(e));
+      const caja = e.kind === 'task' ? (e.done ? '[x] ' : '[ ] ') : '';
+      L.push(`- ${caja}**${e.title}** · ${hora}${e.location ? ' · ' + e.location : ''}`);
+      if (e.description) L.push(...String(e.description).split('\n').map(x => '  ' + x));
+    }
+    return { titulo, md: L.join('\n') + '\n' };
+  }
+
   /* ---------- Estructura ---------- */
   function build() {
     const v = $('view-calendar');
@@ -89,8 +107,10 @@
       { label: 'Importar archivo .ics…', icon: 'i-upload', onClick: () => K.calExtra.importar() },
       { label: 'Suscribirse desde otro calendario…', icon: 'i-link', onClick: () => K.calExtra.suscripcion() },
       { label: 'Festivos de España…', icon: 'i-star', onClick: () => K.calExtra.festivos() },
+      '-', ...K.doc.items(() => { const d = agendaMd(); return d.md ? { titulo: d.titulo, nombre: 'calendario', md: d.md } : (K.toast('No hay eventos en este periodo'), null); }),
       '-', { label: 'Gestionar etiquetas…', icon: 'i-tag', onClick: () => K.manageLabels() },
     ], { align: 'end' }));
+    mas.title = 'Importar, exportar y más';
     head.append(t, grow, search, nuevo, mas);
 
     const cal = el('div', 'cal');

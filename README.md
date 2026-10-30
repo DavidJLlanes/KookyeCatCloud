@@ -64,7 +64,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 - [Qué puedes hacer](#qué-puedes-hacer)
 - [Instalación](#instalación) — [local](#arrancar-en-local) · [VPS paso a paso](#despliegue-en-el-vps) · [dominio, subdominio o subcarpeta](#en-qué-dirección-instalarla)
-- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [bases](#bases), [código](#código), [exportar JSON](#exportar-json), [juegos](#juegos), [contactos](#contactos), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
+- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [bases](#bases), [código](#código), [exportar JSON](#exportar-json), [exportar a .txt, .md y PDF](#exportar-a-texto-markdown-y-pdf), [juegos](#juegos), [contactos](#contactos), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
 - [Actualizaciones](#actualizaciones)
 - [Variables de entorno](#variables-de-entorno)
 - [Seguridad](#seguridad) · [Copias de seguridad](#copias-de-seguridad) · [Estructura del proyecto](#estructura-del-proyecto) · [Solución de problemas](#solución-de-problemas)
@@ -88,6 +88,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 🎮 **Juegos** | Colección de videojuegos con carátulas, notas, horas, lista de deseos y backlog, estadísticas, búsqueda opcional con RAWG, logros propios y tarjetas para compartir de cada juego y de tu perfil. |
 | 🗂️ **Bases** | Bases de datos propias al estilo AppFlowy: columnas a tu medida (texto, número, fecha, casilla, selección, etiquetas, enlace), vistas de tabla y tablero Kanban, plantillas, exportación CSV/JSON y logros propios. Cada base es su propio JSON. |
 | </> **Código** | Proyectos tipo GitHub: carpetas y archivos, editor con colores, subida de archivos, carpetas y ZIP (con descompresión), versiones con comparación y restauración, vista web aislada sin JavaScript y descarga en ZIP. Límites: 50 MB y 1000 archivos por proyecto, 10 MB por archivo, 50 versiones. Con logros. |
+| 📄 **Exportar a .txt, .md y PDF** | Notas, prompts, contactos, calendario, bases, juegos, compra y código, desde su menú ⋯. |
 | 📤 **Exportar JSON** | Botón en la barra superior que exporta los datos de la sección abierta; ZIP con todos los JSON de la app para administración. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
 | 📋 **Portapapeles compartido** | Deja texto o archivos desde un dispositivo y recógelos desde otro al instante. En Android, la app aparece en el menú «Compartir». |
@@ -928,6 +929,23 @@ Los prompts de tipo **código** (sección Prompts) y los proyectos de **Código*
 ![Lista de proyectos de código](docs/capturas/codigo.png)
 
 *Lista de proyectos de código con archivos, versiones y vista web.*
+
+## Exportar a texto, Markdown y PDF
+
+Las secciones con contenido legible tienen en su menú ⋯ (o en el botón **Exportar** de Compra) tres entradas: **.txt**, **.md** y **PDF**.
+
+| Sección | Qué se exporta |
+|---|---|
+| Notas | La nota o la carpeta entera (en .md baja el archivo o un ZIP; en .txt y PDF, todas las notas seguidas) |
+| Prompts | Los seleccionados, una lista o todos (diálogo «Exportar», junto a JSON e instrucciones personalizadas) |
+| Contactos | Los seleccionados o los que muestra el filtro; también una sola ficha |
+| Calendario | Eventos y tareas del periodo que estás viendo, por días |
+| Bases | La base como tabla (las opciones salen con su nombre) |
+| Juegos | La colección por estado, en tablas |
+| Compra | La pestaña activa: pendientes como lista de comprobación por categoría, comprados o productos |
+| Código | Descripción, árbol de archivos y el código de los archivos de texto (tope de ~600 KB) |
+
+Cada sección construye su documento en Markdown y `public/js/docexport.js` (`K.doc`) lo entrega: el `.md` tal cual, el `.txt` sin marcas y el PDF maquetado, que se imprime desde un marco oculto para que el navegador ofrezca «Guardar como PDF» (sin dependencias nuevas en el servidor). Las tablas anchas salen en horizontal.
 
 ## Exportar JSON
 

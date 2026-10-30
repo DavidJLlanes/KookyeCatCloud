@@ -77,6 +77,25 @@
     render();
   }
 
+  // Contacto en Markdown (para .md, .txt y .pdf)
+  function contactoMd(c) {
+    const cargo = [c.title, c.department, c.company].filter(Boolean).join(' · ');
+    const L = [`## ${nombre(c)}`];
+    if (c.nickname) L.push(`“${c.nickname}”`);
+    if (cargo && cargo !== nombre(c)) L.push(cargo);
+    const lin = (et, arr) => (arr || []).forEach(x => L.push(`- ${et}${x.label || x.type ? ' (' + (x.label || x.type) + ')' : ''}: ${x.value}`));
+    L.push('');
+    lin('Teléfono', c.phones); lin('Correo', c.emails); lin('Web', c.websites);
+    (c.addresses || []).forEach(a => L.push(`- Dirección${a.label || a.type ? ' (' + (a.label || a.type) + ')' : ''}: ${direccionTexto(a)}`));
+    if (c.birthday) L.push(`- Cumpleaños: ${c.birthday}`);
+    if (c.notes) L.push('', c.notes);
+    return L.join('\n').replace(/\n{3,}/g, '\n\n');
+  }
+  const contactosMd = (lista, titulo) => `# ${titulo}\n\n` + lista.map(contactoMd).join('\n\n');
+  function exportaDoc(lista, titulo) {
+    return () => (lista().length ? { titulo, nombre: titulo.toLowerCase(), md: contactosMd(lista(), titulo) } : (K.toast('No hay contactos que exportar'), null));
+  }
+
   function filtrados() {
     const q = norm(S.q), qd = digitos(S.q);
     let l = S.items;
@@ -130,6 +149,7 @@
     mas.addEventListener('click', () => K.menu(mas, [
       { label: 'Importar contactos (.vcf)…', icon: 'i-upload', onClick: pideImportar },
       { label: 'Exportar todos (.vcf)', icon: 'i-download', onClick: () => { if (!S.items.length) { K.toast('No hay contactos que exportar'); return; } location.href = BASE + '/api/contacts/export'; } },
+      ...K.doc.items(exportaDoc(() => (S.sel.size ? S.items.filter(c => S.sel.has(c.id)) : filtrados()), 'Contactos')),
       '-', { label: 'Gestionar etiquetas…', icon: 'i-tag', onClick: () => K.manageLabels() },
     ], { align: 'end' }));
     document.addEventListener('keydown', (e) => {
@@ -309,6 +329,7 @@
       { label: c.favorite ? 'Quitar de favoritos' : 'Marcar como favorito', icon: c.favorite ? 'i-star-fill' : 'i-star', onClick: async () => { m.close(); await alternaFav(c); } },
       { label: 'Copiar nombre', icon: 'i-copy', onClick: async () => { K.toast((await K.copy(nombre(c))) ? 'Copiado' : 'No se pudo copiar'); } },
       { label: 'Exportar (.vcf)', icon: 'i-download', onClick: () => { location.href = BASE + '/api/contacts/export?ids=' + c.id; } },
+      ...K.doc.items(() => ({ titulo: nombre(c), nombre: nombre(c), md: contactoMd(c) })),
       { label: 'Copiar o mover a…', icon: 'i-move', onClick: () => { m.close(); K.transferir.abre({ tipo: 'contactos', ids: [c.id], titulo: nombre(c) }, { alTerminar: () => load() }); } },
       '-', { label: 'Eliminar contacto', icon: 'i-trash', danger: true, onClick: () => elimina(c, m) },
     ], { align: 'end' }));

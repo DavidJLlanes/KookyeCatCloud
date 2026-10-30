@@ -101,6 +101,25 @@
   function entra() { S.tab = 'archivos'; S.ruta = null; S.ver = null; S.texto = ''; S.bin = null; S.abiertas = new Set(); S.guardado = true; S.movil = 'arbol'; S.vistaPrev = false; S.token = null; pinta(); }
   async function cierra() { await guardaYa(); S.p = null; clearTimeout(S.timer); await carga(); }
 
+  // Proyecto como documento: descripción, árbol de archivos y el código de cada archivo de texto (tope para no desbordar)
+  async function proyectoMd() {
+    await guardaYa();
+    const p = S.p, v = vistaArch(), rutas = Object.keys(v.archivos).sort((a, b) => a.localeCompare(b, 'es'));
+    const L = [`# ${p.nombre}`]; if (p.descripcion) L.push('', p.descripcion);
+    L.push('', '## Archivos', '', ...rutas.map(r => `- ${r}`));
+    let total = 0, omitidos = 0;
+    for (const r of rutas) {
+      if (!v.archivos[r].texto || total > 600000) { if (v.archivos[r].texto) omitidos++; continue; }
+      let d; try { d = await K.get(url('/texto?' + q({ ruta: r, v: S.ver && S.ver.id }))); } catch { continue; }
+      if (d.binario) continue;
+      total += d.contenido.length;
+      let cerca = '```'; while (d.contenido.includes(cerca)) cerca += '`';
+      L.push('', `## ${r}`, '', cerca + langDe(r), d.contenido.replace(/\n$/, ''), cerca);
+    }
+    if (omitidos) L.push('', `> ${omitidos} archivo${omitidos === 1 ? '' : 's'} de texto no se ${omitidos === 1 ? 'incluye' : 'incluyen'} por el tamaño del documento.`);
+    return L.join('\n') + '\n';
+  }
+
   /* ---------- Proyecto ---------- */
   function pintaProyecto(page) {
     const p = S.p;
@@ -113,6 +132,7 @@
       { label: p.favorito ? 'Quitar de favoritos' : 'Marcar como favorito', icon: 'i-star', onClick: async () => { try { S.p = await K.put(url(''), { favorito: !p.favorito }); pinta(); } catch (e) { K.fail(e); } } },
       { label: 'Editar nombre y descripción', icon: 'i-pencil', onClick: datos },
       { label: 'Descargar como ZIP', icon: 'i-download', onClick: async () => { await guardaYa(); bajar(url('/zip'), nombreZip()); } },
+      ...K.doc.items(() => ({ titulo: p.nombre, nombre: p.nombre, md: proyectoMd })),
       { label: 'Copiar o mover a Archivos…', icon: 'i-move', onClick: () => K.transferir.abre({ tipo: 'codigo', id: p.id, vid: S.ver ? S.ver.id : undefined }, { carpeta: '', alTerminar: () => { S.built && carga(); } }) },
       { label: 'Historial de envíos…', icon: 'i-restore', onClick: () => K.transferir.historial(() => { if (S.p) abre(S.p.id); }) },
       '-', { label: 'Eliminar proyecto', icon: 'i-trash', danger: true, onClick: elimina }]), 'btn sm'); mas.setAttribute('aria-label', 'Más acciones'); acc.appendChild(mas);

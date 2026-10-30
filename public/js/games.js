@@ -65,8 +65,20 @@
     K.menu(anchor, [
       { label: 'Exportar JSON', onClick: () => descarga('json') },
       { label: 'Exportar CSV (hoja de cálculo)', onClick: () => descarga('csv') },
+      ...K.doc.items(() => S.items.length ? { titulo: 'Mis juegos', nombre: 'juegos', md: juegosMd(), ancho: true } : (K.toast('No hay juegos que exportar'), null)),
       { label: 'Importar JSON', onClick: importar },
     ]);
+  }
+  // Colección completa por estado, en tablas Markdown
+  function juegosMd() {
+    const L = ['# Mis juegos', '', `${S.items.length} en la colección`];
+    for (const [k, nombre] of ESTADOS) {
+      const l = S.items.filter(g => g.status === k).sort((a, b) => a.title.localeCompare(b.title, 'es'));
+      if (!l.length) continue;
+      L.push('', `## ${nombre} (${l.length})`, '', K.doc.tabla(['Título', 'Plataformas', 'Géneros', 'Nota', 'Progreso', 'Salida'],
+        l.map(g => [g.title, (g.platforms || []).join(', '), (g.genres || []).join(', '), g.rating != null ? nf(g.rating) : '', g.percent ? g.percent + '%' : '', fechaTxt(g.released)])));
+    }
+    return L.join('\n');
   }
   async function descarga(fmt) {
     try {

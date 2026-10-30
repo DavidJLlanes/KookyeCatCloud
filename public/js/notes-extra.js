@@ -125,6 +125,19 @@
     document.body.appendChild(a); a.click(); a.remove();
   }
 
+  // Texto plano: título y cuerpo de cada nota (si es carpeta, todas las de dentro) sin marcas de Markdown
+  async function exportTxt(item) {
+    if (NB.flush) NB.flush();
+    try { await guardarAhora(); } catch {}
+    const notas = notasDe(item);
+    if (!notas.length) { K.toast('No hay notas que exportar'); return; }
+    const partes = [];
+    try {
+      for (const n of notas) { const r = await K.get('/api/notes/' + encodeURIComponent(n.id)); partes.push(`# ${r.title || 'Sin título'}\n\n${r.body || ''}`); }
+    } catch (e) { K.fail(e); return; }
+    K.doc.exporta('txt', { titulo: item.title, nombre: item.title || 'nota', md: partes.join('\n\n---\n\n') });
+  }
+
   // Los bloques a HTML estático para imprimir
   function bloquesAHtml(blocks) {
     const I = INT();
@@ -297,6 +310,7 @@
   // Menú contextual del árbol de notas (app.js llama a este gancho)
   window.KCC.noteMenu = (menu, item) => {
     opcionCtx(menu, 'i-download', item.type === 'folder' ? 'Exportar carpeta (.zip de Markdown)' : 'Exportar a Markdown', () => exportMd(item));
+    opcionCtx(menu, 'i-download', 'Exportar como texto (.txt)', () => exportTxt(item));
     opcionCtx(menu, 'i-doc', 'Exportar a PDF…', () => exportPdf(item));
     opcionCtx(menu, 'i-move', 'Copiar o mover a…', () => enviaNota(item));
     if (item.type === 'note') opcionCtx(menu, 'i-stack', 'Guardar como plantilla…', () => guardaPlantilla(item));
@@ -317,6 +331,7 @@
         const it = NT.items.find(i => i.id === NT.abierta); if (!it) return;
         K.menu(b, [
           { label: 'Exportar a Markdown', icon: 'i-download', onClick: () => exportMd(it) },
+          { label: 'Exportar como texto (.txt)', icon: 'i-download', onClick: () => exportTxt(it) },
           { label: 'Exportar a PDF…', icon: 'i-doc', onClick: () => exportPdf(it) },
           { label: 'Copiar o mover a…', icon: 'i-move', onClick: () => enviaNota(it) },
           '-', { label: 'Guardar como plantilla…', icon: 'i-stack', onClick: () => guardaPlantilla(it) },
@@ -328,5 +343,5 @@
   botones();
   montaPanel();
 
-  K.notes = { plantillas, exportPdf, exportMd, bloquesAHtml };
+  K.notes = { plantillas, exportPdf, exportMd, exportTxt, bloquesAHtml };
 })();

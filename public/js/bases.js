@@ -126,6 +126,7 @@
     K.menu(anchor, [
       { label: 'Renombrar base', onClick: renombra },
       { label: 'Exportar CSV', onClick: () => descarga('csv') }, { label: 'Exportar JSON', onClick: () => descarga('json') },
+      ...K.doc.items(() => { const d = baseMd(); return S.base.rows.length ? { titulo: S.base.name, nombre: S.base.name, md: d.md, ancho: d.ancho } : (K.toast('La base no tiene filas'), null); }),
       { label: 'Copiar o mover a…', onClick: () => K.transferir.abre({ tipo: 'bases', ids: [S.base.id], titulo: S.base.name }, { alTerminar: (r) => { if (r && r.modo === 'mover') { S.base = null; cargaLista(); } } }) },
       '-', { label: 'Eliminar base', danger: true, onClick: eliminar },
     ]);
@@ -138,6 +139,13 @@
   async function eliminar() {
     if (!await K.confirm(`Se eliminará la base «${S.base.name}» con todas sus filas.`, { ok: 'Eliminar', danger: true })) return;
     try { await K.del('/api/bases/' + S.base.id); S.base = null; await cargaLista(); logros(); } catch (e) { K.fail(e); }
+  }
+  // Toda la base como tabla Markdown (las columnas de opciones se escriben con su nombre)
+  function baseMd() {
+    const b = S.base, cols = b.columns;
+    const val = (c, v) => c.tipo === 'select' ? ((opcion(c, v) || {}).nombre || '') : c.tipo === 'multiselect' ? (v || []).map(i => (opcion(c, i) || {}).nombre).filter(Boolean).join(', ')
+      : c.tipo === 'checkbox' ? (v ? 'Sí' : 'No') : c.tipo === 'date' ? fechaTxt(v) : c.tipo === 'number' ? nf(v) : String(v ?? '');
+    return { ancho: cols.length > 5, md: `# ${b.name}\n\n${b.rows.length} fila${b.rows.length === 1 ? '' : 's'}\n\n` + K.doc.tabla(cols.map(c => c.nombre), b.rows.map(r => cols.map(c => val(c, r.c[c.id])))) };
   }
   async function descarga(fmt) {
     try {

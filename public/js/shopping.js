@@ -17,6 +17,22 @@
     });
     return [...groups.values()].sort((a, b) => b.boughtAt - a.boughtAt);
   }
+  // Documento de la pestaña activa: pendientes como lista de comprobación por categoría, comprados y catálogo
+  function compraMd() {
+    const linea = (p, q) => `${p.name}${q ? ' — ' + fmt(q) + (p.unit ? ' ' + p.unit : '') : ''}`;
+    if (S.tab === 'catalog') {
+      const l = S.data.products.slice().sort((a, b) => a.name.localeCompare(b.name, 'es'));
+      return { titulo: 'Productos', md: l.length ? '# Productos\n\n' + K.doc.tabla(['Producto', 'Categoría', 'Unidad'], l.map(p => [p.name, p.category, p.unit])) : '' };
+    }
+    if (S.tab === 'bought') {
+      const g = boughtGroups();
+      return { titulo: 'Comprado', md: g.length ? '# Comprado\n\n' + g.map(x => { const p = byId(x.productId); return `- ${linea(p, x.quantity)}${x.boughtAt ? ' (' + new Date(x.boughtAt).toLocaleDateString('es-ES') + ')' : ''}`; }).join('\n') + '\n' : '' };
+    }
+    const por = new Map();
+    S.data.entries.filter(e => e.status === 'pending' && byId(e.productId)).forEach(e => { const p = byId(e.productId); const c = p.category || 'Sin categoría'; (por.get(c) || por.set(c, []).get(c)).push(`- [ ] ${linea(p, e.quantity)}`); });
+    const cats = [...por.keys()].sort((a, b) => a.localeCompare(b, 'es'));
+    return { titulo: 'Lista de la compra', md: cats.length ? '# Lista de la compra\n\n' + cats.map(c => `## ${c}\n\n${por.get(c).sort().join('\n')}`).join('\n\n') + '\n' : '' };
+  }
   function setLayout(layout) {
     S.layouts[S.tab] = layout;
     try { localStorage.setItem('kcc-shop-layouts', JSON.stringify(S.layouts)); } catch {}
@@ -37,7 +53,8 @@
     const head = el('header', 'shop-head');
     const title = el('div'); title.append(el('h1', null, 'Lista de la compra'), el('p', 'k-muted', 'Compartida entre las cuentas de esta instalación'));
     const actions = el('div', 'shop-head-actions');
-    actions.append(button('Categorías', 'i-tag', manageCategories, 'btn'), button('Nuevo producto', 'i-plus', () => editProduct(null), 'btn primary'));
+    const exp = button('Exportar', 'i-download', () => K.menu(exp, K.doc.items(() => { const d = compraMd(); return d.md ? { titulo: d.titulo, nombre: d.titulo, md: d.md } : (K.toast('No hay nada que exportar en esta pestaña'), null); }), { align: 'end' }), 'btn');
+    actions.append(exp, button('Categorías', 'i-tag', manageCategories, 'btn'), button('Nuevo producto', 'i-plus', () => editProduct(null), 'btn primary'));
     head.append(title, actions); page.appendChild(head);
 
     const bar = el('div', 'shop-toolbar');

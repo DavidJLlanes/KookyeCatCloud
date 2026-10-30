@@ -279,6 +279,8 @@
     const formatos = [
       ['json', 'JSON (para volver a importarlo aquí)'],
       ['md', 'Markdown (documento legible, con los fragmentos ya sustituidos)'],
+      ['txt', 'Texto plano (.txt)'],
+      ['pdf', 'PDF (se abre el diálogo de impresión)'],
       ['ci', 'Instrucciones personalizadas (texto listo para ChatGPT, Proyectos de Claude, GPTs o Gems)'],
     ];
     let formato = 'md';
@@ -288,6 +290,14 @@
       l.append(r, el('span', null, t)); w.appendChild(l);
     });
     K.modal({ title: 'Exportar prompts', content: w, actions: [{ label: 'Cancelar' }, { label: 'Descargar', primary: true, onClick: async () => {
+      if (formato === 'txt' || formato === 'pdf') {
+        try {
+          const res = await api(BASE + '/api/prompts/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: ids && ids.length ? ids : undefined, list: listaId || undefined, format: 'md' }) });
+          if (!res.ok) throw new Error('No se pudo exportar');
+          K.doc.exporta(formato, { titulo: 'Prompts', nombre: 'prompts', md: await res.text() });
+        } catch (e) { K.fail(e); return false; }
+        return;
+      }
       try { await descarga(BASE + '/api/prompts/export', { ids: ids && ids.length ? ids : undefined, list: listaId || undefined, format: formato }, 'prompts.' + (formato === 'json' ? 'json' : 'md')); }
       catch (e) { K.fail(e); return false; }
     } }] });
