@@ -373,9 +373,9 @@
       let gs = null;
       area.addEventListener('pointerdown', (e) => { if (gs || !J.enJuego() || (e.pointerType === 'mouse' && e.button !== 0)) return; try { area.setPointerCapture(e.pointerId); } catch { /* ya no está */ } gs = { id: e.pointerId, x: e.clientX, y: e.clientY }; e.preventDefault(); });
       area.addEventListener('pointermove', (e) => {
-        if (!gs || e.pointerId !== gs.id) return; const dx = e.clientX - gs.x, dy = e.clientY - gs.y;
+        if (!gs || gs.hecho || e.pointerId !== gs.id) return; const dx = e.clientX - gs.x, dy = e.clientY - gs.y;
         if (Math.max(Math.abs(dx), Math.abs(dy)) < 26) return;
-        mueve2048(J, Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 0 : 1) : (dy < 0 ? 2 : 3)); gs.x = e.clientX; gs.y = e.clientY;
+        mueve2048(J, Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 0 : 1) : (dy < 0 ? 2 : 3)); gs.hecho = true; /* un gesto = un movimiento, como en el original */
       });
       const suelta = (e) => { if (gs && e.pointerId === gs.id) gs = null; };
       area.addEventListener('pointerup', suelta); area.addEventListener('pointercancel', suelta);
