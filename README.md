@@ -1531,6 +1531,7 @@ lib/
   labels.js          Etiquetas de color compartidas entre módulos
   albums.js          Favoritos y álbumes (fábrica createAlbums)
   papelera.js        Papelera de archivos: borrar, restaurar, caducidad (fábrica createPapelera)
+  fotos.js           EXIF, mapa e índice de fotos (fábrica createFotos)
   notes.js           Bloc de notas: árbol, cuerpos .md y papelera (fábrica createNotes)
   calendar.js        Eventos, tareas y repetición; ganchos con notas, prompts y archivos
   ical.js            Feed iCal (RFC 5545) de solo lectura

@@ -174,6 +174,17 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     cierto((await req('DELETE', '/api/trash')).j.removed >= 1, 'vaciar');
     igual((await req('GET', '/api/trash')).j.items.length, 0);
   });
+  await prueba('fotos: exif, metadatos, mapa e índice', async () => {
+    const sharp = require('sharp');
+    const jpg = await sharp({ create: { width: 8, height: 8, channels: 3, background: '#c33' } }).jpeg().toBuffer();
+    const fd = new FormData(); fd.append('files', new Blob([jpg], { type: 'image/jpeg' }), 'foto1.jpg');
+    igual((await fetch(BASE + '/api/upload', { method: 'POST', headers: { Cookie: cookie }, body: fd })).status, 200);
+    const ex = await req('GET', '/api/exif?path=foto1.jpg'); igual(ex.s, 200); igual(ex.j.nombre, 'foto1.jpg');
+    igual((await req('GET', '/api/exif?path=a.txt')).s, 415, 'EXIF de un texto');
+    cierto('foto1.jpg' in (await req('GET', '/api/photometa?path=')).j.fotos, 'photometa');
+    const m = await req('GET', '/api/photomap'); igual(m.s, 200); cierto(m.j.total >= 1, 'photomap total');
+    const ix = await req('GET', '/api/photoindex'); igual(ix.s, 200); cierto(ix.j.fotos.some(f => f.name === 'foto1.jpg'), 'photoindex');
+  });
   await prueba('usuarios (admin)', async () => { igual((await req('GET', '/api/users')).s, 200); });
   await prueba('cierre de sesión', async () => { cierto((await req('POST', '/api/logout')).s < 400, 'logout'); });
 
