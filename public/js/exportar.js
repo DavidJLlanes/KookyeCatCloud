@@ -3,7 +3,7 @@
    en Cuenta hay una lista con todas las secciones y en Administración un ZIP con todos los JSON de la app. */
 (function () {
   const SECCION = { notes: 'notas', prompts: 'prompts', contacts: 'contactos', calendar: 'calendario', colecciones: 'etiquetas', shopping: 'compra', games: 'juegos', bases: 'bases', codigo: 'codigo', logros: 'logros', tetris: 'logros', g2048: 'logros', breakout: 'logros', clip: 'portapapeles', files: 'archivos' };
-  const NOMBRES = { notas: 'Notas', prompts: 'Prompts', contactos: 'Contactos', calendario: 'Calendario', etiquetas: 'Etiquetas', juegos: 'Juegos', bases: 'Bases', codigo: 'Código', logros: 'Logros y progreso', portapapeles: 'Portapapeles', archivos: 'Favoritos y álbumes', compra: 'Compra (compartida)' };
+  const NOMBRES = { notas: 'Notas', prompts: 'Prompts', contactos: 'Contactos', calendario: 'Calendario', etiquetas: 'Etiquetas', valores: 'Valores reutilizables', juegos: 'Juegos', bases: 'Bases', codigo: 'Código', logros: 'Logros y progreso', portapapeles: 'Portapapeles', archivos: 'Favoritos y álbumes', compra: 'Compra (compartida)' };
   async function baja(url, nombre) {
     try {
       const r = await fetch(BASE + url, { credentials: 'same-origin' });

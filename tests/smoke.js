@@ -264,6 +264,35 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     const t = await req('GET', '/api/text?path=a.txt'); igual(t.s, 200); igual(t.j.text, 'hola a.txt');
     igual((await req('GET', '/api/capabilities')).j.textMax, 512 * 1024);
   });
+  await prueba('valores: la normalización une variantes y no mezcla lo distinto', async () => {
+    const V = require(path.join(ROOT, 'public/js/valores-clave.js'));
+    for (const [a, b] of [['Claude Sonnet 5,5', 'claude  sonnet 5.5'], ['CLAUDE-SONNET 5.5', 'Claude Sonnet 5.5'], ['Atención', 'atencion'], ['Node.js', 'NodeJS'], ['GPT 4o', 'gpt-4o']]) igual(V.clave(a), V.clave(b), `${a} = ${b}`);
+    for (const [a, b] of [['Claude Sonnet 4.5', 'Claude Sonnet 5.5'], ['C++', 'C'], ['C#', 'C'], ['PS4', 'PS5'], ['5 5', '55'], ['Opus', 'Opus 4']]) cierto(V.clave(a) !== V.clave(b), `${a} ≠ ${b}`);
+    cierto(V.sonParecidos(V.clave('claude sonet 5,5'), V.clave('Claude Sonnet 5.5')), 'errata de una letra');
+    for (const [a, b] of [['Claude Sonnet 4.5', 'Claude Sonnet 5.5'], ['PS4', 'PS5'], ['Midjourney v6', 'Midjourney v7']]) cierto(!V.sonParecidos(V.clave(a), V.clave(b)), `no sugerir ${a} → ${b}`);
+    igual(V.limpia('  Claude   Sonnet 5,5 '), 'Claude Sonnet 5.5');
+  });
+  await prueba('valores: los prompts guardan una sola grafía y se pueden unir', async () => {
+    const mk = async (model, extra = {}) => { const r = await req('POST', '/api/prompts', { title: 'v ' + model, body: 'x', kind: 'texto', model, ...extra }); cierto(r.s < 300, 'crear ' + r.s); return r.j; };
+    const a = await mk('Claude Sonnet 5.5');
+    const b = await mk('claude  sonnet 5,5');
+    const c = await mk('CLAUDE-SONNET 5.5', { tool: 'Cursor', language: 'es' });
+    for (const x of [a, b, c]) igual((x.prompt || x).model, 'Claude Sonnet 5.5', 'grafía única');
+    const f = await req('GET', '/api/valores/prompts.model'); igual(f.s, 200);
+    igual(f.j.valores.filter(v => v.v.toLowerCase().includes('sonnet')).length, 1, 'un solo valor');
+    igual((await req('GET', '/api/valores/prompts.language')).j.valores.some(v => v.v === 'es'), true);
+    // filtrar por una variante encuentra todos
+    const l = await req('GET', '/api/prompts?model=' + encodeURIComponent('claude sonnet 5,5'));
+    igual(l.s, 200); cierto(JSON.stringify(l.j).split('Claude Sonnet 5.5').length >= 4, 'filtro por clave');
+    // un valor en uso no se borra; uno nuevo sí
+    igual((await req('DELETE', '/api/valores/prompts.model?v=' + encodeURIComponent('Claude Sonnet 5.5'))).s, 409);
+    igual((await req('POST', '/api/valores/prompts.model', { valor: 'Modelo temporal' })).s, 200);
+    igual((await req('DELETE', '/api/valores/prompts.model?v=' + encodeURIComponent('Modelo temporal'))).s, 200);
+    // unir y renombrar cambia los prompts que lo usan
+    const u = await req('POST', '/api/valores/prompts.model/fusionar', { de: ['Claude Sonnet 5.5'], a: 'Claude Sonnet 5.6' });
+    igual(u.s, 200); cierto(u.j.cambiados >= 3, 'cambiados ' + u.j.cambiados);
+    igual((await req('GET', '/api/valores/nope.campo')).s, 404);
+  });
   await prueba('usuarios (admin)', async () => { igual((await req('GET', '/api/users')).s, 200); });
 
   // --- Cuentas: usuarios, contraseñas, sesiones, tokens de app y 2FA ---

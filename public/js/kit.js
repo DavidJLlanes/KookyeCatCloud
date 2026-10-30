@@ -131,6 +131,8 @@ K.modal = function ({ title, sub, cls = '', content, actions = [], onClose, dism
   document.body.appendChild(overlay);
   return h;
 };
+// Cierra todos los diálogos abiertos (p. ej. al pulsar un valor para filtrar desde una ficha)
+K.cierraModales = () => { [..._pila].forEach(h => h.close()); };
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (K._popClose) { K._popClose(); e.stopPropagation(); return; }

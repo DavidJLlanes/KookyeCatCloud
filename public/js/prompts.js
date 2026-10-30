@@ -26,7 +26,7 @@
 
   const S = {
     built: false, M: null, items: [], total: 0, page: 1, pages: 1, loading: 0,
-    q: { q: '', category: '', list: '', kind: '', status: '', model: '', tool: '', fav: false, minRating: 0, images: '', cal: false, from: '', to: '', trash: false, sort: 'updated' },
+    q: { q: '', category: '', list: '', kind: '', status: '', model: '', tool: '', language: '', fav: false, minRating: 0, images: '', cal: false, from: '', to: '', trash: false, sort: 'updated' },
     labels: new Set(), view: 'grid', sel: new Set(), selMode: false, modelsAll: false, toolsAll: false,
   };
   try { S.view = localStorage.getItem('kcc-pr-view') || 'grid'; S.q.sort = localStorage.getItem('kcc-pr-sort') || 'updated'; } catch {}
@@ -52,7 +52,7 @@
   function params(page) {
     const q = S.q;
     return K.qs({
-      q: q.q, category: q.category, list: q.list, kind: q.kind, status: q.status, model: q.model, tool: q.tool,
+      q: q.q, category: q.category, list: q.list, kind: q.kind, status: q.status, model: q.model, tool: q.tool, language: q.language,
       fav: q.fav, minRating: q.minRating || '', images: q.images, cal: q.cal, from: q.from, to: q.to,
       trash: q.trash, sort: q.sort, labels: [...S.labels].join(','), page, limit: S.view === 'board' ? 200 : 48,
     });
@@ -145,7 +145,7 @@
     b.addEventListener('keydown', (e) => { if (e.key === 'Enter') onClick(); });
     return b;
   }
-  const resetNav = () => { Object.assign(S.q, { category: '', list: '', fav: false, images: '', trash: false, kind: '', status: '', model: '', tool: '' }); };
+  const resetNav = () => { Object.assign(S.q, { category: '', list: '', fav: false, images: '', trash: false, kind: '', status: '', model: '', tool: '', language: '' }); };
 
   function section(title, action) {
     const s = el('div', 'pr-sec'); const h = el('h4'); h.appendChild(el('span', null, title));
@@ -155,7 +155,7 @@
 
   async function guardaVista() {
     const q = S.q;
-    const filtros = ['q', 'category', 'list', 'kind', 'status', 'model', 'tool', 'fav', 'minRating', 'images', 'cal', 'from', 'to', 'trash', 'sort'];
+    const filtros = ['q', 'category', 'list', 'kind', 'status', 'model', 'tool', 'language', 'fav', 'minRating', 'images', 'cal', 'from', 'to', 'trash', 'sort'];
     const guardado = {}; filtros.forEach(k => { if (q[k]) guardado[k] = q[k]; });
     if (Object.keys(guardado).length <= 1 && !S.labels.size) { K.toast('Aplica primero una búsqueda o algún filtro'); return; }
     const name = await K.ask('Nombre de la vista', { placeholder: 'p. ej. Prompts finales de Claude' });
@@ -169,7 +169,7 @@
 
     const [s1, n1] = section('Biblioteca');
     n1.append(
-      link({ ic: 'i-sparkle', name: 'Todos los prompts', n: f.total, on: noFilter && !q.kind && !q.status && !q.model && !q.tool, onClick: () => { resetNav(); load(); } }),
+      link({ ic: 'i-sparkle', name: 'Todos los prompts', n: f.total, on: noFilter && !q.kind && !q.status && !q.model && !q.tool && !q.language, onClick: () => { resetNav(); load(); } }),
       link({ ic: 'i-star-fill', name: 'Favoritos', n: f.favorites, on: q.fav, onClick: () => { resetNav(); q.fav = true; load(); } }),
       link({ ic: 'i-image', name: 'Con imágenes', n: f.withImages, on: q.images === '1' && !q.trash, onClick: () => { resetNav(); q.images = '1'; load(); } }),
       link({ ic: 'i-inbox', name: 'Sin categoría', n: f.noCategory, on: q.category === '__none', onClick: () => { const k = q.category === '__none'; q.category = k ? '' : '__none'; q.list = ''; q.fav = false; q.images = ''; q.trash = false; load(); } }),
@@ -232,7 +232,7 @@
     const modelos = Object.entries(f.model).sort((a, b) => b[1] - a[1]);
     if (modelos.length) {
       const [s6, n6] = section('Modelo');
-      (S.modelsAll ? modelos : modelos.slice(0, 8)).forEach(([m, n]) => n6.appendChild(link({ ic: 'i-server', name: m, n, on: q.model === m, onClick: () => { q.model = q.model === m ? '' : m; load(); } })));
+      (S.modelsAll ? modelos : modelos.slice(0, 8)).forEach(([m, n]) => n6.appendChild(link({ ic: 'i-server', name: m, n, on: K.valores.clave(q.model) === K.valores.clave(m), onClick: () => { q.model = q.model === m ? '' : m; load(); } })));
       if (modelos.length > 8) { const b = el('button', 'btn ghost tiny', S.modelsAll ? 'Ver menos' : `Ver ${modelos.length - 8} más`); b.type = 'button'; b.style.margin = '4px 0 0 6px'; b.addEventListener('click', () => { S.modelsAll = !S.modelsAll; renderRail(); }); n6.appendChild(b); }
       rail.appendChild(s6);
     }
@@ -240,7 +240,7 @@
     const herrs = Object.entries(f.tool || {}).sort((a, b) => b[1] - a[1]);
     if (herrs.length) {
       const [s7, n7] = section('Herramienta');
-      (S.toolsAll ? herrs : herrs.slice(0, 8)).forEach(([m, n]) => n7.appendChild(link({ ic: 'i-sparkle', name: m, n, on: q.tool === m, onClick: () => { q.tool = q.tool === m ? '' : m; load(); } })));
+      (S.toolsAll ? herrs : herrs.slice(0, 8)).forEach(([m, n]) => n7.appendChild(link({ ic: 'i-sparkle', name: m, n, on: K.valores.clave(q.tool) === K.valores.clave(m), onClick: () => { q.tool = q.tool === m ? '' : m; load(); } })));
       if (herrs.length > 8) { const b = el('button', 'btn ghost tiny', S.toolsAll ? 'Ver menos' : `Ver ${herrs.length - 8} más`); b.type = 'button'; b.style.margin = '4px 0 0 6px'; b.addEventListener('click', () => { S.toolsAll = !S.toolsAll; renderRail(); }); n7.appendChild(b); }
     }
 
@@ -392,7 +392,7 @@
     const p = K.pop(anchor, w, { width: 310 });
   }
   function clearAll() {
-    Object.assign(S.q, { q: '', category: '', list: '', kind: '', status: '', model: '', tool: '', fav: false, minRating: 0, images: '', cal: false, from: '', to: '', trash: false });
+    Object.assign(S.q, { q: '', category: '', list: '', kind: '', status: '', model: '', tool: '', language: '', fav: false, minRating: 0, images: '', cal: false, from: '', to: '', trash: false });
     S.labels.clear(); R.si.value = ''; load();
   }
 
@@ -453,6 +453,7 @@
     if (q.status) chip(`Estado: ${STATUS[q.status]}`, () => { q.status = ''; load(); });
     if (q.model) chip(`Modelo: ${q.model}`, () => { q.model = ''; load(); });
     if (q.tool) chip(`Herramienta: ${q.tool}`, () => { q.tool = ''; load(); });
+    if (q.language) chip(`Idioma: ${q.language}`, () => { q.language = ''; load(); });
     if (q.minRating) chip(`★ ${q.minRating}+`, () => { q.minRating = 0; load(); }, '#f59e0b');
     if (q.images) chip(q.images === '1' ? 'Con imágenes' : 'Sin imágenes', () => { q.images = ''; load(); });
     if (q.cal) chip('En el calendario', () => { q.cal = false; load(); }, '#8b5cf6');
@@ -462,7 +463,7 @@
 
   function emptyState() {
     const e = el('div', 'k-empty'); const em = el('div', 'em'); em.appendChild(icon(S.q.trash ? 'i-trash' : 'i-sparkle')); e.appendChild(em);
-    const filtrado = S.q.q || S.q.category || S.q.list || S.q.kind || S.q.status || S.q.model || S.q.tool || S.q.fav || S.q.minRating || S.q.images || S.q.cal || S.labels.size || S.q.from || S.q.to;
+    const filtrado = S.q.q || S.q.category || S.q.list || S.q.kind || S.q.status || S.q.model || S.q.tool || S.q.language || S.q.fav || S.q.minRating || S.q.images || S.q.cal || S.labels.size || S.q.from || S.q.to;
     if (S.q.trash) { e.append(el('h3', null, 'La papelera está vacía'), el('p', null, 'Los prompts que borres aparecerán aquí.')); return e; }
     if (filtrado) {
       e.append(el('h3', null, 'Nada coincide con esos filtros'), el('p', null, 'Prueba a quitar alguno.'));
@@ -518,7 +519,8 @@
     const foot = el('div', 'pr-foot');
     // Los datos (modelo, valoración, fecha) van agrupados y pueden pasar a otra línea; el botón no se sale de la tarjeta
     const meta = el('div', 'pr-meta');
-    if (p.model || p.tool) { const mt = [p.model, p.tool].filter(Boolean).join(' · '); const m = el('span', 'model', mt); m.title = mt; meta.appendChild(m); }
+    if (p.model) meta.appendChild(K.chipValor('prompts.model', p.model));
+    if (p.tool) meta.appendChild(K.chipValor('prompts.tool', p.tool));
     if (p.rating) meta.appendChild(el('span', 'pr-rate', '★ ' + p.rating));
     if (p.cal) { const cl = el('span', 'pr-date'); cl.appendChild(icon('i-calendar')); cl.firstChild.style.cssText = 'width:12px;height:12px;vertical-align:-1px;flex:none'; cl.append(' ' + K.d.short(K.d.parse(p.cal.date))); cl.title = 'En el calendario'; meta.appendChild(cl); }
     if (meta.children.length) foot.appendChild(meta);
@@ -546,8 +548,8 @@
     p.labels.slice(0, 4).forEach(l => { const ch = K.labelChip(l); if (ch) chips.appendChild(ch); });
     mid.append(h, sn, chips);
     const side = el('div', 'side');
-    if (p.model) side.appendChild(el('span', 'k-chip', p.model));
-    if (p.tool) side.appendChild(el('span', 'k-chip', p.tool));
+    if (p.model) side.appendChild(K.chipValor('prompts.model', p.model));
+    if (p.tool) side.appendChild(K.chipValor('prompts.tool', p.tool));
     side.appendChild(el('span', 'pr-badge ' + p.status, STATUS[p.status]));
     if (p.rating) { const rr = el('span', null, '★ ' + p.rating); rr.style.color = '#fbbf24'; side.appendChild(rr); }
     side.appendChild(el('span', null, K.ago(p.updatedAt)));
@@ -859,6 +861,7 @@
     fila('Tipo', [valor(kd.name, '#64748b', () => { S.q.kind = p.kind; }, kd.icon)]);
     fila('Estado', [valor(STATUS[p.status] || p.status, { borrador: '#94a3b8', probando: '#f59e0b', final: '#22c55e', archivado: '#64748b' }[p.status] || '#64748b', () => { S.q.status = p.status; })]);
     fila('Modelo', p.model ? [valor(p.model, '#06b6d4', () => { S.q.model = p.model; }, 'i-server')] : []);
+    fila('Idioma', p.language ? [valor(p.language, '#10b981', () => { S.q.language = p.language; })] : []);
     fila('Herramienta', p.tool ? [valor(p.tool, '#8b5cf6', () => { S.q.tool = p.tool; }, 'i-sparkle')] : []);
     fila('Etiquetas', (p.labels || []).map(id => K.labels.by[id]).filter(Boolean).map(l => valor(l.name, l.color, () => { S.labels.add(l.id); })));
     info.appendChild(props);
@@ -1095,33 +1098,13 @@
     };
     kindSel.addEventListener('change', aplicaTipo); aplicaTipo();
     const statSel = el('select'); Object.entries(STATUS).forEach(([k, n]) => { const o = el('option', null, n); o.value = k; statSel.appendChild(o); }); statSel.value = d.status;
-    const model = el('input'); model.value = d.model; model.setAttribute('list', 'pr-models'); model.placeholder = 'GPT-5, Claude, FLUX, SDXL…'; model.maxLength = 60;
-    const dl = el('datalist'); dl.id = 'pr-models';
-    const tool = el('input'); tool.value = d.tool || ''; tool.setAttribute('list', 'pr-tools'); tool.placeholder = 'Midjourney, ComfyUI, Cursor…'; tool.maxLength = 60;
-    const dlt = el('datalist'); dlt.id = 'pr-tools';
-    const syncOptionLists = () => {
-      dl.textContent = ''; (S.M.models || []).forEach(x2 => { const o = el('option'); o.value = x2; dl.appendChild(o); });
-      dlt.textContent = ''; (S.M.tools || []).forEach(x2 => { const o = el('option'); o.value = x2; dlt.appendChild(o); });
-    };
-    const optionField = (label, input, type) => {
-      const wrap = el('div', 'field tight'); wrap.appendChild(el('span', null, label)); wrap.appendChild(input);
-      const known = () => (type === 'model' ? S.M.models : S.M.tools).some(x => x.toLocaleLowerCase() === input.value.trim().toLocaleLowerCase());
-      const add = el('button', 'btn tiny ghost', '＋ Añadir a opciones'); add.type = 'button'; add.hidden = !input.value.trim() || known();
-      input.addEventListener('input', () => { add.hidden = !input.value.trim() || known(); });
-      add.addEventListener('click', async () => {
-        try {
-          const result = await K.post('/api/prompts/options', { [type]: input.value });
-          S.M.models = result.models; S.M.tools = result.tools; syncOptionLists(); add.hidden = true;
-          K.toast(`${label} añadido a las opciones`);
-        } catch (e) { K.fail(e); }
-      });
-      wrap.appendChild(add); return wrap;
-    };
-    syncOptionLists();
-    const lang = el('input'); lang.value = d.language; lang.placeholder = 'es, en…'; lang.maxLength = 30;
+    // Modelo, herramienta e idioma: valores reutilizables (se guardan solos al guardar el prompt, sin duplicar variantes)
+    const model = K.campoValor({ campo: 'prompts.model', value: d.model, placeholder: 'GPT-5, Claude, FLUX, SDXL…' });
+    const tool = K.campoValor({ campo: 'prompts.tool', value: d.tool || '', placeholder: 'Midjourney, ComfyUI, Cursor…' });
+    const lang = K.campoValor({ campo: 'prompts.language', value: d.language, placeholder: 'es, en…' });
     const row2 = el('div', 'k-2'); row2.append(fld('Tipo', kindSel, true), fld('Estado', statSel, true));
-    const row3 = el('div', 'k-2'); row3.append(optionField('Modelo', model, 'model'), optionField('Herramienta', tool, 'tool'));
-    const row3b = el('div', 'k-2'); row3b.append(fld('Idioma', lang, true));
+    const row3 = el('div', 'k-2'); row3.append(fld('Modelo', model.el, true), fld('Herramienta', tool.el, true));
+    const row3b = el('div', 'k-2'); row3b.append(fld('Idioma', lang.el, true));
     const lp = K.labelPicker({ selected: d.labels });
     const rating = d.rating; let rate = rating; const stars = K.stars(rate, (v) => { rate = v; });
     let fav = !!d.favorite; const favSw = el('label', 'k-switch'); const favCk = el('input'); favCk.type = 'checkbox'; favCk.checked = fav; favSw.append(favCk, el('span', 'track'), el('span', null, 'Favorito')); favCk.addEventListener('change', () => { fav = favCk.checked; });
@@ -1138,7 +1121,7 @@
 
     right.append(fld('Categoría', catSel, true), row2, row3, row3b, fld('Etiquetas', lp, true), fld('Listas', listsBox, true));
     const rr = el('div', 'k-row'); rr.style.margin = '4px 0 14px'; rr.append(stars, favSw); right.appendChild(rr);
-    right.append(fld('Color de la tarjeta', color, true), fld('Fuente', src, true), dl, dlt, dlPk, fld('Calendario', calF, true));
+    right.append(fld('Color de la tarjeta', color, true), fld('Fuente', src, true), dlPk, fld('Calendario', calF, true));
 
     // Imágenes
     const imgs = (d.images || []).map(i => ({ ...i, key: i.id }));   // existentes
@@ -1169,8 +1152,8 @@
             if (!title.value.trim()) { title.value = (body.value.trim() || meta.body || '').replace(/\s+/g, ' ').trim().slice(0, 60) || f.name.replace(/\.[^.]+$/, ''); changed = true; }
             if (!body.value.trim() && meta.body) { body.value = meta.body; changed = true; }
             if (!neg.value.trim() && meta.negative) { neg.value = meta.negative; changed = true; }
-            if (!model.value.trim() && meta.model) { model.value = meta.model; model.dispatchEvent(new Event('input')); changed = true; }
-            if (!tool.value.trim() && meta.tool) { tool.value = meta.tool; tool.dispatchEvent(new Event('input')); changed = true; }
+            if (!model.get() && meta.model) { model.set(meta.model); changed = true; }
+            if (!tool.get() && meta.tool) { tool.set(meta.tool); changed = true; }
             if (!src.value.trim()) { src.value = f.name; changed = true; }
             Object.entries(meta.params || {}).forEach(([k, v]) => {
               if (!k || v == null || String(v).trim() === '') return;
@@ -1236,7 +1219,7 @@
       const params2 = {}; paramsList.forEach(([k, v]) => { if (k.trim()) params2[k.trim()] = v; });
       const campos = {
         title: title.value, body: body.value, negative: neg.value, notes: notes.value, category: catSel.value, kind: kindSel.value,
-        status: statSel.value, model: model.value, tool: tool.value, language: lang.value, source: src.value, rating: rate, favorite: fav,
+        status: statSel.value, model: model.get(), tool: tool.get(), language: lang.get(), source: src.value, rating: rate, favorite: fav,
         labels: lp.get(), lists: [...listSel], color: color.get(), params: params2,
         system: sys.value,
       };
@@ -1271,10 +1254,7 @@
           const cov = imgs.find(i => i.key === cover);
           await K.put(`/api/prompts/${pid}/images`, { order: finalIds, captions: caps, cover: cov ? cov.id : '' });
         }
-        try {
-          const options = await K.post('/api/prompts/options', { model: model.value, tool: tool.value });
-          S.M.models = options.models; S.M.tools = options.tools;
-        } catch (e) { console.warn('No se pudieron actualizar las opciones guardadas de modelos y herramientas:', e); }
+        K.valores.cambio();
         imgs.forEach(i => { if (i.url) URL.revokeObjectURL(i.url); });
         K.bus.emit('prompts'); if (cal || (p && p.cal)) K.bus.emit('calendar');
         K.toast(nuevo ? 'Prompt guardado' : 'Cambios guardados');
@@ -1327,6 +1307,8 @@
     close() { S.selMode = false; S.sel.clear(); },
   });
   K.bus.on('labels', () => { if (S.built && !$('view-prompts').hidden) load(); });
+  // Los chips de modelo, herramienta e idioma de cualquier parte de la web filtran la biblioteca
+  K.filtros.prompts = (prop, valor) => { resetNav(); S.labels.clear(); S.q.q = ''; if (R.si) R.si.value = ''; S.q[prop] = valor; switchTab('prompts'); load(); };
   K.openers.prompt = (id) => { switchTab('prompts'); setTimeout(() => openDetail(id), 60); };
   // prompts-extra.js cuelga de aquí sus entradas de menú, la comparación de versiones y las estadísticas
   K.prompts = Object.assign(K.prompts || {}, {

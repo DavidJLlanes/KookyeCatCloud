@@ -22,6 +22,7 @@ const { ZipArchive } = require('archiver');
 const { createDav } = require('./webdav');
 const createEvents = require('./lib/events');
 const createLabels = require('./lib/labels');
+const createValores = require('./lib/valores');
 const createCalendar = require('./lib/calendar');
 const createPrompts = require('./lib/prompts');
 const createClip = require('./lib/clip');
@@ -285,6 +286,7 @@ function totpVerificar(secretB32, token) {
 
 // Módulos nuevos. Se crean aquí, antes de las rutas, porque las rutas de archivos los usan.
 const labelsMod = createLabels({ express, userRoot, sendError });
+const valoresMod = createValores({ express, userRoot, sendError, registrarActividad });
 const calendarMod = createCalendar({
   express, userRoot, sendError, registrarActividad,
   icalIndexFile: path.join(APP_DIR, 'ical-tokens.json'),   // token de suscripción -> usuario
@@ -293,6 +295,7 @@ const promptsMod = createPrompts({
   express, multer, sharp, userRoot, sendError, registrarActividad,
   calendar: calendarMod.core, labels: labelsMod,
   papeleraDias: (user) => papeleraDias(user),
+  valores: valoresMod.core,
 });
 const contactsMod = createContacts({ express, sharp, userRoot, sendError, registrarActividad, labels: labelsMod, calendar: calendarMod.core });
 const shoppingMod = createShopping({ express, multer, sharp, dataRoot: DATA_ROOT, sendError, registrarActividad });
@@ -1600,6 +1603,7 @@ app.use('/api', sharesMod.router);
 app.use('/api', passkeysMod.router);
 
 app.use('/api/labels', auth, labelsMod.router);
+app.use('/api/valores', auth, valoresMod.router);
 app.use('/api/calendar', auth, calendarMod.router);
 app.use('/api/prompts', auth, promptsMod.router);
 app.use('/api/clip', auth, clipMod.router);

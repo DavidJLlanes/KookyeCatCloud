@@ -1,0 +1,26 @@
+/* Valores reutilizables: campo con sugerencias (K.campoValor) y chip que filtra (K.chipValor).
+   Ver public/js/valores.js. Los tamaños de letra siguen el ajuste «Tamaño del texto». */
+.k-vf{display:flex;flex-direction:column;gap:6px;min-width:0;}
+.k-vf input{width:100%;font-size:max(16px,calc(16px*var(--fs,1)));}
+.k-vf-chips{margin-bottom:2px;}
+.k-vf-chips[hidden]{display:none;}
+
+/* Sugerencias: van en el flujo (no flotan), así nunca las recorta el diálogo ni las tapa el teclado */
+.k-vf-lista{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:var(--glass-2);overflow:hidden;max-height:220px;overflow-y:auto;}
+.k-vf-lista[hidden]{display:none;}
+.k-vf-op{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:9px 12px;border:0;border-top:1px solid var(--line);background:none;color:inherit;
+  font:inherit;font-size:calc(14px*var(--fs,1));text-align:left;cursor:pointer;}
+.k-vf-op:first-child{border-top:0;}
+.k-vf-op span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.k-vf-op small{flex:none;color:var(--faint);font-size:calc(11.5px*var(--fs,1));}
+.k-vf-op:hover,.k-vf-op.on{background:var(--brand-soft);}
+
+.k-vf-aviso{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:0 4px;font-size:calc(12.5px*var(--fs,1));color:var(--muted);}
+.k-vf-aviso[hidden]{display:none;}
+.k-vf-aviso.aviso-par{color:#fbbf24;}
+.k-vf-aviso.aviso-nuevo{color:var(--faint);}
+
+/* Chip que filtra al pulsarlo */
+.k-vchip{display:inline-flex;align-items:center;max-width:100%;padding:2px 9px;border:1px solid var(--line);border-radius:99px;background:var(--glass-2);color:var(--muted);
+  font:inherit;font-size:calc(12px*var(--fs,1));font-weight:650;line-height:1.5;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:.15s;}
+.k-vchip:hover,.k-vchip:focus-visible{background:var(--brand-soft);border-color:var(--accent-strong);color:var(--text,inherit);outline:none;}
