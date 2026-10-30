@@ -14,7 +14,7 @@
   };
   const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
-  const S = { sel: new Set(), selMode: false, built: false, items: [], loaded: false, q: '', label: '', fav: false, sort: 'first', max: 10000 };
+  const S = { sel: new Set(), selMode: false, built: false, items: [], loaded: false, q: '', label: '', fav: false, val: null, sort: 'first', max: 10000 };
   const R = {};
   try { S.sort = localStorage.getItem('kcc-ct-sort') || 'first'; } catch { /* sin almacenamiento */ }
 
@@ -25,6 +25,7 @@
     || (c.emails[0] || {}).value || (c.phones[0] || {}).value || 'Sin nombre';
   const claveOrden = (c) => norm(S.sort === 'last' ? [c.last || c.first || c.company, c.first, c.middle].filter(Boolean).join(' ') : nombre(c));
   const letraDe = (c) => { const ch = claveOrden(c).charAt(0).toUpperCase(); return /[A-Z]/.test(ch) ? ch : '#'; };
+  const NOMVAL = { company: 'Empresa', department: 'Departamento', title: 'Cargo', city: 'Ciudad', region: 'Provincia', country: 'País' };
   const principal = (c) => [c.company, c.title].filter(Boolean).join(' · ');
 
   function iniciales(c) {
@@ -101,6 +102,10 @@
     let l = S.items;
     if (S.fav) l = l.filter(c => c.favorite);
     if (S.label) l = l.filter(c => (c.labels || []).includes(S.label));
+    if (S.val) {
+      const k = K.valores.clave(S.val.valor), p = S.val.prop;
+      l = l.filter(c => (['city', 'region', 'country'].includes(p) ? (c.addresses || []).some(a => K.valores.clave(a[p]) === k) : K.valores.clave(c[p]) === k));
+    }
     if (q) {
       l = l.filter((c) => {
         const hay = norm([nombre(c), c.nickname, c.company, c.title, c.department, c.notes,
@@ -179,11 +184,12 @@
     S.items.forEach(c => (c.labels || []).forEach(l => { uso[l] = (uso[l] || 0) + 1; }));
     const sec1 = el('div', 'pr-sec'); sec1.appendChild(el('h4', null, 'Contactos'));
     const nav = el('div', 'pr-nav');
-    const ir = (fav, label) => () => { S.fav = fav; S.label = label; R.wrap.classList.remove('rail-open'); render(); };
+    const ir = (fav, label) => () => { S.fav = fav; S.label = label; S.val = null; R.wrap.classList.remove('rail-open'); render(); };
     nav.append(
-      link({ ic: 'i-contact', name: 'Todos', n: S.items.length, on: !S.fav && !S.label, onClick: ir(false, '') }),
+      link({ ic: 'i-contact', name: 'Todos', n: S.items.length, on: !S.fav && !S.label && !S.val, onClick: ir(false, '') }),
       link({ ic: 'i-star', name: 'Favoritos', n: S.items.filter(c => c.favorite).length, on: S.fav, onClick: ir(true, '') }),
     );
+    if (S.val) nav.appendChild(link({ ic: 'i-search', name: `${NOMVAL[S.val.prop]}: ${S.val.valor}`, n: filtrados().length, on: true, onClick: ir(false, '') }));
     sec1.appendChild(nav); rail.appendChild(sec1);
 
     const sec2 = el('div', 'pr-sec');
@@ -309,8 +315,8 @@
     quien.appendChild(avatar(c, 84));
     quien.appendChild(el('h2', null, nombre(c)));
     if (c.nickname) quien.appendChild(el('p', 'ct-nick', `“${c.nickname}”`));
-    const cargo = [c.title, c.department, c.company].filter(Boolean).join(' · ');
-    if (cargo && cargo !== nombre(c)) quien.appendChild(el('p', 'ct-job', cargo));
+    const cargos = [['title', c.title], ['department', c.department], ['company', c.company]].filter(x => x[1] && x[1] !== nombre(c));
+    if (cargos.length) { const j = el('div', 'ct-job ct-vchips'); cargos.forEach(([p, v]) => j.appendChild(K.chipValor('contacts.' + p, v))); quien.appendChild(j); }
     if ((c.labels || []).length) { const ch = K.labelChips(c.labels, { onClick: (l) => { m.close(); S.fav = false; S.label = l.id; render(); } }); ch.style.justifyContent = 'center'; quien.appendChild(ch); }
     root.append(top, quien);
 
@@ -361,6 +367,8 @@
       const d = celda(txt, a.label, direccionTexto(a));
       const mapa = enlace('Ver en el mapa', 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(direccionTexto(a)), true); mapa.className = 'ct-maplink';
       d.insertBefore(mapa, d.querySelector('small') || null);
+      const vs = [['city', a.city], ['region', a.region], ['country', a.country]].filter(x => x[1]);
+      if (vs.length) { const w = el('div', 'ct-vchips'); vs.forEach(([p, v]) => w.appendChild(K.chipValor('contacts.' + p, v))); d.insertBefore(w, d.querySelector('small') || null); }
       return d;
     }));
     bloque('i-globe', c.websites.map((w) => { const u = urlSegura(w.value); return celda(u ? enlace(w.value, u, true) : el('span', null, w.value), w.label, w.value); }));
@@ -384,6 +392,9 @@
 
   /* ---------- Editor ---------- */
   const campo = (txt, input) => { const l = el('label', 'field tight'); l.append(el('span', null, txt), input); return l; };
+  // Campo con valores reutilizables (sugerencias y unificación de variantes): contenedor sin <label> porque lleva botones
+  const campoV = (txt, api) => { const l = el('div', 'field tight'); l.append(el('span', null, txt), api.el); return l; };
+  const valor = (prop, v, ph) => K.campoValor({ campo: 'contacts.' + prop, value: v || '', placeholder: ph || '' });
   const entrada = (valor, ph, tipo, max) => { const i = el('input'); i.type = tipo || 'text'; i.value = valor || ''; if (ph) i.placeholder = ph; i.maxLength = max || 160; i.autocomplete = 'off'; return i; };
   function selector(opciones, valor) {
     const s = el('select');
@@ -424,14 +435,14 @@
   function filaDireccion(v) {
     const r = el('div', 'ct-rep-row ct-adr');
     const sel = selector(ETQ.addresses, v.label);
-    const calle = entrada(v.street, 'Calle y número', 'text', 160), cp = entrada(v.zip, 'Código postal', 'text', 20), ciudad = entrada(v.city, 'Ciudad', 'text', 80);
-    const region = entrada(v.region, 'Provincia / región', 'text', 80), pais = entrada(v.country, 'País', 'text', 80);
+    const calle = entrada(v.street, 'Calle y número', 'text', 160), cp = entrada(v.zip, 'Código postal', 'text', 20), ciudad = valor('city', v.city, 'Ciudad');
+    const region = valor('region', v.region, 'Provincia / región'), pais = valor('country', v.country, 'País');
     const q = botonQuitar();
-    const g = el('div', 'ct-adr-g'); g.append(calle, cp, ciudad, region, pais);
+    const g = el('div', 'ct-adr-g'); g.append(calle, cp, ciudad.el, region.el, pais.el);
     const cab = el('div', 'ct-adr-h'); cab.append(sel, q);
     r.append(cab, g);
     return { el: r, quita: q, foco: calle, get: () => {
-      const a = { label: sel.value, street: calle.value.trim(), zip: cp.value.trim(), city: ciudad.value.trim(), region: region.value.trim(), country: pais.value.trim() };
+      const a = { label: sel.value, street: calle.value.trim(), zip: cp.value.trim(), city: ciudad.get(), region: region.get(), country: pais.get() };
       return a.street || a.zip || a.city || a.region || a.country ? a : null;
     } };
   }
@@ -465,8 +476,8 @@
     const middle = entrada(base.middle, '', 'text', 80), nick = entrada(base.nickname, '', 'text', 80);
     nom.append(campo('Nombre', first), campo('Apellidos', last), campo('Segundo nombre', middle), campo('Apodo', nick));
     const trab = el('div', 'k-2');
-    const company = entrada(base.company, '', 'text', 120), title = entrada(base.title, '', 'text', 120), dep = entrada(base.department, '', 'text', 120);
-    trab.append(campo('Empresa', company), campo('Cargo', title), campo('Departamento', dep));
+    const company = valor('company', base.company), title = valor('title', base.title), dep = valor('department', base.department);
+    trab.append(campoV('Empresa', company), campoV('Cargo', title), campoV('Departamento', dep));
     f.append(nom, trab);
 
     const tels = repetidor({ titulo: 'Teléfonos', ic: 'i-phone', anadir: 'Añadir teléfono', items: base.phones || [], nuevaFila: filaSimple('phones', 'Teléfono', 'tel', 40) });
@@ -522,13 +533,13 @@
       { label: 'Guardar', primary: true, onClick: async () => {
         const body = {
           first: first.value, middle: middle.value, last: last.value, nickname: nick.value,
-          company: company.value, title: title.value, department: dep.value,
+          company: company.get(), title: title.get(), department: dep.get(),
           phones: tels.get(), emails: mails.get(), addresses: dirs.get(), websites: webs.get(), dates: fechas.get(),
           notes: notas.value, labels: picker.get(), favorite: favorito,
         };
         try {
           const r = c ? await K.put('/api/contacts/' + c.id, body) : await K.post('/api/contacts', body);
-          let ct = r.contact;
+          let ct = r.contact; K.valores.cambio();
           try {
             if (foto.file) {
               const rs = await api(`${BASE}/api/contacts/${ct.id}/photo`, { method: 'PUT', headers: { 'Content-Type': foto.file.type || 'application/octet-stream' }, body: foto.file });
@@ -587,6 +598,13 @@
     close() { S.selMode = false; S.sel.clear(); if (R.selb) R.selb.classList.remove('is-on'); },
   });
   K.bus.on('labels', () => { if (S.built && !$('view-contacts').hidden) load(); else S.loaded = false; });
+  // Un chip de empresa, cargo, departamento, ciudad, provincia o país de cualquier parte filtra la agenda
+  K.filtros.contacts = (prop, valor) => {
+    switchTab('contacts');
+    const aplica = () => { S.fav = false; S.label = ''; S.q = ''; if (R.si) R.si.value = ''; S.val = { prop, valor }; render(); };
+    aplica();
+    if (!S.loaded) load().then(aplica); else load().then(render);
+  };
   K.openers.contact = (id) => { switchTab('contacts'); const ir = () => openDetail(id); S.loaded ? setTimeout(ir, 60) : setTimeout(ir, 400); };
   K.contacts = { open: (id) => K.openers.contact(id), newContact: () => { switchTab('contacts'); setTimeout(() => openEditor(null), 60); } };
 })();

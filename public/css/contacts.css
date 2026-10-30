@@ -71,3 +71,8 @@
   .ct-date select:first-child{grid-column:1/-1;}
 }
 
+
+/* Chips que filtran (K.chipValor): cargo, empresa y datos de las direcciones */
+.ct-vchips{display:flex;flex-wrap:wrap;gap:5px;justify-content:inherit;min-width:0;}
+.ct-hero .ct-vchips{justify-content:center;}
+.ct-val .ct-vchips{margin-top:4px;}

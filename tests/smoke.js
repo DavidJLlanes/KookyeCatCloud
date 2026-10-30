@@ -306,6 +306,18 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     const u = await req('POST', '/api/valores/games.platforms/fusionar', { de: ['PC'], a: 'PC (Windows)' });
     igual(u.s, 200); igual(u.j.cambiados, 1);
   });
+  await prueba('valores: los contactos unifican empresa, cargo y país de las direcciones', async () => {
+    const a = await req('POST', '/api/contacts', { first: 'Ana', company: 'Sapientum Studio', title: 'Diseñadora', addresses: [{ label: 'Casa', city: 'León', country: 'España' }] });
+    cierto(a.s < 300, 'crear ' + a.s);
+    const b = await req('POST', '/api/contacts', { first: 'Luis', company: 'sapientum  studio', title: 'diseñadora', addresses: [{ label: 'Casa', city: 'leon', country: 'espana' }] });
+    cierto(b.s < 300, 'crear ' + b.s);
+    igual(b.j.contact.company, 'Sapientum Studio'); igual(b.j.contact.title, 'Diseñadora');
+    igual(b.j.contact.addresses[0].city, 'León'); igual(b.j.contact.addresses[0].country, 'España');
+    const f = await req('GET', '/api/valores/contacts.company'); igual(f.s, 200);
+    igual(f.j.valores.find(v => v.v === 'Sapientum Studio').n, 2);
+    const r = await req('POST', '/api/valores/contacts.country/fusionar', { de: ['España'], a: 'Spain' });
+    igual(r.s, 200); igual(r.j.cambiados, 2);
+  });
   await prueba('usuarios (admin)', async () => { igual((await req('GET', '/api/users')).s, 200); });
 
   // --- Cuentas: usuarios, contraseñas, sesiones, tokens de app y 2FA ---

@@ -297,7 +297,7 @@ const promptsMod = createPrompts({
   papeleraDias: (user) => papeleraDias(user),
   valores: valoresMod.core,
 });
-const contactsMod = createContacts({ express, sharp, userRoot, sendError, registrarActividad, labels: labelsMod, calendar: calendarMod.core });
+const contactsMod = createContacts({ express, sharp, userRoot, sendError, registrarActividad, labels: labelsMod, calendar: calendarMod.core, valores: valoresMod.core });
 const shoppingMod = createShopping({ express, multer, sharp, dataRoot: DATA_ROOT, sendError, registrarActividad });
 const alCambiarContenido = (user) => { if (typeof gameMod !== 'undefined' && gameMod) gameMod.invalida(user); };   // refresca los logros al instante
 const gamesMod = createGames({ express, multer, sharp, userRoot, sendError, registrarActividad, calendar: calendarMod.core, alCambiar: alCambiarContenido, valores: valoresMod.core });
