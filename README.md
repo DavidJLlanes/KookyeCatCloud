@@ -767,7 +767,7 @@ Cada logro es una **medalla hexagonal**: el borde indica el tramo (bronce, plata
 
 ### Logros de toda la app
 
-Además de Archivos, Fotos, Notas, Prompts, Contactos, Calendario, Etiquetas, Enlaces, Juegos y Bases, ahora hay logros para:
+Además de Archivos, Fotos, Notas, Prompts, Contactos, Calendario, Etiquetas, Enlaces, Juegos, Bases y Código, ahora hay logros para:
 
 - **Compra**: *Despensa organizada* (productos en el catálogo: 5 / 25 / 100 / 300 / 1000) y *Compra hecha* (compras marcadas como hechas: 5 / 30 / 150 / 600 / 2500).
 - **Favoritos** (*Lo mejor de lo mejor*) y **Álbumes** (*Curador de álbumes*).
@@ -885,6 +885,7 @@ Nueva dependencia: `fflate` (descompresión de ZIP); tras actualizar hay que eje
 ## Exportar JSON
 
 - **Cada sección**: el botón ⤓ de la barra superior exporta los datos de la sección abierta (Notas, Prompts, Contactos, Calendario, Etiquetas, Compra, Juegos, Bases, Código, Logros, Portapapeles y Favoritos/álbumes). En **Cuenta → Mis datos (JSON)** están todas en una lista.
+- **Código**: el JSON exporta el `proyecto.json` de cada proyecto (árbol y versiones, sin el contenido de los archivos). Para llevarte la web completa usa **Exportar ZIP** en la cabecera del proyecto.
 - **Administración → Exportar todos los JSON**: un ZIP comprimido con los JSON de todos los usuarios (`usuarios/<nombre>/…`), los compartidos (`compartido/`), la lista de usuarios sin contraseñas y un `LEEME.json`. No incluye contraseñas, secretos, sesiones ni passkeys, ni los archivos subidos.
 - API: `GET /api/export/:seccion` y `GET /api/admin/export-all` (solo administradores). Código en `lib/exportar.js`.
 
@@ -1410,7 +1411,7 @@ lib/
   prompts.js         Biblioteca de prompts e imágenes WebP
   games.js           Colección de videojuegos, RAWG opcional y portadas
   bases.js           Bases de datos con columnas propias (un JSON por base)
-  codigo.js          Fragmentos de código (un JSON por fragmento)
+  codigo.js          Proyectos de código: carpetas, archivos, versiones y vista web (un JSON por proyecto)
   exportar.js        Exportación de JSON por sección y ZIP completo (administración)
   game.js            Logros, niveles, racha, retos semanales, cosméticos y partidas de Tetris
   comfy.js           Lee metadatos de generación: ComfyUI, Automatic1111 / Forge, JSON y EXIF/XMP
