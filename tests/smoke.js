@@ -37,7 +37,7 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
 
 (async () => {
   copia();
-  srv = spawn('node', ['server.js'], { cwd: APP, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: 'smoke-test-1', INSECURE_COOKIES: '1', TEXT_MAX: '512KB', BASE_PATH: '', THUMBS_DIR: path.join(TMP, 'thumbs') }, stdio: ['ignore', 'pipe', 'pipe'] });
+  srv = spawn('node', ['server.js'], { cwd: APP, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: 'smoke-test-1', INSECURE_COOKIES: '1', TEXT_MAX: '512KB   # comentario al final, como en un .env de systemd', OFFICE_TIMEOUT: '90000    # ms', BASE_PATH: '', THUMBS_DIR: path.join(TMP, 'thumbs') }, stdio: ['ignore', 'pipe', 'pipe'] });
   let log = ''; srv.stdout.on('data', d => { log += d; }); srv.stderr.on('data', d => { log += d; });
   for (let i = 0; i < 60; i++) { try { if ((await fetch(BASE + '/api/version')).ok) break; } catch { /* aún no */ } await dormir(250); }
 
@@ -260,7 +260,7 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     igual((await publico('GET', '/p/' + c.j.link.id)).s, 200, 'página pública');
     igual((await publico('GET', '/api/public/prompts/no-existe')).s, 404);
   });
-  await prueba('leer un .txt con TEXT_MAX en formato "512KB" (antes daba NaN)', async () => {
+  await prueba('leer un .txt con TEXT_MAX="512KB # comentario" (antes daba NaN)', async () => {
     const t = await req('GET', '/api/text?path=a.txt'); igual(t.s, 200); igual(t.j.text, 'hola a.txt');
     igual((await req('GET', '/api/capabilities')).j.textMax, 512 * 1024);
   });

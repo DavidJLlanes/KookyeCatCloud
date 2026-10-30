@@ -1,6 +1,13 @@
 /**
  * KookyeCatCloud - Servidor de archivos y backup de fotos personal, autoalojado
  */
+// systemd (EnvironmentFile) no quita los comentarios al final de línea: `OFFICE_TIMEOUT=90000   # en ms`
+// llegaba como "90000   # en ms" y Number() daba NaN (TEXT_MAX rompía el visor de texto y OFFICE_TIMEOUT
+// mataba LibreOffice al instante). Solo se recorta cuando el valor es un número seguido de un comentario.
+for (const k of Object.keys(process.env)) {
+  const m = /^(\d+(?:[.,]\d+)?\s*[kmgKMG]?[bB]?)\s+#.*$/.exec(process.env[k]);
+  if (m) process.env[k] = m[1].trim();
+}
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
