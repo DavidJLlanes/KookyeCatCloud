@@ -125,6 +125,34 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     cierto((await req('GET', '/api/export/contactos')).s < 500, 'sección');
     cierto((await req('GET', '/api/admin/export-all')).s === 200, 'todo');
   });
+  await prueba('favoritos y álbumes (con ZIP)', async () => {
+    for (const n of ['a.txt', 'b.txt']) {
+      const fd = new FormData(); fd.append('files', new Blob(['hola ' + n]), n);
+      const up = await fetch(BASE + '/api/upload', { method: 'POST', headers: { Cookie: cookie }, body: fd });
+      igual(up.status, 200, 'subida ' + n);
+    }
+    igual((await req('POST', '/api/favorites', { path: 'a.txt' })).s, 200);
+    igual((await req('GET', '/api/favorites')).j.items.join(), 'a.txt');
+    await req('POST', '/api/favorites', { path: 'no-existe.txt' });
+    igual((await req('GET', '/api/favorites')).j.items.join(), 'a.txt', 'los favoritos inexistentes se depuran al leer');
+    igual((await req('DELETE', '/api/favorites?path=a.txt')).s, 200);
+    igual((await req('GET', '/api/favorites')).j.items.length, 0);
+    const c = await req('POST', '/api/albums', { title: 'Mi álbum', paths: ['a.txt'] }); igual(c.s, 200);
+    const id = c.j.album.id;
+    igual((await req('POST', `/api/albums/${id}/items`, { paths: ['b.txt', 'a.txt'] })).j.count, 2);
+    igual((await req('GET', `/api/albums/${id}`)).j.items.length, 2);
+    igual((await req('PUT', `/api/albums/${id}`, { title: 'Renombrado' })).s, 200);
+    const z = await fetch(BASE + `/api/albums/${id}/zip`, { headers: { Cookie: cookie } });
+    igual(z.status, 200); cierto((await z.arrayBuffer()).byteLength > 100, 'zip vacío');
+    const enl = await req('POST', '/api/sharelinks', { album: id, days: 1 }); igual(enl.s, 200, 'enlace del álbum');
+    const lista = await fetch(BASE + `/api/public/share/${enl.j.link.id}/list`);
+    igual(lista.status, 200, 'galería pública del álbum');
+    igual((await lista.json()).items.length, 2, 'fotos del álbum público');
+    igual((await req('DELETE', `/api/albums/${id}/items?path=a.txt`)).s, 200);
+    igual((await req('GET', '/api/albums')).j.items[0].count, 1);
+    igual((await req('DELETE', `/api/albums/${id}`)).s, 200);
+    igual((await req('GET', '/api/albums')).j.items.length, 0);
+  });
   await prueba('usuarios (admin)', async () => { igual((await req('GET', '/api/users')).s, 200); });
   await prueba('cierre de sesión', async () => { cierto((await req('POST', '/api/logout')).s < 400, 'logout'); });
 

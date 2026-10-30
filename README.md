@@ -1529,6 +1529,7 @@ lib/
   store.js           Escritura atómica de JSON con cola por archivo
   events.js          Avisos en directo (Server-Sent Events)
   labels.js          Etiquetas de color compartidas entre módulos
+  albums.js          Favoritos y álbumes (fábrica createAlbums)
   notes.js           Bloc de notas: árbol, cuerpos .md y papelera (fábrica createNotes)
   calendar.js        Eventos, tareas y repetición; ganchos con notas, prompts y archivos
   ical.js            Feed iCal (RFC 5545) de solo lectura
