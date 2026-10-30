@@ -240,7 +240,7 @@
     const con = el('section', 'gm-sec');
     const h3 = el('h3'); h3.append(G.gi('archive', 'gi-sm'), el('span', null, 'Lo que has guardado')); con.appendChild(h3);
     const grid = el('div', 'gm-rec');
-    [['archivos', 'files', 'Archivos'], ['fotos', 'photos', 'Fotos'], ['notas', 'notes', 'Notas'], ['prompts', 'prompts', 'Prompts'], ['contactos', 'contacts', 'Contactos'], ['eventos', 'calendar', 'Eventos'], ['etiquetas', 'labels', 'Etiquetas'], ['enlaces', 'share', 'Enlaces'], ['juegos', 'gamepad', 'Juegos'], ['bases', 'abacus', 'Bases'], ['compra_prod', 'purse', 'Compra'], ['favoritos', 'star', 'Favoritos'], ['albumes', 'photos', 'Álbumes'], ['cod_snips', 'anvil', 'Proyectos de código'], ['clip_envios', 'clip', 'En el portapapeles'], ['mud_envios', 'arrow', 'Envíos entre secciones']].forEach(([k, ic, n]) => {
+    [['archivos', 'files', 'Archivos'], ['fotos', 'photos', 'Fotos'], ['notas', 'notes', 'Notas'], ['prompts', 'prompts', 'Prompts'], ['contactos', 'contacts', 'Contactos'], ['eventos', 'calendar', 'Eventos'], ['etiquetas', 'labels', 'Etiquetas'], ['enlaces', 'share', 'Enlaces'], ['juegos', 'gamepad', 'Juegos'], ['bases', 'abacus', 'Bases'], ['compra_prod', 'purse', 'Compra'], ['favoritos', 'star', 'Favoritos'], ['albumes', 'photos', 'Álbumes'], ['cod_snips', 'anvil', 'Proyectos de código'], ['val_total', 'labels', 'Valores reutilizables'], ['clip_envios', 'clip', 'En el portapapeles'], ['mud_envios', 'arrow', 'Envíos entre secciones']].forEach(([k, ic, n]) => {
       const t = el('div', 'gm-rec-i'); t.append(G.gi(ic), el('b', null, num(s.recuentos[k])), el('span', 'k-faint', n)); grid.appendChild(t);
     });
     con.appendChild(grid); c.appendChild(con);

@@ -223,14 +223,16 @@
     const quien = el('div', 'ct-who'); quien.appendChild(avatar(c, 38));
     const nm = el('div', 'ct-nm'); nm.appendChild(el('b', null, nombre(c)));
     // En pantallas estrechas las columnas se esconden y esta línea recoge lo más útil
+    const chipsTrabajo = () => { const w = el('span', 'ct-vchips'); [['company', c.company], ['title', c.title]].forEach(([p, v]) => { if (v) w.appendChild(K.chipValor('contacts.' + p, v)); }); return w; };
     const resumen = principal(c) || (c.emails[0] || {}).value || (c.phones[0] || {}).value || '';
-    if (resumen) nm.appendChild(el('small', 'ct-sub', resumen));
+    if (principal(c)) { const sb = el('small', 'ct-sub'); sb.appendChild(chipsTrabajo()); nm.appendChild(sb); }
+    else if (resumen) nm.appendChild(el('small', 'ct-sub', resumen));
     quien.appendChild(nm);
     const fav = el('button', 'ct-fav' + (c.favorite ? ' on' : '')); fav.type = 'button';
     fav.title = c.favorite ? 'Quitar de favoritos' : 'Marcar como favorito'; fav.setAttribute('aria-label', fav.title);
     fav.appendChild(icon(c.favorite ? 'i-star-fill' : 'i-star'));
     fav.addEventListener('click', async (e) => { e.stopPropagation(); await alternaFav(c); });
-    r.append(quien, el('span', 'ct-col', (c.emails[0] || {}).value || ''), el('span', 'ct-col', (c.phones[0] || {}).value || ''), el('span', 'ct-col', principal(c)), fav);
+    r.append(quien, el('span', 'ct-col', (c.emails[0] || {}).value || ''), el('span', 'ct-col', (c.phones[0] || {}).value || ''), (() => { const col = el('span', 'ct-col'); if (principal(c)) col.appendChild(chipsTrabajo()); return col; })(), fav);
     if ((c.labels || []).length) { const ch = K.labelChips(c.labels.slice(0, 3)); ch.classList.add('ct-chips'); nm.appendChild(ch); }
     if (S.selMode) {
       r.classList.add('sel-mode'); if (S.sel.has(c.id)) r.classList.add('is-sel');

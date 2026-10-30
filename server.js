@@ -286,7 +286,7 @@ function totpVerificar(secretB32, token) {
 
 // Módulos nuevos. Se crean aquí, antes de las rutas, porque las rutas de archivos los usan.
 const labelsMod = createLabels({ express, userRoot, sendError });
-const valoresMod = createValores({ express, userRoot, sendError, registrarActividad });
+const valoresMod = createValores({ express, userRoot, sendError, registrarActividad, alCambiar: (u) => alCambiarContenido(u) });
 const calendarMod = createCalendar({
   express, userRoot, sendError, registrarActividad,
   icalIndexFile: path.join(APP_DIR, 'ical-tokens.json'),   // token de suscripción -> usuario
@@ -314,7 +314,7 @@ const transferMod = createTransferir({ express, userRoot, resuelve: (user, r, wr
     get bases() { return basesMod.core; },
     get juegos() { return gamesMod.core; },
   } });
-const modulosConLogros = [gamesMod, basesMod, codigoMod, transferMod];
+const modulosConLogros = [gamesMod, basesMod, codigoMod, transferMod, valoresMod];
 
 // Versiones de archivos de texto (se crea aquí porque WebDAV y las rutas de archivos la usan)
 const versionsMod = createVersions({

@@ -10,6 +10,7 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [ ] Revisar el Nginx de `patineteleon.es`: nombre de servidor duplicado (`conflicting server name`).
 
 ### Pronto
+- [ ] Valores reutilizables: extenderlos a Compras (tienda de cada producto) y a Bases cuando tengan campos de texto repetibles; valorar un aviso de «hay valores por revisar» tras importar muchos elementos.
 - [ ] Contactos: etiquetar varios a la vez (el borrado en bloque ya está hecho), fusión de duplicados y cumpleaños en el calendario.
 - [ ] Importar los contactos reales desde Google Contacts o iCloud (`.vcf`) y comprobar etiquetas y fotos.
 - [ ] Extender las actualizaciones en directo (SSE) a notas, prompts y contactos.

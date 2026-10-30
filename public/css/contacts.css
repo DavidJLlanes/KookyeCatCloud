@@ -76,3 +76,5 @@
 .ct-vchips{display:flex;flex-wrap:wrap;gap:5px;justify-content:inherit;min-width:0;}
 .ct-hero .ct-vchips{justify-content:center;}
 .ct-val .ct-vchips{margin-top:4px;}
+.ct-sub .ct-vchips,.ct-col .ct-vchips{flex-wrap:nowrap;overflow:hidden;}
+.ct-row .k-vchip{flex:0 1 auto;min-width:0;}

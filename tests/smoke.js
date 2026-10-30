@@ -327,6 +327,12 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     const f = await req('GET', '/api/valores/codigo.etiquetas'); igual(f.s, 200);
     igual(f.j.valores.length, 2);
   });
+  await prueba('valores: los logros cuentan los valores guardados y unidos', async () => {
+    const g = await req('GET', '/api/game'); igual(g.s, 200);
+    cierto(g.j.recuentos && g.j.recuentos.val_total >= 5, 'val_total ' + JSON.stringify(g.j.recuentos));
+    const fam = JSON.stringify(g.j);
+    cierto(fam.includes('val_unidos') || fam.includes('Sin duplicados'), 'falta la familia val_unidos');
+  });
   await prueba('usuarios (admin)', async () => { igual((await req('GET', '/api/users')).s, 200); });
 
   // --- Cuentas: usuarios, contraseñas, sesiones, tokens de app y 2FA ---

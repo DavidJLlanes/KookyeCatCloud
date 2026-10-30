@@ -477,6 +477,7 @@ en el calendario con un enlace de vuelta al elemento.
 | Prompts | Un `.json` por prompt + imágenes WebP | `<usuario>/.kcc/prompts/` |
 | Contactos | Todos los contactos en un solo archivo | `<usuario>/.kcc/contacts.json` |
 | Etiquetas | Lista de etiquetas con color | `<usuario>/.kcc/labels.json` |
+| Valores reutilizables | Catálogo de valores por campo (modelo, plataforma, empresa…) | `<usuario>/.kcc/valores.json` |
 
 Todo está oculto al explorador de archivos y a WebDAV (son carpetas con punto). Para las
 copias de seguridad basta con respaldar `DATA_DIR`.
@@ -487,6 +488,29 @@ Se escriben donde haga falta (nota, prompt, evento) y se crean al vuelo con Ente
 mismas en todas partes: renombrar una o cambiarle el color lo cambia en todos los módulos a la
 vez, y borrarla la quita de todo lo que la usaba. Se gestionan desde el menú “⋯” de Prompts o de Contactos, el
 panel de etiquetas del Calendario o el buscador (Ctrl+K → “Gestionar etiquetas”).
+
+### Valores reutilizables
+
+Los campos de texto que se repiten entre elementos se **guardan al escribirlos** para volver a elegirlos y no duplicar
+variantes: modelo, herramienta e idioma (Prompts); plataformas, géneros, estudio, saga, tienda y etiquetas (Juegos);
+empresa, cargo, departamento, ciudad, provincia y país (Contactos); etiquetas (Código). No se aplica a nombres propios,
+notas, enlaces, fechas, cifras ni a ubicaciones largas del calendario.
+
+- **Se unifican solos** las variantes que solo cambian en mayúsculas, acentos, espacios, guiones o coma/punto decimal:
+  «Claude Sonnet 5.5», «claude  sonnet 5,5» y «CLAUDE-SONNET 5.5» son el mismo valor. No se mezcla lo que cambia el
+  significado («PS4» y «PS5», «4.5» y «5.5», «C» y «C++»).
+- **Las erratas solo se sugieren**: «claude sonet 5.5» avisa «¿Quisiste decir «Claude Sonnet 5.5»?» con un botón para usarlo;
+  nunca se cambia sin que lo decidas.
+- **Pantalla de revisión** (Cuenta → Valores reutilizables, o Ctrl+K → «Revisar valores repetidos»): propone unir los
+  grupos de valores repetidos o parecidos que ya tenías, y lista todos los valores de cada campo para renombrarlos,
+  unirlos o quitar los que no usa nadie. Nada cambia sin tu confirmación.
+- **Todos son clicables**: un valor en una tarjeta, ficha o fila filtra ese módulo por él, desde cualquier sitio.
+
+Para desarrolladores: `lib/valores.js` es un servicio compartido (como las etiquetas). Cada módulo registra sus campos con
+`valores.registra({ campo, modulo, prop, etiqueta, multiple, uso, renombra })`, llama a `valores.aplica(user, modulo, obj)`
+antes de guardar y, en el cliente, usa `K.campoValor()` en el formulario, `K.chipValor()` para mostrar el valor y
+registra `K.filtros.<modulo> = (prop, valor) => …`. La normalización (`public/js/valores-clave.js`) es el mismo archivo
+en servidor y navegador. Datos en `<usuario>/.kcc/valores.json`.
 
 ### Buscador global (Ctrl+K)
 
@@ -1529,6 +1553,7 @@ lib/
   store.js           Escritura atómica de JSON con cola por archivo
   events.js          Avisos en directo (Server-Sent Events)
   labels.js          Etiquetas de color compartidas entre módulos
+  valores.js         Valores reutilizables: catálogo por campo, unificación y revisión de duplicados (fábrica createValores)
   albums.js          Favoritos y álbumes (fábrica createAlbums)
   papelera.js        Papelera de archivos: borrar, restaurar, caducidad (fábrica createPapelera)
   fotos.js           EXIF, mapa e índice de fotos (fábrica createFotos)
@@ -1560,6 +1585,7 @@ public/
   index.html         Página única (vistas, iconos SVG y los <script> en orden)
   js/app/*.js        Aplicación principal, troceada por áreas (antes un solo app.js): estado, markdown, tema, sesión,
                      navegación, visores, papelera y subida, notas, enlaces, colecciones, administración, cuenta e inicio
+  js/valores*.js     Valores reutilizables: normalización compartida con el servidor, campos con sugerencias, chips que filtran y pantalla de revisión
   js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, recordatorios vinculados, portapapeles, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
   css/               Estilos: modules (barra lateral y componentes), calendar, prompts, sistema (versiones, caja fuerte,
                      passkeys), contacts, complementos (retoques, van los últimos) y uno por módulo (notes, shopping…)

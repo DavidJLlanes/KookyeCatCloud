@@ -31,7 +31,13 @@
     }
     return [...por.values()].sort((a, b) => (b.n - a.n) || a.v.localeCompare(b.v, 'es'));
   }
-  const cambio = () => { for (const k of Object.keys(cache)) delete cache[k]; K.bus.emit('valores'); };
+  let tLogros = 0;
+  const cambio = () => {
+    for (const k of Object.keys(cache)) delete cache[k];
+    K.bus.emit('valores');
+    // El servidor recalcula los logros con los nuevos recuentos: se consultan para que salgan los avisos
+    clearTimeout(tLogros); tLogros = setTimeout(() => { if (K.game && K.game.load) K.game.load(); }, 700);
+  };
   K.valores = { campo, opciones, cambio, clave: V.clave, limpia: V.limpia };
 
   /* ---------- Filtrar desde cualquier sitio ---------- */
@@ -109,6 +115,7 @@
         u.addEventListener('pointerdown', (e) => { e.preventDefault(); elige(par); });
         aviso.appendChild(u); aviso.hidden = false; return;
       }
+      if (cs.length) return;                                   // mientras sugiere, no avisa de «valor nuevo»
       aviso.classList.add('aviso-nuevo'); aviso.textContent = 'Valor nuevo: se guardará para volver a usarlo'; aviso.hidden = false;
     }
     function elige(v) {
