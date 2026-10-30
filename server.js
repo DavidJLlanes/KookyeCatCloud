@@ -356,9 +356,24 @@ async function contarArchivos(user) {
   cacheArchivos.set(user.username, v);
   return v;
 }
+// Recuentos de partes sin módulo propio de logros: compra, favoritos, álbumes y seguridad de la cuenta
+async function contarExtrasApp(user) {
+  const r = {};
+  try {
+    const c = await readJson(path.join(DATA_ROOT, '.kcc', 'shopping', 'data.json'), { products: [], entries: [] });
+    r.compra_prod = (c.products || []).length;
+    r.compra_hechas = (c.entries || []).filter(e => e.status === 'bought').length;
+  } catch { /* sin compra */ }
+  try { r.favoritos = (await readFavs(user)).length; } catch { /* sin favoritos */ }
+  try { const al = await readAlbums(user); r.albumes = al.length; r.album_max = al.reduce((m, a) => Math.max(m, (a.items || []).length), 0); } catch { /* sin álbumes */ }
+  try { const u = loadUsers().find(x => x.username === user.username); r.seg_2fa = u && u.twofaSecret ? 1 : 0; } catch { r.seg_2fa = 0; }
+  try { const pk = await readJson(path.join(APP_DIR, 'passkeys.json'), { users: {} }); r.seg_passkeys = ((pk.users || {})[user.username] || { creds: [] }).creds.length; } catch { r.seg_passkeys = 0; }
+  r.seg_capas = (r.seg_2fa ? 1 : 0) + (r.seg_passkeys ? 1 : 0);
+  return r;
+}
 async function contarContenido(user) {
   const raiz = kccDir(userRoot(user));
-  const [arch, notas, contactos, cal, etq, prompts, extras] = await Promise.all([
+  const [arch, notas, contactos, cal, etq, prompts, extras, extrasApp] = await Promise.all([
     contarArchivos(user),
     readNotes(user).catch(() => ({ items: [] })),
     readJson(path.join(raiz, 'contacts.json'), { contacts: [] }),
@@ -366,6 +381,7 @@ async function contarContenido(user) {
     readJson(path.join(raiz, 'labels.json'), { labels: [] }),
     promptsMod.core.contar(user),
     Promise.all(modulosConLogros.map(m => m.core.resumen(user).catch(() => ({})))).then(l => Object.assign({}, ...l)),
+    contarExtrasApp(user),
   ]);
   return {
     archivos: arch.archivos, fotos: arch.fotos,
@@ -375,7 +391,7 @@ async function contarContenido(user) {
     etiquetas: (etq.labels || []).length,
     prompts,
     enlaces: loadLinks().filter(l => l.owner === user.username).length,
-    ...extras,
+    ...extras, ...extrasApp,
   };
 }
 const gameMod = createGame({ express, userRoot, contar: contarContenido, sendError, registrarActividad });

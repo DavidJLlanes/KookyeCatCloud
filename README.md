@@ -763,6 +763,17 @@ se guardan en el navegador junto con el volumen de la pantalla de inicio. El ser
 
 Cada logro es una **medalla hexagonal**: el borde indica el tramo (bronce, plata, oro, platino, diamante) y el fondo la categoría. Al conseguir uno, un aviso con su medalla aparece incluso durante las partidas. En **Logros → Resumen** hay una **vitrina de trofeos** con una copa por categoría (Archivista, Constancia, Tetris, 2048, Breakout, Arcade y Jugador) cuyo color es el tramo medio de sus logros; la copa de diamante brilla. Las tarjetas para compartir usan las mismas medallas.
 
+### Logros de toda la app
+
+Además de Archivos, Fotos, Notas, Prompts, Contactos, Calendario, Etiquetas, Enlaces, Juegos y Bases, ahora hay logros para:
+
+- **Compra**: *Despensa organizada* (productos en el catálogo: 5 / 25 / 100 / 300 / 1000) y *Compra hecha* (compras marcadas como hechas: 5 / 30 / 150 / 600 / 2500).
+- **Favoritos** (*Lo mejor de lo mejor*) y **Álbumes** (*Curador de álbumes*).
+- **Seguridad** (categoría y copa nuevas): *Fortaleza* (verificación en dos pasos y huella o Face ID) y los especiales *Doble cerradura* y *Entrada biométrica*.
+- **Especial** *Gran exposición*: un álbum con 50 fotos o más.
+- **Títulos nuevos**: *Despensa llena*, *Curador de álbumes* y *Guardián*, y dos retos semanales más (compras y favoritos).
+- Los recuentos de Compra, favoritos y álbumes se actualizan en un máximo de 45 s.
+
 ### 2048 y Breakout
 
 **Controles**: un deslizamiento mueve el 2048 una sola vez (levanta el dedo para el siguiente movimiento, como en el original). En los tres juegos, el botón 🔊/🔇 junto a la pausa silencia o reactiva música y efectos.

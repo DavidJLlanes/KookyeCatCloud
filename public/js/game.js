@@ -172,7 +172,7 @@
   const cuando = (t) => new Date(t).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' });
 
   /* ---------- Vitrina de trofeos: una copa por categoría, del color de su tramo medio ---------- */
-  const COPAS = [['Contenido', 'files', 'Copa del Archivista'], ['Uso', 'flame', 'Copa de la Constancia'], ['Tetris', 'cube', 'Copa Tetris'], ['2048', 'gem', 'Copa 2048'], ['Breakout', 'shield', 'Copa Breakout'], ['Arcade', 'archive', 'Copa Arcade'], ['Juegos', 'laurels', 'Copa del Jugador'], ['Bases', 'abacus', 'Copa del Arquitecto']];
+  const COPAS = [['Contenido', 'files', 'Copa del Archivista'], ['Uso', 'flame', 'Copa de la Constancia'], ['Tetris', 'cube', 'Copa Tetris'], ['2048', 'gem', 'Copa 2048'], ['Breakout', 'shield', 'Copa Breakout'], ['Arcade', 'archive', 'Copa Arcade'], ['Juegos', 'laurels', 'Copa del Jugador'], ['Bases', 'abacus', 'Copa del Arquitecto'], ['Seguridad', 'shield', 'Copa del Guardián']];
   function copaSvg(color, id) {
     const NS = 'http://www.w3.org/2000/svg'; const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', '0 0 100 112'); svg.setAttribute('class', 'gm-copa-svg');
     svg.innerHTML = `<defs><linearGradient id="cg${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".35" stop-color="${color}"/><stop offset="1" stop-color="${color}" stop-opacity=".55"/></linearGradient><linearGradient id="cb${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}"/><stop offset="1" stop-color="#000" stop-opacity=".6"/></linearGradient></defs>
@@ -240,7 +240,7 @@
     const con = el('section', 'gm-sec');
     const h3 = el('h3'); h3.append(G.gi('archive', 'gi-sm'), el('span', null, 'Lo que has guardado')); con.appendChild(h3);
     const grid = el('div', 'gm-rec');
-    [['archivos', 'files', 'Archivos'], ['fotos', 'photos', 'Fotos'], ['notas', 'notes', 'Notas'], ['prompts', 'prompts', 'Prompts'], ['contactos', 'contacts', 'Contactos'], ['eventos', 'calendar', 'Eventos'], ['etiquetas', 'labels', 'Etiquetas'], ['enlaces', 'share', 'Enlaces'], ['juegos', 'gamepad', 'Juegos'], ['bases', 'abacus', 'Bases']].forEach(([k, ic, n]) => {
+    [['archivos', 'files', 'Archivos'], ['fotos', 'photos', 'Fotos'], ['notas', 'notes', 'Notas'], ['prompts', 'prompts', 'Prompts'], ['contactos', 'contacts', 'Contactos'], ['eventos', 'calendar', 'Eventos'], ['etiquetas', 'labels', 'Etiquetas'], ['enlaces', 'share', 'Enlaces'], ['juegos', 'gamepad', 'Juegos'], ['bases', 'abacus', 'Bases'], ['compra_prod', 'purse', 'Compra'], ['favoritos', 'star', 'Favoritos'], ['albumes', 'photos', 'Álbumes']].forEach(([k, ic, n]) => {
       const t = el('div', 'gm-rec-i'); t.append(G.gi(ic), el('b', null, num(s.recuentos[k])), el('span', 'k-faint', n)); grid.appendChild(t);
     });
     con.appendChild(grid); c.appendChild(con);
@@ -260,7 +260,7 @@
   function pintaLogros(c) {
     const s = G.state;
     const f = el('div', 'gm-filtros');
-    ['todos', 'Contenido', 'Uso', 'Tetris', '2048', 'Breakout', 'Arcade', 'Juegos', 'Bases', 'Especiales'].forEach(g => {
+    ['todos', 'Contenido', 'Uso', 'Tetris', '2048', 'Breakout', 'Arcade', 'Juegos', 'Bases', 'Seguridad', 'Especiales'].forEach(g => {
       const b = el('button', 'gm-filtro' + (S.grupo === g ? ' on' : ''), g === 'todos' ? 'Todos' : g); b.type = 'button';
       b.addEventListener('click', () => { S.grupo = g; pinta(); }); f.appendChild(b);
     });
@@ -360,7 +360,7 @@
     ds.forEach(d => ctx.fill(new Path2D(d))); ctx.restore();
   }
   // Medalla hexagonal (borde del color del tramo y fondo del color de la categoría) para las tarjetas
-  const GRUPO_COL = { Contenido: ['#38bdf8', '#1d4ed8'], Uso: ['#4ade80', '#047857'], Tetris: ['#22d3ee', '#6d28d9'], '2048': ['#fdba74', '#dc2626'], Breakout: ['#f9a8d4', '#9333ea'], Arcade: ['#fde047', '#ea580c'], Juegos: ['#c4b5fd', '#4338ca'], Bases: ['#5eead4', '#0f766e'], Especiales: ['#f0abfc', '#7e22ce'] };
+  const GRUPO_COL = { Contenido: ['#38bdf8', '#1d4ed8'], Uso: ['#4ade80', '#047857'], Tetris: ['#22d3ee', '#6d28d9'], '2048': ['#fdba74', '#dc2626'], Breakout: ['#f9a8d4', '#9333ea'], Arcade: ['#fde047', '#ea580c'], Juegos: ['#c4b5fd', '#4338ca'], Bases: ['#5eead4', '#0f766e'], Seguridad: ['#fca5a5', '#b91c1c'], Especiales: ['#f0abfc', '#7e22ce'] };
   function medalla(ctx, trazados, nombre, cx, cy, tam, tramo, grupo) {
     const [g1, g2] = GRUPO_COL[grupo] || ['#94a3b8', '#475569'];
     const hex = (r) => { ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 + i * Math.PI / 3; const px = cx + r * 0.93 * Math.cos(a), py = cy + r * Math.sin(a); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.closePath(); };
