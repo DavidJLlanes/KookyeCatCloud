@@ -755,8 +755,8 @@ el tiempo jugado, o partidas encadenadas demasiado rápido).
 La música son tres pistas de dominio público (CC0) de Kevin MacLeod / FreePD, en `public/audio/` (créditos en
 `CREDITS.txt`). Cambian según el nivel de la partida (tranquila, chip y trance) y suenan algo más rápido en los
 últimos 20 s. Los efectos (mover, girar, líneas, Tetris, potenciadores, cuenta atrás y fin) se sintetizan con Web
-Audio, sin archivos. Los botones ♪ y 🔊 de la cabecera y el volumen de la pantalla de inicio se guardan en el
-navegador. El service worker no cachea `/audio/`.
+Audio, sin archivos. El botón 🔊/🔇 junto al de pausa (en Tetris, 2048 y Breakout) silencia o reactiva música y efectos, y
+se guardan en el navegador junto con el volumen de la pantalla de inicio. El service worker no cachea `/audio/`.
 
 ### Medallas y vitrina de trofeos
 

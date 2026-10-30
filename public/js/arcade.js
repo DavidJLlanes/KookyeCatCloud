@@ -230,6 +230,8 @@
       const zona = el('div', 'tt-zona ar-zona');
       const hudBar = el('div', 'tt-hud'); const celdas = cfg.hud.map(h => { const c = el('div'); const val = el('b', null, h.ini || '0'); c.append(el('span', null, h.nombre), val); hudBar.appendChild(c); return val; });
       const bPausa = el('button', 'tt-pausa'); bPausa.type = 'button'; bPausa.textContent = 'II'; bPausa.setAttribute('aria-label', 'Pausa'); bPausa.addEventListener('click', pausa); hudBar.appendChild(bPausa);
+      const bMudo = el('button', 'tt-pausa tt-mudo'); bMudo.type = 'button'; const pintaMudo = () => { const mudo = !AU.musica && !AU.efectos; bMudo.textContent = mudo ? '🔇' : '🔊'; bMudo.setAttribute('aria-label', mudo ? 'Activar sonido' : 'Silenciar'); bMudo.title = mudo ? 'Activar sonido' : 'Silenciar todo el audio'; }; pintaMudo();
+      bMudo.addEventListener('click', () => { const mudo = !AU.musica && !AU.efectos; AU.musica = AU.efectos = mudo; guardaAudio(); pintaMudo(); bMudo.blur(); }); hudBar.appendChild(bMudo);
       const en = el('div', 'ar-energia'); en.title = 'Energía: se carga jugando y se gasta en potenciadores'; en.appendChild(el('span', null, 'Energía'));
       const pipsBox = el('div'); const pips = [0, 1, 2, 3, 4].map(() => { const i = el('i'); pipsBox.appendChild(i); return i; }); en.appendChild(pipsBox);
       const chips = el('div', 'ar-chips'); en.appendChild(chips);

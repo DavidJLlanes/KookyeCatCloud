@@ -536,6 +536,8 @@
     const pts = celdaHud('Puntos'), tiempo = celdaHud('Tiempo', '3:00'), lineas = celdaHud('Líneas'), nivel = celdaHud('Nivel', '1');
     const bPausa = el('button', 'tt-pausa'); bPausa.type = 'button'; bPausa.textContent = 'II'; bPausa.setAttribute('aria-label', 'Pausa'); bPausa.addEventListener('click', pausa);
     hudBar.appendChild(bPausa);
+    const bMudo = el('button', 'tt-pausa tt-mudo'); bMudo.type = 'button'; const pintaMudo = () => { const mudo = !AU.musica && !AU.efectos; bMudo.textContent = mudo ? '🔇' : '🔊'; bMudo.setAttribute('aria-label', mudo ? 'Activar sonido' : 'Silenciar'); bMudo.title = mudo ? 'Activar sonido' : 'Silenciar todo el audio'; }; pintaMudo();
+    bMudo.addEventListener('click', () => { const mudo = !AU.musica && !AU.efectos; AU.musica = AU.efectos = mudo; guardaAudio(); pintaMudo(); bMudo.blur(); }); hudBar.appendChild(bMudo);
 
     const fila = el('div', 'tt-fila');
     const izq = el('div', 'tt-lado'); const holdBox = el('div', 'tt-caja'); holdBox.appendChild(el('span', null, 'Reserva'));
