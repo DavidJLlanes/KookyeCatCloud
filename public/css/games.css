@@ -3,12 +3,12 @@
 .gms-page{width:min(100%,1180px);margin:0 auto;}
 .gms-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:0 0 16px;}
 .gms-head h1{margin:0;font-size:clamp(23px,3vw,32px);letter-spacing:-.035em;}
-.gms-head p{margin:4px 0 0;font-size:13px;}
+.gms-head p{margin:4px 0 0;font-size:calc(13px*var(--fs,1));}
 .gms-actions{display:flex;gap:8px;flex-wrap:wrap;}
 .gms-actions .btn{min-height:42px;}
 .gms-tabs{display:flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:13px;background:var(--glass);overflow-x:auto;scrollbar-width:none;}
 .gms-tabs::-webkit-scrollbar{display:none;}
-.gms-tabs button{flex:none;border:0;background:transparent;color:var(--muted);font:600 13px var(--font);padding:9px 12px;border-radius:9px;cursor:pointer;white-space:nowrap;}
+.gms-tabs button{flex:none;border:0;background:transparent;color:var(--muted);font:600 calc(13px*var(--fs,1)) var(--font);padding:9px 12px;border-radius:9px;cursor:pointer;white-space:nowrap;}
 .gms-tabs button:hover{background:var(--glass-2);color:var(--text);}
 .gms-tabs button.is-active{color:var(--accent-text);background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--accent-line);}
 .gms-bar{display:grid;grid-template-columns:minmax(160px,1.4fr) repeat(3,minmax(110px,1fr));gap:8px;padding:12px 0;}
@@ -23,17 +23,17 @@
 .gms-cover.sin span{font-size:clamp(44px,12vw,80px);font-weight:800;letter-spacing:-.05em;}
 .gms-cover.grande{width:150px;flex:none;border-radius:14px;}
 .gms-body{padding:10px 11px 12px;display:flex;flex-direction:column;gap:3px;min-width:0;}
-.gms-body strong{font-size:14px;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere;}
-.gms-body small{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.gms-foot{display:flex;gap:10px;align-items:center;font-size:12px;margin-top:2px;flex-wrap:wrap;}
+.gms-body strong{font-size:calc(14px*var(--fs,1));line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere;}
+.gms-body small{font-size:calc(12px*var(--fs,1));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gms-foot{display:flex;gap:10px;align-items:center;font-size:calc(12px*var(--fs,1));margin-top:2px;flex-wrap:wrap;}
 .gms-nota{color:var(--accent-text);font-weight:700;}
 .gms-empty{grid-column:1/-1;text-align:center;padding:48px 16px;}
-.gms-empty-i{font-size:46px;}
+.gms-empty-i{font-size:calc(46px*var(--fs,1));}
 .gms-empty h2{margin:8px 0 4px;}
 .gms-form{display:flex;flex-direction:column;gap:11px;min-width:0;}
 .gms-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
 .gms-field{display:flex;flex-direction:column;gap:5px;min-width:0;}
-.gms-field>span{font-size:12px;font-weight:600;color:var(--muted);}
+.gms-field>span{font-size:calc(12px*var(--fs,1));font-weight:600;color:var(--muted);}
 .gms-field input,.gms-field select,.gms-field textarea{width:100%;min-width:0;max-width:100%;box-sizing:border-box;}
 .gms-results{display:flex;flex-direction:column;gap:6px;max-height:42vh;overflow:auto;}
 .gms-res{display:flex;align-items:center;gap:10px;text-align:left;padding:7px;border:1px solid var(--line);border-radius:12px;background:var(--glass);color:inherit;cursor:pointer;min-width:0;}
@@ -42,26 +42,26 @@
 .gms-res strong,.gms-res small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .gms-res-img{width:44px;height:58px;flex:none;border-radius:8px;overflow:hidden;background:var(--surface-2);}
 .gms-res-img img{width:100%;height:100%;object-fit:cover;}
-.gms-attr{font-size:11px;margin:0;}
+.gms-attr{font-size:calc(11px*var(--fs,1));margin:0;}
 .gms-ficha{display:flex;flex-direction:column;gap:12px;min-width:0;}
 .gms-ficha-top{display:flex;gap:16px;min-width:0;}
 .gms-ficha-info{min-width:0;flex:1;}
-.gms-ficha-info h2{margin:0 0 4px;font-size:21px;overflow-wrap:anywhere;}
+.gms-ficha-info h2{margin:0 0 4px;font-size:calc(21px*var(--fs,1));overflow-wrap:anywhere;}
 .gms-ficha-info p{margin:0;}
-.gms-nota-grande{font-size:22px;font-weight:800;color:var(--accent-text);margin:6px 0;}
-.gms-datos{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:8px 0 0;font-size:13px;}
+.gms-nota-grande{font-size:calc(22px*var(--fs,1));font-weight:800;color:var(--accent-text);margin:6px 0;}
+.gms-datos{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:8px 0 0;font-size:calc(13px*var(--fs,1));}
 .gms-datos dt{color:var(--muted);}
 .gms-datos dd{margin:0;overflow-wrap:anywhere;}
 .gms-review,.gms-pc{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;}
 .gms-tags{display:flex;gap:6px;flex-wrap:wrap;}
-.gms-tags span{padding:3px 9px;border-radius:99px;background:var(--brand-soft);color:var(--accent-text);font-size:12px;}
+.gms-tags span{padding:3px 9px;border-radius:99px;background:var(--brand-soft);color:var(--accent-text);font-size:calc(12px*var(--fs,1));}
 .gms-link{color:var(--accent-text);}
 .gms-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:16px;}
 .gms-kpi{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--glass);display:flex;flex-direction:column;gap:2px;min-width:0;}
-.gms-kpi strong{font-size:22px;letter-spacing:-.03em;overflow-wrap:anywhere;}
+.gms-kpi strong{font-size:calc(22px*var(--fs,1));letter-spacing:-.03em;overflow-wrap:anywhere;}
 .gms-block{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--glass);margin-bottom:12px;}
-.gms-block h3{margin:0 0 10px;font-size:15px;}
-.gms-bar-r{display:grid;grid-template-columns:minmax(70px,28%) 1fr auto;align-items:center;gap:8px;margin:6px 0;font-size:13px;}
+.gms-block h3{margin:0 0 10px;font-size:calc(15px*var(--fs,1));}
+.gms-bar-r{display:grid;grid-template-columns:minmax(70px,28%) 1fr auto;align-items:center;gap:8px;margin:6px 0;font-size:calc(13px*var(--fs,1));}
 .gms-bar-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .gms-bar-b{display:block;height:12px;border-radius:99px;background:var(--brand);}
 .gms-bar-v{color:var(--muted);font-variant-numeric:tabular-nums;}

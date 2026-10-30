@@ -838,6 +838,10 @@ Bases de datos propias al estilo AppFlowy: tú defines las columnas y las miras 
 - **Logros de Bases**: 5 familias (Arquitecto de datos, Registro tras registro, Esquema a medida, Maestro del tablero, Tarea cumplida), 2 especiales (Esquema completo, Gran biblioteca), el título «Arquitecto de datos», 2 retos y la Copa del Arquitecto.
 - Convención para módulos futuros (JSON propio y gamificación obligatoria): ver `CLAUDE.md`.
 
+## Tamaño del texto
+
+En **Cuenta → Tamaño del texto** puedes aumentar o reducir las letras de toda la aplicación (del 85 % al 140 %, con botones A− / A+, deslizador y «Restablecer»). Se guarda en el dispositivo y se aplica antes de pintar la página. Funciona con un único factor (`--fs`) que multiplica todas las tipografías de `public/css/` y de `index.html`: en CSS nuevo escribe `font-size:calc(13px*var(--fs,1))` en lugar de `13px`. Los campos de texto no bajan de 16 px para que iOS no haga zoom al enfocarlos. El código está en `public/js/textsize.js`.
+
 ## Contactos
 
 Agenda personal al estilo de Google Contacts, en la pestaña **Contactos** (barra lateral en el
