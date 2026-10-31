@@ -181,7 +181,7 @@ function switchTab(tab) {
   if (tab !== 'files') exitSelectMode();
   if (tab !== 'notes') guardarAhora();          // salir de Notas no debe perder lo escrito
   if (tab === 'notes') { loadNotes(true); refrescarContadorPapeleraNotas(); }
-  if (tab === 'admin') { loadAdmin(); loadDiskUsage(''); }
+  if (tab === 'admin') { loadAdmin(); loadDiskUsage(''); if (K.copias) K.copias.cargar(); }
   if (tab === 'map') loadMap();
   if (tab === 'trash') loadTrash();
   if (tab === 'colecciones') loadColecciones();

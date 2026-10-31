@@ -37,7 +37,7 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
 
 (async () => {
   copia();
-  srv = spawn('node', ['server.js'], { cwd: APP, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: 'smoke-test-1', INSECURE_COOKIES: '1', TEXT_MAX: '512KB   # comentario al final, como en un .env de systemd', OFFICE_TIMEOUT: '90000    # ms', BASE_PATH: '', THUMBS_DIR: path.join(TMP, 'thumbs') }, stdio: ['ignore', 'pipe', 'pipe'] });
+  srv = spawn('node', ['server.js'], { cwd: APP, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: 'smoke-test-1', INSECURE_COOKIES: '1', TEXT_MAX: '512KB   # comentario al final, como en un .env de systemd', OFFICE_TIMEOUT: '90000    # ms', BASE_PATH: '', THUMBS_DIR: path.join(TMP, 'thumbs'), COPIAS_DIR: path.join(TMP, 'copias') }, stdio: ['ignore', 'pipe', 'pipe'] });
   let log = ''; srv.stdout.on('data', d => { log += d; }); srv.stderr.on('data', d => { log += d; });
   for (let i = 0; i < 60; i++) { try { if ((await fetch(BASE + '/api/version')).ok) break; } catch { /* aún no */ } await dormir(250); }
 
@@ -332,6 +332,36 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     cierto(g.j.recuentos && g.j.recuentos.val_total >= 5, 'val_total ' + JSON.stringify(g.j.recuentos));
     const fam = JSON.stringify(g.j);
     cierto(fam.includes('val_unidos') || fam.includes('Sin duplicados'), 'falta la familia val_unidos');
+  });
+  await prueba('copias: horario de Madrid y reintentos (3:00, 4:00 y 5:00)', async () => {
+    const P = require(path.join(ROOT, 'lib/copias-programa.js'));
+    igual(P.ahoraMadrid(new Date('2026-10-31T02:30:00Z')).hora, 3, 'UTC+1 en otoño');
+    igual(P.ahoraMadrid(new Date('2026-07-01T01:30:00Z')).hora, 3, 'UTC+2 en verano');
+    igual(P.ahoraMadrid(new Date('2026-10-31T23:30:00Z')).fecha, '2026-11-01', 'cambio de día');
+    const a = { fecha: '2026-10-31', hora: 3 };
+    cierto(P.debeIntentar(a, { ultimoIntento: null, ultimaOkFecha: null }).toca, 'a las 3 sin copia');
+    cierto(!P.debeIntentar(a, { ultimoIntento: null, ultimaOkFecha: '2026-10-31' }).toca, 'no si ya hay una correcta hoy');
+    cierto(!P.debeIntentar(a, { ultimoIntento: '2026-10-31T3', ultimaOkFecha: null }).toca, 'una vez por hora');
+    cierto(P.debeIntentar({ fecha: '2026-10-31', hora: 4 }, { ultimoIntento: '2026-10-31T3', ultimaOkFecha: null }).toca, 'reintenta a las 4');
+    cierto(!P.debeIntentar({ fecha: '2026-10-31', hora: 6 }, { ultimoIntento: null, ultimaOkFecha: null }).toca, 'fuera de la franja no');
+  });
+  await prueba('copias: crear, verificar, descargar (solo administrador)', async () => {
+    igual((await req('GET', '/api/admin/copias')).s, 200, 'estado');
+    igual((await req('POST', '/api/admin/copias', {})).s, 202, 'arranca');
+    let e = null;
+    for (let i = 0; i < 240; i++) { await dormir(500); e = (await req('GET', '/api/admin/copias')).j; if (!e.enCurso) break; }
+    cierto(e && e.ultima, 'sin registro');
+    igual(e.ultima.resultado, 'ok', 'resultado: ' + (e.ultima.error || ''));
+    cierto(e.archivo && e.archivo.tamano > 0, 'sin archivo');
+    const f = path.join(TMP, 'copias', 'kookyecatcloud-datos.tar.gz');
+    const lista = execFileSync('tar', ['-tzf', f]).toString();
+    cierto(lista.includes('datos/'), 'sin datos'); cierto(lista.includes('app/users.json'), 'sin users.json');
+    igual((fs.statSync(f).mode & 0o777).toString(8), '600', 'permisos del archivo');
+    igual((fs.statSync(path.join(TMP, 'copias')).mode & 0o777).toString(8), '700', 'permisos de la carpeta');
+    igual(fs.existsSync(path.join(TMP, 'copias', 'kookyecatcloud-datos.tar.gz.tmp')), false, 'no deja temporales');
+    const d = await fetch(BASE + '/api/admin/copias/descarga', { headers: { Cookie: cookie } }); igual(d.status, 200, 'descarga');
+    igual((await fetch(BASE + '/api/admin/copias')).status, 401, 'sin sesión');
+    igual((await req('GET', '/api/game')).j.recuentos.copias_manuales >= 1, true, 'contador de logros');
   });
   await prueba('usuarios (admin)', async () => { igual((await req('GET', '/api/users')).s, 200); });
 

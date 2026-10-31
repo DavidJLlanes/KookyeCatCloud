@@ -1,0 +1,12 @@
+/* Copia de seguridad en Administración: alerta, estado y registro de intentos (js/copias.js) */
+.copias-alerta{padding:10px 12px;border-radius:12px;border:1px solid #fbbf24;background:rgba(251,191,36,.12);color:#fde68a;font-size:calc(13px*var(--fs,1));}
+.copias-alerta.error{border-color:#f87171;background:rgba(248,113,113,.12);color:#fecaca;}
+.copias-alerta[hidden]{display:none;}
+.copias-linea{margin:6px 0;font-size:calc(13.5px*var(--fs,1));color:var(--muted);overflow-wrap:anywhere;}
+.copias-acc{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.copias-acc a{text-decoration:none;}
+.copias-acc a[hidden]{display:none;}
+.copias-acc button:disabled{display:inline-flex;opacity:.5;cursor:not-allowed;}
+.copias-hist{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:calc(12.5px*var(--fs,1));}
+.copias-hist li{overflow-wrap:anywhere;color:var(--muted);}
+.copias-hist li.error{color:#f87171;}

@@ -6,7 +6,7 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 
 ### Para hacer ya
 - [ ] Probar en el móvil real: desplazamiento de ventanas, barra inferior grande, bloqueo de zoom (también en el mapa), foto de contacto y actualización en directo.
-- [ ] Copia de seguridad automática de `DATA_DIR`, `users.json`, `.jwt-secret`, `shares.json` y `passkeys.json` (cron nocturno con `rsync` o `restic` a otro servidor).
+- [x] ~~Copia de seguridad automática de `DATA_DIR`, `users.json`, `.jwt-secret`, `shares.json` y `passkeys.json`.~~ Hecho: Administración → Copia de seguridad (archivo sin cifrar en `/var/backups/kookyecatcloud/`, diaria a las 3:00 con reintentos a las 4:00 y 5:00, comprobación y restauración documentada). Sin cifrar y sin copia fuera del VPS por decisión propia; descargarla a mano de vez en cuando.
 - [ ] Revisar el Nginx de `patineteleon.es`: nombre de servidor duplicado (`conflicting server name`).
 
 ### Pronto

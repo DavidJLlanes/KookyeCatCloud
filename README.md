@@ -478,9 +478,10 @@ en el calendario con un enlace de vuelta al elemento.
 | Contactos | Todos los contactos en un solo archivo | `<usuario>/.kcc/contacts.json` |
 | Etiquetas | Lista de etiquetas con color | `<usuario>/.kcc/labels.json` |
 | Valores reutilizables | Catálogo de valores por campo (modelo, plataforma, empresa…) | `<usuario>/.kcc/valores.json` |
+| Copia de seguridad | Un único `.tar.gz` sin cifrar, fuera de la web (no está en `DATA_DIR`) | `COPIAS_DIR` (`/var/backups/kookyecatcloud/`) |
 
 Todo está oculto al explorador de archivos y a WebDAV (son carpetas con punto). Para las
-copias de seguridad basta con respaldar `DATA_DIR`.
+copias de seguridad, ver «Copias de seguridad» más abajo.
 
 ### Etiquetas de color
 
@@ -1534,15 +1535,45 @@ Si encuentras una vulnerabilidad, avísala por un
 
 ## Copias de seguridad
 
-Lo imprescindible: `DATA_DIR` (los archivos), `users.json` (las cuentas, incluye tokens de
-aplicación y el secreto de verificación en dos pasos de quien la tenga activada) y
-`.jwt-secret` (si se pierde, todas las sesiones abiertas se invalidan). Los datos de notas,
-calendario, prompts, contactos, etiquetas, versiones y la caja fuerte viven dentro de `DATA_DIR` (carpetas
-`.notes`, `.kcc` y `.vault`), así que quedan cubiertos por la copia de `DATA_DIR`. Junto a
-`users.json` conviene copiar `shares.json` (comparticiones entre usuarios), `passkeys.json` (dispositivos con huella/Face ID)
-e `ical-tokens.json` (enlaces de suscripción de calendario). `sessions.json` y
-`activity.log.jsonl` son prescindibles: perderlos solo borra el historial de sesiones/actividad,
-no cierra a nadie ni rompe nada.
+En **Administración → Copia de seguridad** se crea una copia de todo lo que guarda la app: archivos y datos de cada
+usuario (`DATA_DIR`), cuentas (`users.json`), secretos (`.jwt-secret`), comparticiones (`shares.json`), huellas
+(`passkeys.json`), enlaces de suscripción del calendario (`ical-tokens.json`) y el `.env`. **No se cifra** y **no se
+incluyen las miniaturas** (se regeneran solas). El código no entra: está en GitHub.
+
+- **Un único archivo**: `kookyecatcloud-datos.tar.gz` en `COPIAS_DIR` (por defecto `/var/backups/kookyecatcloud/`). Cada copia
+  sustituye a la anterior. El registro de intentos está en `estado.json` en la misma carpeta.
+- **Cuándo**: a mano con «Crear copia ahora», y cada día a las **3:00** (hora de Madrid). Si la de las 3:00 falla o no
+  se hace, reintenta a las **4:00** y a las **5:00**. El programador vive dentro de la propia app: no hay cron ni
+  servicios nuevos. Si la app estaba parada en esa franja, la copia se hace al arrancar.
+- **Seguridad del proceso**: se escribe primero en un temporal, se verifica (se puede leer el archivo entero y todos
+  los JSON) y solo entonces sustituye a la anterior. Si algo falla, la copia buena de antes no se toca. Antes de empezar
+  se comprueba que haya espacio libre. Se ejecuta con prioridad baja de CPU y disco.
+- **Avisos**: la tarjeta muestra la última copia correcta o el error de la última fallida, y avisa si la última correcta
+  tiene más de 26 horas. Las copias a mano cuentan para el logro «Previsor».
+- **Permisos**: la carpeta queda en `700` y el archivo en `600`. Contiene contraseñas cifradas, secretos y el `.env` **en
+  claro**: no la pongas en ninguna ruta que sirva Nginx ni la compartas con nadie.
+
+### Restaurar una copia
+
+1. Para el servicio: `sudo systemctl stop kookyecatcloud`.
+2. Extrae el archivo en una carpeta temporal:
+   `mkdir -p /root/restauracion && tar -xzf /var/backups/kookyecatcloud/kookyecatcloud-datos.tar.gz -C /root/restauracion`.
+   Dentro hay `datos/` (todo lo de `DATA_DIR`) y `app/` (`.env`, `users.json`, `.jwt-secret`, `passkeys.json`,
+   `shares.json`, `ical-tokens.json`).
+3. Aparta lo actual, no lo borres: `sudo mv /var/lib/kookyecatcloud /var/lib/kookyecatcloud.antes`, y después
+   `sudo cp -a /root/restauracion/datos /var/lib/kookyecatcloud`.
+4. Copia la configuración a la carpeta de la app (`/var/www/djl.com.es/cloud/` en este VPS):
+   `sudo cp -a /root/restauracion/app/. /var/www/djl.com.es/cloud/`.
+5. Devuelve los dueños y permisos: `sudo chown -R filecloud:filecloud /var/lib/kookyecatcloud /var/www/djl.com.es/cloud`
+   y `sudo chmod 600 /var/www/djl.com.es/cloud/.env /var/www/djl.com.es/cloud/.jwt-secret`.
+6. Arranca: `sudo systemctl start kookyecatcloud`. Comprueba que entras con tu usuario y que se ven tus archivos.
+7. Cuando todo esté bien, borra `/var/lib/kookyecatcloud.antes` y `/root/restauracion`.
+
+Las miniaturas se regeneran solas tras la restauración. Si no entras con las contraseñas de la copia, revisa que
+`.jwt-secret` y `users.json` sean de la misma copia.
+
+Recomendación: descarga una copia a tu ordenador de vez en cuando con el botón «Descargar copia». Como todo vive en el
+mismo servidor, esa es la única protección frente a la pérdida del propio VPS.
 
 ## Estructura del proyecto
 
@@ -1554,6 +1585,9 @@ lib/
   events.js          Avisos en directo (Server-Sent Events)
   labels.js          Etiquetas de color compartidas entre módulos
   valores.js         Valores reutilizables: catálogo por campo, unificación y revisión de duplicados (fábrica createValores)
+  copias.js          Copia de seguridad: rutas de Administración, registro de intentos y comprobación de espacio (fábrica createCopias)
+  copias-archivo.js  Empaquetado con tar (sin copiar en disco), medida y verificación del archivo de copia
+  copias-programa.js Programador diario (3:00, reintentos 4:00 y 5:00, hora de Madrid) dentro del proceso de la app
   albums.js          Favoritos y álbumes (fábrica createAlbums)
   papelera.js        Papelera de archivos: borrar, restaurar, caducidad (fábrica createPapelera)
   fotos.js           EXIF, mapa e índice de fotos (fábrica createFotos)
@@ -1585,6 +1619,7 @@ public/
   index.html         Página única (vistas, iconos SVG y los <script> en orden)
   js/app/*.js        Aplicación principal, troceada por áreas (antes un solo app.js): estado, markdown, tema, sesión,
                      navegación, visores, papelera y subida, notas, enlaces, colecciones, administración, cuenta e inicio
+  js/copias.js       Tarjeta de Administración: estado, crear copia, descargar y registro de intentos
   js/valores*.js     Valores reutilizables: normalización compartida con el servidor, campos con sugerencias, chips que filtran y pantalla de revisión
   js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, recordatorios vinculados, portapapeles, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
   css/               Estilos: modules (barra lateral y componentes), calendar, prompts, sistema (versiones, caja fuerte,

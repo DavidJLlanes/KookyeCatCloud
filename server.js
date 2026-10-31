@@ -44,6 +44,7 @@ const createCodigo = require('./lib/codigo');
 const createVinculos = require('./lib/vinculos');
 const createTransferir = require('./lib/transferir');
 const createExportar = require('./lib/exportar');
+const createCopias = require('./lib/copias');
 const createVersions = require('./lib/versions');
 const createVault = require('./lib/vault');
 const createShares = require('./lib/shares');
@@ -85,6 +86,8 @@ const USERNAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]{2,31}$/;
 const MIN_PASSWORD = 6;
 // Caché de miniaturas: fuera de DATA_DIR para que no aparezca en los listados
 const THUMBS_DIR = process.env.THUMBS_DIR || path.join(APP_DIR, '.thumbs');
+// Copia de seguridad: fuera de la web y de DATA_DIR (un único archivo, reemplazado en cada copia)
+const COPIAS_DIR = process.env.COPIAS_DIR || '/var/backups/kookyecatcloud';
 const THUMB_SIZE = 480;
 const { TRASH_DIR, TRASH_SWEEP_HOURS } = createPapelera;
 const SEARCH_LIMIT = 300;
@@ -1618,6 +1621,10 @@ app.use('/api/codigo', auth, codigoMod.router);
 app.use('/api/vinculos', auth, createVinculos({ express, prompts: promptsMod.core, codigo: codigoMod.core, sendError, registrarActividad }));
 app.use('/api/transferir', auth, transferMod.router);
 app.use('/api', createExportar({ express, auth, adminOnly, userRoot, dataRoot: DATA_ROOT, loadUsers, ZipArchive, registrarActividad, sendError }).router);
+// Copia de seguridad (solo administradores): rutas /api/admin/copias y programación diaria (ver lib/copias.js)
+const copiasMod = createCopias({ express, auth, adminOnly, sendError, registrarActividad, alCambiar: alCambiarContenido, dataRoot: DATA_ROOT, appDir: APP_DIR, copiasDir: COPIAS_DIR });
+app.use('/api/admin/copias', copiasMod.router);
+modulosConLogros.push(copiasMod);   // Copias a mano aportan recuentos a la gamificación (ver CLAUDE.md)
 calendarMod.core.registraOrigen('prompt', (user, id, ev) => promptsMod.core.setCal(user, id, ev));
 calendarMod.core.registraOrigen('game', (user, id, ev) => gamesMod.core.setCal(user, id, ev));
 calendarMod.core.registraOrigen('note', async (user, id, ev) => {

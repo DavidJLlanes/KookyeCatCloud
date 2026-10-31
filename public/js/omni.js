@@ -27,6 +27,7 @@
     { t: 'Ir a Bases', i: 'i-table', f: () => switchTab('bases') },
     { t: 'Ir a Juegos', i: 'i-gamepad', f: () => switchTab('games') },
     { t: 'Ir a Calendario', i: 'i-calendar', f: () => switchTab('calendar') },
+    { t: 'Crear copia de seguridad', s: 'Solo administradores: copia de todos los datos', i: 'i-shield', f: () => { if (state.user && state.user.role !== 'admin') { K.toast('Solo administradores'); return; } switchTab('admin'); if (K.copias) K.copias.crear(); } },
     { t: 'Revisar valores repetidos', s: 'Modelos, plataformas, empresas… guardados para reutilizar', i: 'i-list-check', f: () => K.valores.pantalla() },
     { t: 'Ir a Prompts', i: 'i-sparkle', f: () => switchTab('prompts') },
     { t: 'Ir a Contactos', i: 'i-contact', f: () => switchTab('contacts') },

@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="/css/prompts.css">
 <link rel="stylesheet" href="/css/sistema.css">
 <link rel="stylesheet" href="/css/valores.css">
+<link rel="stylesheet" href="/css/copias.css">
 <link rel="stylesheet" href="/css/contacts.css">
 <link rel="stylesheet" href="/css/complementos.css">
 <link rel="stylesheet" href="/css/notes.css">
@@ -1612,6 +1613,19 @@
         </figure>
       </section>
 
+      <section class="card" id="copias-card">
+        <h3><svg class="ico"><use href="#i-shield"/></svg> Copia de seguridad</h3>
+        <p class="card-sub">Datos de todos los usuarios, archivos, cuentas, secretos y el .env en un único archivo sin cifrar. Cada copia sustituye a la anterior. Se guarda fuera de la web.</p>
+        <div id="copias-alerta" class="copias-alerta" hidden></div>
+        <div id="copias-estado"></div>
+        <div class="copias-acc">
+          <button class="btn primary" id="copias-crear" type="button">Crear copia ahora</button>
+          <a class="btn" id="copias-bajar" href="#" hidden>Descargar copia</a>
+        </div>
+        <h4 class="ap-h">Últimos intentos</h4>
+        <ol class="copias-hist" id="copias-historial"></ol>
+      </section>
+
       <section class="card">
         <h3><svg class="ico"><use href="#i-link"/></svg> Enlaces de subida</h3>
         <p class="card-sub">Para que alguien te envíe archivos sin necesidad de tener cuenta</p>
@@ -1944,6 +1958,7 @@
 <script src="/js/valores-clave.js"></script>
 <script src="/js/valores.js"></script>
 <script src="/js/valores-pantalla.js"></script>
+<script src="/js/copias.js"></script>
 <script src="/js/docexport.js"></script>
 <script src="/js/ics.js"></script>
 <script src="/js/calendar.js"></script>
