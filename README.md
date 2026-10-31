@@ -64,7 +64,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 - [Qué puedes hacer](#qué-puedes-hacer)
 - [Instalación](#instalación) — [local](#arrancar-en-local) · [VPS paso a paso](#despliegue-en-el-vps) · [dominio, subdominio o subcarpeta](#en-qué-dirección-instalarla)
-- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [bases](#bases), [código](#código), [exportar JSON](#exportar-json), [exportar a .txt, .md y PDF](#exportar-a-texto-markdown-y-pdf), [juegos](#juegos), [contactos](#contactos), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
+- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [bases](#bases), [código](#código), [exportar JSON](#exportar-json), [exportar a .txt, .md y PDF](#exportar-a-texto-markdown-y-pdf), [juegos](#juegos), [contactos](#contactos), [valores reutilizables](#valores-reutilizables), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
 - [Actualizaciones](#actualizaciones)
 - [Variables de entorno](#variables-de-entorno)
 - [Seguridad](#seguridad) · [Copias de seguridad](#copias-de-seguridad) · [Estructura del proyecto](#estructura-del-proyecto) · [Solución de problemas](#solución-de-problemas)
@@ -1496,6 +1496,7 @@ indique; reinicia el servicio tras cambiarlas.
 | `JWT_SECRET` | auto | Secreto de las sesiones; si falta se crea `.jwt-secret` |
 | `ADMIN_PASSWORD` | aleatoria | Contraseña del admin en el **primer** arranque |
 | `INSECURE_COOKIES` | — | `1` solo en desarrollo con `http://localhost` |
+| `COPIAS_DIR` | `/var/backups/kookyecatcloud` | Dónde se guarda la copia de seguridad (fuera de la web; debe ser escribible por el servicio). Ver «Copias de seguridad» |
 | `MAX_UPLOAD_BYTES` | 5 GB | Tamaño máximo por archivo |
 | `TRASH_TTL_DAYS` | 30 | Días en la papelera por defecto (cada usuario puede cambiarlo) |
 | `TRASH_SWEEP_HOURS` | 6 | Cada cuántas horas se vacían las papeleras caducadas en segundo plano (0 = nunca) |
