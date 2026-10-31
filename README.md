@@ -185,7 +185,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/data/storage /opt/filecloud
+ReadWritePaths=/data/storage /opt/filecloud /var/backups/kookyecatcloud
 
 [Install]
 WantedBy=multi-user.target
@@ -193,7 +193,11 @@ WantedBy=multi-user.target
 
 `ProtectSystem=strict` deja todo el sistema de archivos en solo lectura salvo lo indicado en
 `ReadWritePaths`: si cambias `DATA_DIR` en el `.env` a una ruta distinta de `/data/storage`,
-actualiza también esta línea o el servicio no podrá escribir ahí.
+actualiza también esta línea o el servicio no podrá escribir ahí. Lo mismo vale para `COPIAS_DIR` (la carpeta de la
+copia de seguridad, `/var/backups/kookyecatcloud` por defecto): tiene que estar en `ReadWritePaths` y existir antes de
+arrancar el servicio. En un servicio que ya funciona, sin tocar su unidad:
+`sudo systemctl edit kookyecatcloud` y pega `[Service]` con `ReadWritePaths=/var/backups/kookyecatcloud`; después
+`sudo systemctl restart kookyecatcloud`.
 
 ```bash
 systemctl daemon-reload && systemctl enable --now filecloud
@@ -1551,6 +1555,9 @@ incluyen las miniaturas** (se regeneran solas). El código no entra: está en Gi
   se comprueba que haya espacio libre. Se ejecuta con prioridad baja de CPU y disco.
 - **Avisos**: la tarjeta muestra la última copia correcta o el error de la última fallida, y avisa si la última correcta
   tiene más de 26 horas. Las copias a mano cuentan para el logro «Previsor».
+- **Requisito de systemd**: `COPIAS_DIR` debe estar en `ReadWritePaths` de la unidad (ver «systemd» en el despliegue). Si no, el
+  sistema la deja en solo lectura y la copia falla; la tarjeta lo indica con un aviso y el motivo queda en el diario
+  (`journalctl -u kookyecatcloud | grep copias`).
 - **Permisos**: la carpeta queda en `700` y el archivo en `600`. Contiene contraseñas cifradas, secretos y el `.env` **en
   claro**: no la pongas en ninguna ruta que sirva Nginx ni la compartas con nadie.
 
@@ -1644,6 +1651,7 @@ ves en `public/` es lo que se sirve.
 | --- | --- |
 | `npm ci` falla con `EACCES` en el VPS | Ejecútalo como **root** (el usuario `filecloud` no tiene carpeta personal) y luego `chown -R filecloud:filecloud .` |
 | El servicio arranca pero no guarda nada | `DATA_DIR` no está en `ReadWritePaths` de la unidad systemd |
+| La copia de seguridad no se crea y la carpeta de copias está vacía | `COPIAS_DIR` no está en `ReadWritePaths` de la unidad systemd (la tarjeta de Administración muestra el aviso). Añádela y reinicia |
 | `https://…/cloud/.env` devuelve algo distinto de 404 | El `location` de Nginx no es `^~ /cloud/` o hay otra regla que lo adelanta |
 | Entras y te echa al instante en `http://` | Falta `INSECURE_COOKIES=1` (solo en desarrollo local) |
 | No aparece “Huella y Face ID” | Hace falta HTTPS, haber entrado antes con contraseña y abrir **Cuenta → Huella y Face ID**; las passkeys son por dominio |

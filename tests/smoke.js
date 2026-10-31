@@ -363,6 +363,19 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     igual((await fetch(BASE + '/api/admin/copias')).status, 401, 'sin sesión');
     igual((await req('GET', '/api/game')).j.recuentos.copias_manuales >= 1, true, 'contador de logros');
   });
+  await prueba('copias: si no se puede escribir, el panel muestra el error (no se pierde en silencio)', async () => {
+    const crea = require(path.join(ROOT, 'lib/copias.js'));
+    const rutas = {};
+    const router = { get: (p, ...h) => { rutas['GET ' + p] = h[h.length - 1]; }, post: (p, ...h) => { rutas['POST ' + p] = h[h.length - 1]; } };
+    const fichero = path.join(TMP, 'no-es-carpeta'); fs.writeFileSync(fichero, 'x');   // un archivo en lugar de carpeta: no se puede escribir dentro
+    const m = crea({ express: { Router: () => router }, auth: null, adminOnly: null, sendError: (res, e) => { throw e; }, registrarActividad() {}, alCambiar() {}, dataRoot: DATA, appDir: ROOT, copiasDir: path.join(fichero, 'copias') });
+    rutas['POST /']({ user: { username: 'admin' } }, { status: () => ({ json() {} }) });
+    let e = null;
+    for (let i = 0; i < 50; i++) { await dormir(100); e = await m.core.estado(); if (!e.enCurso && e.ultima) break; }
+    cierto(e && e.ultima, 'sin registro del intento');
+    igual(e.ultima.resultado, 'error', 'resultado');
+    cierto(e.alerta && e.alerta.includes('falló'), 'alerta: ' + e.alerta);
+  });
   await prueba('usuarios (admin)', async () => { igual((await req('GET', '/api/users')).s, 200); });
 
   // --- Cuentas: usuarios, contraseñas, sesiones, tokens de app y 2FA ---
