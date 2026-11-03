@@ -200,13 +200,7 @@ async function abrirAlbum(id) {
 }
 function descargarAlbum() {
   if (!COL.albumAbierto) return;
-  const a = el('a');
-  a.href = BASE + '/api/albums/' + COL.albumAbierto + '/zip';
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  showToast('Preparando el ZIP del álbum…');
+  K.guardarUrl('/api/albums/' + COL.albumAbierto + '/zip', { nombre: 'album.zip' });
 }
 function compartirAlbum() {
   if (!COL.albumAbierto) return;

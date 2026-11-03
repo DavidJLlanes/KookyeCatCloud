@@ -974,7 +974,15 @@ Las secciones con contenido legible tienen en su menú ⋯ (o en el botón **Exp
 | Compra | La pestaña activa: pendientes como lista de comprobación por categoría, comprados o productos |
 | Código | Descripción, árbol de archivos y el código de los archivos de texto (tope de ~600 KB) |
 
-Cada sección construye su documento en Markdown y `public/js/docexport.js` (`K.doc`) lo entrega: el `.md` tal cual, el `.txt` sin marcas y el PDF maquetado, que se imprime desde un marco oculto para que el navegador ofrezca «Guardar como PDF» (sin dependencias nuevas en el servidor). Las tablas anchas salen en horizontal.
+Cada sección construye su documento en Markdown y `public/js/docexport.js` (`K.doc`) lo entrega: el `.md` tal cual, el `.txt` sin marcas y el PDF.
+
+**El PDF lo genera el servidor** (`POST /api/pdf`, `lib/pdf.js` + `lib/pdf/`, con `pdfkit` y las fuentes DejaVu de `lib/pdf/fuentes/`): A4 con títulos, listas y tareas, citas, avisos, código, tablas (con la cabecera repetida al cambiar de página), imágenes de tus notas, enlaces y numeración «n / total». Las tablas anchas salen en horizontal; los emojis de color que la fuente no tiene se omiten. Antes se imprimía desde un marco oculto del navegador, que en el móvil no guardaba nada. Tras actualizar hace falta `npm ci` (la actualización nocturna ya lo hace).
+
+### Dónde se guarda lo que exportas
+
+Toda exportación y descarga pasa por `public/js/guardar.js` (`K.guardar`, `K.guardarUrl`, `K.guardarPeticion`) y **siempre pregunta**: en el PC, el cuadro «Guardar como» del sistema (Chrome, Edge, Opera); en iPhone, la hoja de compartir con «Guardar en Archivos»; en Android, el menú de compartir (Archivos, Drive…), porque el navegador no permite un «Guardar como». Firefox y Safari de escritorio usan la descarga normal. Los archivos muy grandes (más de 150 MB en móvil, 600 MB en PC) se descargan directamente para no llenar la memoria. Varios archivos seleccionados bajan en un solo ZIP.
+
+Los CSV (Bases y Juegos) llevan «;» y BOM, y los números con coma decimal, para abrirse bien en Excel en español.
 
 ## Exportar JSON
 
@@ -1579,6 +1587,10 @@ incluyen las miniaturas** (se regeneran solas). El código no entra: está en Gi
 
 Las miniaturas se regeneran solas tras la restauración. Si no entras con las contraseñas de la copia, revisa que
 `.jwt-secret` y `users.json` sean de la misma copia.
+
+### Si una nota «desaparece»
+
+Las notas guardan un `index.json` y un `.md` por nota en `<datos>/.notes/` (`users/<nombre>/.notes/` para el resto de usuarios). Las escrituras van en cola, son atómicas y dejan `index.json.bak`; un índice dañado se aparta como `.dañado-<fecha>` y se restaura el `.bak`; si el cuerpo de una nota se queda vacío de golpe, el texto anterior queda en `.notes/salvavidas/`. En Notas → Papelera, **Buscar notas perdidas** recupera en la carpeta «Notas recuperadas» cualquier `.md` que ya no figure en el índice. Para sacar una nota de una copia de seguridad: `mkdir -p /root/recuperar && sudo tar -xzf /var/backups/kookyecatcloud/kookyecatcloud-datos.tar.gz -C /root/recuperar --wildcards '*/.notes/*'`, busca con `sudo grep -rl "palabra" /root/recuperar` y copia el `.md` a `.notes/` (después, «Buscar notas perdidas»).
 
 Recomendación: descarga una copia a tu ordenador de vez en cuando con el botón «Descargar copia». Como todo vive en el
 mismo servidor, esa es la única protección frente a la pérdida del propio VPS.

@@ -5,13 +5,7 @@
   const SECCION = { notes: 'notas', prompts: 'prompts', contacts: 'contactos', calendar: 'calendario', colecciones: 'etiquetas', shopping: 'compra', games: 'juegos', bases: 'bases', codigo: 'codigo', logros: 'logros', tetris: 'logros', g2048: 'logros', breakout: 'logros', clip: 'portapapeles', files: 'archivos' };
   const NOMBRES = { notas: 'Notas', prompts: 'Prompts', contactos: 'Contactos', calendario: 'Calendario', etiquetas: 'Etiquetas', valores: 'Valores reutilizables', juegos: 'Juegos', bases: 'Bases', codigo: 'Código', logros: 'Logros y progreso', portapapeles: 'Portapapeles', archivos: 'Favoritos y álbumes', compra: 'Compra (compartida)' };
   async function baja(url, nombre) {
-    try {
-      const r = await fetch(BASE + url, { credentials: 'same-origin' });
-      if (!r.ok) { let m = 'No se pudo exportar'; try { m = (await r.json()).error || m; } catch { /* sin cuerpo */ } throw new Error(m); }
-      const cd = r.headers.get('content-disposition') || ''; const m = /filename="([^"]+)"/.exec(cd);
-      const u = URL.createObjectURL(await r.blob()); const a = document.createElement('a'); a.href = u; a.download = m ? m[1] : nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 3000);
-      K.toast('Exportación lista');
-    } catch (e) { K.fail(e); }
+    await K.guardarUrl(url, { nombre: '', respaldo: nombre });
   }
   window.KccExport = { seccion: (id) => baja('/api/export/' + id, `kookyecatcloud-${id}.json`), todo: () => baja('/api/admin/export-all', 'kookyecatcloud-json.zip') };
 

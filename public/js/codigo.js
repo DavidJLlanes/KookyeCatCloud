@@ -33,10 +33,7 @@
     setTimeout(() => { i.focus(); i.select(); }, 60);
   });
   async function bajar(ruta, nombre) {
-    try {
-      const r = await api(BASE + ruta); if (!r.ok) { let j = {}; try { j = await r.json(); } catch { /* sin cuerpo */ } throw new Error(j.error || 'No se pudo descargar'); }
-      const u = URL.createObjectURL(await r.blob()); const a = el('a'); a.href = u; a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000);
-    } catch (e) { K.fail(e); }
+    await K.guardarUrl(ruta, { nombre });
   }
 
   /* ---------- Lista de proyectos ---------- */

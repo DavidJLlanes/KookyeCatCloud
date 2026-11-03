@@ -667,12 +667,7 @@ async function guardaEnGaleria(rel) {
   }
 }
 function downloadRel(rel) {
-  const a = document.createElement('a');
-  a.href = BASE + '/api/download?path=' + qs(rel);
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  return K.guardarUrl('/api/download?path=' + qs(rel), { nombre: '' });
 }
 
 async function bulkDelete() {
@@ -691,8 +686,8 @@ async function bulkDelete() {
 function bulkDownload() {
   const files = selectedItems().filter(i => !i.isDir);
   if (!files.length) { showToast('Las carpetas no se pueden descargar todavía'); return; }
-  files.forEach((f, i) => setTimeout(() => downloadRel(f.rel), i * 350));
-  showToast(`Descargando ${files.length} archivo${files.length > 1 ? 's' : ''}`);
+  // Varios archivos: un solo ZIP (varios cuadros de guardado seguidos no caben en el móvil)
+  if (files.length > 1) descargarZip(files.map(f => f.rel)); else downloadRel(files[0].rel);
 }
 
 function reportBatch(data, singular, plural) {

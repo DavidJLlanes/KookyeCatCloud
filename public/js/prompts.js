@@ -117,7 +117,7 @@
     nuevo.addEventListener('click', () => openEditor(null));
     mas.addEventListener('click', () => K.menu(mas, [
       { label: 'Importar prompts…', icon: 'i-upload', onClick: openImport },
-      { label: 'Exportar todo (JSON)', icon: 'i-download', onClick: () => { location.href = BASE + '/api/prompts/export/all'; } },
+      { label: 'Exportar todo (JSON)', icon: 'i-download', onClick: () => { K.guardarUrl('/api/prompts/export/all', { nombre: 'prompts.json' }); } },
       { label: 'Editar nombres e iconos de tipos…', icon: 'i-palette', onClick: manageKinds },
       ...((K.prompts && K.prompts.extraMenu) || []),
       '-', { label: 'Gestionar etiquetas…', icon: 'i-tag', onClick: () => K.manageLabels() },

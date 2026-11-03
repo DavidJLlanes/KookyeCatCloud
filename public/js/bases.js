@@ -148,10 +148,7 @@
     return { ancho: cols.length > 5, md: `# ${b.name}\n\n${b.rows.length} fila${b.rows.length === 1 ? '' : 's'}\n\n` + K.doc.tabla(cols.map(c => c.nombre), b.rows.map(r => cols.map(c => val(c, r.c[c.id])))) };
   }
   async function descarga(fmt) {
-    try {
-      const r = await fetch(`${BASE}/api/bases/${S.base.id}/export?format=${fmt}`, { credentials: 'same-origin' }); if (!r.ok) throw new Error('No se pudo exportar');
-      const url = URL.createObjectURL(await r.blob()); const a = el('a'); a.href = url; a.download = `${S.base.name}.${fmt}`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
-    } catch (e) { K.fail(e); }
+    await K.guardarUrl(`/api/bases/${S.base.id}/export?format=${fmt}`, { nombre: `${S.base.name}.${fmt}` });
   }
 
   /* ---------- Operaciones sobre filas ---------- */

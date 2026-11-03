@@ -153,7 +153,7 @@
     nuevo.addEventListener('click', () => openEditor(null));
     mas.addEventListener('click', () => K.menu(mas, [
       { label: 'Importar contactos (.vcf)…', icon: 'i-upload', onClick: pideImportar },
-      { label: 'Exportar todos (.vcf)', icon: 'i-download', onClick: () => { if (!S.items.length) { K.toast('No hay contactos que exportar'); return; } location.href = BASE + '/api/contacts/export'; } },
+      { label: 'Exportar todos (.vcf)', icon: 'i-download', onClick: () => { if (!S.items.length) { K.toast('No hay contactos que exportar'); return; } K.guardarUrl('/api/contacts/export', { nombre: 'contactos.vcf' }); } },
       ...K.doc.items(exportaDoc(() => (S.sel.size ? S.items.filter(c => S.sel.has(c.id)) : filtrados()), 'Contactos')),
       '-', { label: 'Gestionar etiquetas…', icon: 'i-tag', onClick: () => K.manageLabels() },
     ], { align: 'end' }));
@@ -336,7 +336,7 @@
     mo.addEventListener('click', () => K.menu(mo, [
       { label: c.favorite ? 'Quitar de favoritos' : 'Marcar como favorito', icon: c.favorite ? 'i-star-fill' : 'i-star', onClick: async () => { m.close(); await alternaFav(c); } },
       { label: 'Copiar nombre', icon: 'i-copy', onClick: async () => { K.toast((await K.copy(nombre(c))) ? 'Copiado' : 'No se pudo copiar'); } },
-      { label: 'Exportar (.vcf)', icon: 'i-download', onClick: () => { location.href = BASE + '/api/contacts/export?ids=' + c.id; } },
+      { label: 'Exportar (.vcf)', icon: 'i-download', onClick: () => { K.guardarUrl('/api/contacts/export?ids=' + c.id, { nombre: 'contacto.vcf' }); } },
       ...K.doc.items(() => ({ titulo: nombre(c), nombre: nombre(c), md: contactoMd(c) })),
       { label: 'Copiar o mover a…', icon: 'i-move', onClick: () => { m.close(); K.transferir.abre({ tipo: 'contactos', ids: [c.id], titulo: nombre(c) }, { alTerminar: () => load() }); } },
       '-', { label: 'Eliminar contacto', icon: 'i-trash', danger: true, onClick: () => elimina(c, m) },

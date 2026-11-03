@@ -83,6 +83,54 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     igual((await req('DELETE', '/api/notes-trash')).s, 200);
     igual((await req('GET', '/api/notes-trash')).j.items.length, 0, 'papelera vacía');
   });
+  await prueba('notas: guardados a la vez no pierden nada y el índice sobrevive a un fallo', async () => {
+    const dir = () => path.join(DATA, '.notes');      // el administrador guarda en la raíz de datos
+    // 25 notas creadas y editadas a la vez: antes compartían el mismo .tmp y se pisaban
+    const nuevas = await Promise.all(Array.from({ length: 25 }, (_, i) => req('POST', '/api/notes', { type: 'note', title: 'Par' + i, body: 'cuerpo ' + i })));
+    cierto(nuevas.every(r => r.s === 200), 'creación simultánea');
+    const ids = nuevas.map(r => r.j.item.id);
+    const edit = await Promise.all(ids.map((id, i) => req('PUT', '/api/notes/' + id, { title: 'Par' + i, body: 'editado ' + i + ' '.repeat(5) })));
+    cierto(edit.every(r => r.s === 200), 'edición simultánea');
+    const lista = (await req('GET', '/api/notes')).j.items;
+    igual(ids.filter(id => lista.some(x => x.id === id)).length, 25, 'notas en el índice');
+    igual((await req('GET', '/api/notes/' + ids[7])).j.body.startsWith('editado 7'), true, 'cuerpo editado');
+    cierto(fs.readdirSync(dir()).filter(n => n.endsWith('.tmp')).length === 0, 'temporales sin limpiar');
+
+    // Índice dañado: no se toma por «sin notas» (sobrescribirlo las habría dejado huérfanas) y se repone desde la copia
+    const idx = path.join(dir(), 'index.json');
+    fs.writeFileSync(idx, '{"items":[{"id":"x"');
+    const tras = await req('GET', '/api/notes/' + ids[3]);
+    igual(tras.s, 200, 'con la copia anterior se repone el índice');
+    cierto(fs.readdirSync(dir()).some(n => n.startsWith('index.json.dañado-')), 'el dañado se aparta');
+
+    // Sin copia válida: error claro y NO se sobrescribe; luego «recuperar» da de alta los textos
+    fs.rmSync(idx + '.bak'); fs.writeFileSync(idx, 'no es json');
+    igual((await req('GET', '/api/notes')).s, 500, 'índice dañado sin copia');
+    igual((await req('POST', '/api/notes/' + ids[0], { body: 'x' })).s, 500, 'no se guarda sobre un índice dañado');
+    cierto(fs.readFileSync(idx, 'utf8') === 'no es json', 'el índice dañado no se toca');
+    const rec = await req('POST', '/api/notes-recover', {});
+    cierto(rec.j.recuperadas >= 25, 'recuperadas ' + JSON.stringify(rec.j));
+    const tras2 = (await req('GET', '/api/notes')).j.items;
+    cierto(ids.every(id => tras2.some(x => x.id === id)), 'todas vuelven al índice');
+    cierto(tras2.some(x => x.type === 'folder' && x.title === 'Notas recuperadas'), 'carpeta de recuperadas');
+    igual((await req('GET', '/api/notes/' + ids[9])).j.body.startsWith('editado 9'), true, 'texto intacto');
+    igual((await req('POST', '/api/notes-recover', {})).j.recuperadas, 0, 'segunda vez no duplica');
+  });
+  await prueba('notas: un cuerpo vacío no borra el texto (salvavidas) ni se lee una nota como vacía', async () => {
+    const dir = () => path.join(DATA, '.notes');      // el administrador guarda en la raíz de datos
+    const largo = 'Texto importante de la nota. '.repeat(10);
+    const c = await req('POST', '/api/notes', { type: 'note', title: 'Valiosa', body: largo }); const id = c.j.item.id;
+    igual((await req('PUT', '/api/notes/' + id, { body: '' })).s, 200);
+    const sv = fs.existsSync(path.join(dir(), 'salvavidas')) ? fs.readdirSync(path.join(dir(), 'salvavidas')).filter(n => n.startsWith(id)) : [];
+    igual(sv.length, 1, 'salvavidas creado');
+    igual(fs.readFileSync(path.join(dir(), 'salvavidas', sv[0]), 'utf8'), largo, 'salvavidas con el texto previo');
+    // Si el texto desaparece del disco pero el índice dice que había contenido, no se devuelve una nota vacía
+    await req('PUT', '/api/notes/' + id, { body: largo });
+    fs.rmSync(path.join(dir(), id + '.md'));
+    const l = await req('GET', '/api/notes/' + id);
+    igual(l.s, 404, 'nota sin texto');
+    cierto(/Buscar notas perdidas/.test(l.t), 'mensaje con la salida');
+  });
   await prueba('contactos: crear y listar', async () => {
     igual((await req('POST', '/api/contacts', { first: 'Ana', last: 'Prueba', emails: [{ value: 'a@b.es' }] })).s, 200);
     cierto(JSON.stringify((await req('GET', '/api/contacts')).j).includes('Prueba'), 'no aparece');
@@ -453,6 +501,13 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     igual((await b2('POST', '/api/2fa/disable', { password: 'clave-segura-2' })).s, 200);
     igual((await b2('GET', '/api/2fa/status')).j.enabled, false);
     igual((await req('DELETE', '/api/users/bea')).s, 200);
+  });
+  await prueba('PDF del servidor: tablas, listas, emojis, saltos de página y errores', async () => {
+    const md = '# Título ñ 🎉\n\nTexto **negrita** y `código` [enlace](https://x.es) 😀\n\n- a\n  - b\n- [x] hecha\n\n> [!TIP] consejo\n\n| A | B |\n|---|---|\n| 1 | dos |\n\n```\ncodigo\n```\n\n![img](kcc:file/no-existe.png)\n\n\f\n# Otra\n' + 'línea\n\n'.repeat(300);
+    const r = await req('POST', '/api/pdf', { titulo: 'Prueba', md, nombre: 'prueba' });
+    igual(r.s, 200); cierto(String(r.t).startsWith('%PDF'), 'es un PDF');
+    igual((await req('POST', '/api/pdf', { titulo: 'x', md: '   ' })).s, 400, 'vacío');
+    igual((await req('POST', '/api/pdf', { titulo: 'x', md: '| a |\n|---|\n' + '| 1 |\n'.repeat(50) , ancho: true })).s, 200, 'tabla ancha');
   });
   await prueba('cierre de sesión', async () => { cierto((await req('POST', '/api/logout')).s < 400, 'logout'); });
 

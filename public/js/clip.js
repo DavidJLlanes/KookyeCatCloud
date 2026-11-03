@@ -114,7 +114,7 @@
     const btn = (ic, txt, fn, cls) => { const b = el('button', 'btn tiny ' + (cls || 'ghost')); b.type = 'button'; b.title = txt; b.setAttribute('aria-label', txt); b.appendChild(icon(ic)); if (cls === 'primary') b.append(' ' + txt); b.addEventListener('click', fn); return b; };
     if (i.type === 'text') pie.appendChild(btn('i-copy', 'Copiar', async () => { K.toast((await K.copy(i.text)) ? 'Copiado' : 'No se pudo copiar'); }, 'primary'));
     else {
-      pie.appendChild(btn('i-download', 'Descargar', () => { const a = el('a'); a.href = `${BASE}/api/clip/${i.id}/file`; document.body.appendChild(a); a.click(); a.remove(); }, 'primary'));
+      pie.appendChild(btn('i-download', 'Descargar', () => { K.guardarUrl(`/api/clip/${i.id}/file`, { nombre: i.name || '' }); }, 'primary'));
       pie.appendChild(btn('i-folder-plus', 'Guardar en Archivos', () => accion(async () => { const r = await K.post(`/api/clip/${i.id}/save`, {}); K.toast(`Guardado en ${r.path}`); })));
     }
     pie.appendChild(btn('i-move', 'Copiar o mover a…', () => K.transferir.abre({ tipo: 'portapapeles', ids: [i.id], titulo: i.type === 'text' ? 'texto del portapapeles' : i.name }, { alTerminar: () => load(true) })));

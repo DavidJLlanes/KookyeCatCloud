@@ -209,12 +209,46 @@ async function errorOf(res, fallback) {
 }
 // Id de esta pestaña: el servidor lo usa para no avisarle de los cambios que ella misma hace
 const CID = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)).replace(/[^\w-]/g, '').slice(0, 36);
+// Cuánto se espera a que el servidor EMPIECE a responder (la lectura del cuerpo no tiene tope). Sin esto, una conexión
+// que se queda colgada (típico en el móvil al cambiar de red o al volver de segundo plano) deja pantallas en «Cargando…»
+// para siempre. Las lecturas (GET) se reintentan una vez; las operaciones largas (ComfyUI, enviar archivos, importar,
+// exportar, convertir) tienen un tope mucho mayor y las subidas con archivo, ninguno.
+const API_ESPERA_MS = 15000;
+const API_LARGAS = /\/api\/(?:prompts\/[^/?]+\/comfy|prompts\/import|prompts\/export|transferir|pdf|zip|[^?]*\/zip|vault\/items\/[^/?]+\/file|clip\/[^/?]+\/file|versions\/|download|office|admin\/(?:copias|export-all)|export\/|games\/export|bases\/[^/?]+\/(?:export|import)|contacts\/(?:export|import)|notes\/[^/?]+\/export)/;
 async function api(url, opts = {}) {
-  const headers = new Headers(opts.headers || {});
+  const { timeout, signal, ...resto } = opts;
+  const headers = new Headers(resto.headers || {});
   headers.set('X-KCC-Client', CID);
-  const res = await fetch(url, { credentials: 'include', ...opts, headers });
-  if (res.status === 401) { showLogin(); throw new Error('No autenticado'); }
-  return res;
+  const metodo = String(resto.method || 'GET').toUpperCase();
+  const subida = resto.body && typeof resto.body !== 'string';          // FormData, Blob…: puede tardar lo que tarde
+  const ms = timeout !== undefined ? timeout : subida ? 0 : API_LARGAS.test(String(url)) ? 600000 : API_ESPERA_MS;
+  const intentos = metodo === 'GET' && ms && ms <= API_ESPERA_MS ? 2 : 1;
+  for (let n = 1; ; n++) {
+    // Un `signal` de quien llama (p. ej. el botón «Cancelar» de una descarga) se respeta y convive con el tope de espera
+    const ctl = ms ? new AbortController() : null;
+    let vencido = false, suelta = null;
+    if (ctl && signal) {
+      if (signal.aborted) ctl.abort();
+      else { suelta = () => ctl.abort(); signal.addEventListener('abort', suelta, { once: true }); }
+    }
+    const t = ctl ? setTimeout(() => { vencido = true; ctl.abort(); }, ms) : null;
+    try {
+      const res = await fetch(url, { credentials: 'include', ...resto, headers, signal: ctl ? ctl.signal : signal });
+      if (res.status === 401) { showLogin(); throw new Error('No autenticado'); }
+      return res;
+    } catch (e) {
+      if (vencido) {
+        if (n < intentos) continue;
+        const err = new Error('El servidor no responde. Comprueba la conexión e inténtalo de nuevo.');
+        err.name = 'TimeoutError';
+        throw err;
+      }
+      throw e;
+    } finally {
+      if (t) clearTimeout(t);
+      if (suelta) signal.removeEventListener('abort', suelta);
+    }
+  }
 }
 async function post(url, body) {
   return api(url, {

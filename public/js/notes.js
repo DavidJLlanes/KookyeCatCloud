@@ -361,6 +361,9 @@
   // Empuja el Markdown al textarea oculto: de ahí lo recoge el autoguardado de app.js
   function syncStore() {
     if (aplicando || !store) return;
+    // Un editor sin ningún bloque (todavía sin cargar o ya limpiado) nunca debe machacar el texto que hay: el editor
+    // siempre deja al menos un párrafo, así que vaciar una nota a propósito sí se guarda
+    if (!host.querySelector('.nb-block') && store.value.trim()) return;
     store.value = serialize();
     store.dispatchEvent(new Event('input', { bubbles: true }));
   }

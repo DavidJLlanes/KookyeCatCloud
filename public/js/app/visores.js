@@ -650,12 +650,7 @@ function openActions(item) {
   show('action-modal');
 }
 function downloadConvertido(rel, as) {
-  const a = document.createElement('a');
-  a.href = BASE + '/api/download?path=' + qs(rel) + '&as=' + as;
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  return K.guardarUrl('/api/download?path=' + qs(rel) + '&as=' + as, { nombre: '' });
 }
 
 async function renameSelected() {

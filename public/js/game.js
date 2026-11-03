@@ -462,7 +462,7 @@
     const w = el('div', 'gm-tarjeta'); const im = el('img'); im.src = url; im.alt = 'Tarjeta para compartir'; w.appendChild(im);
     const contar = async () => { try { G.set(await K.post('/api/game/event', { type: 'tarjeta' })); } catch { /* no es crítico */ } };
     const acts = [{ label: 'Cerrar', onClick: () => { setTimeout(() => URL.revokeObjectURL(url), 1000); } }];
-    acts.push({ label: 'Descargar', onClick: async () => { const a = el('a'); a.href = url; a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); await contar(); return false; } });
+    acts.push({ label: 'Descargar', onClick: async () => { const r = await K.guardar({ nombre, blob }); if (r !== 'cancelado') await contar(); return false; } });
     if (navigator.clipboard && window.ClipboardItem) acts.push({ label: 'Copiar', onClick: async () => { try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); K.toast('Imagen copiada'); await contar(); } catch { K.toast('No se pudo copiar la imagen'); } return false; } });
     if (navigator.canShare && navigator.canShare({ files: [file] })) acts.push({ label: 'Compartir', primary: true, onClick: async () => { try { await navigator.share({ files: [file], title: 'KookyeCatCloud' }); await contar(); } catch { /* cancelado */ } return false; } });
     K.modal({ title: titulo, content: w, cls: 'wide', actions: acts, onClose: () => setTimeout(() => URL.revokeObjectURL(url), 1000) });

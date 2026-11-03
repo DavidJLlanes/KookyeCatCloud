@@ -95,4 +95,4 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [ ] Al deshacer un movimiento, los vínculos con el calendario (Juegos, Notas, Contactos) no se restauran.
 - [ ] La previsualización de contactos con foto convierte cada foto: lenta con muchos contactos.
 - [ ] Los contadores de Mudanzas y Copión cuentan envíos y elementos sin límite de frecuencia: se pueden inflar a propósito.
-- [ ] Exportar a PDF usa el diálogo de impresión del navegador: no hay opción de elegir tamaño de página ni portada.
+- [ ] El PDF del servidor es siempre A4 (vertical u horizontal); no hay opción de otro tamaño ni portada. Las imágenes de notas máximo 30 por PDF.

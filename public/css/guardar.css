@@ -1,0 +1,8 @@
+/* Cuadro «Guardar archivo» (js/guardar.js): nombre, tamaño y cómo se va a guardar en esta plataforma */
+.gd-modal{max-width:min(460px,94vw);}
+.gd-fila{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--glass-2);}
+.gd-fila .ico{width:28px;height:28px;flex:none;}
+.gd-info{display:flex;flex-direction:column;min-width:0;gap:2px;}
+.gd-nombre{overflow-wrap:anywhere;font-size:calc(15px*var(--fs,1));}
+.gd-meta{color:var(--muted);font-size:calc(12.5px*var(--fs,1));}
+.gd-ayuda{margin:12px 0 0;color:var(--muted);font-size:calc(13px*var(--fs,1));line-height:1.45;}

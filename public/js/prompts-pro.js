@@ -264,13 +264,7 @@
 
   /* ---------- Exportar ---------- */
   async function descarga(url, cuerpo, nombreDefecto) {
-    const res = await api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
-    if (!res.ok) { let msg = 'No se pudo exportar'; try { msg = (await res.json()).error || msg; } catch { /* sin cuerpo */ } throw new Error(msg); }
-    const blob = await res.blob();
-    const cd = res.headers.get('Content-Disposition') || '';
-    const nombre = (cd.match(/filename="([^"]+)"/) || [])[1] || nombreDefecto;
-    const a = el('a'); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    await K.guardarPeticion(url, cuerpo, { nombre: '', respaldo: nombreDefecto });
   }
   PRO.exportar = (ids, listaId) => {
     const w = el('div');

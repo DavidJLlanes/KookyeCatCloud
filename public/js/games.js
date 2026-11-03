@@ -90,12 +90,7 @@
     return L.join('\n');
   }
   async function descarga(fmt) {
-    try {
-      const r = await fetch(`${BASE}/api/games/export?format=${fmt}`, { credentials: 'same-origin' });
-      if (!r.ok) throw new Error('No se pudo exportar');
-      const url = URL.createObjectURL(await r.blob());
-      const a = el('a'); a.href = url; a.download = `juegos.${fmt}`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
-    } catch (e) { K.fail(e); }
+    await K.guardarUrl(`/api/games/export?format=${fmt}`, { nombre: `juegos.${fmt}` });
   }
   function importar() {
     const inp = el('input'); inp.type = 'file'; inp.accept = 'application/json,.json';

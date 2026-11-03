@@ -193,7 +193,7 @@
     t.addEventListener('keydown', (e) => { if (e.key === 'Enter') abre(); });
     const menu = (anchor) => K.menu(anchor, [
       { label: it.type === 'folder' ? 'Abrir' : 'Ver', icon: 'i-external', onClick: abre },
-      ...(it.type === 'file' ? [{ label: 'Descargar', icon: 'i-download', onClick: () => { location.href = url(it.id, 'file') + '?download=1'; tocado(); } }] : []),
+      ...(it.type === 'file' ? [{ label: 'Descargar', icon: 'i-download', onClick: () => { tocado(); K.guardarUrl(url(it.id, 'file') + '?download=1', { nombre: it.name }); } }] : []),
       { label: 'Renombrar…', icon: 'i-pencil', onClick: () => renombra(it) },
       { label: 'Mover a…', icon: 'i-move', onClick: () => mueve(it) },
       { label: 'Sacar a mis archivos…', icon: 'i-upload', onClick: () => saca(it) },
@@ -331,7 +331,7 @@
       catch (er) { K.fail(er); return; }
     } else { cont.appendChild(el('p', 'k-muted', 'No hay vista previa para este tipo de archivo. Puedes descargarlo.')); }
     K.modal({ title: it.name, sub: fmtSize(it.size), content: cont, cls: 'xl', actions: [
-      { label: 'Descargar', onClick: () => { location.href = u + '?download=1'; return false; }, close: false },
+      { label: 'Descargar', onClick: () => { K.guardarUrl(u + '?download=1', { nombre: it.name }); return false; }, close: false },
       { label: 'Cerrar', primary: true },
     ] });
     tocado();

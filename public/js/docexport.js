@@ -117,26 +117,12 @@
     hr{border:0;border-top:1px solid #ccc;margin:10pt 0} a{color:#4338ca}`;
 
   /* ---------- Entrega ---------- */
-  function descarga(nombre, texto, mime) {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([texto], { type: mime + ';charset=utf-8' }));
-    a.download = nombre; document.body.appendChild(a); a.click();
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
-  }
+  // Siempre pasa por K.guardar (guardar.js): pregunta dónde guardar en PC, iPhone y Android
+  function descarga(nombre, texto, mime) { return K.guardar({ nombre, texto, tipo: mime + ';charset=utf-8' }); }
+  // El PDF lo maqueta el servidor (pdfkit): el «imprimir» del navegador no guarda nada en el móvil
   function imprime(titulo, md, opciones) {
     const o = opciones || {};
-    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${esc(titulo)}</title><style>${CSS}${o.ancho ? '@page{size:landscape}' : ''}</style></head><body>${aHtml(md)}</body></html>`;
-    window.__ultimoHtmlImpresion = html;
-    const f = document.createElement('iframe');
-    f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
-    f.srcdoc = html;
-    f.addEventListener('load', () => {
-      setTimeout(() => {
-        try { f.contentWindow.focus(); f.contentWindow.print(); } catch { K.toast('No se pudo abrir la impresión'); }
-        setTimeout(() => f.remove(), 60000);
-      }, 150);
-    });
-    document.body.appendChild(f);
+    return K.guardarPeticion('/api/pdf', { titulo, md: String(md), ancho: !!o.ancho, nombre: o.nombre || titulo }, { nombre: nombreSeguro(o.nombre || titulo) + '.pdf' });
   }
 
   // fmt: 'md' | 'txt' | 'pdf'; d: { titulo, nombre, md | () => md, ancho }
@@ -145,8 +131,8 @@
     try { md = typeof d.md === 'function' ? await d.md() : d.md; } catch (e) { K.fail(e); return; }
     if (!md || !String(md).trim()) { K.toast('No hay nada que exportar'); return; }
     const base = nombreSeguro(d.nombre || d.titulo);
-    if (fmt === 'pdf') imprime(d.titulo || base, md, { ancho: d.ancho });
-    else descarga(`${base}.${fmt}`, fmt === 'txt' ? aTxt(md) : String(md).replace(/\n{3,}/g, '\n\n').trim() + '\n', MIME[fmt]);
+    if (fmt === 'pdf') await imprime(d.titulo || base, md, { ancho: d.ancho, nombre: base });
+    else await descarga(`${base}.${fmt}`, fmt === 'txt' ? aTxt(md) : String(md).replace(/\n{3,}/g, '\n\n').trim() + '\n', MIME[fmt]);
   }
 
   // Tres entradas de menú (las tres juntas); `get` puede devolver el descriptor o una promesa

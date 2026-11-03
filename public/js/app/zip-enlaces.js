@@ -7,13 +7,7 @@ function descargarZip(rutas) {
   if (!rutas.length) return;
   if (rutas.length > 200) { showToast('Máximo 200 elementos por ZIP'); return; }
   const url = BASE + '/api/zip?' + rutas.map(r => 'p=' + qs(r)).join('&');
-  const a = el('a');
-  a.href = url;
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  showToast(rutas.length === 1 ? 'Preparando el ZIP…' : `Preparando un ZIP con ${rutas.length} elementos…`);
+  K.guardarUrl(url, { nombre: 'archivos.zip' });
 }
 
 /* ---------------------------------------------------------------

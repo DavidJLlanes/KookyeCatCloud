@@ -103,6 +103,7 @@ $('sel-zip').addEventListener('click', () => descargarZip(selectedItems().map(i 
 $('btn-notes-trash').addEventListener('click', abrirPapeleraNotas);
 $('btn-notes-select').addEventListener('click', () => { NT.selMode = !NT.selMode; if (!NT.selMode) NT.sel.clear(); renderNotes(); });
 $('btn-empty-notes-trash').addEventListener('click', vaciarPapeleraNotas);
+$('btn-recover-notes').addEventListener('click', buscarNotasPerdidas);
 
 $('action-move').addEventListener('click', () => {
   const item = state.selected;

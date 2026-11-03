@@ -30,6 +30,7 @@ const { createGame } = require('./lib/game');
 const { readJson, updateJson, kccDir } = require('./lib/store');
 const createContacts = require('./lib/contacts');
 const createNotesExtra = require('./lib/notes-extra');
+const createPdf = require('./lib/pdf');
 const createNotes = require('./lib/notes');
 const createAlbums = require('./lib/albums');
 const createPapelera = require('./lib/papelera');
@@ -447,8 +448,10 @@ app.use('/dav', createDav({
 const jsonPequeno = express.json({ limit: '100kb' });
 const jsonMedio = express.json({ limit: '2mb' });
 const jsonGrande = express.json({ limit: '30mb' });
+const jsonPdf = express.json({ limit: '8mb' });
 app.use((req, res, next) => {
   if (req.path === '/api/prompts/import') return jsonGrande(req, res, next);
+  if (req.path === '/api/pdf') return jsonPdf(req, res, next);
   if (/^\/api\/(notes|text|prompts|calendar|labels|clip|shopping|codigo)(\/|$)/.test(req.path)) return jsonMedio(req, res, next);
   return jsonPequeno(req, res, next);
 });
@@ -1464,7 +1467,7 @@ app.get('/api/diskusage', auth, async (req, res) => {
    Vive en lib/notes.js; aquí se crea y se exponen sus funciones al resto del servidor. */
 const { trashItem, papeleraDias, purgeExpired } = papeleraMod.core;
 const notesMod = createNotes({ express, auth, userRoot, sendError, papeleraDias, calendar: () => calendarMod.core, extraeLinks: (b) => notesExtra.extraeLinks(b) });
-const { readNotes, writeNotes, notaFile, descendientes, notasFuente, purgarNotasCaducadas } = notesMod.core;
+const { readNotes, writeNotes, notaFile, descendientes, notasFuente, purgarNotasCaducadas, enCola: enColaNotas } = notesMod.core;
 app.use('/api', notesMod.router);
 
 // --- Estadísticas de almacenamiento ---
@@ -1598,8 +1601,9 @@ app.get(/^\/ical\/([a-f0-9]{64})\.ics$/, async (req, res) => {
 });
 
 // Extras de notas: backlinks, exportación y plantillas (cada ruta lleva su propio auth)
-const notesExtra = createNotesExtra({ express, auth, userRoot, sendError, readNotes, writeNotes, notaFile, descendientes, resolveFor, ZipArchive });
+const notesExtra = createNotesExtra({ express, auth, userRoot, sendError, readNotes, writeNotes, enCola: enColaNotas, notaFile, descendientes, resolveFor, ZipArchive });
 app.use('/api', notesExtra.router);
+app.use('/api', createPdf({ express, auth, resolveFor, sendError, registrarActividad, sharp }).router);
 app.use('/api', versionsMod.router);
 app.use('/api', vaultMod.router);
 app.use('/api', sharesMod.router);

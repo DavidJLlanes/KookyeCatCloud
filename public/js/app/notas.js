@@ -23,10 +23,12 @@ async function loadNotes(mantener) {
   try {
     const res = await api(BASE + '/api/notes');
     const data = await res.json();
+    // Un error del servidor NO es «sin notas»: se conserva la lista que ya se ve y se avisa con el motivo
+    if (!res.ok) throw new Error(data.error || 'No se pudieron cargar las notas');
     NT.items = data.items || [];
     renderNotes();
     if (!mantener && NT.abierta && !NT.items.some(i => i.id === NT.abierta)) cerrarNota();
-  } catch { showToast('No se pudieron cargar las notas'); }
+  } catch (e) { showToast(e && e.message && e.message !== 'No autenticado' ? e.message : 'No se pudieron cargar las notas'); }
 }
 
 function hijosDe(parent) {
@@ -91,25 +93,40 @@ function pintaVacio() {
 }
 $('nv-new').addEventListener('click', () => crearNota('note', ''));
 
+// Firma de lo que se ve en el árbol. Si no cambió nada (típico tras cada autoguardado), no se reconstruye: reemplazar las
+// filas mientras el dedo las pulsa hace que el toque se pierda y la nota «no se abra».
+let firmaArbol = '';
+function firmaDe(filas) {
+  const lb = (window.K && K.labels && K.labels.by) || {};
+  return JSON.stringify([NT.filtro, NT.abierta, NT.selMode, [...NT.sel], filas.map(([it, n]) => [
+    it.id, n, it.title, it.type, it.color || '', it.icon || '', it.cal ? 1 : 0, it.pinned ? 1 : 0, NT.abiertas.has(it.id) ? 1 : 0,
+    (it.labels || []).slice(0, 3).map(id => lb[id] ? lb[id].name + lb[id].color : '')])]);
+}
+
 function renderNotes() {
   pintaSelNotas();
   pintaVacio();
   const caja = $('notes-tree');
-  caja.textContent = '';
   const raiz = hijosDe('').filter(coincide);
+  const filas = [];
+  const reune = (lista, nivel) => {
+    for (const item of lista) {
+      filas.push([item, nivel]);
+      const abierta = NT.abiertas.has(item.id) || (NT.filtro && item.type === 'folder');
+      if (item.type === 'folder' && abierta) reune(hijosDe(item.id).filter(coincide), nivel + 1);
+    }
+  };
+  reune(raiz, 0);
+  const firma = firmaDe(filas);
+  if (firma === firmaArbol && caja.childElementCount) return;
+  firmaArbol = firma;
+  caja.textContent = '';
   if (!raiz.length) {
     caja.appendChild(el('div', 'notes-vacio',
       NT.filtro ? 'Ningún título coincide' : 'Sin notas todavía. Crea la primera con el botón +'));
     return;
   }
-  const pinta = (lista, nivel) => {
-    for (const item of lista) {
-      caja.appendChild(filaNota(item, nivel));
-      const abierta = NT.abiertas.has(item.id) || (NT.filtro && item.type === 'folder');
-      if (item.type === 'folder' && abierta) pinta(hijosDe(item.id).filter(coincide), nivel + 1);
-    }
-  };
-  pinta(raiz, 0);
+  for (const [item, nivel] of filas) caja.appendChild(filaNota(item, nivel));
 }
 
 function filaNota(item, nivel) {
@@ -259,12 +276,22 @@ async function borrarNota(item) {
   } catch { showToast('Error de conexión'); }
 }
 
+// Cada pulsación toma un número: si el usuario toca otra nota antes de que llegue la primera, solo vale la última
+// (antes la respuesta más lenta podía pisar a la buena y parecía que «no se abría»)
+let aperturaN = 0;
 async function abrirNota(id) {
-  await guardarAhora();                       // no perder lo escrito al cambiar de nota
+  const mia = ++aperturaN;
+  // Un guardado pendiente no puede impedir abrir otra nota: se le da un momento y, si tarda, se sigue (su contenido
+  // ya va en la petición y, si falla, queda en NT.pendientes para reintentarlo)
+  await Promise.race([guardarAhora(), new Promise(r => setTimeout(r, 2500))]);
+  if (mia !== aperturaN) return;
+  $('note-saved').textContent = 'Abriendo…';
+  $('note-saved').classList.remove('ok');
   try {
     const res = await api(BASE + '/api/notes/' + qs(id));
     const nota = await res.json();
-    if (!res.ok) { showToast(nota.error || 'No se pudo abrir'); return; }
+    if (mia !== aperturaN) return;
+    if (!res.ok) { $('note-saved').textContent = ''; showToast(nota.error || 'No se pudo abrir'); return; }
     NT.abierta = id;
     NT.sucia = false;
     $('note-title').value = nota.title;
@@ -275,7 +302,11 @@ async function abrirNota(id) {
     pintarMetaNota(nota);
     $('note-saved').textContent = '';
     renderNotes();
-  } catch { showToast('Error de conexión'); }
+  } catch (e) {
+    if (mia !== aperturaN) return;
+    $('note-saved').textContent = '';
+    showToast(e && e.name === 'TimeoutError' ? e.message : 'Error de conexión');
+  }
 }
 
 function pintarMetaNota(nota) {
@@ -304,9 +335,23 @@ function marcarSucia() {
   pintarMetaNota(NT.items.find(i => i.id === NT.abierta));
 }
 
+// Guardados que no llegaron al servidor (sin red, tiempo agotado): se reintentan en el siguiente guardado, al abrir otra
+// nota o cuando vuelve la conexión. Así cambiar de nota con la red mala no pierde lo escrito.
+NT.pendientes = new Map();
+async function reintentaPendientes() {
+  for (const [id, cuerpo] of [...NT.pendientes]) {
+    if (id === NT.abierta && NT.sucia) continue;          // la nota abierta ya tiene cambios más nuevos
+    try {
+      const res = await api(BASE + '/api/notes/' + qs(id), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
+      if (res.ok || res.status === 404) NT.pendientes.delete(id);
+    } catch { /* se vuelve a intentar más tarde */ }
+  }
+}
+window.addEventListener('online', () => { reintentaPendientes(); });
+
 async function guardarAhora() {
   clearTimeout(NT.guardando);
-  if (!NT.abierta || !NT.sucia) return;
+  if (!NT.abierta || !NT.sucia) { if (NT.pendientes.size) reintentaPendientes(); return; }
   const id = NT.abierta;
   const cuerpo = { title: $('note-title').value.trim() || 'Nota sin título', body: $('note-body').value };
   NT.sucia = false;
@@ -316,16 +361,20 @@ async function guardarAhora() {
       body: JSON.stringify(cuerpo),
     });
     if (res.ok) {
-      $('note-saved').textContent = 'Guardado';
-      $('note-saved').classList.add('ok');
-      setTimeout(() => { if (!NT.sucia) $('note-saved').textContent = ''; }, 2000);
+      NT.pendientes.delete(id);
+      if (NT.abierta === id) {
+        $('note-saved').textContent = 'Guardado';
+        $('note-saved').classList.add('ok');
+        setTimeout(() => { if (!NT.sucia) $('note-saved').textContent = ''; }, 2000);
+      }
       await loadNotes(true);
     } else {
-      NT.sucia = true;
-      $('note-saved').textContent = await errorOf(res, 'Error al guardar');
+      // Error del servidor: la nota abierta sigue sucia; si ya se abrió otra, el texto se guarda para reintentarlo
+      if (NT.abierta === id) { NT.sucia = true; $('note-saved').textContent = await errorOf(res, 'Error al guardar'); }
+      else NT.pendientes.set(id, cuerpo);
     }
   } catch {
-    NT.sucia = true;
-    $('note-saved').textContent = 'Sin conexión';
+    if (NT.abierta === id) { NT.sucia = true; $('note-saved').textContent = 'Sin conexión'; }
+    else NT.pendientes.set(id, cuerpo);
   }
 }

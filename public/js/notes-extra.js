@@ -121,8 +121,7 @@
   async function exportMd(item) {
     if (NB.flush) NB.flush();
     try { await guardarAhora(); } catch {}
-    const a = document.createElement('a'); a.href = BASE + '/api/notes/' + encodeURIComponent(item.id) + '/export'; a.download = '';
-    document.body.appendChild(a); a.click(); a.remove();
+    await K.guardarUrl('/api/notes/' + encodeURIComponent(item.id) + '/export', { nombre: '' });
   }
 
   // Texto plano: título y cuerpo de cada nota (si es carpeta, todas las de dentro) sin marcas de Markdown
@@ -192,38 +191,20 @@
   }
 
   async function exportPdf(item) {
-    const I = INT();
     if (NB.flush) NB.flush();
     try { await guardarAhora(); } catch {}
     const notas = notasDe(item);
     if (!notas.length) { K.toast('No hay notas que exportar'); return; }
-    K.toast('Preparando el PDF…');
-    let cuerpo = '';
+    let md = '';
     try {
       for (const n of notas) {
         const r = await K.get('/api/notes/' + encodeURIComponent(n.id));
         const fecha = new Date(r.updatedAt || Date.now()).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-        cuerpo += `<section class="nota"><h1 class="nota-titulo">${I.esc(((n.icon ? n.icon + ' ' : '') + r.title))}</h1><p class="nota-meta">Editada el ${fecha}</p>${bloquesAHtml(I.parseMd(r.body || ''))}</section>`;
+        const cuerpo = String(r.body || '').replace(/^\s*#\s+.*\n/, m => (m.trim().slice(2).trim() === (r.title || '').trim() ? '' : m));
+        md += (md ? '\n\f\n' : '') + `# ${((n.icon ? n.icon + ' ' : '') + (r.title || 'Sin título'))}\n\n*Editada el ${fecha}*\n\n${cuerpo}\n`;
       }
     } catch (e) { K.fail(e); return; }
-    imprimeHtml(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${I.esc(item.title)}</title><style>${CSS_PDF}</style></head><body>${cuerpo}</body></html>`);
-  }
-
-  // Se imprime desde un iframe oculto: el navegador ofrece "Guardar como PDF"
-  function imprimeHtml(html) {
-    window.__ultimoHtmlImpresion = html;
-    const f = document.createElement('iframe');
-    f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
-    f.srcdoc = html;
-    f.addEventListener('load', () => {
-      const d = f.contentDocument, w = f.contentWindow;
-      const listo = () => [...d.images].every(i => i.complete);
-      let n = 0;
-      const espera = setInterval(() => {
-        if (listo() || ++n > 40) { clearInterval(espera); try { w.focus(); w.print(); } catch { K.toast('No se pudo abrir la impresión'); } setTimeout(() => f.remove(), 60000); }
-      }, 150);
-    });
-    document.body.appendChild(f);
+    await K.doc.exporta('pdf', { titulo: item.title || 'Nota', nombre: item.title || 'nota', md });
   }
 
   /* ============ Plantillas ============ */

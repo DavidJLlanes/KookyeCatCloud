@@ -35,6 +35,7 @@
     const bajar = $c('copias-bajar');
     bajar.hidden = !d.archivo;
     bajar.href = `${BASE}/api/admin/copias/descarga`;
+    bajar.onclick = (e) => { e.preventDefault(); K.guardarUrl('/api/admin/copias/descarga', { nombre: 'kookyecatcloud-datos.tar.gz' }); };
 
     const h = $c('copias-historial');
     h.textContent = '';

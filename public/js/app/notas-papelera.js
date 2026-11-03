@@ -21,6 +21,8 @@ async function abrirPapeleraNotas() {
   try {
     const res = await api(BASE + '/api/notes-trash');
     const data = await res.json();
+    // Un error del servidor NO es «papelera vacía»: así no se confunde un fallo con que la nota ha desaparecido
+    if (!res.ok) throw new Error(data.error || 'No se pudo cargar la papelera');
     NT.papelera = data.items || [];
     $('notes-trash-sub').textContent = data.ttlDays ? `Se borran solas pasados ${data.ttlDays} días` : 'No se borran solas';
     caja.textContent = '';
@@ -57,10 +59,31 @@ async function abrirPapeleraNotas() {
 
       caja.appendChild(row);
     }
-  } catch {
+  } catch (e) {
     caja.textContent = '';
-    caja.appendChild(el('div', 'none', 'No se pudo cargar'));
+    caja.appendChild(el('div', 'none', e && e.message && e.message !== 'No autenticado' ? e.message : 'No se pudo cargar la papelera'));
+    const otra = el('button', 'btn sm', 'Reintentar'); otra.type = 'button';
+    otra.addEventListener('click', abrirPapeleraNotas);
+    caja.appendChild(otra);
   }
+}
+
+// Notas cuyo texto está en el servidor pero que la lista no muestra (índice dañado o sobrescrito): se dan de alta en
+// la carpeta «Notas recuperadas»
+async function buscarNotasPerdidas() {
+  const b = $('btn-recover-notes');
+  b.disabled = true;
+  try {
+    const res = await post(BASE + '/api/notes-recover', {});
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || 'No se pudo buscar'); return; }
+    if (!data.recuperadas) { showToast('No hay notas perdidas: todo está en su sitio'); return; }
+    showToast(`${data.recuperadas} nota${data.recuperadas === 1 ? '' : 's'} recuperada${data.recuperadas === 1 ? '' : 's'} en «Notas recuperadas»`);
+    hide('notes-trash-modal');
+    await loadNotes(true);
+    refrescarContadorPapeleraNotas();
+  } catch (e) { showToast(e && e.name === 'TimeoutError' ? e.message : 'Error de conexión'); }
+  finally { b.disabled = false; }
 }
 
 async function restaurarNota(t) {

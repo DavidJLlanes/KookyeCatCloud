@@ -99,7 +99,7 @@
         const barra = el('div', 'k-row'); barra.style.marginBottom = '10px';
         const t = el('b', null, ES(x.at));
         const rest = el('button', 'btn primary sm'); rest.type = 'button'; rest.append(icon('i-restore'), document.createTextNode(' Restaurar esta versión'));
-        const des = el('a', 'btn sm', 'Descargar'); des.href = `${BASE}/api/versions/${x.id}?${K.qs({ path: rel, download: 1 })}`;
+        const des = el('a', 'btn sm', 'Descargar'); des.href = `${BASE}/api/versions/${x.id}?${K.qs({ path: rel, download: 1 })}`; des.addEventListener('click', (e) => { e.preventDefault(); K.guardarUrl(`/api/versions/${x.id}?${K.qs({ path: rel, download: 1 })}`, { nombre: rel.split('/').pop() }); });
         const bor = el('button', 'btn ghost sm'); bor.type = 'button'; bor.appendChild(icon('i-trash')); bor.title = 'Borrar esta versión';
         barra.append(t, el('span', 'k-grow'), des, bor, rest);
         der.appendChild(barra);
