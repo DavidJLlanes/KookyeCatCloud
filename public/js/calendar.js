@@ -918,7 +918,7 @@
             if (!scope) return false;
             if (scope === 'one') q = `?scope=one&date=${ev.occurrence}`;
           }
-          await K.put('/api/calendar/events/' + ev.id + q, body);
+          await K.put('/api/calendar/events/' + ev.id + q, { ...body, base: ev.updatedAt });
         }
         K.bus.emit('calendar'); if (ev && ev.source) K.bus.emit(ev.source.type === 'prompt' ? 'prompts' : ev.source.type === 'game' ? 'games' : 'notes');
         S.dirty = true; load();

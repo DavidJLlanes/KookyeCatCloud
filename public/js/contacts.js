@@ -540,7 +540,7 @@
           notes: notas.value, labels: picker.get(), favorite: favorito,
         };
         try {
-          const r = c ? await K.put('/api/contacts/' + c.id, body) : await K.post('/api/contacts', body);
+          const r = c ? await K.put('/api/contacts/' + c.id, { ...body, base: c.updatedAt }) : await K.post('/api/contacts', body);
           let ct = r.contact; K.valores.cambio();
           try {
             if (foto.file) {

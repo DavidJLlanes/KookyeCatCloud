@@ -1331,7 +1331,23 @@
     "jti": "e7bdf19492d7d0aba00bc1df50b036d3",
     "username": "admin",
     "createdAt": 1793824902108,
-    "lastSeenAt": 1793824907227,
+    "lastSeenAt": 1793824909953,
+    "ip": "127.0.0.1",
+    "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+  },
+  "d35690efc01ebdb9b9a2e8d1fdddbb3c": {
+    "jti": "d35690efc01ebdb9b9a2e8d1fdddbb3c",
+    "username": "admin",
+    "createdAt": 1793825505634,
+    "lastSeenAt": 1793825513345,
+    "ip": "127.0.0.1",
+    "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+  },
+  "ecf01bea3525955d68ecf6112081cc4e": {
+    "jti": "ecf01bea3525955d68ecf6112081cc4e",
+    "username": "admin",
+    "createdAt": 1793825514778,
+    "lastSeenAt": 1793825516670,
     "ip": "127.0.0.1",
     "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
   }

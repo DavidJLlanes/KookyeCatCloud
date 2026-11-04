@@ -9,6 +9,17 @@ for (const k of Object.keys(process.env)) {
   if (m) process.env[k] = m[1].trim();
 }
 const express = require('express');
+// Express 4 no recoge los rechazos de los manejadores async: un error fuera de su try dejaba la petición sin respuesta
+// (la app se quedaba «leyendo» hasta agotar el tiempo). Se envía al manejador de errores final, que responde en JSON.
+{
+  const Layer = require('express/lib/router/layer');
+  Layer.prototype.handle_request = function handle(req, res, next) {
+    const fn = this.handle;
+    if (fn.length > 3) return next();
+    try { const r = fn(req, res, next); if (r && typeof r.catch === 'function') r.catch(next); }
+    catch (err) { next(err); }
+  };
+}
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -1146,6 +1157,7 @@ app.get('/api/text', auth, async (req, res) => {
       truncated: stat.size > TEXT_MAX,
       size: stat.size,
       shown: leer,
+      mtime: stat.mtimeMs,   // «base» para el guardado: detecta si el archivo cambió en otro sitio mientras se editaba
     });
   } catch (err) {
     sendError(res, err);
@@ -1162,8 +1174,16 @@ app.put('/api/text', auth, express.json({ limit: '2mb' }), async (req, res) => {
     }
     const stat = await fsp.stat(file);
     if (stat.isDirectory()) return res.status(400).json({ error: 'Es una carpeta' });
+    // Un archivo más grande que lo que el visor carga NO se puede guardar desde aquí: el editor solo tenía el principio y
+    // guardar habría cortado el resto del archivo
+    if (stat.size > TEXT_MAX) return res.status(413).json({ error: 'Este archivo es demasiado grande para editarlo aquí: solo se mostraba el principio.' });
     const contenido = String(req.body?.text ?? '');
-    if (contenido.length > TEXT_MAX) return res.status(400).json({ error: 'Demasiado grande para editar aquí' });
+    if (Buffer.byteLength(contenido) > TEXT_MAX) return res.status(400).json({ error: 'Demasiado grande para editar aquí' });
+    const baseM = Number(req.body?.base);
+    if (Number.isFinite(baseM) && baseM > 0 && stat.mtimeMs > baseM + 1) {
+      const actual = await fsp.readFile(file, 'utf8').catch(() => null);
+      if (actual !== null && actual !== contenido) return res.status(409).json({ error: 'El archivo se cambió en otro sitio mientras lo editabas. Copia tu texto, cierra y vuelve a abrirlo.' });
+    }
     // Si no cambia nada, no se reescribe ni se crea una versión de más
     if (stat.size <= TEXT_MAX * 4 && await fsp.readFile(file, 'utf8').then(t => t === contenido, () => false)) return res.json({ ok: true, unchanged: true });
     await versionsMod.snapshot(req.user, req.query.path, file);     // guarda lo que había antes
@@ -1171,7 +1191,7 @@ app.put('/api/text', auth, express.json({ limit: '2mb' }), async (req, res) => {
     const tmpE = path.join(path.dirname(file), `.kcc-edicion-${crypto.randomBytes(6).toString('hex')}`);
     try { await fsp.writeFile(tmpE, contenido, 'utf8'); await fsp.rename(tmpE, file); } catch (e) { await fsp.rm(tmpE, { force: true }).catch(() => {}); throw e; }
     registrarActividad(req, 'archivo_editado', { path: req.query.path });
-    res.json({ ok: true });
+    res.json({ ok: true, mtime: (await fsp.stat(file)).mtimeMs });
   } catch (err) {
     sendError(res, err);
   }
@@ -1719,7 +1739,7 @@ app.use((err, req, res, next) => {
   const status = err && (err.status || err.statusCode);
   if (err && err.type === 'entity.parse.failed') return res.status(400).json({ error: 'El cuerpo de la petición no es un JSON válido' });
   if (err && err.type === 'entity.too.large') return res.status(413).json({ error: 'El contenido es demasiado grande' });
-  if (status && status < 500) return res.status(status).json({ error: err.expose ? err.message : 'Petición no válida' });
+  if (status && status < 500) return res.status(status).json({ error: err.expose || (err.constructor && err.constructor.name === 'HttpError') ? err.message : 'Petición no válida' });
   console.error('Error no controlado en', req.method, req.originalUrl, '-', err && err.stack || err);
   res.status(500).json({ error: 'Error interno del servidor' });
 });

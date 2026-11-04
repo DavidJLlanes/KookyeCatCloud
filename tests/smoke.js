@@ -221,6 +221,37 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     igual(fin.rows.find(r => r.id === fila.id).c[nueva.id], 'dato importante', 'y sus datos');
     cierto(fin.columns.some(c => c.nombre === 'Renombrada'), 'el renombrado se aplica');
   });
+  await prueba('fichas completas: un formulario desfasado no pisa lo guardado en otro dispositivo (contactos, juegos, prompts, eventos)', async () => {
+    const A = { headers: { 'X-KCC-Client': 'ficha-A' } }, B = { headers: { 'X-KCC-Client': 'ficha-B' } };
+    const casos = [
+      ['contacto', async () => (await req('POST', '/api/contacts', { first: 'Conflicto' }, A)).j.contact, (id) => `/api/contacts/${id}`, { first: 'Cambio B' }, { first: 'Viejo A' }],
+      ['juego', async () => (await req('POST', '/api/games', { title: 'Conflicto', status: 'pendiente' }, A)).j, (id) => `/api/games/${id}`, { title: 'Cambio B' }, { title: 'Viejo A' }],
+      ['prompt', async () => (await req('POST', '/api/prompts', { title: 'Conflicto', body: 'x' }, A)).j.prompt, (id) => `/api/prompts/${id}`, { title: 'Cambio B' }, { title: 'Viejo A' }],
+      ['evento', async () => (await req('POST', '/api/calendar/events', { title: 'Conflicto', start: '2026-12-01T10:00', end: '2026-12-01T11:00' }, A)).j, (id) => `/api/calendar/events/${id}`, { title: 'Cambio B' }, { title: 'Viejo A' }],
+    ];
+    for (const [nombre, crea, url, deB, deA] of casos) {
+      const x = await crea(); const it = x && (x.event || x.item || x); cierto(it && it.id, nombre + ' creado');
+      const base = it.updatedAt;
+      await dormir(5);
+      igual((await req('PUT', url(it.id), { ...deB, base }, B)).s, 200, nombre + ': B guarda');
+      igual((await req('PUT', url(it.id), { ...deA, base }, A)).s, 409, nombre + ': A desfasado recibe 409');
+      igual((await req('PUT', url(it.id), { ...deA, base: Date.now() + 1000 }, A)).s, 200, nombre + ': A al día guarda');
+    }
+  });
+  await prueba('editor de texto: un archivo grande no se corta al guardar y un cambio ajeno no se pisa', async () => {
+    const grande = 'línea de relleno\n'.repeat(40000);   // > 512 KB (TEXT_MAX de las pruebas)
+    fs.writeFileSync(path.join(DATA, 'grande.txt'), grande);
+    const g = await req('GET', '/api/text?path=grande.txt'); igual(g.s, 200); igual(g.j.truncated, true);
+    igual((await req('PUT', '/api/text?path=grande.txt', { text: g.j.text + 'añadido' })).s, 413, 'no deja guardar el trozo');
+    igual(fs.readFileSync(path.join(DATA, 'grande.txt'), 'utf8'), grande, 'el archivo sigue entero');
+    fs.writeFileSync(path.join(DATA, 'peq.txt'), 'uno');
+    const a = (await req('GET', '/api/text?path=peq.txt')).j;
+    await dormir(20); fs.writeFileSync(path.join(DATA, 'peq.txt'), 'cambiado fuera');
+    igual((await req('PUT', '/api/text?path=peq.txt', { text: 'mi versión', base: a.mtime })).s, 409, 'cambio ajeno detectado');
+    igual(fs.readFileSync(path.join(DATA, 'peq.txt'), 'utf8'), 'cambiado fuera');
+    const b = (await req('GET', '/api/text?path=peq.txt')).j;
+    igual((await req('PUT', '/api/text?path=peq.txt', { text: 'mi versión', base: b.mtime })).s, 200);
+  });
   await prueba('código: crear proyecto y leer archivo', async () => {
     const c = await req('POST', '/api/codigo', { nombre: 'Web', plantilla: 'web' }); igual(c.s, 200); proyecto = c.j.id;
     igual((await req('GET', `/api/codigo/${proyecto}/texto?ruta=index.html`)).j.binario, false);

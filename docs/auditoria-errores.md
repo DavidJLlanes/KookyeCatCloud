@@ -66,3 +66,21 @@ Foco: ediciones desde **varios dispositivos o pestañas** (un cliente con datos 
 Riesgos que quedan en esta línea: contactos, eventos y juegos se guardan como ficha completa (gana el último guardado si se edita la misma ficha a la vez en dos dispositivos); el editor de texto de Archivos también, pero ahí cada guardado deja la versión anterior en «Versiones».
 
 Pruebas nuevas: conflicto de notas entre dos clientes (409 y sin pisar), columnas de Bases con un cliente desfasado. En navegador (escritorio y 390 px): diálogo que pregunta antes de descartar, y conflicto real entre dos pestañas (la nota conserva lo del otro dispositivo y lo escrito aquí queda como copia).
+
+## Cuarta auditoría, profunda (4 nov 2026, noche)
+
+Revisión sistemática: todos los manejadores de la API (con un script que busca los `async` sin `try`), todas las llamadas de red del cliente, el service worker, cada endpoint que escribe archivos, los temporizadores de limpieza y los flujos de escritura.
+
+| # | Dónde | Fallo | Gravedad | Arreglo |
+|---|---|---|---|---|
+| 22 | Editor de texto de Archivos | En un archivo mayor que lo que carga el visor (512 KB por defecto) solo llega el principio, pero se podía editar y **guardar, y el archivo quedaba cortado** a ese trozo. (confirmado) | Alta | El visor no ofrece editarlo y el servidor rechaza el guardado (413) |
+| 23 | Editor de texto de Archivos | Guardar encima de un cambio hecho en otro sitio (otro dispositivo, WebDAV) mientras se editaba | Media | El visor manda la fecha del archivo que abrió; si cambió y el texto es distinto, 409 y el editor sigue abierto (además queda la versión anterior en «Versiones») |
+| 24 | Contactos, eventos, juegos y prompts | Un formulario abierto con una versión vieja pisaba los cambios hechos después en otro dispositivo (último que guarda gana). | Media | El formulario manda la fecha de la ficha que abrió; si otro cliente la cambió, 409 y el formulario sigue abierto con lo escrito (comprobado en navegador) |
+| 25 | Toda la API | Express 4 no recoge los errores de los manejadores `async` que ocurren fuera de su `try`: **la petición se quedaba sin respuesta** y la app «leyendo» hasta agotar el tiempo (15 rutas con código antes del `try`). | Media | Los rechazos van al manejador de errores final, que responde en JSON; los `HttpError` conservan su mensaje |
+| 26 | Restaurar una versión de archivo | Copia directa sobre el archivo | Media | Atómico (temporal + renombrado) |
+| 27 | Caja fuerte: sacar archivos | El error de escritura del flujo se escuchaba tarde: con el disco lleno **tumbaba el servidor** | Media | Se escucha desde el principio; se borra el archivo a medias |
+| 28 | Papelera de archivos y de notas | Al caducar, una entrada sin fecha se quitaba del índice sin borrar su archivo (quedaba huérfano) | Baja | Solo salen del índice las caducadas |
+
+Revisado sin hallazgos: el service worker no guarda en caché nada de `/api/`, `/dav/`, `/s/`, `/u/`; las importaciones solo añaden; borrar un usuario no borra sus datos; las demás llamadas de red pasan por `api()` (con tiempo máximo) salvo login, passkeys, subidas y la versión, que no lo necesitan; los tamaños que se cargan en memoria están acotados.
+
+Riesgos que quedan: el registro de actividad se recorta reescribiéndolo (si coincide con una línea nueva, esa línea puede perderse; no son datos del usuario); si la copia de una versión falla (p. ej. disco lleno), el archivo se guarda igualmente sin versión.

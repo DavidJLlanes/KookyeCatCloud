@@ -267,7 +267,7 @@
           const c = cal.get(); body.calendar = c ? { date: c.date, time: c.time, calendarId: c.calendarId || 'juegos' } : null;
           if (!g && !c) delete body.calendar;
           const r = await guardar(async () => {
-            const res = await (g ? K.put('/api/games/' + g.id, body) : K.post('/api/games', body));
+            const res = await (g ? K.put('/api/games/' + g.id, { ...body, base: g.updatedAt }) : K.post('/api/games', body));
             const img = f.portada.files[0];
             if (img && res && res.id) { const fd = new FormData(); fd.append('image', img); const up = await fetch(`${BASE}/api/games/${res.id}/cover`, { method: 'PUT', body: fd, credentials: 'same-origin' }); if (!up.ok) K.toast('El juego se guardó, pero la carátula no se pudo subir'); }
             return res;

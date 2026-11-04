@@ -1234,7 +1234,7 @@
       h.buttons.save.disabled = true;
       try {
         let pid = id;
-        if (nuevo) { const r = await K.post('/api/prompts', campos); pid = r.prompt.id; } else await K.put('/api/prompts/' + id, campos);
+        if (nuevo) { const r = await K.post('/api/prompts', campos); pid = r.prompt.id; } else await K.put('/api/prompts/' + id, { ...campos, base: p && p.updatedAt });
         // Imágenes: primero las quitadas, luego las nuevas, y al final orden, pies y portada
         for (const rid of removed) await K.del(`/api/prompts/${pid}/images/${rid}`);
         const nuevas = imgs.filter(i => i.file);

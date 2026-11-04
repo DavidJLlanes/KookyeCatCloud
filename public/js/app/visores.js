@@ -325,7 +325,14 @@ async function alternarEdicion() {
       $('lb-edit').classList.remove('is-active');
       return;
     }
-    DOC_EDITANDO = { item };
+    if (data.truncated) {
+      // Solo llega el principio del archivo: editarlo y guardarlo cortaría el resto
+      caja.textContent = '';
+      caja.appendChild(estadoDoc('i-doc-alert', 'Archivo demasiado grande para editarlo aquí', 'Solo se puede ver el principio. Descárgalo para editarlo en tu ordenador.', item));
+      $('lb-edit').classList.remove('is-active');
+      return;
+    }
+    DOC_EDITANDO = { item, base: data.mtime || 0 };
     caja.textContent = '';
     const wrap = el('div', 'doc-edit');
     const ta = el('textarea');
@@ -357,7 +364,7 @@ async function alternarEdicion() {
 async function guardarEdicion(item, texto) {
   try {
     const res = await api(BASE + '/api/text?path=' + qs(item.rel), {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: texto }),
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: texto, base: (DOC_EDITANDO && DOC_EDITANDO.base) || 0 }),
     });
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'No se pudo guardar'); return; }
