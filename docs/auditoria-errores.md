@@ -33,3 +33,22 @@ La causa exacta del primero no pudo confirmarse sin registros del servidor; las 
 - La copia es diaria: lo creado o editado desde las 03:00 no está en ella. Para notas, el salvavidas y `.bak` cubren el caso habitual.
 - La auditoría es estática y de patrones: no demuestra que no haya otros fallos. Los módulos con un archivo por elemento (prompts, bases) usan lectura-escritura sin cola por elemento; es raro que dos ediciones del mismo elemento coincidan.
 - No hay registro del servidor de peticiones lentas ni de la latencia del bucle de eventos: si vuelve a haber lentitud, `journalctl -u kookyecatcloud` es lo único que hay.
+
+## Segunda auditoría (4 nov 2026, noche)
+
+Revisión de todo lo que borra, mueve o sobrescribe (servidor, WebDAV, papelera, transferencias, subidas) y de los autoguardados del cliente. Cada hallazgo marcado «confirmado» se reprodujo con una prueba que **falla con el código anterior** y pasa con el nuevo.
+
+| # | Dónde | Fallo | Gravedad | Arreglo |
+|---|---|---|---|---|
+| 9 | Papelera de archivos | Varios borrados a la vez se pisaban el índice: **de 20 borrados en paralelo solo 1 quedaba en la papelera**; los otros 19 seguían en disco pero invisibles, sin poder restaurarse ni vaciarse. La selección múltiple de la app ya borraba en serie, pero dos borrados seguidos desde el visor, dos dispositivos o un cliente WebDAV sí coincidían. (confirmado) | Alta | Índice en cola por usuario para borrar, restaurar, eliminar, vaciar y caducar; vaciar escribe el índice primero |
+| 10 | WebDAV `MOVE`/`COPY` | Origen y destino iguales: se borraba el «destino» (el propio archivo) y luego fallaba el renombrado → **archivo perdido**. (confirmado) Mover algo sobre una carpeta que lo contiene borraba también el origen. | Alta | Se rechazan los dos casos (403 / 409) |
+| 11 | WebDAV `PUT` | Se escribía directamente sobre el archivo: una subida cortada a mitad lo dejaba truncado | Media | Temporal oculto + renombrado al terminar; se borra si la subida se corta |
+| 12 | WebDAV `DELETE` y sobrescribir con `MOVE` | Borraban para siempre, sin pasar por la papelera | Media | Van a la papelera, como en la app |
+| 13 | Editar texto en la app (`PUT /api/text`) | Escritura directa sobre el archivo | Media | Escritura atómica |
+| 14 | Subidas | Dos subidas del mismo nombre a la vez podían elegir el mismo nombre libre y escribir el mismo archivo | Baja | Nombres reservados mientras dura la subida |
+| 15 | Deshacer un «Mover» de Copiar o mover entre secciones | `rename` sobrescribía lo que hubiera ahora en el sitio original | Media | Se detiene con un aviso |
+| 16 | Prompts | Un fallo pasajero al cargar el índice quedaba en caché y Prompts no funcionaba hasta reiniciar | Media | La carga fallida no se cachea |
+| 17 | Notas (cliente) | Lo escrito en los últimos 900 ms se perdía si el móvil descartaba la app al cambiar de app; los guardados pendientes solo vivían en memoria | Media | Se guarda al ocultar la app; los pendientes se copian en el navegador y se reintentan al volver (solo si la nota no se editó después en otro sitio) |
+| 18 | Código (cliente) | Si el guardado fallaba, abrir otro archivo o salir del proyecto descartaba lo escrito; no se guardaba al ocultar la app | Media | No cambia de archivo ni sale si no pudo guardar; guarda al ocultar |
+
+Pruebas nuevas: WebDAV (mismo origen y destino, destino que contiene al origen, sobrescribir sin temporales, borrar a la papelera) y 20 borrados en paralelo. Comprobado en navegador (escritorio y 390 px) el guardado al ocultar en Notas y la apertura de archivos en Código.

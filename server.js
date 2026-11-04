@@ -431,6 +431,8 @@ app.use('/dav', createDav({
   loadUsers,
   isHidden,
   base: BASE_PATH,
+  // Borrar o sobrescribir desde WebDAV manda lo anterior a la papelera (papeleraMod se crea más abajo; se usa en tiempo de petición)
+  aPapelera: (u, rel) => papeleraMod.core.trashItem(u, rel),
   // Sobrescribir un archivo de texto desde un cliente WebDAV también deja la versión anterior
   alMover: async (user, desde, hacia) => { sharesMod.mueve(user.username, desde, hacia); await versionsMod.mueve(user, desde, hacia); await calendarMod.core.mueveOrigenArchivo(user, desde, hacia); },
   alSobrescribir: async (user, rel, abs) => { if (TEXT_RE.test(path.basename(abs))) await versionsMod.snapshot(user, rel, abs); },
@@ -815,6 +817,7 @@ app.post('/api/mkdir', auth, async (req, res) => {
 // --- Subir archivos ---
 // Un único constructor para la subida autenticada y la pública: solo cambia
 // cómo se resuelve la carpeta de destino.
+const nombresEnSubida = new Set();
 function makeUploader(resolveDir, limits) {
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -833,10 +836,13 @@ function makeUploader(resolveDir, limits) {
         const base = path.basename(safeName, ext);
         let target = path.join(dir, safeName);
         let counter = 1;
-        while (fs.existsSync(target)) {
+        // Nombres reservados por subidas en curso: dos subidas del mismo nombre a la vez ya no escriben el mismo archivo
+        while (fs.existsSync(target) || nombresEnSubida.has(target)) {
           target = path.join(dir, `${base}_${counter}${ext}`);
           counter++;
         }
+        nombresEnSubida.add(target);
+        req.once('close', () => nombresEnSubida.delete(target));
         cb(null, path.basename(target));
       } catch (e) { cb(e); }
     }
@@ -1161,7 +1167,9 @@ app.put('/api/text', auth, express.json({ limit: '2mb' }), async (req, res) => {
     // Si no cambia nada, no se reescribe ni se crea una versión de más
     if (stat.size <= TEXT_MAX * 4 && await fsp.readFile(file, 'utf8').then(t => t === contenido, () => false)) return res.json({ ok: true, unchanged: true });
     await versionsMod.snapshot(req.user, req.query.path, file);     // guarda lo que había antes
-    await fsp.writeFile(file, contenido, 'utf8');
+    // Escritura atómica: un corte a mitad no deja el archivo truncado
+    const tmpE = path.join(path.dirname(file), `.kcc-edicion-${crypto.randomBytes(6).toString('hex')}`);
+    try { await fsp.writeFile(tmpE, contenido, 'utf8'); await fsp.rename(tmpE, file); } catch (e) { await fsp.rm(tmpE, { force: true }).catch(() => {}); throw e; }
     registrarActividad(req, 'archivo_editado', { path: req.query.path });
     res.json({ ok: true });
   } catch (err) {

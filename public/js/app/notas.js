@@ -337,16 +337,38 @@ function marcarSucia() {
 
 // Guardados que no llegaron al servidor (sin red, tiempo agotado): se reintentan en el siguiente guardado, al abrir otra
 // nota o cuando vuelve la conexión. Así cambiar de nota con la red mala no pierde lo escrito.
+// También se copian en el almacenamiento del navegador: si la app se cierra o el móvil la descarta antes de guardar, se
+// reintentan al volver (solo si la nota no se ha editado después en otro sitio, para no pisar una versión más nueva).
+const CLAVE_PEND = 'kcc-notas-pendientes';
 NT.pendientes = new Map();
+try { for (const [id, c] of JSON.parse(localStorage.getItem(CLAVE_PEND) || '[]')) NT.pendientes.set(id, { ...c, restaurada: true }); } catch { /* sin almacenamiento */ }
+function persistePendientes() { try { localStorage.setItem(CLAVE_PEND, JSON.stringify([...NT.pendientes])); } catch { /* sin almacenamiento */ } }
+function pendiente(id, cuerpo) { if (cuerpo) NT.pendientes.set(id, { ...cuerpo, at: cuerpo.at || Date.now() }); else NT.pendientes.delete(id); persistePendientes(); }
 async function reintentaPendientes() {
-  for (const [id, cuerpo] of [...NT.pendientes]) {
+  for (const [id, c] of [...NT.pendientes]) {
     if (id === NT.abierta && NT.sucia) continue;          // la nota abierta ya tiene cambios más nuevos
     try {
-      const res = await api(BASE + '/api/notes/' + qs(id), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
-      if (res.ok || res.status === 404) NT.pendientes.delete(id);
+      if (c.restaurada) {
+        const r = await api(BASE + '/api/notes/' + qs(id));
+        if (r.status === 404) { pendiente(id, null); continue; }
+        const n = await r.json().catch(() => null);
+        if (!r.ok || !n) continue;
+        if ((n.updatedAt || 0) > (c.at || 0) || n.body === c.body) { pendiente(id, null); continue; }   // ya hay algo más nuevo
+      }
+      const res = await api(BASE + '/api/notes/' + qs(id), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: c.title, body: c.body }) });
+      if (res.ok || res.status === 404) pendiente(id, null);
     } catch { /* se vuelve a intentar más tarde */ }
   }
 }
+// Al ocultar la app (cambiar de app en el móvil, cerrar la pestaña) se guarda ya, sin esperar al temporizador
+function guardaAlOcultar() {
+  if (!NT.abierta || !NT.sucia) return;
+  pendiente(NT.abierta, { title: $('note-title').value.trim() || 'Nota sin título', body: $('note-body').value });
+  guardarAhora();
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) guardaAlOcultar(); });
+window.addEventListener('pagehide', guardaAlOcultar);
+setTimeout(() => { if (NT.pendientes.size) reintentaPendientes(); }, 4000);
 window.addEventListener('online', () => { reintentaPendientes(); });
 
 async function guardarAhora() {
@@ -361,7 +383,7 @@ async function guardarAhora() {
       body: JSON.stringify(cuerpo),
     });
     if (res.ok) {
-      NT.pendientes.delete(id);
+      pendiente(id, null);
       if (NT.abierta === id) {
         $('note-saved').textContent = 'Guardado';
         $('note-saved').classList.add('ok');
@@ -371,10 +393,10 @@ async function guardarAhora() {
     } else {
       // Error del servidor: la nota abierta sigue sucia; si ya se abrió otra, el texto se guarda para reintentarlo
       if (NT.abierta === id) { NT.sucia = true; $('note-saved').textContent = await errorOf(res, 'Error al guardar'); }
-      else NT.pendientes.set(id, cuerpo);
+      else pendiente(id, cuerpo);
     }
   } catch {
     if (NT.abierta === id) { NT.sucia = true; $('note-saved').textContent = 'Sin conexión'; }
-    else NT.pendientes.set(id, cuerpo);
+    else pendiente(id, cuerpo);
   }
 }

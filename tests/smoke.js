@@ -169,6 +169,31 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     cierto(!/allow-scripts/.test(await csp(false)), 'js:false sin scripts');
     const con = await csp(true); cierto(/sandbox allow-scripts/.test(con) && !/allow-same-origin/.test(con), 'js:true con scripts y sin allow-same-origin');
   });
+  await prueba('WebDAV: no pierde archivos (mismo origen y destino, destino que contiene al origen, subida cortada, borrar a la papelera)', async () => {
+    const A = { Authorization: 'Basic ' + Buffer.from('admin:smoke-test-1').toString('base64') };
+    const dav = (m, u, o = {}) => fetch(BASE + '/dav/' + u, { method: m, headers: { ...A, ...(o.h || {}) }, body: o.b });
+    cierto([201, 405].includes((await dav('MKCOL', 'wd')).status), 'carpeta');
+    igual((await dav('PUT', 'wd/a.txt', { b: 'hola mundo' })).status, 201);
+    igual((await dav('MOVE', 'wd/a.txt', { h: { Destination: BASE + '/dav/wd/a.txt' } })).status, 403, 'MOVE sobre sí mismo');
+    igual(await (await dav('GET', 'wd/a.txt')).text(), 'hola mundo', 'sigue intacto');
+    igual((await dav('MKCOL', 'wd/sub')).status, 201);
+    igual((await dav('PUT', 'wd/sub/x.txt', { b: 'x' })).status, 201);
+    igual((await dav('MOVE', 'wd/sub/x.txt', { h: { Destination: BASE + '/dav/wd/sub', Overwrite: 'T' } })).status, 409, 'destino que contiene al origen');
+    igual(await (await dav('GET', 'wd/sub/x.txt')).text(), 'x', 'el origen sigue');
+    igual((await dav('PUT', 'wd/a.txt', { b: 'nuevo' })).status, 204, 'sobrescribir');
+    igual(await (await dav('GET', 'wd/a.txt')).text(), 'nuevo');
+    cierto(!fs.readdirSync(path.join(DATA, 'wd')).some(n => n.startsWith('.kcc-subida-')), 'sin temporales');
+    igual((await dav('DELETE', 'wd/sub')).status, 204);
+    const t = await req('GET', '/api/trash'); cierto(JSON.stringify(t.j).includes('sub'), 'lo borrado por WebDAV está en la papelera');
+  });
+  await prueba('papelera: 20 borrados a la vez quedan todos en la papelera (índice en cola)', async () => {
+    fs.mkdirSync(path.join(DATA, 'conc'), { recursive: true });
+    for (let i = 0; i < 20; i++) fs.writeFileSync(path.join(DATA, 'conc', `f${i}.txt`), 'x' + i);
+    const rs = await Promise.all(Array.from({ length: 20 }, (_, i) => req('DELETE', '/api/files?path=' + encodeURIComponent(`conc/f${i}.txt`))));
+    cierto(rs.every(r => r.s === 200), 'todos los borrados responden 200');
+    const t = (await req('GET', '/api/trash')).j.items.filter(e => e.from === 'conc');
+    igual(t.length, 20, 'las 20 entradas están en el índice');
+  });
   await prueba('código: crear proyecto y leer archivo', async () => {
     const c = await req('POST', '/api/codigo', { nombre: 'Web', plantilla: 'web' }); igual(c.s, 200); proyecto = c.j.id;
     igual((await req('GET', `/api/codigo/${proyecto}/texto?ruta=index.html`)).j.binario, false);

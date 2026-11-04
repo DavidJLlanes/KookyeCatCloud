@@ -97,7 +97,7 @@
   }
   async function abre(id) { try { S.p = await K.get('/api/codigo/' + id); entra(); } catch (e) { K.fail(e); } }
   function entra() { S.js = false; S.tab = 'archivos'; S.ruta = null; S.ver = null; S.texto = ''; S.bin = null; S.abiertas = new Set(); S.guardado = true; S.movil = 'arbol'; S.vistaPrev = false; S.token = null; pinta(); }
-  async function cierra() { await guardaYa(); S.p = null; clearTimeout(S.timer); await carga(); }
+  async function cierra() { if (!await guardaYa()) { K.toast('No se pudo guardar el archivo abierto: sigue aquí para no perder los cambios'); return; } S.p = null; clearTimeout(S.timer); await carga(); }
 
   // Proyecto como documento: descripción, árbol de archivos y el código de cada archivo de texto (tope para no desbordar)
   async function proyectoMd() {
@@ -291,7 +291,7 @@
     try { await guardaYa(); const d = await K.del(url('/ruta?' + q({ ruta }))); if (S.ruta === ruta || (S.ruta && S.ruta.startsWith(ruta + '/'))) { S.ruta = null; S.texto = ''; S.bin = null; S.movil = 'arbol'; } S.p = d; pinta(); logros(); } catch (e) { K.fail(e); }
   }
   async function abreArchivo(ruta) {
-    await guardaYa();
+    if (!await guardaYa()) { K.toast('No se pudo guardar el archivo abierto: sigue aquí para no perder los cambios'); return; }
     try {
       const d = await K.get(url('/texto?' + q({ ruta, v: S.ver && S.ver.id })));
       S.ruta = ruta; S.bin = d.binario ? d : null; S.texto = d.binario ? '' : d.contenido; S.guardado = true; S.vistaPrev = false; S.movil = 'editor'; S.token = null; pinta();
@@ -391,12 +391,13 @@
   function marca(ok) { S.guardado = ok; const e = root.querySelector('#cd-estado'); if (e && !S.ver) e.textContent = ok ? 'Guardado' : 'Guardando…'; }
   function programa() { marca(false); clearTimeout(S.timer); S.timer = setTimeout(guardaYa, 800); }
   async function guardaYa() {
-    clearTimeout(S.timer); if (!S.p || !S.ruta || S.guardado || S.ver) return; const ruta = S.ruta, texto = S.texto, id = S.p.id;
+    // Devuelve false si no se pudo guardar: quien cambia de archivo o sale del proyecto se detiene para no perder lo escrito
+    clearTimeout(S.timer); if (!S.p || !S.ruta || S.guardado || S.ver) return true; const ruta = S.ruta, texto = S.texto, id = S.p.id;
     try {
       const r = await K.put(`/api/codigo/${id}/archivo`, { ruta, contenido: texto });
       if (S.p && S.p.id === id && S.p.archivos[ruta]) { S.p.archivos[ruta] = { t: r.archivo[1], l: r.archivo[2], texto: true }; if (S.ruta === ruta && S.texto === texto) marca(true); const sz = root.querySelector('.cd-fila.sel .cd-sz'); if (sz) sz.textContent = tam(r.archivo[1]); }
-      logros();
-    } catch (e) { K.fail(e); }
+      logros(); return true;
+    } catch (e) { K.fail(e); return false; }
   }
 
   /* ---------- Subidas ---------- */
@@ -571,5 +572,8 @@
     switchTab('codigo');
     (async () => { if (S.p) { await guardaYa(); S.p = null; clearTimeout(S.timer); } await carga(); })();
   };
+  // Al ocultar la app (cambiar de app en el móvil, cerrar la pestaña) se guarda ya, sin esperar al temporizador
+  document.addEventListener('visibilitychange', () => { if (document.hidden && S.p && !S.guardado) guardaYa(); });
+  window.addEventListener('pagehide', () => { if (S.p && !S.guardado) guardaYa(); });
   K.registerView('codigo', { open() { if (S.p) pinta(); else carga(); }, close() { guardaYa(); } });
 })();

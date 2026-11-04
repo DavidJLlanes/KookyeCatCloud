@@ -36,7 +36,7 @@ function decodeHref(href, base = '') {
   return p.replace(/^\/dav\/?/, '').replace(/^\/+/, '').replace(/\/+$/, '');
 }
 
-function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '', alSobrescribir, alMover, alCambiar }) {
+function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '', alSobrescribir, alMover, alCambiar, aPapelera }) {
   async function exists(p) {
     try { await fsp.access(p); return true; } catch { return false; }
   }
@@ -194,13 +194,20 @@ function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '', 
           await fsp.mkdir(path.dirname(abs), { recursive: true });
           const nuevo = !await exists(abs);
           if (!nuevo && alSobrescribir) { try { await alSobrescribir(user, rel, abs); } catch { /* sin versión, pero se guarda igual */ } }
-          await new Promise((resolve, reject) => {
-            const salida = fs.createWriteStream(abs);
-            req.pipe(salida);
-            salida.on('finish', resolve);
-            salida.on('error', reject);
-            req.on('error', reject);
-          });
+          // Se escribe en un temporal oculto y se renombra al terminar: una subida cortada a mitad no deja el archivo
+          // original truncado (antes se abría el destino directamente, que lo vacía en el acto)
+          const tmp = path.join(path.dirname(abs), `.kcc-subida-${crypto.randomBytes(6).toString('hex')}`);
+          try {
+            await new Promise((resolve, reject) => {
+              const salida = fs.createWriteStream(tmp);
+              req.pipe(salida);
+              salida.on('finish', () => (req.readableAborted || req.aborted ? reject(new Error('Subida interrumpida')) : resolve()));
+              salida.on('error', reject);
+              req.on('error', reject);
+              req.on('aborted', () => { salida.destroy(); reject(new Error('Subida interrumpida')); });
+            });
+            await fsp.rename(tmp, abs);
+          } catch (e) { await fsp.rm(tmp, { force: true }).catch(() => {}); throw e; }
           return res.status(nuevo ? 201 : 204).end();
         }
 
@@ -214,7 +221,8 @@ function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '', 
         case 'DELETE': {
           if (!await exists(abs)) return res.status(404).end();
           if (abs === userRoot(user)) return res.status(403).end('No puedes borrar la raíz');
-          await fsp.rm(abs, { recursive: true, force: true });
+          // Como en la app: lo borrado desde un cliente WebDAV va a la papelera (antes se borraba para siempre)
+          if (aPapelera) await aPapelera(user, rel); else await fsp.rm(abs, { recursive: true, force: true });
           return res.status(204).end();
         }
 
@@ -228,11 +236,13 @@ function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '', 
           const sobrescribir = (req.headers.overwrite || 'T').toUpperCase() !== 'F';
           const existia = await exists(absDestino);
           if (existia && !sobrescribir) return res.status(412).end('El destino ya existe');
-          if (metodo === 'MOVE' && absDestino.startsWith(abs + path.sep)) {
-            return res.status(409).end('No puedes mover una carpeta dentro de sí misma');
-          }
+          // Origen y destino iguales: antes se borraba el «destino» (que era el propio origen) y se perdía el archivo
+          if (absDestino === abs) return res.status(403).end('El origen y el destino son el mismo');
+          if (absDestino.startsWith(abs + path.sep)) return res.status(409).end('No puedes mover ni copiar una carpeta dentro de sí misma');
+          // Sobrescribir una carpeta que contiene al origen borraría el propio origen
+          if (abs.startsWith(absDestino + path.sep)) return res.status(409).end('El destino contiene al origen');
           await fsp.mkdir(path.dirname(absDestino), { recursive: true });
-          if (existia) await fsp.rm(absDestino, { recursive: true, force: true });
+          if (existia) { if (aPapelera) await aPapelera(user, relDestino); else await fsp.rm(absDestino, { recursive: true, force: true }); }
           if (metodo === 'MOVE') { await fsp.rename(abs, absDestino); if (alMover) { try { await alMover(user, rel, relDestino); } catch { /* sin gancho */ } } }
           else await fsp.cp(abs, absDestino, { recursive: true });
           return res.status(existia ? 204 : 201).end();
