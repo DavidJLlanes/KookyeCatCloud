@@ -87,7 +87,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 🏆 **Logros y Tetris** | Niveles y rangos, racha diaria, logros por cantidad de elementos (también Compra, favoritos, álbumes, Bases y Juegos), por uso y de seguridad, retos semanales, cosméticos y tres juegos (Tetris, 2048 y Breakout) táctiles y con música, con potenciadores que se desbloquean al subir de nivel. |
 | 🎮 **Juegos** | Colección de videojuegos con carátulas, notas, horas, lista de deseos y backlog, estadísticas, búsqueda opcional con RAWG, logros propios y tarjetas para compartir de cada juego y de tu perfil. |
 | 🗂️ **Bases** | Bases de datos propias al estilo AppFlowy: columnas a tu medida (texto, número, fecha, casilla, selección, etiquetas, enlace), vistas de tabla y tablero Kanban, plantillas, exportación CSV/JSON y logros propios. Cada base es su propio JSON. |
-| </> **Código** | Proyectos tipo GitHub: carpetas y archivos, editor con colores, subida de archivos, carpetas y ZIP (con descompresión), versiones con comparación y restauración, vista web aislada sin JavaScript y descarga en ZIP. Límites: 50 MB y 1000 archivos por proyecto, 10 MB por archivo, 50 versiones. Con logros. |
+| </> **Código** | Proyectos tipo GitHub: carpetas y archivos, editor con colores, subida de archivos, carpetas y ZIP (con descompresión), versiones con comparación y restauración, vista web aislada (JavaScript solo si activas el interruptor) y descarga en ZIP. Límites: 50 MB y 1000 archivos por proyecto, 10 MB por archivo, 50 versiones. Con logros. |
 | 📄 **Exportar a .txt, .md y PDF** | Notas, prompts, contactos, calendario, bases, juegos, compra y código, desde su menú ⋯. |
 | 📤 **Exportar JSON** | Botón en la barra superior que exporta los datos de la sección abierta; ZIP con todos los JSON de la app para administración. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
@@ -920,8 +920,26 @@ Pestaña **Código**: proyectos al estilo GitHub, con carpetas, archivos, versio
 - Las versiones comparten el contenido idéntico, así que guardar muchas apenas ocupa más.
 
 **Vista web aislada**
-- Pestaña **Vista web**: abre el `index.html` (o la página que elijas) del trabajo actual o de cualquier versión, con su CSS, imágenes y fuentes relativos.
-- **No ejecuta JavaScript** y los enlaces no navegan: va en un marco con `sandbox` y con cabecera `Content-Security-Policy: sandbox` desde el servidor. Se sirve con un enlace firmado que caduca a la hora y no depende de tu sesión.
+- Pestaña **Vista web**: abre el `index.html` (o la página que elijas) del trabajo actual o de cualquier versión, con su CSS, imágenes y fuentes relativos. La vista previa de un HTML dentro del editor funciona igual.
+- **Por defecto no ejecuta JavaScript** y los enlaces no navegan: va en un marco con `sandbox` y con cabecera `Content-Security-Policy: sandbox` desde el servidor. Se sirve con un enlace firmado que caduca a la hora y no depende de tu sesión.
+- **Interruptor «Permitir JavaScript»** (junto a la página y la versión, y también en la vista previa del editor). Está **apagado cada vez que abres un proyecto** y no se recuerda. Al activarlo, la web se ejecuta con `sandbox="allow-scripts"` y la cabecera `sandbox allow-scripts` **sin** `allow-same-origin`. El permiso va dentro del token firmado, así que no se puede forzar desde fuera. Con JavaScript activo el CSP permite scripts, estilos, imágenes, fuentes y conexiones del propio proyecto y de `https:` (CDN, Google Fonts, APIs públicas) y `eval`, para que funcionen las webs normales.
+
+**Riesgos de activar JavaScript y cómo evitarlos**
+
+Lo que protege (comprobado con una prueba que lee `document.cookie` y `parent.document`): el script corre con un **origen opaco**, distinto de `djl.com.es`. No puede leer tus cookies (además son `httpOnly` y `SameSite=strict`), ni tocar la página de la nube, ni llamar a la API con tu sesión, ni navegar fuera del marco, abrir ventanas o enviar formularios.
+
+Lo que **sí puede hacer** una web con el interruptor activado:
+- Cargar y enviar datos a cualquier sitio de internet por `https:` (rastreadores, anuncios, mineros de criptomonedas) y consumir CPU o memoria de tu navegador.
+- Leer los demás archivos de **ese mismo proyecto** (con una petición a su propia URL firmada) y mandarlos fuera.
+- Cargar scripts de terceros. Si un CDN o una librería está comprometida, se ejecuta su código.
+- Mostrar contenido engañoso dentro del marco (por ejemplo, un formulario falso de inicio de sesión).
+
+Cómo evitar problemas:
+1. Actívalo solo con webs tuyas o de las que te fíes. Para un ZIP de origen dudoso, o código generado por IA que no has revisado, déjalo apagado.
+2. No pongas secretos (claves de API, contraseñas) dentro de proyectos que vayas a previsualizar con JavaScript.
+3. Nunca escribas en ellas tus contraseñas reales: aunque el marco no pueda leer tu sesión, una web falsa podría pedírtelas.
+4. Si prefieres bloquear las conexiones salientes, cambia en `lib/codigo.js` (`vistaRouter`) los orígenes `https:` del CSP con JavaScript por `'self'` y las webs solo cargarán lo que haya en el proyecto.
+5. Si no quieres que exista esta opción, elimina `js` del token en `POST /:id/vista` y el interruptor en `public/js/codigo.js` (`interruptorJs`).
 
 **Límites**
 

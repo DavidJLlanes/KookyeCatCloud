@@ -161,6 +161,14 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     igual((await req('GET', `/api/codigo/${id}/texto?ruta=vacio.txt`)).s, 200, 'se recrea el objeto vacío');
     igual((await req('GET', `/api/codigo/${id}/zip`)).s, 200, 'el ZIP también');
   });
+  await prueba('código: vista web con y sin JavaScript (el permiso va firmado en el token)', async () => {
+    const c = await req('POST', '/api/codigo', { nombre: 'Vista JS' }); igual(c.s, 200); const id = c.j.id;
+    igual((await req('PUT', `/api/codigo/${id}/archivo`, { ruta: 'index.html', contenido: '<script>1</script>' })).s, 200);
+    const csp = async (js) => { const t = (await req('POST', `/api/codigo/${id}/vista`, js === undefined ? { v: '' } : { v: '', js })).j.token; const r = await fetch(`${BASE}/api/codigo-vista/${t}/index.html`); igual(r.status, 200); return r.headers.get('content-security-policy'); };
+    const sin = await csp(); cierto(!/allow-scripts|script-src/.test(sin), 'por defecto sin scripts');
+    cierto(!/allow-scripts/.test(await csp(false)), 'js:false sin scripts');
+    const con = await csp(true); cierto(/sandbox allow-scripts/.test(con) && !/allow-same-origin/.test(con), 'js:true con scripts y sin allow-same-origin');
+  });
   await prueba('código: crear proyecto y leer archivo', async () => {
     const c = await req('POST', '/api/codigo', { nombre: 'Web', plantilla: 'web' }); igual(c.s, 200); proyecto = c.j.id;
     igual((await req('GET', `/api/codigo/${proyecto}/texto?ruta=index.html`)).j.binario, false);

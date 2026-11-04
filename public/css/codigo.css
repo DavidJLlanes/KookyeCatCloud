@@ -213,3 +213,5 @@
 
 .cd-chips .k-vchip{max-width:100%;}
 .cd-bar2 .k-chip{align-self:center;}
+.cd-js{display:inline-flex;align-items:center;gap:6px;font-size:calc(13px*var(--fs,1));cursor:pointer;padding:4px 8px;}
+.cd-js input{width:auto;margin:0;accent-color:var(--accent,#6366f1);}

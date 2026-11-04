@@ -96,7 +96,7 @@
     }); f.click();
   }
   async function abre(id) { try { S.p = await K.get('/api/codigo/' + id); entra(); } catch (e) { K.fail(e); } }
-  function entra() { S.tab = 'archivos'; S.ruta = null; S.ver = null; S.texto = ''; S.bin = null; S.abiertas = new Set(); S.guardado = true; S.movil = 'arbol'; S.vistaPrev = false; S.token = null; pinta(); }
+  function entra() { S.js = false; S.tab = 'archivos'; S.ruta = null; S.ver = null; S.texto = ''; S.bin = null; S.abiertas = new Set(); S.guardado = true; S.movil = 'arbol'; S.vistaPrev = false; S.token = null; pinta(); }
   async function cierra() { await guardaYa(); S.p = null; clearTimeout(S.timer); await carga(); }
 
   // Proyecto como documento: descripción, árbol de archivos y el código de cada archivo de texto (tope para no desbordar)
@@ -332,8 +332,8 @@
   function accionPrev() { if (S.p && !S.usoPrev.has(S.p.id)) { S.usoPrev.add(S.p.id); accion('preview'); } }
   async function preview(pv, ruta, lang) {
     if (lang === 'html') {
-      try { const t = await token(); const fr = el('iframe', 'cd-frame'); fr.setAttribute('sandbox', ''); fr.title = 'Vista previa'; fr.src = `${BASE}/api/codigo-vista/${t}/${ruta.split('/').map(encodeURIComponent).join('/')}`; pv.appendChild(fr);
-        pv.appendChild(el('small', 'k-faint cd-nota', 'Vista aislada: se ven HTML, CSS e imágenes del proyecto; los scripts no se ejecutan.')); } catch (e) { K.fail(e); }
+      try { const t = await token(); const fr = el('iframe', 'cd-frame'); fr.setAttribute('sandbox', S.js ? 'allow-scripts' : ''); fr.title = 'Vista previa'; fr.src = `${BASE}/api/codigo-vista/${t}/${ruta.split('/').map(encodeURIComponent).join('/')}`; pv.appendChild(fr);
+        pv.append(interruptorJs(() => { pv.textContent = ''; preview(pv, ruta, lang); }), el('small', 'k-faint cd-nota', S.js ? AVISO_JS : 'Vista aislada: se ven HTML, CSS e imágenes del proyecto; los scripts no se ejecutan.')); } catch (e) { K.fail(e); }
     } else if (ext(ruta) === 'svg') {
       const img = el('img', 'cd-svg'); img.alt = 'Vista previa SVG'; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(S.texto); pv.appendChild(img);
     } else if (lang === 'json') {
@@ -341,7 +341,14 @@
       catch (e) { pv.appendChild(el('p', 'cd-err', '✖ ' + e.message)); }
     } else { const d = el('div', 'cd-md'); d.innerHTML = markdown(S.texto); pv.appendChild(d); }
   }
-  async function token() { if (!S.token || S.token.v !== (S.ver ? S.ver.id : '')) { const v = S.ver ? S.ver.id : ''; const r = await K.post(url('/vista'), { v }); S.token = { v, t: r.token }; } return S.token.t; }
+  async function token() { const v = S.ver ? S.ver.id : ''; if (!S.token || S.token.v !== v || S.token.js !== !!S.js) { const r = await K.post(url('/vista'), { v, js: !!S.js }); S.token = { v, js: !!S.js, t: r.token }; } return S.token.t; }
+  // Interruptor «Permitir JavaScript» de las vistas previas (apagado al abrir cada proyecto)
+  function interruptorJs(alCambiar) {
+    const l = el('label', 'cd-js'); const c = el('input'); c.type = 'checkbox'; c.checked = !!S.js;
+    c.addEventListener('change', () => { S.js = c.checked; alCambiar(); });
+    l.append(c, document.createTextNode(' Permitir JavaScript')); return l;
+  }
+  const AVISO_JS = 'JavaScript activado: la web se ejecuta aislada (sin tu sesión ni cookies), pero puede cargar recursos de internet. Actívalo solo con webs en las que confíes.';
   // Teclado del editor (sangría, pares, Tab…)
   function inserta(ta, texto) {
     ta.focus(); let ok = false; try { ok = document.execCommand('insertText', false, texto); } catch { ok = false; }
@@ -511,18 +518,18 @@
     if (!htmls.length) { const e = el('div', 'cd-empty'); e.append(el('div', 'cd-empty-i', '🌐'), el('p', 'k-muted', 'Este proyecto no tiene archivos HTML. Añade un index.html o sube tu web en un ZIP.')); cont.appendChild(e); return; }
     const bar = el('div', 'cd-webbar'); const sa = el('select'); sa.setAttribute('aria-label', 'Página'); htmls.forEach(r => { const o = el('option', null, r); o.value = r; sa.appendChild(o); });
     const sv = el('select'); sv.setAttribute('aria-label', 'Versión'); const o0 = el('option', null, 'Trabajo actual'); o0.value = ''; sv.appendChild(o0); p.versiones.forEach(v => { const o = el('option', null, `v${v.n} · ${v.mensaje}`); o.value = v.id; sv.appendChild(o); }); sv.value = S.webVer && p.versiones.some(v => v.id === S.webVer) ? S.webVer : '';
-    const marco = el('div', 'cd-webmarco'); const nota = el('small', 'k-faint cd-nota', 'Vista aislada: se ven HTML, CSS, imágenes y fuentes; los scripts de la web no se ejecutan y los enlaces no navegan.');
+    const marco = el('div', 'cd-webmarco'); const nota = el('small', 'k-faint cd-nota'); const pintaNota = () => { nota.textContent = S.js ? AVISO_JS : 'Vista aislada: se ven HTML, CSS, imágenes y fuentes; los scripts de la web no se ejecutan y los enlaces no navegan.'; }; pintaNota();
     const carga2 = async () => {
       marco.textContent = ''; S.webVer = sv.value;
       try {
         if (S.webVer === '') await guardaYa();
-        const r = await K.post(url('/vista'), { v: sv.value }); const fr = el('iframe', 'cd-frame grande'); fr.setAttribute('sandbox', ''); fr.title = 'Vista web';
+        const r = await K.post(url('/vista'), { v: sv.value, js: !!S.js }); const fr = el('iframe', 'cd-frame grande'); fr.setAttribute('sandbox', S.js ? 'allow-scripts' : ''); fr.title = 'Vista web';
         const lista = sv.value ? await K.get(url('/versiones/' + sv.value)).then(d => Object.keys(d.archivos)) : htmls; const pag = lista.includes(sa.value) ? sa.value : (lista.find(x => /\.html?$/i.test(x)) || sa.value);
         fr.src = `${BASE}/api/codigo-vista/${r.token}/${pag.split('/').map(encodeURIComponent).join('/')}`; marco.appendChild(fr); accionPrev();
       } catch (e) { marco.appendChild(el('p', 'cd-err', e.message)); }
     };
     sa.addEventListener('change', carga2); sv.addEventListener('change', carga2);
-    bar.append(sa, sv, btn('Recargar', 'i-refresh', carga2, 'btn sm')); cont.append(bar, marco, nota); carga2();
+    bar.append(sa, sv, interruptorJs(() => { pintaNota(); carga2(); }), btn('Recargar', 'i-refresh', carga2, 'btn sm')); cont.append(bar, marco, nota); carga2();
   }
 
   // Markdown básico y seguro: todo se escapa antes de dar formato
