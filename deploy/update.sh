@@ -62,7 +62,9 @@ git_ rev-parse --git-dir >/dev/null 2>&1 || { log "ERROR: $APP_DIR no es un repo
 git_ fetch --quiet "$REMOTE" "$BRANCH" || { log "ERROR: no se pudo contactar con $REMOTE (¿sin conexión?)"; exit 1; }
 
 ANTES="$(git_ rev-parse HEAD)"
-NUEVO="$(git_ rev-parse "$REMOTE/$BRANCH")"
+# FETCH_HEAD es justo lo que se acaba de descargar; "$REMOTE/$BRANCH" puede quedarse sin refrescar según la
+# configuración del repositorio y entonces el script decía «Sin cambios» aunque hubiera commits nuevos
+NUEVO="$(git_ rev-parse FETCH_HEAD 2>/dev/null || git_ rev-parse "$REMOTE/$BRANCH")"
 if [ "$ANTES" = "$NUEVO" ]; then log "Sin cambios: ya estás en $(git_ rev-parse --short HEAD)"; exit 0; fi
 
 N="$(git_ rev-list --count "$ANTES..$NUEVO")"
