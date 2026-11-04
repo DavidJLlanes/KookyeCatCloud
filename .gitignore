@@ -18,3 +18,8 @@ shares.json
 shares.json.tmp
 passkeys.json
 passkeys.json.tmp
+# Copias y temporales de la configuración que guarda la app (lib/store.js: escribeJsonSync)
+/*.json.bak
+/*.json.*.tmp
+/*.json.dañado-*
+/*.jsonl.*.tmp
