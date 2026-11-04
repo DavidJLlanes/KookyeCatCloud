@@ -527,6 +527,19 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     igual((await req('POST', '/api/pdf', { titulo: 'x', md: '   ' })).s, 400, 'vacío');
     igual((await req('POST', '/api/pdf', { titulo: 'x', md: '| a |\n|---|\n' + '| 1 |\n'.repeat(50) , ancho: true })).s, 200, 'tabla ancha');
   });
+  await prueba('álbumes: creaciones a la vez no se pisan y un índice dañado no se sobrescribe en silencio', async () => {
+    const antes = (await req('GET', '/api/albums')).j.items.length;
+    const rs = await Promise.all(Array.from({ length: 15 }, (_, i) => req('POST', '/api/albums', { title: 'Álbum conc ' + i })));
+    cierto(rs.every(r => r.s === 200), 'todas las creaciones responden 200');
+    igual((await req('GET', '/api/albums')).j.items.length, antes + 15, 'las 15 siguen ahí');
+    const f = path.join(DATA, '.albums', 'index.json');
+    const cand = [f, path.join(DATA, 'albums.json')].find(x => fs.existsSync(x));
+    if (cand) {
+      fs.writeFileSync(cand, '{roto');
+      const r = await req('GET', '/api/albums'); igual(r.s, 200);
+      cierto(fs.readdirSync(path.dirname(cand)).some(n => n.includes('.dañado-') || n.endsWith('.bak')), 'el archivo dañado queda apartado o hay copia');
+    }
+  });
   await prueba('cierre de sesión', async () => { cierto((await req('POST', '/api/logout')).s < 400, 'logout'); });
 
   srv.kill();

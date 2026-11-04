@@ -1606,6 +1606,10 @@ incluyen las miniaturas** (se regeneran solas). El código no entra: está en Gi
 Las miniaturas se regeneran solas tras la restauración. Si no entras con las contraseñas de la copia, revisa que
 `.jwt-secret` y `users.json` sean de la misma copia.
 
+### Auditoría de errores
+
+El informe de la auditoría de pérdida de datos (causas, arreglos y riesgos que quedan) está en [`docs/auditoria-errores.md`](docs/auditoria-errores.md). `npm run check` incluye `tests/auditoria.js`, que rechaza los patrones que ya hicieron perder datos.
+
 ### Si una nota «desaparece»
 
 Las notas guardan un `index.json` y un `.md` por nota en `<datos>/.notes/` (`users/<nombre>/.notes/` para el resto de usuarios). Las escrituras van en cola, son atómicas y dejan `index.json.bak`; un índice dañado se aparta como `.dañado-<fecha>` y se restaura el `.bak`; si el cuerpo de una nota se queda vacío de golpe, el texto anterior queda en `.notes/salvavidas/`. En Notas → Papelera, **Buscar notas perdidas** recupera en la carpeta «Notas recuperadas» cualquier `.md` que ya no figure en el índice. Para sacar una nota de una copia de seguridad: `mkdir -p /root/recuperar && sudo tar -xzf /var/backups/kookyecatcloud/kookyecatcloud-datos.tar.gz -C /root/recuperar --wildcards '*/.notes/*'`, busca con `sudo grep -rl "palabra" /root/recuperar` y copia el `.md` a `.notes/` (después, «Buscar notas perdidas»).

@@ -17,3 +17,12 @@ Node 20 + Express 4 + JS vanilla (PWA). Respuestas al usuario en español, breve
 6. **Exportación:** si el módulo guarda datos nuevos, añade su sección en `lib/exportar.js` (`SECCIONES`) y en `public/js/exportar.js` (`SECCION` y `NOMBRES`) para que entre en el botón ⤓ y en el ZIP de administración.
 7. **Valores repetibles:** los campos de texto que se repiten entre elementos (modelo, plataforma, empresa, etiqueta…) usan el servicio `lib/valores.js`: `valores.registra({…})` en la fábrica (con `uso` y `renombra`), `valores.aplica(user, modulo, obj)` antes de guardar, `K.campoValor()` en el formulario, `K.chipValor()` donde se muestre el valor y `K.filtros.<modulo>` para filtrar al pulsarlo. No aplica a nombres, notas, URLs, fechas ni cifras. Añade el módulo a `MODULOS` de `public/js/valores-pantalla.js`.
 8. **Tipografía:** los tamaños de letra se escriben como `calc(Npx*var(--fs,1))` (ajuste «Tamaño del texto» de Cuenta), nunca `Npx` a pelo; los campos de texto usan `max(16px,calc(16px*var(--fs,1)))`.
+
+## Persistencia (obligatorio; ver `docs/auditoria-errores.md`)
+
+- Los datos se leen y escriben solo con `lib/store.js`: `readJson`, `writeJson`, `updateJson` (y `leeJsonSync`/`escribeJsonSync` para configuración que se lee al arrancar). Nunca `JSON.parse(readFile…)` con `catch → []`, nunca un `.tmp` de nombre fijo, nunca `writeFile` directo sobre un `.json`. `npm run check` lo vigila (`tests/auditoria.js`).
+- Un archivo que **existe pero no se puede leer** nunca equivale a «vacío»: se lanza el error (el cliente lo muestra) o se usa el `.bak`. Solo «no existe» es vacío.
+- Todo leer-modificar-guardar sobre el mismo archivo va por `updateJson` o por una cola; el servidor no debe aceptar un guardado que deje vacío lo que antes tenía contenido sin dejar copia.
+- Comprobar presencia con `in`/`has`, no con la veracidad del valor: `0`, `''` y `[]` son valores válidos.
+- Todo módulo nuevo añade su prueba de humo de: lectura dañada, escritura concurrente y valor vacío.
+

@@ -27,7 +27,8 @@ const createCalendar = require('./lib/calendar');
 const createPrompts = require('./lib/prompts');
 const createClip = require('./lib/clip');
 const { createGame } = require('./lib/game');
-const { readJson, updateJson, kccDir } = require('./lib/store');
+const store = require('./lib/store');
+const { readJson, updateJson, kccDir } = store;
 const createContacts = require('./lib/contacts');
 const createNotesExtra = require('./lib/notes-extra');
 const createPdf = require('./lib/pdf');
@@ -151,13 +152,10 @@ function loadSecret() {
 const JWT_SECRET = loadSecret();
 
 function loadUsers() {
-  if (!fs.existsSync(USERS_FILE)) return [];
-  return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+  return store.leeJsonSync(USERS_FILE, []);
 }
 function saveUsers(users) {
-  const tmp = `${USERS_FILE}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(users, null, 2), { mode: 0o600 });
-  fs.renameSync(tmp, USERS_FILE);
+  store.escribeJsonSync(USERS_FILE, users, 0o600);
 }
 
 // Bootstrap: crea admin por defecto si no hay usuarios
@@ -180,12 +178,10 @@ const DUMMY_HASH = bcrypt.hashSync('timing-equalizer', 10);
    un jti que apunta a un registro aquí. Cerrar una sesión en remoto borra su
    registro, y el siguiente uso de ese token cae con 401 aunque no haya caducado. */
 function loadSessions() {
-  try { return JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8')); } catch { return {}; }
+  return store.leeJsonSync(SESSIONS_FILE, {});
 }
 function saveSessions(data) {
-  const tmp = `${SESSIONS_FILE}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), { mode: 0o600 });
-  fs.renameSync(tmp, SESSIONS_FILE);
+  store.escribeJsonSync(SESSIONS_FILE, data, 0o600);
 }
 const sessions = loadSessions();
 let sessionsSucio = false;
