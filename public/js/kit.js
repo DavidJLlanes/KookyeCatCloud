@@ -22,7 +22,7 @@ K.http = async function (method, url, body) {
   const res = await api(BASE + url, opts);
   let data = null;
   try { data = await res.json(); } catch { /* sin cuerpo */ }
-  if (!res.ok) throw new Error((data && data.error) || `Error ${res.status}`);
+  if (!res.ok) { const e = new Error((data && data.error) || `Error ${res.status}`); e.status = res.status; throw e; }
   return data;
 };
 K.get = (u) => K.http('GET', u);

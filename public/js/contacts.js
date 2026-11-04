@@ -520,7 +520,7 @@
     pintaFoto();
     f.insertBefore(fotoBox, f.firstChild);
 
-    const notas = el('textarea'); notas.value = base.notes || ''; notas.maxLength = 5000; notas.rows = 3; notas.placeholder = 'Notas';
+    const notas = el('textarea'); notas.value = base.notes || ''; notas.rows = 3; notas.placeholder = 'Notas';
     f.appendChild(campo('Notas', notas));
     const picker = K.labelPicker({ selected: base.labels || [] });
     f.appendChild(campo('Etiquetas', picker));

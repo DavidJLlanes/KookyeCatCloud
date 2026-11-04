@@ -153,8 +153,15 @@
 
   /* ---------- Operaciones sobre filas ---------- */
   async function guardaCelda(r, c, valor) {
+    const antes = r.c[c.id];
     r.c[c.id] = valor;
-    try { const d = await K.put(`/api/bases/${S.base.id}/rows/${r.id}`, { c: { [c.id]: valor } }); Object.assign(r, d.row); logros(); } catch (e) { K.fail(e); recarga(); }
+    try { const d = await K.put(`/api/bases/${S.base.id}/rows/${r.id}`, { c: { [c.id]: valor } }); Object.assign(r, d.row); logros(); }
+    catch (e) {
+      K.fail(e);
+      // Valor no válido (demasiado largo, no es un número…): la celda conserva lo escrito para corregirlo, sin recargar
+      if (e.status === 400) { r.c[c.id] = antes; return; }
+      recarga();
+    }
   }
   async function nuevaFila(inicial = {}) {
     try { const d = await K.post(`/api/bases/${S.base.id}/rows`, { c: inicial }); S.base.rows.push(d.row); repinta(); actualizaContador(); logros(); return d.row; } catch (e) { K.fail(e); return null; }
@@ -173,7 +180,7 @@
   function celda(r, c) {
     const v = r.c[c.id]; const td = el('td'); td.dataset.t = c.tipo;
     if (c.tipo === 'text' || c.tipo === 'url') {
-      const i = el('input'); i.type = c.tipo === 'url' ? 'url' : 'text'; i.value = v || ''; i.maxLength = c.tipo === 'url' ? 500 : 2000; i.setAttribute('aria-label', c.nombre); if (c.tipo === 'url') i.placeholder = 'https://…';
+      const i = el('input'); i.type = c.tipo === 'url' ? 'url' : 'text'; i.value = v || ''; i.setAttribute('aria-label', c.nombre); if (c.tipo === 'url') i.placeholder = 'https://…';
       i.addEventListener('change', () => guardaCelda(r, c, i.value)); td.appendChild(i);
       if (c.tipo === 'url' && v) { const a = el('a', 'bs-ext', '↗'); a.href = v; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.title = 'Abrir enlace'; td.appendChild(a); }
     } else if (c.tipo === 'number') {

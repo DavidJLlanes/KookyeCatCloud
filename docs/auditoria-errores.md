@@ -109,3 +109,15 @@ Riesgos que quedan (conocidos y aceptados):
 - Ninguna auditoría garantiza que no haya fallos: estas cubren los patrones que ya hicieron perder datos y las rutas que borran, mueven o sobrescriben.
 
 Para recuperar algo de `.kcc/borrados/` (bases, proyectos, contactos, juegos, eventos borrados hace menos de 30 días) ver el README.
+
+## Cierre de pendientes (4 nov 2026, noche)
+
+| # | Dónde | Fallo | Arreglo |
+|---|---|---|---|
+| 38 | Bases: celdas | El texto de una celda de más de 2.000 caracteres se recortaba; un número o una fecha no válidos se vaciaban; un enlace sin `http(s)://` se borraba. Todo sin avisar. Además el navegador cortaba lo pegado en la celda. | Se rechaza con un aviso que nombra la columna; la celda conserva lo escrito para corregirlo; en importaciones se adapta como antes |
+| 39 | Campos cortos de contactos, juegos, eventos y prompts (nombre, empresa, cargo, teléfonos, direcciones, título, lugar, estudio, saga, tienda, fuente…) | Se recortaban al máximo sin avisar | Se avisa (`store.corto`); en importaciones y datos de RAWG se recortan |
+| 40 | Valores reutilizables (empresa, ciudad, plataforma…) | Se cortaban a 80 caracteres sin avisar (aunque el campo declarase 120) | Se avisa con el máximo real |
+| 41 | Notas de contacto y portapapeles | El navegador cortaba en silencio lo pegado por encima del máximo | Sin tope en el campo: el servidor avisa |
+| 42 | Versiones al mover (pendiente de la quinta) | Mover un archivo a la ruta de otro con historial borraba ese historial | El historial anterior se aparta 30 días en `.kcc/borrados/versiones/` |
+
+Ya no queda ningún pendiente conocido de las auditorías. Sigue sin estar garantizado que no haya otros fallos, y la copia de seguridad sigue siendo diaria.

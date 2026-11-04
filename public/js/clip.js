@@ -153,7 +153,7 @@
     head.append(t, el('span', 'grow'), vaciar);
 
     const caja = el('section', 'cb-caja');
-    const ta = el('textarea'); ta.rows = 3; ta.placeholder = 'Escribe o pega aquí lo que quieras enviar…'; ta.maxLength = 200000;
+    const ta = el('textarea'); ta.rows = 3; ta.placeholder = 'Escribe o pega aquí lo que quieras enviar…'; /* sin maxLength: al pegar, el navegador cortaría en silencio; el servidor avisa si no cabe */
     ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); enviar(); } });
     ta.addEventListener('paste', (e) => {
       const files = [...(e.clipboardData ? e.clipboardData.files : [])];

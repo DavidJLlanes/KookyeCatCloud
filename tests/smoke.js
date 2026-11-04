@@ -256,7 +256,7 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     const largo = 'x'.repeat(5001);
     const r = await req('POST', '/api/contacts', { first: 'Largo', notes: largo }); igual(r.s, 400); cierto(/demasiado largo/.test(r.j.error), 'mensaje claro');
     igual((await req('POST', '/api/calendar/events', { title: 'Largo', start: '2026-12-02T10:00', end: '2026-12-02T11:00', description: largo })).s, 400);
-    const vcf = 'BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Importado Largo\r\nN:Largo;Importado;;;\r\nNOTE:' + 'y'.repeat(6000) + '\r\nEND:VCARD\r\n';
+    const vcf = 'BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Importado Largo\r\nN:Largo;Importado;;;\r\nORG:' + 'o'.repeat(200) + '\r\nNOTE:' + 'y'.repeat(6000) + '\r\nEND:VCARD\r\n';
     const imp = await fetch(BASE + '/api/contacts/import', { method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'text/vcard' }, body: vcf });
     const j = await imp.json(); igual(j.creados, 1, 'la importación no se salta la ficha');
   });
@@ -278,6 +278,29 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     igual((await req('POST', '/api/vault/import', { paths: ['proy'], parent: '' })).s, 200);
     const items = (await req('GET', '/api/vault/items')).j.items.map(i => i.name);
     cierto(items.includes('.env') && items.includes('.git') && items.includes('HEAD'), 'los ocultos están en la caja: ' + items.join(','));
+  });
+  await prueba('sin recortes ni vaciados silenciosos: celdas de Bases, campos cortos y textos (avisa en vez de cortar)', async () => {
+    const b = (await req('POST', '/api/bases', { nombre: 'Límites' })).j; const col = b.columns[0];
+    const fila = (await req('POST', `/api/bases/${b.id}/rows`, { c: { [col.id]: 'corto' } })).j.row;
+    const r1 = await req('PUT', `/api/bases/${b.id}/rows/${fila.id}`, { c: { [col.id]: 'z'.repeat(2001) } }); igual(r1.s, 400); cierto(/demasiado largo/.test(r1.j.error));
+    const b2 = (await req('PUT', `/api/bases/${b.id}/schema`, { columnas: [...b.columns, { nombre: 'Cifra', tipo: 'number' }, { nombre: 'Web', tipo: 'url' }], vistas: b.views })).j;
+    const num = b2.columns.find(c => c.nombre === 'Cifra'), web = b2.columns.find(c => c.nombre === 'Web');
+    igual((await req('PUT', `/api/bases/${b.id}/rows/${fila.id}`, { c: { [num.id]: 'abc' } })).s, 400, 'número no válido');
+    igual((await req('PUT', `/api/bases/${b.id}/rows/${fila.id}`, { c: { [web.id]: 'ejemplo.com' } })).s, 400, 'enlace sin http');
+    igual((await req('GET', `/api/bases/${b.id}`)).j.rows.find(r => r.id === fila.id).c[col.id], 'corto', 'el dato anterior sigue');
+    igual((await req('POST', '/api/contacts', { first: 'Ana', company: 'e'.repeat(121) })).s, 400, 'empresa demasiado larga');
+    igual((await req('POST', '/api/games', { title: 't'.repeat(161), status: 'pendiente' })).s, 400, 'título de juego demasiado largo');
+  });
+  await prueba('versiones: mover un archivo a la ruta de otro con historial no borra ese historial', async () => {
+    fs.writeFileSync(path.join(DATA, 'h1.txt'), 'uno');
+    igual((await req('PUT', '/api/text?path=h1.txt', { text: 'uno-b' })).s, 200);
+    fs.writeFileSync(path.join(DATA, 'h2.txt'), 'dos');
+    igual((await req('PUT', '/api/text?path=h2.txt', { text: 'dos-b' })).s, 200);
+    fs.unlinkSync(path.join(DATA, 'h2.txt'));
+    igual((await req('POST', '/api/move', { from: 'h1.txt', to: 'h2.txt' })).s, 200);
+    await dormir(400);   // las versiones se mueven en segundo plano
+    const apartado = path.join(DATA, '.kcc', 'borrados', 'versiones');
+    cierto(fs.existsSync(apartado) && fs.readdirSync(apartado).length > 0, 'el historial anterior queda apartado');
   });
   await prueba('código: crear proyecto y leer archivo', async () => {
     const c = await req('POST', '/api/codigo', { nombre: 'Web', plantilla: 'web' }); igual(c.s, 200); proyecto = c.j.id;

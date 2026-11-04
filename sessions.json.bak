@@ -1422,5 +1422,45 @@
     "lastSeenAt": 1793826271427,
     "ip": "127.0.0.1",
     "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+  },
+  "b04a5b097a67c861e50bb5e6a587cd53": {
+    "jti": "b04a5b097a67c861e50bb5e6a587cd53",
+    "username": "admin",
+    "createdAt": 1793826274005,
+    "lastSeenAt": 1793826275875,
+    "ip": "127.0.0.1",
+    "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+  },
+  "154635084b7b105bdb8c4bee64985c1f": {
+    "jti": "154635084b7b105bdb8c4bee64985c1f",
+    "username": "admin",
+    "createdAt": 1793826850139,
+    "lastSeenAt": 1793826854559,
+    "ip": "127.0.0.1",
+    "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+  },
+  "0c33f3890d9f8e4d97be62ded0b45bb9": {
+    "jti": "0c33f3890d9f8e4d97be62ded0b45bb9",
+    "username": "admin",
+    "createdAt": 1793826856004,
+    "lastSeenAt": 1793826860368,
+    "ip": "127.0.0.1",
+    "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+  },
+  "7ed978d1787af74695a8d4dd9e71b8b3": {
+    "jti": "7ed978d1787af74695a8d4dd9e71b8b3",
+    "username": "admin",
+    "createdAt": 1793826876962,
+    "lastSeenAt": 1793826881472,
+    "ip": "127.0.0.1",
+    "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+  },
+  "c13325c579f9d8c18d4857a40ed8c97a": {
+    "jti": "c13325c579f9d8c18d4857a40ed8c97a",
+    "username": "admin",
+    "createdAt": 1793826882867,
+    "lastSeenAt": 1793826884778,
+    "ip": "127.0.0.1",
+    "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
   }
 }
