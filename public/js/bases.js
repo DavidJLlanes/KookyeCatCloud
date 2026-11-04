@@ -317,7 +317,7 @@
     };
     dibuja();
     K.modal({ title: 'Columnas', sub: 'El tipo de una columna no se puede cambiar una vez creada', content: w, cls: 'wide', actions: [{ label: 'Cancelar' }, { label: 'Guardar', primary: true, onClick: async () => {
-      try { S.base = await K.put(`/api/bases/${S.base.id}/schema`, { columnas: cols, vistas: S.base.views }); if (!S.base.views.some(v => v.id === S.vista)) S.vista = S.base.views[0].id; pinta(); logros(); return true; } catch (e) { K.fail(e); return false; }
+      try { S.base = await K.put(`/api/bases/${S.base.id}/schema`, { columnas: cols, conocidas: S.base.columns.map(c => c.id), vistas: S.base.views }); if (!S.base.views.some(v => v.id === S.vista)) S.vista = S.base.views[0].id; pinta(); logros(); return true; } catch (e) { K.fail(e); return false; }
     } }] });
   }
 
@@ -339,12 +339,12 @@
     const f5 = el('div', 'bs-row3'); const a5 = el('label', 'bs-field'); a5.append(el('span', null, 'Filtrar'), fc); const b5 = el('label', 'bs-field'); b5.append(el('span', null, 'Condición'), fo); const c5 = el('label', 'bs-field'); c5.append(el('span', null, 'Valor'), fv); f5.append(a5, b5, c5);
     w.append(f1, f2, f3, f4, f5);
     const acts = [{ label: 'Cancelar' }];
-    if (!nueva2 && S.base.views.length > 1) acts.push({ label: 'Eliminar vista', danger: true, onClick: async () => { try { S.base = await K.put(`/api/bases/${S.base.id}/schema`, { columnas: S.base.columns, vistas: S.base.views.filter(x => x.id !== v.id) }); S.vista = S.base.views[0].id; pinta(); return true; } catch (e) { K.fail(e); return false; } } });
+    if (!nueva2 && S.base.views.length > 1) acts.push({ label: 'Eliminar vista', danger: true, onClick: async () => { try { S.base = await K.put(`/api/bases/${S.base.id}/schema`, { vistas: S.base.views.filter(x => x.id !== v.id) }); S.vista = S.base.views[0].id; pinta(); return true; } catch (e) { K.fail(e); return false; } } });
     acts.push({ label: 'Guardar', primary: true, onClick: async () => {
       if (tipo.value === 'kanban' && !agr.value) { K.toast('Para un tablero necesitas una columna de tipo Selección'); return false; }
       const nv = { ...(v || {}), nombre: nom.value, tipo: tipo.value, agrupa: tipo.value === 'kanban' ? agr.value : undefined, orden: oc.value ? { col: oc.value, dir: od.value } : null, filtro: fc.value ? { col: fc.value, op: fo.value, valor: fv.value } : null };
       const vistas = nueva2 ? [...S.base.views, nv] : S.base.views.map(x => x.id === v.id ? nv : x);
-      try { S.base = await K.put(`/api/bases/${S.base.id}/schema`, { columnas: S.base.columns, vistas }); if (nueva2) S.vista = S.base.views[S.base.views.length - 1].id; S.ordenLocal = null; pinta(); return true; } catch (e) { K.fail(e); return false; }
+      try { S.base = await K.put(`/api/bases/${S.base.id}/schema`, { vistas }); if (nueva2) S.vista = S.base.views[S.base.views.length - 1].id; S.ordenLocal = null; pinta(); return true; } catch (e) { K.fail(e); return false; }
     } });
     K.modal({ title: nueva2 ? 'Nueva vista' : 'Editar vista', content: w, cls: 'wide', actions: acts });
   }

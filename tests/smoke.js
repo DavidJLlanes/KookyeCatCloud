@@ -194,6 +194,33 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     const t = (await req('GET', '/api/trash')).j.items.filter(e => e.from === 'conc');
     igual(t.length, 20, 'las 20 entradas están en el índice');
   });
+  await prueba('notas: un dispositivo con la nota desfasada no pisa lo que guardó otro (409 conflicto)', async () => {
+    const A = { headers: { 'X-KCC-Client': 'disp-A' } }, B = { headers: { 'X-KCC-Client': 'disp-B' } };
+    const n = (await req('POST', '/api/notes', { type: 'note', title: 'Conflicto', body: 'v0' }, A)).j.item;
+    const base = (await req('GET', '/api/notes/' + n.id, undefined, A)).j.bodyAt || 0;
+    const a1 = await req('PUT', '/api/notes/' + n.id, { body: 'v1 desde A', base }, A); igual(a1.s, 200);
+    const a2 = await req('PUT', '/api/notes/' + n.id, { body: 'v2 desde A', base }, A); igual(a2.s, 200, 'el mismo cliente no choca consigo mismo');
+    const b1 = await req('PUT', '/api/notes/' + n.id, { body: 'texto viejo de B', base }, B); igual(b1.s, 409, 'B tenía una versión anterior');
+    igual((await req('GET', '/api/notes/' + n.id)).j.body, 'v2 desde A', 'no se pisó');
+    const bAct = (await req('GET', '/api/notes/' + n.id, undefined, B)).j.bodyAt;
+    igual((await req('PUT', '/api/notes/' + n.id, { body: 'B al día', base: bAct }, B)).s, 200, 'con la versión al día sí guarda');
+    igual((await req('PUT', '/api/notes/' + n.id, { body: 'sin base' }, A)).s, 200, 'sin base (envío al cerrar) no se comprueba');
+  });
+  await prueba('bases: un cliente desfasado no borra columnas creadas en otro dispositivo', async () => {
+    const b0 = (await req('POST', '/api/bases', { nombre: 'Desfase', plantilla: 'vacia' })).j;
+    const colsA = b0.columns.map(c => ({ ...c }));
+    // Otro dispositivo añade una columna y le pone datos
+    const b1 = (await req('PUT', `/api/bases/${b0.id}/schema`, { columnas: [...b0.columns, { nombre: 'Nueva', tipo: 'text' }], vistas: b0.views })).j;
+    const nueva = b1.columns.find(c => c.nombre === 'Nueva');
+    const fila = (await req('POST', `/api/bases/${b0.id}/rows`, { c: { [nueva.id]: 'dato importante' } })).j.row;
+    // El cliente desfasado cambia solo vistas y luego renombra su columna
+    igual((await req('PUT', `/api/bases/${b0.id}/schema`, { vistas: b0.views })).s, 200);
+    colsA[0].nombre = 'Renombrada';
+    const fin = (await req('PUT', `/api/bases/${b0.id}/schema`, { columnas: colsA, conocidas: b0.columns.map(c => c.id), vistas: b0.views })).j;
+    cierto(fin.columns.some(c => c.id === nueva.id), 'la columna nueva sigue');
+    igual(fin.rows.find(r => r.id === fila.id).c[nueva.id], 'dato importante', 'y sus datos');
+    cierto(fin.columns.some(c => c.nombre === 'Renombrada'), 'el renombrado se aplica');
+  });
   await prueba('código: crear proyecto y leer archivo', async () => {
     const c = await req('POST', '/api/codigo', { nombre: 'Web', plantilla: 'web' }); igual(c.s, 200); proyecto = c.j.id;
     igual((await req('GET', `/api/codigo/${proyecto}/texto?ruta=index.html`)).j.binario, false);

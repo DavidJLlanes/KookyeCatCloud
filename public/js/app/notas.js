@@ -294,6 +294,7 @@ async function abrirNota(id) {
     if (!res.ok) { $('note-saved').textContent = ''; showToast(nota.error || 'No se pudo abrir'); return; }
     NT.abierta = id;
     NT.sucia = false;
+    NT.base = nota.bodyAt || 0;   // para detectar si otro dispositivo la cambia mientras la tienes abierta
     $('note-title').value = nota.title;
     $('note-body').value = nota.body || '';
     hide('editor-vacio');
@@ -348,6 +349,11 @@ async function reintentaPendientes() {
   for (const [id, c] of [...NT.pendientes]) {
     if (id === NT.abierta && NT.sucia) continue;          // la nota abierta ya tiene cambios más nuevos
     try {
+      if (id.startsWith('conflicto-')) {   // copia en conflicto que no se pudo crear: se crea ahora como nota nueva
+        const r = await post(BASE + '/api/notes', { type: 'note', title: `${c.title} (copia en conflicto)`.slice(0, 120), body: c.body });
+        if (r.ok) { pendiente(id, null); loadNotes(true); }
+        continue;
+      }
       if (c.restaurada) {
         const r = await api(BASE + '/api/notes/' + qs(id));
         if (r.status === 404) { pendiente(id, null); continue; }
@@ -371,19 +377,38 @@ window.addEventListener('pagehide', guardaAlOcultar);
 setTimeout(() => { if (NT.pendientes.size) reintentaPendientes(); }, 4000);
 window.addEventListener('online', () => { reintentaPendientes(); });
 
+// Otro dispositivo cambió la nota mientras estaba abierta aquí: no se pisa ninguna de las dos. Lo escrito aquí se guarda
+// como una nota nueva «(copia en conflicto)» junto a la original y se abre la versión del servidor.
+async function resuelveConflicto(id, cuerpo) {
+  const it = NT.items.find(i => i.id === id) || {};
+  const hora = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  try {
+    const r = await post(BASE + '/api/notes', { type: 'note', title: `${cuerpo.title} (copia en conflicto ${hora})`.slice(0, 120), body: cuerpo.body, parent: it.parent || '' });
+    if (!r.ok) throw new Error(await errorOf(r, 'No se pudo guardar la copia'));
+    showToast('Esta nota se cambió en otro dispositivo. Tu versión se ha guardado como «copia en conflicto».');
+  } catch (e) {
+    pendiente('conflicto-' + id, cuerpo);   // al menos queda en el navegador
+    showToast('Esta nota se cambió en otro dispositivo y no se pudo guardar tu copia: ' + e.message);
+  }
+  await loadNotes(true);
+  if (NT.abierta === id) { NT.sucia = false; await abrirNota(id); }
+}
 async function guardarAhora() {
   clearTimeout(NT.guardando);
   if (!NT.abierta || !NT.sucia) { if (NT.pendientes.size) reintentaPendientes(); return; }
   const id = NT.abierta;
   const cuerpo = { title: $('note-title').value.trim() || 'Nota sin título', body: $('note-body').value };
+  const base = NT.base || 0;
   NT.sucia = false;
   try {
     const res = await api(BASE + '/api/notes/' + qs(id), {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cuerpo),
+      body: JSON.stringify({ ...cuerpo, base }),
     });
+    if (res.status === 409) { pendiente(id, null); await resuelveConflicto(id, cuerpo); return; }
     if (res.ok) {
       pendiente(id, null);
+      try { const j = await res.clone().json(); if (NT.abierta === id && j.item && j.item.bodyAt) NT.base = j.item.bodyAt; } catch { /* sin cuerpo */ }
       if (NT.abierta === id) {
         $('note-saved').textContent = 'Guardado';
         $('note-saved').classList.add('ok');

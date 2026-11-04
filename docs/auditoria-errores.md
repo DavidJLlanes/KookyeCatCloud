@@ -52,3 +52,17 @@ Revisión de todo lo que borra, mueve o sobrescribe (servidor, WebDAV, papelera,
 | 18 | Código (cliente) | Si el guardado fallaba, abrir otro archivo o salir del proyecto descartaba lo escrito; no se guardaba al ocultar la app | Media | No cambia de archivo ni sale si no pudo guardar; guarda al ocultar |
 
 Pruebas nuevas: WebDAV (mismo origen y destino, destino que contiene al origen, sobrescribir sin temporales, borrar a la papelera) y 20 borrados en paralelo. Comprobado en navegador (escritorio y 390 px) el guardado al ocultar en Notas y la apertura de archivos en Código.
+
+## Tercera auditoría (4 nov 2026, noche)
+
+Foco: ediciones desde **varios dispositivos o pestañas** (un cliente con datos desfasados que guarda encima) y texto escrito que se pierde al cerrar un diálogo.
+
+| # | Dónde | Fallo | Gravedad | Arreglo |
+|---|---|---|---|---|
+| 19 | Notas | Una nota abierta en el móvil y cambiada luego en el PC: al escribir una letra en el móvil, su versión vieja **sobrescribía** lo del PC (el salvavidas solo saltaba si el texto encogía a menos de la mitad). (confirmado) | Alta | El cliente manda la versión del texto que abrió (`base`); si otro cliente guardó algo distinto después, el servidor responde 409 y el cliente guarda lo suyo como nota nueva «… (copia en conflicto HH:MM)» y abre la versión del servidor. No se pierde ninguna de las dos. Las pestañas/dispositivos se distinguen por `X-KCC-Client`, así que un mismo cliente nunca choca consigo mismo |
+| 20 | Bases | Cambiar o borrar una vista reenviaba todas las columnas que tenía el cliente; si estaba desfasado, **se borraban las columnas creadas en otro dispositivo con todos sus datos**. Editar columnas tenía el mismo problema. (confirmado) | Alta | Cambiar vistas ya no toca columnas; al editar columnas, el cliente dice cuáles conocía y el servidor conserva las que no conocía |
+| 21 | Todos los diálogos (`K.modal`) | Un toque fuera o Escape cerraba el diálogo y **tiraba lo escrito** (descripción de un evento, notas de un contacto, un prompt largo…) | Media | Si hay texto escrito (área de texto, editor o campo de 20+ caracteres) se pregunta «¿Descartar los cambios?» antes de cerrar |
+
+Riesgos que quedan en esta línea: contactos, eventos y juegos se guardan como ficha completa (gana el último guardado si se edita la misma ficha a la vez en dos dispositivos); el editor de texto de Archivos también, pero ahí cada guardado deja la versión anterior en «Versiones».
+
+Pruebas nuevas: conflicto de notas entre dos clientes (409 y sin pisar), columnas de Bases con un cliente desfasado. En navegador (escritorio y 390 px): diálogo que pregunta antes de descartar, y conflicto real entre dos pestañas (la nota conserva lo del otro dispositivo y lo escrito aquí queda como copia).

@@ -25,4 +25,4 @@ Node 20 + Express 4 + JS vanilla (PWA). Respuestas al usuario en español, breve
 - Todo leer-modificar-guardar sobre el mismo archivo va por `updateJson` o por una cola; el servidor no debe aceptar un guardado que deje vacío lo que antes tenía contenido sin dejar copia.
 - Comprobar presencia con `in`/`has`, no con la veracidad del valor: `0`, `''` y `[]` son valores válidos.
 - Todo módulo nuevo añade su prueba de humo de: lectura dañada, escritura concurrente y valor vacío.
-
+- Ediciones desde varios dispositivos: los guardados de textos largos mandan la versión que abrieron (como `base` en notas) y el servidor no sobrescribe un cambio ajeno más nuevo; nunca reenviar al servidor partes que el usuario no ha tocado (p. ej. columnas al cambiar una vista).

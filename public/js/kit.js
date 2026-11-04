@@ -121,10 +121,24 @@ K.modal = function ({ title, sub, cls = '', content, actions = [], onClose, dism
       if (onClose) onClose(valor);
     },
   };
+  // Un toque fuera o Escape ya no tira lo escrito: si el formulario tiene texto escrito (un área de texto, un editor o un
+  // campo con algo de longitud), se pregunta antes de descartarlo. Los botones (Guardar, Cancelar…) no cambian.
+  modal.addEventListener('input', (e) => {
+    const t = e.target;
+    if (t && (t.tagName === 'TEXTAREA' || t.isContentEditable || (t.tagName === 'INPUT' && /^(text|search|url|email|tel|)$/.test(t.type || '') && String(t.value || '').length >= 20))) h.sucio = true;
+  });
+  h.intentaCerrar = async () => {
+    if (h.sucio && actions.length && K.confirm && !h._preguntando) {
+      h._preguntando = true;
+      try { if (!await K.confirm('Hay cambios sin guardar. ¿Descartarlos?', { ok: 'Descartar', danger: true })) return; }
+      finally { h._preguntando = false; }
+    }
+    h.close();
+  };
   if (dismiss) {
     let abajo = false;
     overlay.addEventListener('mousedown', (e) => { abajo = e.target === overlay; });
-    overlay.addEventListener('click', (e) => { if (abajo && e.target === overlay) h.close(); });
+    overlay.addEventListener('click', (e) => { if (abajo && e.target === overlay) h.intentaCerrar(); });
   }
   h.dismiss = dismiss;
   _pila.push(h);
@@ -137,7 +151,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (K._popClose) { K._popClose(); e.stopPropagation(); return; }
   const top = _pila[_pila.length - 1];
-  if (top && top.dismiss) { top.close(); e.stopPropagation(); }
+  if (top && top.dismiss) { (top.intentaCerrar || top.close)(); e.stopPropagation(); }
 }, true);
 
 K.confirm = (texto, { ok = 'Aceptar', danger = false, title = 'Confirmar' } = {}) => new Promise((res) => {
