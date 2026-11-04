@@ -151,6 +151,16 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     cierto((await req('GET', `/api/bases/${b.j.id}/export?format=csv`)).s === 200, 'csv');
   });
   let proyecto, prompt;
+  await prueba('código: archivos vacíos siguen leyéndose tras guardar otros (el objeto de 0 bytes no se limpia)', async () => {
+    const c = await req('POST', '/api/codigo', { nombre: 'Vacíos' }); igual(c.s, 200); const id = c.j.id;
+    igual((await req('PUT', `/api/codigo/${id}/archivo`, { ruta: 'vacio.txt', contenido: '' })).s, 200);
+    igual((await req('PUT', `/api/codigo/${id}/archivo`, { ruta: 'otro.txt', contenido: 'hola' })).s, 200);
+    const t = await req('GET', `/api/codigo/${id}/texto?ruta=vacio.txt`); igual(t.s, 200); igual(t.j.contenido, '');
+    // aunque el objeto vacío falte en disco (proyectos creados con la versión anterior), se recrea al leer
+    for (const f of fs.readdirSync(path.join(DATA, '.kcc', 'codigo', id, 'objetos'))) if (f.startsWith('e3b0c442')) fs.unlinkSync(path.join(DATA, '.kcc', 'codigo', id, 'objetos', f));
+    igual((await req('GET', `/api/codigo/${id}/texto?ruta=vacio.txt`)).s, 200, 'se recrea el objeto vacío');
+    igual((await req('GET', `/api/codigo/${id}/zip`)).s, 200, 'el ZIP también');
+  });
   await prueba('código: crear proyecto y leer archivo', async () => {
     const c = await req('POST', '/api/codigo', { nombre: 'Web', plantilla: 'web' }); igual(c.s, 200); proyecto = c.j.id;
     igual((await req('GET', `/api/codigo/${proyecto}/texto?ruta=index.html`)).j.binario, false);
