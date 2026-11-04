@@ -119,7 +119,8 @@
     }
     pie.appendChild(btn('i-move', 'Copiar o mover a…', () => K.transferir.abre({ tipo: 'portapapeles', ids: [i.id], titulo: i.type === 'text' ? 'texto del portapapeles' : i.name }, { alTerminar: () => load(true) })));
     pie.appendChild(btn(i.pinned ? 'i-pin-fill' : 'i-pin', i.pinned ? 'Dejar de fijar' : 'Fijar (no caduca)', () => accion(() => K.put('/api/clip/' + i.id, { pinned: !i.pinned }))));
-    pie.appendChild(btn('i-trash', 'Borrar', () => accion(() => K.del('/api/clip/' + i.id))));
+    // Borrar del portapapeles es definitivo (no pasa por la papelera): se confirma
+    pie.appendChild(btn('i-trash', 'Borrar', async () => { if (!await K.confirm(i.type === 'text' ? 'Se borrará este texto del portapapeles. No se puede deshacer.' : `Se borrará «${i.name}» del portapapeles. No se puede deshacer.`, { ok: 'Borrar', danger: true })) return; accion(() => K.del('/api/clip/' + i.id)); }));
     c.appendChild(pie);
     return c;
   }

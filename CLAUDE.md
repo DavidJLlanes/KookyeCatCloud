@@ -26,3 +26,4 @@ Node 20 + Express 4 + JS vanilla (PWA). Respuestas al usuario en español, breve
 - Comprobar presencia con `in`/`has`, no con la veracidad del valor: `0`, `''` y `[]` son valores válidos.
 - Todo módulo nuevo añade su prueba de humo de: lectura dañada, escritura concurrente y valor vacío.
 - Ediciones desde varios dispositivos: los guardados de textos largos mandan la versión que abrieron (como `base` en notas) y el servidor no sobrescribe un cambio ajeno más nuevo; nunca reenviar al servidor partes que el usuario no ha tocado (p. ej. columnas al cambiar una vista).
+- Borrar: nada de datos del usuario se elimina en el acto. Va a una papelera o se aparta con `store.guardaBorrado` (30 días). Los textos largos no se recortan en silencio (`store.textoLargo`): se rechazan con aviso, salvo en importaciones.

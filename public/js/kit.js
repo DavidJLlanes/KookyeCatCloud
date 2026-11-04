@@ -79,6 +79,11 @@ K.ago = function (ms) {
 
 /* ---------- Modales ---------- */
 const _pila = [];
+// Secciones con cambios sin guardar (Notas, Código…): la recarga automática por versión nueva espera a que no haya ninguno
+K._sinGuardar = [];
+K.registraSinGuardar = (fn) => { K._sinGuardar.push(fn); };
+K.haySinGuardar = () => K._sinGuardar.some((fn) => { try { return !!fn(); } catch { return false; } });
+
 K.modal = function ({ title, sub, cls = '', content, actions = [], onClose, dismiss = true, bare = false } = {}) {
   const overlay = el('div', 'overlay');
   const modal = el('div', 'modal ' + cls);

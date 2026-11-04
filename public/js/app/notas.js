@@ -373,6 +373,9 @@ function guardaAlOcultar() {
   guardarAhora();
 }
 document.addEventListener('visibilitychange', () => { if (document.hidden) guardaAlOcultar(); });
+// kit.js se carga después que este archivo: el registro espera a que estén todos los scripts
+// (los pendientes ya están copiados en el navegador: no impiden recargar)
+document.addEventListener('DOMContentLoaded', () => { if (window.K && K.registraSinGuardar) K.registraSinGuardar(() => NT.sucia); });
 window.addEventListener('pagehide', guardaAlOcultar);
 setTimeout(() => { if (NT.pendientes.size) reintentaPendientes(); }, 4000);
 window.addEventListener('online', () => { reintentaPendientes(); });

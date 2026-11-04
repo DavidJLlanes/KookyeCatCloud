@@ -252,6 +252,33 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     const b = (await req('GET', '/api/text?path=peq.txt')).j;
     igual((await req('PUT', '/api/text?path=peq.txt', { text: 'mi versión', base: b.mtime })).s, 200);
   });
+  await prueba('texto largo: se rechaza con aviso en vez de recortarse en silencio (y la importación sí lo recorta)', async () => {
+    const largo = 'x'.repeat(5001);
+    const r = await req('POST', '/api/contacts', { first: 'Largo', notes: largo }); igual(r.s, 400); cierto(/demasiado largo/.test(r.j.error), 'mensaje claro');
+    igual((await req('POST', '/api/calendar/events', { title: 'Largo', start: '2026-12-02T10:00', end: '2026-12-02T11:00', description: largo })).s, 400);
+    const vcf = 'BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Importado Largo\r\nN:Largo;Importado;;;\r\nNOTE:' + 'y'.repeat(6000) + '\r\nEND:VCARD\r\n';
+    const imp = await fetch(BASE + '/api/contacts/import', { method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'text/vcard' }, body: vcf });
+    const j = await imp.json(); igual(j.creados, 1, 'la importación no se salta la ficha');
+  });
+  await prueba('borrados sin papelera se apartan 30 días (bases, código, contactos, juegos, eventos)', async () => {
+    const b = (await req('POST', '/api/bases', { nombre: 'Para borrar' })).j; igual((await req('DELETE', '/api/bases/' + b.id)).s, 200);
+    const c = (await req('POST', '/api/codigo', { nombre: 'Para borrar' })).j; igual((await req('DELETE', '/api/codigo/' + c.id)).s, 200);
+    const k = (await req('POST', '/api/contacts', { first: 'Para borrar' })).j.contact; igual((await req('DELETE', '/api/contacts/' + k.id)).s, 200);
+    const g = (await req('POST', '/api/games', { title: 'Para borrar', status: 'pendiente' })).j; igual((await req('DELETE', '/api/games/' + g.id)).s, 200);
+    const e = (await req('POST', '/api/calendar/events', { title: 'Para borrar', start: '2026-12-03T10:00', end: '2026-12-03T11:00' })).j; igual((await req('DELETE', '/api/calendar/events/' + (e.event || e).id)).s, 200);
+    const dir = path.join(DATA, '.kcc', 'borrados');
+    for (const [m, id] of [['bases', b.id], ['codigo', c.id], ['contactos', k.id], ['juegos', g.id], ['calendario', (e.event || e).id]]) {
+      cierto(fs.readdirSync(path.join(dir, m)).some(n => n.includes(id)), m + ' apartado');
+    }
+  });
+  await prueba('caja fuerte: meter una carpeta incluye sus archivos ocultos (antes se perdían)', async () => {
+    igual((await req('POST', '/api/vault/setup', { password: 'clave-de-la-caja-1' })).s, 200);
+    fs.mkdirSync(path.join(DATA, 'proy', '.git'), { recursive: true });
+    fs.writeFileSync(path.join(DATA, 'proy', 'a.txt'), 'a'); fs.writeFileSync(path.join(DATA, 'proy', '.env'), 'SECRETO=1'); fs.writeFileSync(path.join(DATA, 'proy', '.git', 'HEAD'), 'ref');
+    igual((await req('POST', '/api/vault/import', { paths: ['proy'], parent: '' })).s, 200);
+    const items = (await req('GET', '/api/vault/items')).j.items.map(i => i.name);
+    cierto(items.includes('.env') && items.includes('.git') && items.includes('HEAD'), 'los ocultos están en la caja: ' + items.join(','));
+  });
   await prueba('código: crear proyecto y leer archivo', async () => {
     const c = await req('POST', '/api/codigo', { nombre: 'Web', plantilla: 'web' }); igual(c.s, 200); proyecto = c.j.id;
     igual((await req('GET', `/api/codigo/${proyecto}/texto?ruta=index.html`)).j.binario, false);

@@ -574,6 +574,13 @@
   };
   // Al ocultar la app (cambiar de app en el móvil, cerrar la pestaña) se guarda ya, sin esperar al temporizador
   document.addEventListener('visibilitychange', () => { if (document.hidden && S.p && !S.guardado) guardaYa(); });
-  window.addEventListener('pagehide', () => { if (S.p && !S.guardado) guardaYa(); });
+  // Al cerrar la pestaña, una petición normal puede cortarse: se manda con keepalive (si cabe, < 60 KB)
+  window.addEventListener('pagehide', () => {
+    if (!S.p || S.guardado || !S.ruta || S.ver) return;
+    const cuerpo = JSON.stringify({ ruta: S.ruta, contenido: S.texto });
+    if (cuerpo.length < 60000) { try { fetch(`${BASE}/api/codigo/${S.p.id}/archivo`, { method: 'PUT', keepalive: true, credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: cuerpo }); return; } catch { /* sigue */ } }
+    guardaYa();
+  });
+  K.registraSinGuardar(() => !!(S.p && !S.guardado));
   K.registerView('codigo', { open() { if (S.p) pinta(); else carga(); }, close() { guardaYa(); } });
 })();

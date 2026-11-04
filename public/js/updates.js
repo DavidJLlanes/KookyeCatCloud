@@ -13,6 +13,7 @@
   // No interrumpir una partida de Tetris ni un formulario en edición.
   let reg = null, ultimaBusqueda = 0, recargando = false, pendiente = false;
   const puedeRecargar = () => !document.hidden && !document.querySelector('#view-tetris:not([hidden])') &&
+    !(window.K && K.haySinGuardar && K.haySinGuardar()) &&   // nada a medio guardar (notas, código)
     !document.querySelector('input:focus,textarea:focus,[contenteditable="true"]:focus');
   function aplica() {
     if (!pendiente || recargando || !puedeRecargar()) return;

@@ -45,7 +45,7 @@
         ver.disabled = !e.start;
         ver.addEventListener('click', () => { m.close(); switchTab('calendar'); if (K.calendar && K.calendar.goto) K.calendar.goto(K.d.parse(e.start), 'month'); });
         const del = el('button', 'btn ghost icon tiny'); del.type = 'button'; del.title = 'Quitar'; del.setAttribute('aria-label', 'Quitar'); del.appendChild(icon('i-trash'));
-        del.addEventListener('click', async () => { try { await K.del('/api/calendar/events/' + e.id); K.bus.emit('calendar'); await carga(); } catch (x) { K.fail(x); } });
+        del.addEventListener('click', async () => { if (!await K.confirm(`Se eliminará «${e.title}» del calendario.`, { ok: 'Eliminar', danger: true })) return; try { await K.del('/api/calendar/events/' + e.id); K.bus.emit('calendar'); await carga(); } catch (x) { K.fail(x); } });
         f.append(chk, txt, ver, del);
         lista.appendChild(f);
       }

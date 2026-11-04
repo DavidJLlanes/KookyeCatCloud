@@ -84,3 +84,28 @@ Revisión sistemática: todos los manejadores de la API (con un script que busca
 Revisado sin hallazgos: el service worker no guarda en caché nada de `/api/`, `/dav/`, `/s/`, `/u/`; las importaciones solo añaden; borrar un usuario no borra sus datos; las demás llamadas de red pasan por `api()` (con tiempo máximo) salvo login, passkeys, subidas y la versión, que no lo necesitan; los tamaños que se cargan en memoria están acotados.
 
 Riesgos que quedan: el registro de actividad se recorta reescribiéndolo (si coincide con una línea nueva, esa línea puede perderse; no son datos del usuario); si la copia de una versión falla (p. ej. disco lleno), el archivo se guarda igualmente sin versión.
+
+## Quinta auditoría, exhaustiva (4 nov 2026, noche)
+
+Revisión de: todo lo que borra (cada `rm`/`unlink` del servidor y cada borrado del cliente, con o sin confirmación), todos los errores que se tragan en silencio (`catch {}`), los límites de longitud de cada campo de texto, todas las rutas sin autenticación, las descompresiones, los deshacer, la recarga automática por versión nueva y los dos riesgos que quedaban de la auditoría anterior.
+
+| # | Dónde | Fallo | Gravedad | Arreglo |
+|---|---|---|---|---|
+| 29 | Caja fuerte: meter una carpeta | Los archivos ocultos de la carpeta (`.env`, `.git`…) **no se cifraban, pero la carpeta original se borraba entera**: se perdían. (confirmado) | Alta | Se incluyen también los ocultos |
+| 30 | Bases, proyectos de Código, contactos, juegos y eventos | Borrar era definitivo en el acto (una base o un proyecto entero con un toque y un «Aceptar») | Media | Lo borrado se aparta 30 días en `.kcc/borrados/<sección>/` y luego se elimina solo |
+| 31 | Contactos, eventos, juegos y prompts | Las descripciones, notas, reseñas y cuerpos más largos que el máximo **se recortaban en silencio** al guardar | Media | Se rechaza con un mensaje que dice cuánto sobra y el formulario sigue abierto; en importaciones sí se recorta (rechazar haría saltarse la ficha) |
+| 32 | Copiar o mover entre secciones: deshacer | Si el deshacer fallaba a medias, el envío quedaba como deshecho y lo apartado **se borraba al caducar** (1 minuto); los fallos al devolver datos se tragaban | Media | Si falla, lo apartado se conserva 30 días, se puede reintentar (los pasos ya hechos se saltan) y el error llega al usuario; devolver a su sitio ya no sobrescribe nada |
+| 33 | Archivos → Código al mover | Se apartaban (y luego borraban) también los archivos que Código descarta (`.DS_Store`, `Thumbs.db`) | Baja | Solo se apartan los que entraron en el proyecto |
+| 34 | Portapapeles y recordatorios vinculados | Borrar era definitivo y sin confirmación | Media | Se pide confirmación |
+| 35 | Recarga automática por versión nueva | Podía recargar con cambios sin guardar en Código o en Notas; al cerrar la pestaña, el guardado de Código podía cortarse | Media | No recarga si hay algo a medio guardar; Código manda lo último con `keepalive` al cerrar |
+| 36 | Registro de actividad (pendiente de la cuarta) | Una línea escrita durante la poda podía perderse | Baja | Poda síncrona y atómica, después de las escrituras en curso |
+| 37 | Versiones (pendiente de la cuarta) | Si fallaba guardar la versión anterior (disco lleno), el archivo se sobrescribía igualmente | Media | Se avisa y no se sobrescribe (salvo desde WebDAV, que no puede preguntar) |
+
+Revisado sin hallazgos: todas las rutas públicas son las previstas (inicio de sesión, passkeys, enlaces de compartir y de subida); la copia de seguridad, la exportación y la administración exigen administrador; el ZIP de Código no puede escribir fuera del proyecto (rutas normalizadas, sin `..`); las importaciones solo añaden; el servidor no borra archivos del usuario fuera de la papelera salvo temporales; los borrados de la caja fuerte son definitivos a propósito y piden la contraseña o lo avisan.
+
+Riesgos que quedan (conocidos y aceptados):
+- Mover un archivo con historial de versiones a la ruta de otro archivo borrado reemplaza el historial de aquel (el archivo borrado sigue en la papelera, sin sus versiones).
+- La copia de seguridad es diaria.
+- Ninguna auditoría garantiza que no haya fallos: estas cubren los patrones que ya hicieron perder datos y las rutas que borran, mueven o sobrescriben.
+
+Para recuperar algo de `.kcc/borrados/` (bases, proyectos, contactos, juegos, eventos borrados hace menos de 30 días) ver el README.
