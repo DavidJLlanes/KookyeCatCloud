@@ -233,7 +233,7 @@ async function deleteUser(username) {
 
 async function changeMyPassword() {
   const password = $('my-newpass').value;
-  if (!password || password.length < 6) { showToast('Mínimo 6 caracteres'); return; }
+  if (!password || password.length < 8) { showToast('Mínimo 8 caracteres'); return; }
   try {
     const res = await post(BASE + '/api/users/' + qs(state.user.username) + '/password', { password });
     if (res.ok) { showToast('Contraseña actualizada'); $('my-newpass').value = ''; }

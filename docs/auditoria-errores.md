@@ -177,3 +177,19 @@ Revisión de `lib/push/` y su cliente. Cada arreglo tiene prueba en `tests/modul
 | 5 | Prueba | El aviso de prueba se podía lanzar en bucle | Enfriamiento de 10 s (429) |
 
 Sin hallazgos: el destino de los envíos solo puede ser un servicio push de navegador (sin SSRF), la clave privada VAPID no sale al cliente, el endpoint de la suscripción tampoco, los avisos no se repiten (registro por clave), un fallo pasajero se reintenta a los 10 min y un dispositivo caducado (404/410) se quita solo. La ruta `/api/push/_ciclo` solo existe con `KCC_PUSH_PRUEBAS=1` (no usar en producción).
+
+## Séptima auditoría (9 nov 2026): general, segunda pasada
+
+Pruebas de caja negra contra la app en marcha (archivos internos por la web, fugas en errores, sesiones, fuerza bruta, cabeceras, reglas de usuarios y contraseñas). Pruebas nuevas en `tests/modulos/seguridad.js`.
+
+| # | Dónde | Hallazgo | Arreglo |
+|---|---|---|---|
+| 1 | `sendError` | Un error del sistema devolvía su texto al cliente, con rutas del servidor (`ENOENT … scandir '/…/data'`), y con estado 400 | Errores de disco/permisos y fallos de programación devuelven un mensaje general con el estado correcto (404, 403, 507…) y los graves se registran |
+| 2 | Cabeceras | Sin `Strict-Transport-Security` en la app | Se envía con HTTPS real (sin `includeSubDomains`, por si otros subdominios no tienen HTTPS) |
+| 3 | Inicio de sesión | `bcrypt.compareSync` bloqueaba a todos los usuarios ~70 ms por intento | `await bcrypt.compare` |
+| 4 | Contraseñas | Mínimo 6 y sin máximo: bcrypt ignora lo que pasa de 72 bytes | De 8 a 72 caracteres (cliente y servidor) |
+| 5 | Usuarios | «ADMIN» se podía crear junto a «admin» | Unicidad sin distinguir mayúsculas |
+
+Sin hallazgos: ningún archivo interno (`.env`, `.jwt-secret`, `users.json`, `vapid.json`, código, `.git`, `docs`) se sirve por la web, con ni sin sesión; el cierre de sesión invalida el token; tras 5 fallos el inicio de sesión se bloquea 15 min por IP y por usuario; sin `X-Powered-By` ni CORS abierto.
+
+Riesgo conocido: el bloqueo por intentos permite a un atacante bloquear a un usuario concreto durante 15 minutos (compromiso aceptado frente a la fuerza bruta). Las contraseñas ya existentes de menos de 8 caracteres siguen valiendo hasta que se cambien.
