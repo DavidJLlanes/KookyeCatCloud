@@ -135,3 +135,15 @@ Revisión del código nuevo (validación, persistencia, SSRF, XSS, borrados). Si
 | 5 | Sonidos | Un volumen guardado no numérico dejaba el volumen en NaN | Valor por defecto si no es un número |
 
 Sin hallazgos: ningún `innerHTML` con datos del usuario en los clientes nuevos (todo con `textContent`), enlaces solo http/https, iconos solo por cabecera real (nunca SVG), borrados con copia de 30 días y 409 en ediciones obsoletas.
+
+## Cuarta auditoría (9 nov 2026): recorte de la foto de perfil
+
+Revisión de `public/js/perfil-recorte.js` y del procesado de 300 × 300 WebP (calidad 75). Probado en el navegador con una foto de 6000 × 4000, una de 100 × 100, una con orientación EXIF y un archivo que no era imagen.
+
+| # | Dónde | Riesgo | Arreglo |
+|---|---|---|---|
+| 1 | Recorte | Las fotos enormes se redibujaban enteras en cada movimiento (lento en móvil) | Se reducen a 2400 px al abrirlas |
+| 2 | Recorte | Solo se podía encuadrar con puntero | Flechas para mover y +/− para el zoom |
+| 3 | Recorte | Una imagen sin dimensiones dejaba un recorte vacío | Se avisa y se cancela |
+
+Sin hallazgos: cancelar no sube nada, la orientación EXIF sale bien, una foto pequeña no se amplía en el cliente, un archivo que no es imagen lo rechaza el servidor con aviso y siempre se guarda 300 × 300 WebP.

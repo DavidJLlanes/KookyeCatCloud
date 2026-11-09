@@ -16,8 +16,16 @@
     });
   };
 
-  function abre(img, url, resolve) {
-    const nw = img.naturalWidth, nh = img.naturalHeight;
+  const MAX_LADO = 2400;            // las fotos enormes se reducen antes de encuadrar: arrastrar y hacer zoom sigue fluido
+
+  function abre(img0, url, resolve) {
+    let img = img0, nw = img0.naturalWidth, nh = img0.naturalHeight;
+    if (!nw || !nh) { URL.revokeObjectURL(url); K.toast('No se pudo abrir la imagen'); resolve(null); return; }
+    if (Math.max(nw, nh) > MAX_LADO) {
+      const r = MAX_LADO / Math.max(nw, nh), c = document.createElement('canvas');
+      c.width = Math.round(nw * r); c.height = Math.round(nh * r);
+      try { c.getContext('2d').drawImage(img0, 0, 0, c.width, c.height); img = c; nw = c.width; nh = c.height; } catch { /* se usa el original */ }
+    }
     const caja = el('div', 'pf-rec-caja'), lienzo = el('canvas', 'pf-rec-lienzo');
     const guia = el('div', 'pf-rec-guia');
     caja.append(lienzo, guia);
@@ -65,6 +73,14 @@
     });
     const suelta = (e) => { punteros.delete(e.pointerId); distAntes = 0; };
     caja.addEventListener('pointerup', suelta); caja.addEventListener('pointercancel', suelta);
+    // Teclado: flechas para mover, + y − para el zoom
+    caja.tabIndex = 0; caja.setAttribute('aria-label', 'Encuadre de la foto: flechas para mover, más y menos para el zoom');
+    caja.addEventListener('keydown', (e) => {
+      const paso = e.shiftKey ? 30 : 10, k = e.key;
+      if (k === 'ArrowLeft') ox += paso; else if (k === 'ArrowRight') ox -= paso; else if (k === 'ArrowUp') oy += paso; else if (k === 'ArrowDown') oy -= paso;
+      else if (k === '+' || k === '=') zoom(escala * 1.1); else if (k === '-') zoom(escala / 1.1); else return;
+      e.preventDefault(); pinta();
+    });
     caja.addEventListener('wheel', (e) => { e.preventDefault(); const r = caja.getBoundingClientRect(); zoom(escala * (e.deltaY < 0 ? 1.08 : 1 / 1.08), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
     zoomIn.addEventListener('input', () => zoom(min + (Number(zoomIn.value) / 100) * (max() - min)));
 
