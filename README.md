@@ -64,7 +64,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 - [Qué puedes hacer](#qué-puedes-hacer)
 - [Instalación](#instalación) — [local](#arrancar-en-local) · [VPS paso a paso](#despliegue-en-el-vps) · [dominio, subdominio o subcarpeta](#en-qué-dirección-instalarla)
-- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [bases](#bases), [código](#código), [exportar JSON](#exportar-json), [exportar a .txt, .md y PDF](#exportar-a-texto-markdown-y-pdf), [juegos](#juegos), [contactos](#contactos), [pagos](#pagos), [marcadores](#marcadores-web), [sonidos](#sonidos), [foto de perfil](#foto-de-perfil), [valores reutilizables](#valores-reutilizables), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
+- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [bases](#bases), [código](#código), [exportar JSON](#exportar-json), [exportar a .txt, .md y PDF](#exportar-a-texto-markdown-y-pdf), [juegos](#juegos), [contactos](#contactos), [pagos](#pagos), [marcadores](#marcadores-web), [avisos push](#avisos-push), [sonidos](#sonidos), [foto de perfil](#foto-de-perfil), [valores reutilizables](#valores-reutilizables), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
 - [Actualizaciones](#actualizaciones)
 - [Variables de entorno](#variables-de-entorno)
 - [Seguridad](#seguridad) · [Copias de seguridad](#copias-de-seguridad) · [Estructura del proyecto](#estructura-del-proyecto) · [Solución de problemas](#solución-de-problemas)
@@ -1046,6 +1046,20 @@ Favoritos con nombre, dirección, descripción, color y carpetas. El icono (favi
 - **Seguridad (SSRF)**: el servidor nunca descarga de direcciones privadas, locales ni reservadas; resuelve el nombre y conecta a la dirección ya comprobada, revalida cada redirección y limita tamaño y tiempo. `KCC_ICONOS_LOCALES=1` lo relaja solo para las pruebas.
 - Borrar una carpeta mueve sus marcadores a «Sin carpeta». Borrar un marcador lo aparta 30 días.
 
+## Avisos push
+
+Notificaciones en el móvil o el ordenador, también con la app cerrada. Se configuran en **Cuenta → Avisos**.
+
+- **Qué avisa:** *Pagos* (los días de «Avisar» de cada pago, el mismo día y si ha vencido, hasta 7 días), *Calendario* (los recordatorios de cada evento o tarea; los de día completo a la hora que elijas) y *Contactos* (cumpleaños y otras fechas, el mismo día o con 1, 2, 3, 7, 14 o 30 días de antelación).
+- **Cuándo:** cada sección tiene su interruptor y su hora; hay un interruptor general y un horario de silencio (por defecto 22:00-08:00; lo que cae dentro llega al terminar, y los del calendario hasta 12 h después).
+- **Privacidad:** por defecto el aviso es genérico («Tienes un pago por vencer»). Con «Mostrar el detalle» incluye nombre e importe; ese texto pasa por los servidores de Google, Apple o Mozilla.
+- **Dispositivos:** cada navegador se activa por separado (máximo 10); se pueden quitar y hay un aviso de prueba.
+- **iPhone/iPad:** solo funciona con la web instalada («Añadir a pantalla de inicio», iOS 16.4 o posterior).
+- **Carga del servidor:** un temporizador de un minuto que solo trabaja con usuarios con avisos activos; cada aviso es una petición HTTPS corta al servicio push del navegador. No mantiene conexiones abiertas.
+- **Seguridad:** solo se envía a los servicios push de los navegadores (FCM, Mozilla, Apple, Windows); cualquier otra dirección se rechaza (SSRF). Las claves VAPID se generan solas en `vapid.json` (fuera de git, incluidas en la copia de seguridad; si se pierden hay que volver a activar los avisos). `PUSH_CONTACT` fija el contacto que se da a los servicios push.
+- **Datos:** `<raíz>/.kcc/push/ajustes.json`, `suscripciones.json` y `enviados.json` (registro para no repetir). Código en `lib/push/` (`fuentes/` = qué avisa cada sección; para añadir otra, un archivo nuevo con `pendientes()`) y `public/js/push/`.
+- **Logros:** familia «Siempre al tanto» (avisos recibidos) y el especial «Aviso a navegantes».
+
 ## Sonidos
 
 Sonidos suaves de interfaz (avisos, logros, errores, abrir y cerrar), sintetizados con WebAudio: no hay archivos de audio. En Cuenta se elige el paquete, el volumen y el interruptor general. Se guarda por dispositivo (`localStorage`). Código en `public/js/sonidos/`.
@@ -1662,6 +1676,7 @@ lib/
   pagos/             Pagos y recordatorios (modelo, fechas, valores, resumen, rutas)
   marcadores/        Marcadores web (modelo, favicon, red con defensa SSRF, resumen, rutas)
   perfil/            Foto de perfil (procesado de imagen y rutas)
+  push/              Avisos push (ajustes, dispositivos, envío, programador y fuentes: pagos, calendario, contactos)
   valores.js         Valores reutilizables: catálogo por campo, unificación y revisión de duplicados (fábrica createValores)
   copias.js          Copia de seguridad: rutas de Administración, registro de intentos y comprobación de espacio (fábrica createCopias)
   copias-archivo.js  Empaquetado con tar (sin copiar en disco), medida y verificación del archivo de copia

@@ -37,7 +37,7 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
 
 (async () => {
   copia();
-  srv = spawn('node', ['server.js'], { cwd: APP, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: 'smoke-test-1', INSECURE_COOKIES: '1', TEXT_MAX: '512KB   # comentario al final, como en un .env de systemd', OFFICE_TIMEOUT: '90000    # ms', BASE_PATH: '', KCC_ICONOS_LOCALES: '1', THUMBS_DIR: path.join(TMP, 'thumbs'), COPIAS_DIR: path.join(TMP, 'copias') }, stdio: ['ignore', 'pipe', 'pipe'] });
+  srv = spawn('node', ['server.js'], { cwd: APP, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: 'smoke-test-1', INSECURE_COOKIES: '1', TEXT_MAX: '512KB   # comentario al final, como en un .env de systemd', OFFICE_TIMEOUT: '90000    # ms', BASE_PATH: '', KCC_ICONOS_LOCALES: '1', KCC_PUSH_PRUEBAS: '1', THUMBS_DIR: path.join(TMP, 'thumbs'), COPIAS_DIR: path.join(TMP, 'copias') }, stdio: ['ignore', 'pipe', 'pipe'] });
   let log = ''; srv.stdout.on('data', d => { log += d; }); srv.stderr.on('data', d => { log += d; });
   for (let i = 0; i < 60; i++) { try { if ((await fetch(BASE + '/api/version')).ok) break; } catch { /* aún no */ } await dormir(250); }
 
@@ -676,7 +676,7 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
   // Módulos con sus propias pruebas (tests/modulos/<modulo>.js)
   process.env.__KCC_BASE = BASE; process.env.__KCC_COOKIE = cookie;
   const ctx = { req, prueba, igual, cierto, DATA, BASE, cookie: () => cookie };
-  for (const m of ['pagos', 'marcadores', 'perfil']) await require('./modulos/' + m)(ctx);
+  for (const m of ['pagos', 'marcadores', 'perfil', 'push']) await require('./modulos/' + m)(ctx);
   await prueba('cierre de sesión', async () => { cierto((await req('POST', '/api/logout')).s < 400, 'logout'); });
 
   srv.kill();

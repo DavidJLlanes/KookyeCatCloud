@@ -2,6 +2,7 @@ node_modules/
 .thumbs/
 .env
 .jwt-secret
+vapid.json
 users.json
 users.json.tmp
 uploadlinks.json

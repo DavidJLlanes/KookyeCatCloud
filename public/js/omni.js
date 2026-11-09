@@ -26,6 +26,7 @@
     { t: 'Ir a Código', i: 'i-code', f: () => switchTab('codigo') },
     { t: 'Ir a Bases', i: 'i-table', f: () => switchTab('bases') },
     { t: 'Ir a Pagos', s: 'Recibos, seguros y suscripciones', i: 'i-wallet', f: () => switchTab('pagos') },
+    { t: 'Avisos y notificaciones', s: 'Elegir qué te avisa y cuándo', i: 'i-bell', f: () => switchTab('cuenta') },
     { t: 'Nuevo pago', s: 'Apuntar un recibo o seguro', i: 'i-wallet', f: () => K.pagos.nuevo() },
     { t: 'Ir a Marcadores', s: 'Tus webs favoritas', i: 'i-bookmark', f: () => switchTab('marcadores') },
     { t: 'Nuevo marcador', s: 'Guardar una web', i: 'i-bookmark', f: () => K.marcadores.nuevo() },

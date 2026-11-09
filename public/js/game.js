@@ -260,7 +260,7 @@
   function pintaLogros(c) {
     const s = G.state;
     const f = el('div', 'gm-filtros');
-    ['todos', 'Contenido', 'Uso', 'Tetris', '2048', 'Breakout', 'Arcade', 'Juegos', 'Bases', 'Pagos', 'Marcadores', 'Código', 'Seguridad', 'Especiales'].forEach(g => {
+    ['todos', 'Contenido', 'Uso', 'Tetris', '2048', 'Breakout', 'Arcade', 'Juegos', 'Bases', 'Pagos', 'Marcadores', 'Avisos', 'Código', 'Seguridad', 'Especiales'].forEach(g => {
       const b = el('button', 'gm-filtro' + (S.grupo === g ? ' on' : ''), g === 'todos' ? 'Todos' : g); b.type = 'button';
       b.addEventListener('click', () => { S.grupo = g; pinta(); }); f.appendChild(b);
     });
@@ -360,7 +360,7 @@
     ds.forEach(d => ctx.fill(new Path2D(d))); ctx.restore();
   }
   // Medalla hexagonal (borde del color del tramo y fondo del color de la categoría) para las tarjetas
-  const GRUPO_COL = { Contenido: ['#38bdf8', '#1d4ed8'], Uso: ['#4ade80', '#047857'], Tetris: ['#22d3ee', '#6d28d9'], '2048': ['#fdba74', '#dc2626'], Breakout: ['#f9a8d4', '#9333ea'], Arcade: ['#fde047', '#ea580c'], Juegos: ['#c4b5fd', '#4338ca'], Bases: ['#5eead4', '#0f766e'], Pagos: ['#fdba74', '#c2410c'], Marcadores: ['#93c5fd', '#1d4ed8'], Seguridad: ['#fca5a5', '#b91c1c'], Código: ['#86efac', '#15803d'], Especiales: ['#f0abfc', '#7e22ce'] };
+  const GRUPO_COL = { Contenido: ['#38bdf8', '#1d4ed8'], Uso: ['#4ade80', '#047857'], Tetris: ['#22d3ee', '#6d28d9'], '2048': ['#fdba74', '#dc2626'], Breakout: ['#f9a8d4', '#9333ea'], Arcade: ['#fde047', '#ea580c'], Juegos: ['#c4b5fd', '#4338ca'], Bases: ['#5eead4', '#0f766e'], Pagos: ['#fdba74', '#c2410c'], Marcadores: ['#93c5fd', '#1d4ed8'], Avisos: ['#fcd34d', '#b45309'], Seguridad: ['#fca5a5', '#b91c1c'], Código: ['#86efac', '#15803d'], Especiales: ['#f0abfc', '#7e22ce'] };
   function medalla(ctx, trazados, nombre, cx, cy, tam, tramo, grupo) {
     const [g1, g2] = GRUPO_COL[grupo] || ['#94a3b8', '#475569'];
     const hex = (r) => { ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 + i * Math.PI / 3; const px = cx + r * 0.93 * Math.cos(a), py = cy + r * Math.sin(a); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.closePath(); };

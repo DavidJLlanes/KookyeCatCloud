@@ -56,6 +56,7 @@ const createBases = require('./lib/bases');
 const createPagos = require('./lib/pagos');
 const createMarcadores = require('./lib/marcadores');
 const createPerfil = require('./lib/perfil');
+const createPush = require('./lib/push');
 const createCodigo = require('./lib/codigo');
 const createVinculos = require('./lib/vinculos');
 const createTransferir = require('./lib/transferir');
@@ -327,6 +328,9 @@ const pagosMod = createPagos({ express, userRoot, sendError, registrarActividad,
 // KCC_ICONOS_LOCALES=1 solo lo usan las pruebas (permite buscar iconos en un servidor local; en producción está prohibido: SSRF)
 const marcadoresMod = createMarcadores({ express, sharp, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido, permiteLocal: process.env.KCC_ICONOS_LOCALES === '1' });
 const perfilMod = createPerfil({ express, multer, sharp, userRoot, usuarios: () => loadUsers(), sendError, registrarActividad, alCambiar: alCambiarContenido });
+// Avisos push (lib/push): leen de Pagos, Calendario y Contactos, que se crean antes. Claves VAPID en <app>/vapid.json
+const pushMod = createPush({ express, userRoot, usuarios: () => loadUsers(), sendError, registrarActividad, alCambiar: alCambiarContenido, claveFile: path.join(APP_DIR, 'vapid.json'),
+  fuentes: { pagos: pagosMod.core, calendario: calendarMod.core, contactos: contactsMod.core } });
 // Módulos que aportan recuentos a la gamificación: todo módulo nuevo se añade aquí (ver CLAUDE.md)
 const codigoMod = createCodigo({ express, multer, ZipArchive, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido, valores: valoresMod.core });
 // Enviar entre secciones (Archivos ⇄ Código): copiar o mover, con deshacer de 1 minuto
@@ -339,7 +343,7 @@ const transferMod = createTransferir({ express, userRoot, resuelve: (user, r, wr
     get bases() { return basesMod.core; },
     get juegos() { return gamesMod.core; },
   } });
-const modulosConLogros = [gamesMod, basesMod, codigoMod, transferMod, valoresMod, pagosMod, marcadoresMod, perfilMod];
+const modulosConLogros = [gamesMod, basesMod, codigoMod, transferMod, valoresMod, pagosMod, marcadoresMod, perfilMod, pushMod];
 
 // Versiones de archivos de texto (se crea aquí porque WebDAV y las rutas de archivos la usan)
 const versionsMod = createVersions({
@@ -1661,6 +1665,7 @@ app.use('/api/bases', auth, basesMod.router);
 app.use('/api/pagos', auth, pagosMod.router);
 app.use('/api/marcadores', auth, marcadoresMod.router);
 app.use('/api/perfil', auth, perfilMod.router);
+app.use('/api/push', auth, pushMod.router);
 app.use('/api/codigo-vista', codigoMod.vistaRouter); // enlaces firmados y caducan: el iframe aislado no envía cookies
 app.use('/api/codigo', auth, codigoMod.router);
 app.use('/api/vinculos', auth, createVinculos({ express, prompts: promptsMod.core, codigo: codigoMod.core, sendError, registrarActividad }));
@@ -1765,5 +1770,5 @@ process.on('unhandledRejection', (e) => console.error('Promesa rechazada sin cap
 
 root.use(BASE_PATH || '/', app);
 
-root.listen(PORT, () => console.log(
-  `KookyeCatCloud escuchando en puerto ${PORT}${BASE_PATH ? `, bajo ${BASE_PATH}/` : ''}, datos en ${DATA_ROOT}`));
+root.listen(PORT, () => { console.log(
+  `KookyeCatCloud escuchando en puerto ${PORT}${BASE_PATH ? `, bajo ${BASE_PATH}/` : ''}, datos en ${DATA_ROOT}`); pushMod.arranca(); });
