@@ -1,6 +1,6 @@
 'use strict';
 /* Foto de perfil: tarjeta «Mi perfil» de Administración, avatar de la cabecera y fotos en la lista de usuarios.
-   La foto la procesa el servidor (cuadrada, WebP); aquí solo se elige, se sube y se pinta. */
+   Se elige, se recorta en cuadrado (perfil-recorte.js) y el servidor la guarda a 300 × 300 en WebP, calidad 75. */
 (function () {
   if (!window.K) return;
   const P = K.perfil = { v: null };
@@ -31,6 +31,7 @@
 
   async function sube(archivo) {
     if (!archivo) return;
+    if (K.perfil.recorta) { archivo = await K.perfil.recorta(archivo); if (!archivo) return; }     // null = cancelado
     const fd = new FormData(); fd.append('foto', archivo);
     try {
       const res = await api(`${BASE}/api/perfil/avatar`, { method: 'PUT', body: fd });

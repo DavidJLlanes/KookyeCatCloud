@@ -6,3 +6,11 @@
 .pf-datos{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 140px;}
 .pf-datos b{font-size:calc(16px*var(--fs,1));overflow-wrap:anywhere;}
 .pf-acc{display:flex;gap:8px;flex-wrap:wrap;}
+/* Recorte cuadrado (js/perfil-recorte.js) */
+.pf-rec{display:grid;justify-items:center;gap:12px;}
+.pf-rec-caja{position:relative;overflow:hidden;border-radius:12px;background:#000 repeating-conic-gradient(#222 0 25%,#333 0 50%) 0 0/16px 16px;touch-action:none;cursor:grab;max-width:100%;}
+.pf-rec-caja:active{cursor:grabbing;}
+.pf-rec-lienzo{display:block;}
+.pf-rec-guia{position:absolute;inset:0;border-radius:50%;pointer-events:none;box-shadow:0 0 0 999px rgba(0,0,0,.55),inset 0 0 0 2px rgba(255,255,255,.85);}
+.pf-rec-zoom{width:min(280px,72vw);}
+.pf-rec-ayuda{margin:0;text-align:center;font-size:calc(13px*var(--fs,1));}

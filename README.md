@@ -1052,7 +1052,7 @@ Sonidos suaves de interfaz (avisos, logros, errores, abrir y cerrar), sintetizad
 
 ## Foto de perfil
 
-En Administración se sube, cambia o quita la foto de cada usuario. Se recorta a 256 × 256 WebP con `sharp`. Datos en `<raíz>/.kcc/perfil/`; al quitarla se aparta 30 días. Código en `lib/perfil/`. Logro especial «Con cara y ojos».
+En Administración se sube, cambia o quita la foto de cada usuario. Antes de subirla se abre un recorte cuadrado (arrastrar, rueda, deslizador o pellizco; el círculo muestra cómo se verá). El servidor la guarda a 300 × 300 en WebP con calidad 75 (`sharp`); si el navegador no puede abrir el formato (HEIC), la recorta el servidor al centro. Datos en `<raíz>/.kcc/perfil/`; al quitarla se aparta 30 días. Código en `lib/perfil/`. Logro especial «Con cara y ojos».
 
 ## Contactos
 

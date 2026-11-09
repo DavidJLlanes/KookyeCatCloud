@@ -15,11 +15,11 @@ module.exports = async ({ req, prueba, igual, cierto, DATA, BASE, cookie }) => {
     igual((await req('GET', '/api/perfil/avatares')).s, 200);
   });
   if (!sharp) { console.log('  (sin sharp: se omiten las pruebas de procesado de imagen)'); return; }
-  await prueba('perfil: la foto se procesa a WebP cuadrado de 256 px, se sirve y deja un logro', async () => {
+  await prueba('perfil: la foto se procesa a WebP cuadrado de 300 px, se sirve y deja un logro', async () => {
     const png = await sharp({ create: { width: 640, height: 320, channels: 3, background: '#3b82f6' } }).png().toBuffer();
     const r = await sube(png); igual(r.s, 200); cierto(r.j.avatar.v > 0, 'marca de versión');
     const img = await fetch(BASE + '/api/perfil/avatar', { headers: { Cookie: cookie() } }); igual(img.status, 200); igual(img.headers.get('content-type'), 'image/webp');
-    const meta = await sharp(Buffer.from(await img.arrayBuffer())).metadata(); igual(meta.width, 256); igual(meta.height, 256);
+    const meta = await sharp(Buffer.from(await img.arrayBuffer())).metadata(); igual(meta.width, 300); igual(meta.height, 300);
     cierto(fs.existsSync(path.join(DATA, '.kcc', 'perfil', 'perfil.json')), 'JSON propio del perfil');
     const g = (await req('GET', '/api/game')).j; cierto(g.logros.especiales.some(e => e.id === 'perfil_foto' && e.cuando > 0), 'logro «Con cara y ojos»');
   });
