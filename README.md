@@ -84,10 +84,15 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 🛒 **Lista de la compra** | Catálogo y compras compartidos, cantidades, categorías e imágenes con recorte cuadrado. |
 | 📅 **Calendario** | Mes, semana, día y agenda con calendarios de colores, repetición y recordatorios. |
 | ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables, imágenes de muestra, comparación de versiones, estadísticas y creación desde metadatos de imágenes de ComfyUI / Automatic1111. |
-| 🏆 **Logros y Tetris** | Niveles y rangos, racha diaria, logros por cantidad de elementos (también Compra, favoritos, álbumes, Bases y Juegos), por uso y de seguridad, retos semanales, cosméticos y tres juegos (Tetris, 2048 y Breakout) táctiles y con música, con potenciadores que se desbloquean al subir de nivel. |
+| 🏆 **Logros y Tetris** | Niveles y rangos, racha diaria, logros por cantidad de elementos (también Compra, favoritos, álbumes, Bases, Juegos, Pagos, Marcadores y Avisos), por uso y de seguridad, retos semanales, cosméticos y tres juegos (Tetris, 2048 y Breakout) táctiles y con música, con potenciadores que se desbloquean al subir de nivel. |
 | 🎮 **Juegos** | Colección de videojuegos con carátulas, notas, horas, lista de deseos y backlog, estadísticas, búsqueda opcional con RAWG, logros propios y tarjetas para compartir de cada juego y de tu perfil. |
 | 🗂️ **Bases** | Bases de datos propias al estilo AppFlowy: columnas a tu medida (texto, número, fecha, casilla, selección, etiquetas, enlace), vistas de tabla y tablero Kanban, plantillas, exportación CSV/JSON y logros propios. Cada base es su propio JSON. |
 | </> **Código** | Proyectos tipo GitHub: carpetas y archivos, editor con colores, subida de archivos, carpetas y ZIP (con descompresión), versiones con comparación y restauración, vista web aislada (JavaScript solo si activas el interruptor) y descarga en ZIP. Límites: 50 MB y 1000 archivos por proyecto, 10 MB por archivo, 50 versiones. Con logros. |
+| 💳 **Pagos** | Recordatorios de recibos, seguros y suscripciones: compañía, importe, frecuencia y próxima fecha; «Pagado» pasa al siguiente periodo (con deshacer) y el vencimiento aparece en el calendario. [Más](#pagos) |
+| 🔖 **Marcadores web** | Favoritos con carpetas, colores y descripción; el icono de cada web se extrae solo (con defensa SSRF). Vista de tarjetas o lista deslizante. [Más](#marcadores-web) |
+| 🔔 **Avisos push** | Notificaciones en el móvil u ordenador, con la app cerrada, de pagos, recordatorios del calendario y cumpleaños de contactos. Tú eliges qué avisa, a qué hora y cuándo no molestar. [Más](#avisos-push) |
+| 🔊 **Sonidos suaves** | Sonidos de interfaz sintetizados (sin archivos de audio), con paquetes, volumen e interruptor para apagarlos. [Más](#sonidos) |
+| 🧑 **Foto de perfil** | Recorte cuadrado antes de subirla; se guarda en WebP 300 × 300. [Más](#foto-de-perfil) |
 | 📄 **Exportar a .txt, .md y PDF** | Notas, prompts, contactos, calendario, bases, juegos, compra y código, desde su menú ⋯. |
 | 📤 **Exportar JSON** | Botón en la barra superior que exporta los datos de la sección abierta; ZIP con todos los JSON de la app para administración. |
 | 👤 **Contactos** | Agenda al estilo Google Contacts: varios teléfonos, correos, direcciones, webs y fechas, con importación y exportación `.vcf`. |
@@ -102,6 +107,11 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 🔄 **Calendario sincronizable** | Suscripción iCal de solo lectura, importación de `.ics` y festivos de España. |
 | 🌐 **Cualquier dirección** | Dominio, subdominio o subcarpeta (`BASE_PATH`), sin tocar el código. |
 | ♻️ **Autoactualización** | Script con vuelta atrás automática y temporizador systemd opcional. |
+
+### Novedades
+
+- **9 nov 2026** · Avisos push (pagos, calendario y contactos) con ajustes por sección, horas y horario de silencio · Pagos · Marcadores web con favicon automático · Sonidos suaves · Foto de perfil con recorte cuadrado (WebP 300 × 300) · contraseñas de 8 a 72 caracteres, HSTS y errores sin rutas del servidor · recorrido de seguridad documentado en [`docs/auditoria-errores.md`](docs/auditoria-errores.md) (siete auditorías) · pruebas por módulo en `tests/modulos/` (98 pruebas de humo).
+- **4 nov 2026** · Persistencia a prueba de fallos: lectura que distingue «no existe» de «ilegible», copias `.bak`, escritura atómica y borrados con copia de 30 días.
 
 Licencia [MIT](LICENSE): úsalo, modifícalo o redistribúyelo libremente, con o sin fines
 comerciales, siempre que mantengas el aviso de copyright.
@@ -1588,6 +1598,9 @@ indique; reinicia el servicio tras cambiarlas.
 | `EVENTS_PER_USER` | 8 | Conexiones de avisos en directo por usuario |
 | `DUP_LIMIT` / `DU_LIMIT` | 20000 / 200000 | Topes del buscador de duplicados y del analizador de espacio |
 | `VERSIONS_KEEP` / `VERSIONS_DAYS` / `VERSIONS_MAX_BYTES` | 30 / 180 / 5 MB | Versiones de archivos de texto |
+| `PUSH_CONTACT` | `mailto:no-reply@kookyecat.dev` | Contacto que se da a los servicios push de los navegadores (`mailto:` o `https://`); Apple lo exige válido |
+| `APP_TZ` | `Europe/Madrid` | Zona horaria de las horas de los avisos y de «hoy» en Pagos |
+| `KCC_PUSH_PRUEBAS` / `KCC_ICONOS_LOCALES` | — | **Solo para las pruebas automáticas** (avisos simulados / iconos de webs locales). No activar en producción |
 | `VAULT_IDLE_MIN` | 15 | Minutos sin usar la caja fuerte hasta que se bloquea |
 | `WEBAUTHN_RP_ID` / `WEBAUTHN_ORIGIN` | deducidos | Solo si el proxy no pasa bien `Host` / `X-Forwarded-Proto` |
 
@@ -1595,13 +1608,15 @@ indique; reinicia el servicio tras cambiarlas.
 
 - **Sesiones**: JWT en cookie `HttpOnly`, `Secure` y `SameSite=Strict`, registradas en el servidor
   (se pueden cerrar en remoto). Límite de intentos de acceso por IP.
-- **Acceso**: contraseña con bcrypt, verificación en dos pasos (TOTP), passkeys (huella / Face ID)
+- **Acceso**: contraseña de 8 a 72 caracteres con bcrypt (comprobación asíncrona), nombres de usuario únicos sin distinguir mayúsculas, verificación en dos pasos (TOTP), passkeys (huella / Face ID)
   y tokens de aplicación para WebDAV y scripts.
 - **Datos privados**: caja fuerte con AES-256-GCM, nombres cifrados y clave solo en memoria.
 - **Aislamiento**: cada usuario ve solo su carpeta; las rutas se validan en cada petición y las
   carpetas internas (`.trash`, `.notes`, `.kcc`, `.vault`) no son accesibles por la API ni WebDAV.
 - **Navegador**: Content-Security-Policy estricta (sin CDN; la única excepción son los tiles del
   mapa), contenido de usuario mostrado en `sandbox` y Markdown renderizado sin HTML.
+- **Errores y cabeceras**: los errores del sistema nunca muestran rutas del servidor; `Strict-Transport-Security` con HTTPS.
+- **Salidas a Internet**: los iconos de los marcadores y los avisos push solo conectan con destinos permitidos (sin direcciones privadas ni locales: defensa SSRF).
 - **Servicio**: systemd con `NoNewPrivileges`, `ProtectSystem=strict` y un usuario sin privilegios.
 
 Si encuentras una vulnerabilidad, avísala por un
@@ -1714,12 +1729,14 @@ public/
                      navegación, visores, papelera y subida, notas, enlaces, colecciones, administración, cuenta e inicio
   js/copias.js       Tarjeta de Administración: estado, crear copia, descargar y registro de intentos
   js/valores*.js     Valores reutilizables: normalización compartida con el servidor, campos con sugerencias, chips que filtran y pantalla de revisión
+  js/pagos/, js/marcadores/, js/push/, js/sonidos/  Clientes de los módulos nuevos, un archivo por responsabilidad (datos, lista, formulario, ajustes…)
   js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, recordatorios vinculados, portapapeles, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
   css/               Estilos: modules (barra lateral y componentes), calendar, prompts, sistema (versiones, caja fuerte,
                      passkeys), contacts, complementos (retoques, van los últimos) y uno por módulo (notes, shopping…)
   sw.js, manifest.json  PWA
   audio/             Música del Tetris (CC0) y créditos
   vendor/            Leaflet alojado en local; game-icons.net (iconos de logros)
+tests/               smoke.js (pruebas de humo: arrancan la app en una copia temporal), modulos/ (una por módulo: pagos, marcadores, perfil, push, seguridad), sintaxis.js y auditoria.js (`npm run check`)
 deploy/              update.sh y temporizador systemd de autoactualización
 .env.example         Todas las variables de configuración
 ```
