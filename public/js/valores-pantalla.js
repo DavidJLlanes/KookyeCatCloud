@@ -4,7 +4,7 @@
    Usa la API de lib/valores.js: GET /api/valores, GET /duplicados, POST /ignorar, POST /:campo/fusionar, DELETE /:campo. */
 (function () {
   if (!window.K || !K.valores) return;
-  const MODULOS = { prompts: 'Prompts', games: 'Juegos', contacts: 'Contactos', codigo: 'Código' };
+  const MODULOS = { prompts: 'Prompts', games: 'Juegos', contacts: 'Contactos', codigo: 'Código', pagos: 'Pagos' };
   const TIPO = { igual: 'El mismo valor escrito de varias formas', parecido: 'Valores muy parecidos (¿errata?)' };
 
   K.valores.pantalla = async function (inicial) {

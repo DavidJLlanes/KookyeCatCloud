@@ -124,6 +124,7 @@ async function loadLinks() {
 
       box.appendChild(row);
     }
+    if (window.K && K.perfil) K.perfil.lista();
   } catch {}
 }
 
@@ -159,6 +160,7 @@ async function revocarEnlace(l) {
    Administración
 --------------------------------------------------------------- */
 async function loadAdmin() {
+  if (window.K && K.perfil) K.perfil.tarjeta();
   try {
     const res = await api(BASE + '/api/stats');
     const s = await res.json();
@@ -187,7 +189,9 @@ async function loadAdmin() {
     box.textContent = '';
     for (const u of users) {
       const row = el('div', 'urow');
-      row.appendChild(el('div', 'av', u.username.charAt(0).toUpperCase()));
+      const av = el('div', 'av', u.username.charAt(0).toUpperCase());
+      av.dataset.user = u.username;
+      row.appendChild(av);
       row.appendChild(el('div', 'un', u.username));
       row.appendChild(el('span', 'pill' + (u.role === 'admin' ? ' admin' : ''), u.role));
       if (u.username !== 'admin') {

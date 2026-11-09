@@ -122,6 +122,7 @@ function showApp() {
   $('user-av').textContent = name.charAt(0).toUpperCase();
   $('user-name').textContent = name;
   $('user-role').textContent = state.user.role === 'admin' ? 'admin' : '';
+  if (window.K && K.perfil) K.perfil.cabecera();
   const isAdmin = state.user.role === 'admin';
   $('tab-admin').hidden = !isAdmin;
   $('mnav-admin').hidden = !isAdmin;

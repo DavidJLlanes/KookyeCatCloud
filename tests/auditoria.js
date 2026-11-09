@@ -7,7 +7,9 @@
 const fs = require('fs');
 const path = require('path');
 const RAIZ = path.join(__dirname, '..');
-const ARCHIVOS = [...fs.readdirSync(path.join(RAIZ, 'lib')).filter(f => f.endsWith('.js')).map(f => `lib/${f}`), 'server.js', 'webdav.js'];
+// lib/ puede tener módulos en carpeta (lib/pagos/, lib/marcadores/…): se recorren enteras
+const jsDe = (rel) => fs.readdirSync(path.join(RAIZ, rel), { withFileTypes: true }).flatMap(e => e.isDirectory() ? jsDe(`${rel}/${e.name}`) : e.name.endsWith('.js') ? [`${rel}/${e.name}`] : []);
+const ARCHIVOS = [...jsDe('lib'), 'server.js', 'webdav.js'];
 const PERMITIDOS = {
   'lib/store.js': 'implementa las reglas',
   'lib/copias.js': 'una sola copia a la vez (enCurso); el .tmp es el archivo de la copia',

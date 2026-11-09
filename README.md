@@ -64,7 +64,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 - [Qué puedes hacer](#qué-puedes-hacer)
 - [Instalación](#instalación) — [local](#arrancar-en-local) · [VPS paso a paso](#despliegue-en-el-vps) · [dominio, subdominio o subcarpeta](#en-qué-dirección-instalarla)
-- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [bases](#bases), [código](#código), [exportar JSON](#exportar-json), [exportar a .txt, .md y PDF](#exportar-a-texto-markdown-y-pdf), [juegos](#juegos), [contactos](#contactos), [valores reutilizables](#valores-reutilizables), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
+- [Funciones en detalle](#miniaturas) — archivos y fotos, [notas](#notas-editor-de-bloques), [calendario](#calendario), [prompts](#prompts-de-ia), [logros y Tetris](#logros-y-tetris), [bases](#bases), [código](#código), [exportar JSON](#exportar-json), [exportar a .txt, .md y PDF](#exportar-a-texto-markdown-y-pdf), [juegos](#juegos), [contactos](#contactos), [pagos](#pagos), [marcadores](#marcadores-web), [sonidos](#sonidos), [foto de perfil](#foto-de-perfil), [valores reutilizables](#valores-reutilizables), [visor con zoom](#visor-con-zoom), [passkeys](#huella-y-face-id-passkeys), [caja fuerte](#caja-fuerte), [compartir](#compartir-con-usuarios), [actualización en directo](#actualización-en-directo)
 - [Actualizaciones](#actualizaciones)
 - [Variables de entorno](#variables-de-entorno)
 - [Seguridad](#seguridad) · [Copias de seguridad](#copias-de-seguridad) · [Estructura del proyecto](#estructura-del-proyecto) · [Solución de problemas](#solución-de-problemas)
@@ -1025,6 +1025,35 @@ En **Cuenta → Apariencia** eliges el tema y el color de acento. Se guardan en 
 
 En **Cuenta → Tamaño del texto** puedes aumentar o reducir las letras de toda la aplicación (del 85 % al 140 %, con botones A− / A+, deslizador y «Restablecer»). Se guarda en el dispositivo y se aplica antes de pintar la página. Funciona con un único factor (`--fs`) que multiplica todas las tipografías de `public/css/` y de `index.html`: en CSS nuevo escribe `font-size:calc(13px*var(--fs,1))` en lugar de `13px`. Los campos de texto no bajan de 16 px para que iOS no haga zoom al enfocarlos. El código está en `public/js/textsize.js`.
 
+## Pagos
+
+Recordatorios de pagos: qué pagas, a qué compañía, cuánto, cada cuánto y cuándo toca (seguros del hogar, suscripciones, impuestos…).
+
+- Datos en `<raíz>/.kcc/pagos/data.json`. Código en `lib/pagos/` (`modelo.js` forma y validación, `fechas.js`, `valores.js`, `resumen.js`, `index.js` rutas) y `public/js/pagos/`.
+- **Marcar como pagado** anota el pago y pasa la fecha al siguiente periodo conservando el día de cobro (31 ene → 28 feb → 31 mar). Un pago único queda finalizado. **Deshacer** recupera el estado anterior.
+- Compañía y categoría usan los [valores reutilizables](#valores-reutilizables) (sin duplicados «Mapfre»/«MAPFRE»).
+- El próximo vencimiento aparece en el calendario «Pagos» (un evento por pago).
+- Borrar aparta el pago 30 días en `.kcc/borrados/pagos/`. Si otro dispositivo lo cambió antes, el guardado devuelve 409 y no lo pisa.
+- Exportación: entra en el botón ⤓ y en el ZIP de administración. Logros: familias `pg_*`.
+
+## Marcadores web
+
+Favoritos con nombre, dirección, descripción, color y carpetas. El icono (favicon) se extrae solo.
+
+- Datos en `<raíz>/.kcc/marcadores/data.json` (carpetas y marcadores) e iconos en `.kcc/marcadores/iconos/`. Código en `lib/marcadores/` (`modelo.js`, `favicon.js`, `red.js`, `resumen.js`, `index.js`) y `public/js/marcadores/`.
+- Vistas: **tarjetas** (favicon y nombre) o **lista** con todos los campos y desplazamiento lateral.
+- Iconos: se lee el HTML de la web, se prueban los iconos declarados y `/favicon.ico`; solo PNG, JPG, GIF, WebP e ICO reconocidos por su cabecera (nunca SVG). Con `sharp` se guardan a 64 × 64 WebP.
+- **Seguridad (SSRF)**: el servidor nunca descarga de direcciones privadas, locales ni reservadas; resuelve el nombre y conecta a la dirección ya comprobada, revalida cada redirección y limita tamaño y tiempo. `KCC_ICONOS_LOCALES=1` lo relaja solo para las pruebas.
+- Borrar una carpeta mueve sus marcadores a «Sin carpeta». Borrar un marcador lo aparta 30 días.
+
+## Sonidos
+
+Sonidos suaves de interfaz (avisos, logros, errores, abrir y cerrar), sintetizados con WebAudio: no hay archivos de audio. En Cuenta se elige el paquete, el volumen y el interruptor general. Se guarda por dispositivo (`localStorage`). Código en `public/js/sonidos/`.
+
+## Foto de perfil
+
+En Administración se sube, cambia o quita la foto de cada usuario. Se recorta a 256 × 256 WebP con `sharp`. Datos en `<raíz>/.kcc/perfil/`; al quitarla se aparta 30 días. Código en `lib/perfil/`. Logro especial «Con cara y ojos».
+
 ## Contactos
 
 Agenda personal al estilo de Google Contacts, en la pestaña **Contactos** (barra lateral en el
@@ -1630,6 +1659,9 @@ lib/
   store.js           Escritura atómica de JSON con cola por archivo
   events.js          Avisos en directo (Server-Sent Events)
   labels.js          Etiquetas de color compartidas entre módulos
+  pagos/             Pagos y recordatorios (modelo, fechas, valores, resumen, rutas)
+  marcadores/        Marcadores web (modelo, favicon, red con defensa SSRF, resumen, rutas)
+  perfil/            Foto de perfil (procesado de imagen y rutas)
   valores.js         Valores reutilizables: catálogo por campo, unificación y revisión de duplicados (fábrica createValores)
   copias.js          Copia de seguridad: rutas de Administración, registro de intentos y comprobación de espacio (fábrica createCopias)
   copias-archivo.js  Empaquetado con tar (sin copiar en disco), medida y verificación del archivo de copia

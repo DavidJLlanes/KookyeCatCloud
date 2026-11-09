@@ -17,6 +17,10 @@
 <link rel="stylesheet" href="/css/complementos.css">
 <link rel="stylesheet" href="/css/notes.css">
 <link rel="stylesheet" href="/css/shopping.css">
+<link rel="stylesheet" href="/css/sonidos.css">
+<link rel="stylesheet" href="/css/perfil.css">
+<link rel="stylesheet" href="/css/pagos.css">
+<link rel="stylesheet" href="/css/marcadores.css">
 <link rel="stylesheet" href="/css/games.css">
 <link rel="stylesheet" href="/css/bases.css">
 <link rel="stylesheet" href="/css/codigo.css">
@@ -1172,6 +1176,8 @@
   <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M17.5 12v3M20.5 12v2.5"/></symbol>
   <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5.5 5h13l2.5 8v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5z"/></symbol>
   <symbol id="i-table" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 10h17M9.5 10v9.5M3.5 14.8h17"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H17v3"/><rect x="3.5" y="8" width="17" height="11.5" rx="2"/><path d="M15.5 13.8h2.2"/></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6.5 4.5h11v15L12 15.7l-5.5 3.8z"/></symbol>
   <symbol id="i-code" viewBox="0 0 24 24"><path d="M8.5 7 3.5 12l5 5M15.5 7l5 5-5 5M13.5 5l-3 14"/></symbol>
   <symbol id="i-gamepad" viewBox="0 0 24 24"><path d="M6 8h12a4 4 0 0 1 3.9 4.9l-.8 3.6a2.4 2.4 0 0 1-4.1 1.1L15 15.5H9L7 17.6a2.4 2.4 0 0 1-4.1-1.1l-.8-3.6A4 4 0 0 1 6 8z"/><path d="M8 10.5v3M6.5 12h3"/><circle cx="15.5" cy="11" r=".6"/><circle cx="17.5" cy="13" r=".6"/></symbol>
   <symbol id="i-g2048" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6" fill="currentColor" fill-opacity=".35"/></symbol>
@@ -1287,6 +1293,8 @@
       <button class="tab" data-view="notes"><svg class="ico"><use href="#i-note"/></svg><span>Notas</span></button>
       <button class="tab" data-view="shopping"><svg class="ico"><use href="#i-cart"/></svg><span>Compra</span></button>
       <button class="tab" data-view="bases"><svg class="ico"><use href="#i-table"/></svg><span>Bases</span></button>
+      <button class="tab" data-view="pagos"><svg class="ico"><use href="#i-wallet"/></svg><span>Pagos</span></button>
+      <button class="tab" data-view="marcadores"><svg class="ico"><use href="#i-bookmark"/></svg><span>Marcadores</span></button>
       <button class="tab" data-view="codigo"><svg class="ico"><use href="#i-code"/></svg><span>Código</span></button>
       <button class="tab" data-view="games"><svg class="ico"><use href="#i-gamepad"/></svg><span>Juegos</span></button>
       <button class="tab" data-view="calendar"><svg class="ico"><use href="#i-calendar"/></svg><span>Calendario</span></button>
@@ -1358,6 +1366,8 @@
   <main class="wrap kcc-view" id="view-shopping" hidden></main>
   <main class="wrap kcc-view" id="view-games" hidden></main>
   <main class="wrap kcc-view" id="view-bases" hidden></main>
+  <main class="wrap kcc-view" id="view-pagos" hidden></main>
+  <main class="wrap kcc-view" id="view-marcadores" hidden></main>
   <main class="wrap kcc-view" id="view-codigo" hidden></main>
 
   <!-- ---- Vista prompts ---- -->
@@ -1508,6 +1518,12 @@
       </section>
 
       <section class="card">
+        <h3><svg class="ico"><use href="#i-music"/></svg> Sonidos</h3>
+        <p class="card-sub">Sonidos suaves al usar la aplicación. Puedes apagarlos del todo o elegir qué suena. Se guarda en este dispositivo.</p>
+        <div id="sonidos-ctl"></div>
+      </section>
+
+      <section class="card">
         <h3><svg class="ico"><use href="#i-list-check"/></svg> Valores reutilizables</h3>
         <p class="card-sub">Modelos, herramientas, plataformas, empresas, etiquetas… se guardan al escribirlos para reutilizarlos sin duplicar. Revisa los repetidos y únelos.</p>
         <button class="btn" id="valores-abrir" type="button">Revisar valores</button>
@@ -1594,6 +1610,8 @@
   <!-- ---- Vista admin ---- -->
   <main class="wrap" id="view-admin" hidden>
     <div class="cards">
+      <section class="card" id="perfil-card"></section>
+
       <section class="card">
         <h3><svg class="ico"><use href="#i-drive"/></svg> Almacenamiento</h3>
         <p class="card-sub">Uso actual del servidor</p>
@@ -1709,6 +1727,8 @@
       <button data-view="notes"><svg class="ico"><use href="#i-note"/></svg>Notas</button>
       <button data-view="shopping"><svg class="ico"><use href="#i-cart"/></svg>Compra</button>
       <button data-view="bases"><svg class="ico"><use href="#i-table"/></svg>Bases</button>
+      <button data-view="pagos"><svg class="ico"><use href="#i-wallet"/></svg>Pagos</button>
+      <button data-view="marcadores"><svg class="ico"><use href="#i-bookmark"/></svg>Marcadores</button>
       <button data-view="codigo"><svg class="ico"><use href="#i-code"/></svg>Código</button>
       <button data-view="games"><svg class="ico"><use href="#i-gamepad"/></svg>Juegos</button>
       <button data-view="calendar"><svg class="ico"><use href="#i-calendar"/></svg>Agenda</button>
@@ -1988,8 +2008,22 @@
 <script src="/js/games.js"></script>
 <script src="/vendor/highlightjs/highlight.min.js"></script>
 <script src="/js/bases.js"></script>
+<script src="/js/pagos/datos.js"></script>
+<script src="/js/pagos/lista.js"></script>
+<script src="/js/pagos/formulario.js"></script>
+<script src="/js/pagos/index.js"></script>
+<script src="/js/marcadores/datos.js"></script>
+<script src="/js/marcadores/tarjeta.js"></script>
+<script src="/js/marcadores/listado.js"></script>
+<script src="/js/marcadores/formulario.js"></script>
+<script src="/js/marcadores/index.js"></script>
 <script src="/js/transferir.js"></script>
 <script src="/js/codigo.js"></script>
+<script src="/js/perfil.js"></script>
+<script src="/js/sonidos/paquetes.js"></script>
+<script src="/js/sonidos/motor.js"></script>
+<script src="/js/sonidos/enlaces.js"></script>
+<script src="/js/sonidos/ajustes.js"></script>
 <script src="/js/exportar.js"></script>
 <script src="/js/omni.js"></script>
 </body>

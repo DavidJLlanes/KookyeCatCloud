@@ -17,6 +17,8 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [ ] Cuota de almacenamiento por usuario con aviso y límite.
 
 ### Más adelante
+- [ ] Pagos: avisos push/correo antes del vencimiento, gráfico de gasto anual por compañía y adjuntar la póliza.
+- [ ] Marcadores: importar/exportar HTML de favoritos del navegador y detectar enlaces rotos.
 - [ ] SQLite, solo si hay decenas de miles de contactos o prompts (decidido: no migrar de momento).
 - [ ] Pruebas automáticas de la API (crear, importar, borrar, permisos).
 - [ ] Monitorizar el servicio `kookyecatcloud` con un chequeo externo (por ejemplo UptimeRobot).
