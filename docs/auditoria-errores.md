@@ -147,3 +147,19 @@ Revisión de `public/js/perfil-recorte.js` y del procesado de 300 × 300 WebP (c
 | 3 | Recorte | Una imagen sin dimensiones dejaba un recorte vacío | Se avisa y se cancela |
 
 Sin hallazgos: cancelar no sube nada, la orientación EXIF sale bien, una foto pequeña no se amplía en el cliente, un archivo que no es imagen lo rechaza el servidor con aviso y siempre se guarda 300 × 300 WebP.
+
+## Quinta auditoría (9 nov 2026): toda la app
+
+Alcance: dependencias, autenticación de las 323 rutas, recorridos de ruta, subidas, XSS en servidor y cliente, cookies/CSRF, ejecución de comandos y barrido de las 22 vistas en móvil y escritorio.
+
+| # | Dónde | Hallazgo | Estado |
+|---|---|---|---|
+| 1 | `public/index.html` | El script que fija el tema antes de pintar iba en línea y la CSP (`script-src 'self'`) lo bloqueaba: el tema claro parpadeaba en oscuro y la consola mostraba un error en cada carga | Corregido: `public/js/tema-inicial.js` (también en `sw.js`) |
+| 2 | `npm audit` | `minimatch` (DoS por patrones) dentro de `archiver`/`readdir-glob` | Aceptado: el único uso es `zip.directory()` con patrón fijo; ningún patrón viene del usuario. Revisar al actualizar `archiver` |
+
+Comprobado sin hallazgos:
+- Sin sesión, 302 rutas dan 401, una 403 y las públicas previstas (`/s`, `/p`, `/u`, `/api/public/*`, login, passkeys, versión, manifiesto) responden o dan 404 con un id falso.
+- Recorrido de ruta (`../`, `%2f`, rutas absolutas, `\`, byte nulo, `.kcc`, otros usuarios) contra descarga, vista previa, texto y lista: ninguna filtra datos; los parámetros en forma de array se rechazan con 400.
+- Subir `.svg` y `.html` no da XSS: la vista previa los rechaza (415) y la descarga va como `attachment` con `application/octet-stream`.
+- `innerHTML` solo con texto escapado (notas, Código); cookies `httpOnly` + `SameSite=Strict` (sin CSRF); límites de subida en todos los `multer`; `execFile`/`spawn` sin intérprete y sin entrada del usuario en los argumentos; ningún secreto ni `.env` en el repositorio.
+- Las 22 vistas cargan sin errores de JavaScript ni respuestas 5xx y sin desborde horizontal a 390 px (solo falla el mapa por no haber internet en el entorno de pruebas).

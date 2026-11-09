@@ -51,19 +51,7 @@
 <meta name="twitter:image" content="__KCC_OG_URL__">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>
-  /* Tema antes de pintar (evita un destello claro/oscuro). Ver Apariencia en app.js. */
-  (function () {
-    var t = 'grafito';
-    try {
-      t = localStorage.getItem('kcc-theme');
-      if (!t) { var old = localStorage.getItem('fc-tint'); t = old === 'oceano' ? 'oscuro' : 'grafito'; }
-    } catch (e) { /* sin almacenamiento */ }
-    if (t === 'auto') t = matchMedia('(prefers-color-scheme: light)').matches ? 'claro' : 'grafito';
-    if (['grafito', 'oscuro', 'claro'].indexOf(t) < 0) t = 'grafito';
-    document.documentElement.dataset.theme = t;
-  })();
-</script>
+<script src="/js/tema-inicial.js"></script>
 <style>
   /* ---------- Temas ----------
      Todo color de la interfaz sale de estos tokens. Cada tema define superficies, texto y
