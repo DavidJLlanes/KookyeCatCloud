@@ -11,7 +11,7 @@
   try {
     const g = JSON.parse(localStorage.getItem(CLAVE) || 'null');
     if (g && typeof g === 'object') {
-      ajustes = { on: g.on !== false, vol: Math.max(0, Math.min(1, Number(g.vol ?? 0.4))), paquete: S.PAQUETES[g.paquete] ? g.paquete : 'suave', grupos: { ...POR_DEFECTO.grupos, ...(g.grupos || {}) } };
+      ajustes = { on: g.on !== false, vol: Number.isFinite(Number(g.vol ?? 0.4)) ? Math.max(0, Math.min(1, Number(g.vol ?? 0.4))) : 0.4, paquete: S.PAQUETES[g.paquete] ? g.paquete : 'suave', grupos: { ...POR_DEFECTO.grupos, ...(g.grupos || {}) } };
     }
   } catch { /* sin almacenamiento o datos viejos: valores por defecto */ }
   const guarda = () => { try { localStorage.setItem(CLAVE, JSON.stringify(ajustes)); } catch { /* da igual */ } };

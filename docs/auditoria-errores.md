@@ -121,3 +121,17 @@ Para recuperar algo de `.kcc/borrados/` (bases, proyectos, contactos, juegos, ev
 | 42 | Versiones al mover (pendiente de la quinta) | Mover un archivo a la ruta de otro con historial borraba ese historial | El historial anterior se aparta 30 días en `.kcc/borrados/versiones/` |
 
 Ya no queda ningún pendiente conocido de las auditorías. Sigue sin estar garantizado que no haya otros fallos, y la copia de seguridad sigue siendo diaria.
+
+## Tercera auditoría (9 nov 2026): Pagos, Marcadores, Perfil y Sonidos
+
+Revisión del código nuevo (validación, persistencia, SSRF, XSS, borrados). Sin hallazgos de pérdida de datos en lectura/escritura; sí cuatro arreglos:
+
+| # | Dónde | Riesgo | Arreglo |
+|---|---|---|---|
+| 1 | Pagos, `frecuencia` | `'toString' in FRECUENCIAS` era cierto: «toString»/«constructor» pasaban la validación y rompían el cálculo de fechas (NaN) | `hasOwnProperty`; prueba con tres nombres del prototipo |
+| 2 | Marcadores, `red.js` | `::127.0.0.1` (IPv4 compatible) y 6to4 (`2002::/16`) no estaban bloqueados | Bloqueo de `::/96` y `2002::/16`; añadidos a la prueba SSRF |
+| 3 | Marcadores, `red.js` | El tiempo máximo era por inactividad: un servidor que goteaba bytes mantenía la descarga abierta | Plazo total (el doble del tiempo por inactividad) |
+| 4 | Perfil, quitar foto | Un fallo al apartar la copia se ignoraba y la foto se daba por quitada | Solo se ignora «no existe»; cualquier otro error aborta sin tocar nada |
+| 5 | Sonidos | Un volumen guardado no numérico dejaba el volumen en NaN | Valor por defecto si no es un número |
+
+Sin hallazgos: ningún `innerHTML` con datos del usuario en los clientes nuevos (todo con `textContent`), enlaces solo http/https, iconos solo por cabecera real (nunca SVG), borrados con copia de 30 días y 409 en ediciones obsoletas.

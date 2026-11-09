@@ -14,6 +14,7 @@ module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
     igual((await nuevo({ fechaProxima: '2026-02-30' })).s, 400, 'fecha imposible');
     igual((await nuevo({ fechaProxima: '' })).s, 400, 'sin fecha');
     igual((await nuevo({ frecuencia: 'quincenal' })).s, 400, 'frecuencia');
+    for (const f of ['toString', 'constructor', '__proto__']) igual((await nuevo({ frecuencia: f })).s, 400, 'frecuencia heredada del prototipo: ' + f);
     igual((await nuevo({ web: 'javascript:alert(1)' })).s, 400, 'web no http');
     igual((await nuevo({ nombre: 'x'.repeat(121) })).s, 400, 'nombre demasiado largo (no se recorta en silencio)');
   });

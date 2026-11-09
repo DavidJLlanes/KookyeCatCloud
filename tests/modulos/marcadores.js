@@ -56,7 +56,7 @@ module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
 
     await prueba('marcadores: defensa SSRF (direcciones privadas, locales y redes internas)', async () => {
       const { esPrivada, descarga } = require('../../lib/marcadores/red');
-      for (const ip of ['127.0.0.1', '10.1.2.3', '172.16.0.1', '192.168.1.1', '169.254.169.254', '100.64.0.1', '0.0.0.0', '::1', '::ffff:127.0.0.1', 'fd00::1', 'fe80::1']) cierto(esPrivada(ip), ip + ' debe bloquearse');
+      for (const ip of ['127.0.0.1', '10.1.2.3', '172.16.0.1', '192.168.1.1', '169.254.169.254', '100.64.0.1', '0.0.0.0', '::1', '::ffff:127.0.0.1', 'fd00::1', 'fe80::1', '::127.0.0.1', '::ffff:7f00:1', '2002:7f00:1::1']) cierto(esPrivada(ip), ip + ' debe bloquearse');
       for (const ip of ['8.8.8.8', '1.1.1.1', '2606:4700:4700::1111']) cierto(!esPrivada(ip), ip + ' es pública');
       for (const u of ['http://127.0.0.1:1/', 'http://localhost/', 'http://[::1]/', 'http://169.254.169.254/latest/meta-data/', 'http://usuario:clave@ejemplo.com/', 'file:///etc/passwd']) {
         let error = null; try { await descarga(u, { permiteLocal: false }); } catch (e) { error = e; }
