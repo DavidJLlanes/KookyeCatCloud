@@ -3,7 +3,8 @@
 // contactos), no repetir, horario de silencio, privacidad del texto, escritura concurrente, archivos dañados y logros.
 const fs = require('fs'), path = require('path');
 
-module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
+module.exports = async ({ req, prueba, igual, cierto, DATA, BASE }) => {
+  const ctxExtra = { BASE };
   const dir = path.join(DATA, '.kcc', 'push');
   const sub = (n) => ({ endpoint: `https://push.prueba.local/envio/${n}`, keys: { p256dh: 'BPubClaveDePrueba' + n, auth: 'auth' + n } });
   // 10 nov 2026, 09:05 en Madrid (CET = UTC+1)
@@ -113,5 +114,40 @@ module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
     const f = path.join(dir, 'ajustes.json'); fs.writeFileSync(f, '{roto');
     const r = await req('GET', '/api/push/config'); igual(r.s, 200); igual(r.j.ajustes.detalles, true, 'se repone de la copia, no vuelve a los valores por defecto');
     cierto(fs.readdirSync(dir).some(n => n.includes('.dañado-')), 'el dañado queda apartado');
+  });
+
+  await prueba('push: un navegador pertenece a una sola cuenta (cambiar de usuario no deja avisos ajenos)', async () => {
+    const { BASE } = ctxExtra;
+    const entra = async (u, c) => { const r = await fetch(BASE + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: c }) }); return r.headers.getSetCookie().map(x => x.split(';')[0]).join('; '); };
+    const llama = (cookie, m, u, b) => fetch(BASE + u, { method: m, headers: { Cookie: cookie, 'Content-Type': 'application/json' }, body: b ? JSON.stringify(b) : undefined }).then(async r => ({ s: r.status, j: await r.json().catch(() => null) }));
+    await req('POST', '/api/users', { username: 'luis', password: 'clave-segura-1', role: 'user' });
+    const cl = await entra('luis', 'clave-segura-1'), mismo = sub(777);
+    igual((await req('POST', '/api/push/dispositivos', { suscripcion: mismo })).s, 200);
+    igual((await llama(cl, 'POST', '/api/push/dispositivos', { suscripcion: mismo })).s, 200);
+    igual((await req('GET', '/api/push/config')).j.dispositivos.length, 0, 'el administrador ya no tiene ese navegador');
+    igual((await llama(cl, 'GET', '/api/push/config')).j.dispositivos.length, 1, 'ahora es de luis');
+  });
+
+  await prueba('push: ajustes antiguos o a medias se completan y 29 de febrero se celebra el 28 en años no bisiestos', async () => {
+    const { limpia } = require('../../lib/push/ajustes');
+    const a = limpia({}, { on: true, pagos: { on: false }, contactos: {} });
+    igual(a.pagos.hora, '09:00'); igual(a.pagos.on, false, 'lo guardado manda'); cierto(Array.isArray(a.contactos.dias), 'dias siempre es una lista'); igual(a.silencio.desde, '22:00');
+    const f = require('../../lib/push/fuentes/contactos');
+    const core = { fechas: async () => [{ id: 'a', nombre: 'Bis', label: 'Cumpleaños', anio: 2000, mes: 2, dia: 29 }] };
+    const cfg = { hora: '09:00', dias: [0] };
+    igual((await f.pendientes({ user: {}, cfg, ahora: { dia: '2027-02-28', hm: '09:00' }, core })).length, 1, '2027 no es bisiesto: el 28');
+    igual((await f.pendientes({ user: {}, cfg, ahora: { dia: '2028-02-28', hm: '09:00' }, core })).length, 0, '2028 es bisiesto: no el 28');
+    igual((await f.pendientes({ user: {}, cfg, ahora: { dia: '2028-02-29', hm: '09:00' }, core })).length, 1, 'y sí el 29');
+  });
+
+  await prueba('push: un ciclo lento no se solapa con el siguiente y la prueba tiene enfriamiento', async () => {
+    const { creaProgramador } = require('../../lib/push/programa');
+    let llamadas = 0;
+    const p = creaProgramador({ usuarios: () => { llamadas++; return []; }, archivoDe: () => '', envio: {}, fuentes: [], cores: {} });
+    await Promise.all([p.tick(), p.tick(), p.tick()]);
+    cierto(llamadas >= 1 && llamadas <= 3, 'sin error');
+    await req('POST', '/api/push/dispositivos', { suscripcion: sub(900) });
+    const r1 = await req('POST', '/api/push/prueba'), r2 = await req('POST', '/api/push/prueba');
+    cierto(r1.s === 200 || r1.s === 429, 'primera'); igual(r2.s, 429, 'segunda seguida: enfriamiento');
   });
 };

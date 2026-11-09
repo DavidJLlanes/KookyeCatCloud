@@ -163,3 +163,17 @@ Comprobado sin hallazgos:
 - Subir `.svg` y `.html` no da XSS: la vista previa los rechaza (415) y la descarga va como `attachment` con `application/octet-stream`.
 - `innerHTML` solo con texto escapado (notas, Código); cookies `httpOnly` + `SameSite=Strict` (sin CSRF); límites de subida en todos los `multer`; `execFile`/`spawn` sin intérprete y sin entrada del usuario en los argumentos; ningún secreto ni `.env` en el repositorio.
 - Las 22 vistas cargan sin errores de JavaScript ni respuestas 5xx y sin desborde horizontal a 390 px (solo falla el mapa por no haber internet en el entorno de pruebas).
+
+## Sexta auditoría (9 nov 2026): avisos push
+
+Revisión de `lib/push/` y su cliente. Cada arreglo tiene prueba en `tests/modulos/push.js`.
+
+| # | Dónde | Riesgo | Arreglo |
+|---|---|---|---|
+| 1 | Programador | Un ciclo lento (red lenta con muchos usuarios) podía solaparse con el siguiente y enviar dos veces lo mismo | Un solo ciclo a la vez |
+| 2 | Dispositivos | Si en un mismo navegador se cambiaba de usuario, el aviso de la cuenta anterior seguía llegando a ese móvil (privacidad) | Un navegador pertenece a una sola cuenta: al registrarlo se quita de las demás |
+| 3 | Ajustes | Un archivo antiguo o a medias (sin `vencidos`, sin `dias`…) dejaba valores sin definir y `cfg.dias.length` podía fallar | Fusión con los valores por defecto sección a sección |
+| 4 | Contactos | Quien cumple el 29 de febrero no recibía aviso en años no bisiestos | Se avisa el 28 |
+| 5 | Prueba | El aviso de prueba se podía lanzar en bucle | Enfriamiento de 10 s (429) |
+
+Sin hallazgos: el destino de los envíos solo puede ser un servicio push de navegador (sin SSRF), la clave privada VAPID no sale al cliente, el endpoint de la suscripción tampoco, los avisos no se repiten (registro por clave), un fallo pasajero se reintenta a los 10 min y un dispositivo caducado (404/410) se quita solo. La ruta `/api/push/_ciclo` solo existe con `KCC_PUSH_PRUEBAS=1` (no usar en producción).
