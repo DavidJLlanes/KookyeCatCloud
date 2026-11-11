@@ -681,7 +681,7 @@ La ficha se adapta al **tipo** (Imagen, Texto, Código, Vídeo, Audio, Agente, F
 
 Dos pestañas, **Logros** y **Tetris**, para que usar la app tenga recompensa. Todo es personal: cada cuenta tiene
 lo suyo, guardado en `<usuario>/.kcc/game.json`. El servidor es quien calcula y concede los puntos
-(`lib/game.js`), así que no se pueden falsear desde el navegador.
+(`lib/game/`), así que no se pueden falsear desde el navegador.
 
 ### Cómo funciona
 
@@ -1727,7 +1727,8 @@ lib/
   codigo.js          Proyectos de código: carpetas, archivos, versiones y vista web (un JSON por proyecto)
   transferir.js      Copiar o mover entre Archivos y Código, con deshacer de 1 minuto e historial
   exportar.js        Exportación de JSON por sección y ZIP completo (administración)
-  game.js            Logros, niveles, racha, retos semanales, cosméticos y partidas de Tetris
+  game/              Gamificación: niveles.js, logros.js, cosmeticos.js, retos.js (catálogos), utilidades.js,
+                     motor.js (métricas, logros, retos, vista) y rutas-estado/partidas/tienda.js
   comfy.js           Lee metadatos de generación: ComfyUI, Automatic1111 / Forge, JSON y EXIF/XMP
   clip.js            Portapapeles compartido entre dispositivos y destino de «Compartir»
   contacts.js        Contactos: API, búsqueda, importación y exportación vCard

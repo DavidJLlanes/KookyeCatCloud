@@ -676,7 +676,7 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
   // Módulos con sus propias pruebas (tests/modulos/<modulo>.js)
   process.env.__KCC_BASE = BASE; process.env.__KCC_COOKIE = cookie;
   const ctx = { req, prueba, igual, cierto, DATA, BASE, cookie: () => cookie };
-  for (const m of ['pagos', 'marcadores', 'perfil', 'push', 'analisis', 'sesiones', 'transversal', 'explorador', 'prompts', 'calendario', 'seguridad']) await require('./modulos/' + m)(ctx);
+  for (const m of ['pagos', 'marcadores', 'perfil', 'push', 'analisis', 'sesiones', 'transversal', 'explorador', 'prompts', 'calendario', 'seguridad', 'game']) await require('./modulos/' + m)(ctx);
   await prueba('cierre de sesión', async () => { cierto((await req('POST', '/api/logout')).s < 400, 'logout'); });
 
   srv.kill();
