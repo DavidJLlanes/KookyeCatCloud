@@ -75,5 +75,8 @@
       elige(async (id) => { w.dataset.ref = id; await carga(w); w._guardado = C.leeSub(w.querySelector('.nb-sy-texto')); C.change(true); const t = w.querySelector('.nb-sy-texto'); if (t) t.focus(); }, quita);
     },
   });
+  // Al cambiar de nota (NB.flush) se guardan antes los bloques sincronizados con cambios sin enviar
+  const flush0 = C.NB.flush;
+  C.NB.flush = function () { if (EST.host) EST.host.querySelectorAll('.nb-block[data-t="sync"]').forEach(guarda); return flush0.apply(this, arguments); };
   window.addEventListener('pagehide', () => EST.host && EST.host.querySelectorAll('.nb-block[data-t="sync"]').forEach(guarda), true);
 })();

@@ -279,3 +279,14 @@ Sin riesgo: la fórmula escrita con muchos paréntesis se rechaza por longitud a
   - `/api/export/__proto__` y `/api/game/arcade/__proto__` daban 500 (se buscaba la clave en un objeto normal): ahora 404 (`Object.hasOwn`).
 - Comprobado sin hallazgos: cabeceras (CSP, nosniff, X-Frame-Options, no-referrer), cookie `HttpOnly` y `SameSite=Strict`, bloqueo de intentos de inicio de sesión (429 a partir del sexto), ningún archivo interno servido (`/server.js`, `/.git/config`, `users.json`, `/lib/*` devuelven solo la página de la app), sin secretos en el repositorio (`.env.example` es solo plantilla).
 - Pendiente de valor bajo: añadir `Permissions-Policy` (cámara y ubicación solo para la propia app) y HSTS en nginx; no es un fallo.
+
+## Decimocuarta auditoría (11-11-2026): bloques de Notas, repetición de Recordatorios y librerías vendidas
+
+- **Librerías de `public/vendor/` fuera del alcance de `npm audit`:** KaTeX 0.16.11 y Mermaid 11.4.1 (recién añadidas) arrastraban 10 avisos (8 altos). Pasan a KaTeX 0.19.1 y Mermaid 12.3.0 (0 avisos). Al vendorizar una librería hay que auditarla en una carpeta aparte (`npm i <lib> && npm audit`), porque no está en `package.json`.
+- **Bloques ricos de Notas, contra XSS:** una nota con `<img onerror>` y `<script>` en un desplegable, `::embed javascript:…`, un PDF de otro dominio, `\href{javascript:…}`/`\url{…}` en KaTeX y `click … href "javascript:…"` en Mermaid no ejecuta nada (0 diálogos, 0 elementos inyectados, 0 errores). Mermaid va en modo `strict`, KaTeX con `trust: false`; los incrustados solo admiten YouTube (youtube-nocookie.com), coordenadas y PDF propio, y lo demás sale como «Contenido no admitido».
+- **Bloques sincronizados:** sin sesión 401; un usuario normal no puede leer, editar ni borrar los de otro (404 y su lista sale vacía); ids raros (`__proto__`, `%00`, `..`, 5.000 caracteres) 404; cuerpos con tipos raros, `__proto__` o 30 kB → 400 o aceptados sin efecto.
+- **Dos fallos corregidos en Recordatorios:**
+  - Una fecha final imposible en la repetición (`2099-13-45`) daba 500: ahora 400.
+  - «Deshacer» con una fecha mal formada borraba la fecha del recordatorio (200): ahora 400 y no toca nada.
+- **Un fallo de datos en Notas:** un bloque sincronizado editado justo antes de abrir otra nota podía no llegar a guardarse; ahora se guarda al cambiar de nota (`NB.flush`) y al cerrar la pestaña.
+- Pendiente de valor bajo: Mermaid pesa 5,3 MB (solo se descarga si una nota tiene un diagrama).

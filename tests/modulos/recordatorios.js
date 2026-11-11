@@ -128,6 +128,10 @@ module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
     igual((await nuevo({ titulo: 'x', fecha: '', repite: { freq: 'dia' } })).s, 400, 'sin fecha no se repite');
     igual((await nuevo({ titulo: 'x', fecha: '2099-01-05', repite: { freq: 'dia', hasta: '2098-01-01' } })).s, 400);
     igual((await nuevo({ titulo: 'x', fecha: '2099-01-05', repite: [] })).s, 400);
+    igual((await nuevo({ titulo: 'x', fecha: '2099-01-05', repite: { freq: 'dia', hasta: '2099-13-45' } })).s, 400, 'fecha final imposible (antes daba 500)');
+    const rr = await nuevo({ titulo: 'd', fecha: '2099-01-05', repite: { freq: 'dia' } });
+    for (const d of [5, 'x', { fecha: {} }, { fecha: '2099-99-99' }]) igual((await req('POST', `/api/recordatorios/${rr.j.recordatorio.id}/hecho`, { hecho: false, deshacer: d })).s, 400, 'deshacer inválido no borra la fecha');
+    igual((await req('GET', '/api/recordatorios')).j.recordatorios.find(x => x.id === rr.j.recordatorio.id).fecha, '2099-01-05');
   });
 
   await prueba('recordatorios: el aviso de uno solo lleva la acción Hecho/Posponer', async () => {
