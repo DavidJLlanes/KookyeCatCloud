@@ -27,3 +27,12 @@ Node 20 + Express 4 + JS vanilla (PWA). Respuestas al usuario en español, breve
 - Todo módulo nuevo añade su prueba de humo de: lectura dañada, escritura concurrente y valor vacío.
 - Ediciones desde varios dispositivos: los guardados de textos largos mandan la versión que abrieron (como `base` en notas) y el servidor no sobrescribe un cambio ajeno más nuevo; nunca reenviar al servidor partes que el usuario no ha tocado (p. ej. columnas al cambiar una vista).
 - Borrar: nada de datos del usuario se elimina en el acto. Va a una papelera o se aparta con `store.guardaBorrado` (30 días). Los textos largos no se recortan en silencio (`store.textoLargo`): se rechazan con aviso, salvo en importaciones.
+
+## Organización del código (regla permanente, pedida por el propietario)
+
+- **Ningún archivo crece sin control.** Pasadas ~300 líneas en un archivo nuevo, o al tocar uno de más de ~500, se trocea en carpeta (`lib/<modulo>/index.js` + archivos de una sola responsabilidad; `public/js/<modulo>/`). `server.js` solo arranca, configura y monta: la lógica va en `lib/`.
+- **Cada cambio deja el código mejor organizado que lo encontró:** si una función nueva no cabe con sensatez en un archivo pequeño, se crea el archivo adecuado en vez de añadirla al grande.
+- **Se trocea con red:** antes de mover código sin pruebas, se añade su prueba de humo en `tests/modulos/`; un movimiento no cambia comportamiento y se verifica con `npm run check && npm test` (y, si toca la interfaz, con Playwright).
+- Tras mover, revisar que cada archivo nuevo importa lo que usa (`fs`, `fsp`, `path`, `crypto`…): un identificador sin importar solo falla en tiempo de ejecución y puede quedar tragado por un `try/catch`.
+- Al acabar una tanda, actualizar la sección «Estructura del proyecto» del README.
+- Deuda pendiente de trocear (ir bajándola): `server.js` (rutas de archivos), `public/js/prompts.js`, `lib/prompts.js`, `public/js/calendar.js`, `public/js/notes.js`, `public/js/app/navegacion.js`, `public/js/app/visores.js`, `lib/game.js`, `lib/calendar.js`.
