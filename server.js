@@ -371,8 +371,8 @@ const jsonGrande = express.json({ limit: '30mb' });
 const jsonPdf = express.json({ limit: '8mb' });
 app.use((req, res, next) => {
   if (req.path === '/api/prompts/import') return jsonGrande(req, res, next);
-  if (req.path === '/api/pdf') return jsonPdf(req, res, next);
-  if (/^\/api\/(notes|text|prompts|calendar|labels|clip|shopping|codigo)(\/|$)/.test(req.path)) return jsonMedio(req, res, next);
+  if (req.path === '/api/pdf' || req.path === '/api/bases/import') return jsonPdf(req, res, next);   // 8 MB (el PDF y la importación de una base)
+  if (/^\/api\/(notes|text|prompts|calendar|labels|clip|shopping|codigo|bases)(\/|$)/.test(req.path)) return jsonMedio(req, res, next);
   return jsonPequeno(req, res, next);
 });
 app.use(cookieParser());

@@ -259,3 +259,13 @@ Alcance: lo añadido en la jornada (módulo Recordatorios, migración desde el c
 - **Corregido:** la optimización de imágenes no intenta decodificar archivos de más de 80 MB (en un móvil agotaría la memoria); se suben tal cual y el límite de 30 MB los rechaza con aviso.
 - **Observaciones sin riesgo:** en los ajustes de avisos, un valor que no sea booleano apaga el interruptor (igual que en el resto de secciones) y un objeto de sección mal formado se ignora. Un recordatorio atado a un archivo no sigue al archivo si lo renombras (solo se pierde el vínculo; el recordatorio sigue).
 - **Riesgos aceptados (sin cambios):** aviso moderado de `minimatch` vía `archiver`, bloqueo por IP abusable 15 min, contraseñas cortas antiguas válidas hasta que se cambien, push sin probar en móviles reales. Las horas de los avisos usan la zona de la app (`APP_TZ`, Europe/Madrid): quien use la web desde otra zona verá los avisos a la hora de Madrid.
+
+## Duodécima auditoría (11-11-2026): Bases con fórmulas, relaciones y vistas nuevas
+
+Revisado: autorización entre usuarios en todas las rutas de Bases (otro usuario recibe 404 en lectura, edición, borrado, exportación y comprobación de fórmulas; no se puede relacionar con una base ajena), cuerpos raros y claves `__proto__`/`constructor`, fórmulas (sin `eval`; ciclos, potencias enormes, textos que crecen, fechas imposibles, anidado), rendimiento con 5000 filas (lectura ~100 ms, edición ~30 ms), XSS en todas las vistas y editores (nombres, opciones, títulos y resultados con HTML), rutas de archivo (`..` rechazado) y el barrido de rutas de todo el servidor.
+
+Encontrado y corregido:
+- **Importar una base grande fallaba con 413**: el límite general de 100 kB del servidor se aplicaba antes que el de la ruta (8 MB). Ahora `/api/bases/import` admite 8 MB y el resto de `/api/bases` 2 MB.
+- **Fórmulas con varios niveles se rechazaban** («demasiados niveles») con solo tres funciones anidadas; el límite de profundidad cuenta ahora el anidado real (unos 18 niveles).
+
+Sin riesgo: la fórmula escrita con muchos paréntesis se rechaza por longitud antes de analizarse; un cuerpo de 600 kB se acepta pero los nombres se recortan a su máximo (comportamiento ya existente). Riesgos aceptados sin cambios: los de la auditoría anterior (minimatch vía archiver, bloqueo por IP, contraseñas antiguas cortas, push sin probar en móviles reales).

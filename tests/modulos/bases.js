@@ -110,6 +110,15 @@ module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
     const c = (await req('POST', '/api/bases', { nombre: 'Vacía' })).j; igual((await fila(c, {})).s, 200, 'fila sin valores');
   });
 
+  await prueba('bases: importar una base grande (más de 100 kB) y fórmulas con varios niveles', async () => {
+    const cuerpo = { name: 'Grande', columns: [{ id: 'c1', nombre: 'Nombre', tipo: 'text' }, { id: 'c2', nombre: 'Num', tipo: 'number' }], rows: Array.from({ length: 4000 }, (_, i) => ({ c: { c1: 'fila de prueba número ' + i, c2: i } })) };
+    cierto(JSON.stringify(cuerpo).length > 150000, 'el cuerpo supera el límite general de 100 kB');
+    const i = await req('POST', '/api/bases/import', cuerpo); igual(i.s, 200); igual(i.j.rows.length, 4000);
+    const e = await esquema(i.j, [...conserva(i.j), { nombre: 'Anidada', tipo: 'formula', expr: 'SI(Y({Num} > 1; O({Num} < 9; NO(VACIO({Nombre})))); SI({Num} > 5; "a"; SI({Num} > 3; "b"; "c")); "d")' }, { nombre: 'Ciclo A', tipo: 'formula', expr: '{Ciclo B} + 1' }, { nombre: 'Ciclo B', tipo: 'formula', expr: '{Ciclo A} + 1' }, { nombre: 'Gigante', tipo: 'formula', expr: '9^9^9^9' }]); igual(e.s, 200, JSON.stringify(e.j));
+    const g = (await req('GET', `/api/bases/${i.j.id}`)).j; const cs = e.j.columns; const f = g.rows[6].f;
+    igual(f[cs.find(c => c.nombre === 'Anidada').id], 'a'); igual(f[cs.find(c => c.nombre === 'Ciclo A').id].e, '#CICLO'); igual(f[cs.find(c => c.nombre === 'Gigante').id].e, '#NUM');
+  });
+
   await prueba('bases: logros de fórmulas, relaciones y vistas', async () => {
     const g = (await req('GET', `/api/game`)).j;
     cierto(g.logros.familias.some(f => f.id === 'db_calc' && f.valor >= 3), 'familia db_calc'); cierto(g.logros.familias.some(f => f.id === 'db_rel' && f.valor >= 1), 'familia db_rel');
