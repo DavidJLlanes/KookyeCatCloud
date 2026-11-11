@@ -56,6 +56,7 @@ const createBases = require('./lib/bases');
 const createPagos = require('./lib/pagos');
 const createMarcadores = require('./lib/marcadores');
 const createPerfil = require('./lib/perfil');
+const createAnalisis = require('./lib/analisis');
 const { base32Encode, totpVerificar } = require('./lib/totp');
 const { isBlocked, registerFailure, clearFailures } = require('./lib/limitador');
 const createPush = require('./lib/push');
@@ -121,17 +122,7 @@ const SESSIONS_FILE = path.join(APP_DIR, 'sessions.json');
 const ACTIVITY_FILE = path.join(APP_DIR, 'activity.log.jsonl');
 const ACTIVITY_MAX = Number(process.env.ACTIVITY_MAX || 2000);
 const ACTIVITY_DIAS = Number(process.env.ACTIVITY_DIAS || 60);   // los registros más antiguos se borran solos
-// Buscador de duplicados: tope de archivos a examinar por si el árbol es enorme
-const DUP_LIMIT = Number(process.env.DUP_LIMIT || 20000);
 
-// Categorías para el reparto de espacio del panel de administración
-const TYPE_RE = [
-  ['image', /\.(jpe?g|png|gif|webp|bmp|avif|heic|heif|svg|tiff?)$/i],
-  ['video', /\.(mp4|mov|avi|mkv|webm|m4v|mpe?g|wmv|flv)$/i],
-  ['audio', /\.(mp3|wav|flac|aac|ogg|m4a|wma|opus)$/i],
-  ['doc',   /\.(pdf|docx?|txt|rtf|odt|md|pages|xlsx?|csv|ods|pptx?|odp|epub)$/i],
-];
-const typeOf = (name) => (TYPE_RE.find(([, re]) => re.test(name)) || ['other'])[0];
 
 // --- Setup ---
 try {
@@ -1344,110 +1335,8 @@ app.use('/', enlacesMod.paginas);
 
 
 
-/* ---------------- Buscador de duplicados ----------------
-   Primero se agrupa por tamaño (gratis, ya se recorre el árbol) y solo se
-   calcula el hash de los que comparten tamaño con otro: es lo que hace viable
-   pasarlo por una nube con miles de archivos sin tardar minutos. */
-app.get('/api/duplicates', auth, async (req, res) => {
-  try {
-    const raiz = userRoot(req.user);
-    const porTamano = new Map();
-    let escaneados = 0, cortado = false;
-
-    async function recorrer(dir, rel) {
-      if (cortado) return;
-      let entradas;
-      try { entradas = await fsp.readdir(dir, { withFileTypes: true }); } catch { return; }
-      for (const e of entradas) {
-        if (cortado) return;
-        if (isHidden(e.name)) continue;
-        const full = path.join(dir, e.name);
-        const hijoRel = rel ? `${rel}/${e.name}` : e.name;
-        if (e.isDirectory()) { await recorrer(full, hijoRel); continue; }
-        if (++escaneados > DUP_LIMIT) { cortado = true; return; }
-        try {
-          const stat = await fsp.stat(full);
-          if (!stat.size) continue;
-          if (!porTamano.has(stat.size)) porTamano.set(stat.size, []);
-          porTamano.get(stat.size).push({ abs: full, rel: hijoRel, size: stat.size, modified: stat.mtime });
-        } catch { /* desaparecido a mitad del recorrido */ }
-      }
-    }
-    await recorrer(raiz, '');
-
-    const candidatos = [...porTamano.values()].filter(g => g.length > 1).flat();
-    const porHash = new Map();
-    for (const f of candidatos) {
-      try {
-        const hash = await new Promise((resolve, reject) => {
-          const h = crypto.createHash('sha1');
-          fs.createReadStream(f.abs).on('data', d => h.update(d)).on('end', () => resolve(h.digest('hex'))).on('error', reject);
-        });
-        if (!porHash.has(hash)) porHash.set(hash, []);
-        porHash.get(hash).push({ rel: f.rel, name: path.basename(f.abs), size: f.size, modified: f.modified });
-      } catch { /* archivo ilegible: se ignora en vez de tumbar todo el escaneo */ }
-    }
-    const grupos = [...porHash.values()].filter(g => g.length > 1)
-      .sort((a, b) => (b[0].size * b.length) - (a[0].size * a.length));
-    const espacioRecuperable = grupos.reduce((n, g) => n + g[0].size * (g.length - 1), 0);
-    res.json({ grupos, espacioRecuperable, escaneados, cortado });
-  } catch (err) { sendError(res, err); }
-});
-
-/* ---------------- Analizador de espacio por carpeta ----------------
-   Reparto de tamaños de lo que hay DENTRO de una carpeta (un nivel), con el
-   tamaño de cada subcarpeta ya sumado recursivamente: sirve para encontrar
-   qué está llenando el disco sin tener que adivinarlo por tipo de archivo.
-   Dos cuidados que la primera versión no tenía y que en un almacén grande
-   sí se notan: un tope de archivos examinados (si no, una carpeta enorme
-   podía agotar los descriptores de archivo o tardar minutos) y concurrencia
-   limitada al sumar las subcarpetas del nivel, en vez de lanzarlas todas
-   a la vez con Promise.all. */
-const DU_LIMIT = Number(process.env.DU_LIMIT || 200000);
-
-async function tamanoDir(p, contador) {
-  let total = 0, entradas;
-  if (contador.cortado) return 0;
-  try { entradas = await fsp.readdir(p, { withFileTypes: true }); } catch { return 0; }
-  for (const e of entradas) {
-    if (isHidden(e.name)) continue;
-    if (++contador.n > DU_LIMIT) { contador.cortado = true; return total; }
-    const full = path.join(p, e.name);
-    try { total += e.isDirectory() ? await tamanoDir(full, contador) : (await fsp.stat(full)).size; }
-    catch { /* desaparecido a mitad del recorrido */ }
-  }
-  return total;
-}
-app.get('/api/diskusage', auth, async (req, res) => {
-  try {
-    const rel = req.query.path || '';
-    const dir = userPath(req, rel);
-    const entradas = (await fsp.readdir(dir, { withFileTypes: true })).filter(e => !isHidden(e.name));
-    const contador = { n: 0, cortado: false };
-    const items = [];
-    // De cuatro en cuatro: sumar todas las subcarpetas del nivel a la vez agota
-    // los descriptores de archivo en un almacén con muchas carpetas grandes.
-    for (let i = 0; i < entradas.length; i += 4) {
-      const grupo = entradas.slice(i, i + 4);
-      const parciales = await Promise.all(grupo.map(async e => {
-        const full = path.join(dir, e.name);
-        try {
-          const stat = await fsp.stat(full);
-          const size = stat.isDirectory() ? await tamanoDir(full, contador) : stat.size;
-          return { name: e.name, isDir: stat.isDirectory(), size };
-        } catch { return null; }
-      }));
-      items.push(...parciales.filter(Boolean));
-    }
-    // En la raíz también salen los datos de la app (no son carpetas navegables)
-    if (!rel) for (const d of await datosApp(req.user)) if (d.bytes) items.push({ name: d.nombre, isDir: false, app: true, size: d.bytes });
-    items.sort((a, b) => b.size - a.size);
-    res.json({
-      path: rel, items, total: items.reduce((n, i) => n + i.size, 0),
-      cortado: contador.cortado,
-    });
-  } catch (err) { sendError(res, err); }
-});
+const analisisMod = createAnalisis({ express, auth, userRoot, userPath, isHidden, sendError, DATA_ROOT, TRASH_DIR, NOTES_DIR });
+app.use(analisisMod.router);   // sus rutas ya llevan /api
 
 /* ---------------- Bloc de notas ----------------
    Vive en lib/notes.js; aquí se crea y se exponen sus funciones al resto del servidor. */
@@ -1455,113 +1344,6 @@ const { trashItem, papeleraDias, purgeExpired } = papeleraMod.core;
 const notesMod = createNotes({ express, auth, userRoot, sendError, papeleraDias, calendar: () => calendarMod.core, extraeLinks: (b) => notesExtra.extraeLinks(b) });
 const { readNotes, writeNotes, notaFile, descendientes, notasFuente, purgarNotasCaducadas, enCola: enColaNotas } = notesMod.core;
 app.use('/api', notesMod.router);
-
-// --- Estadísticas de almacenamiento ---
-/* Datos de la propia app que viven en carpetas ocultas de cada usuario (papelera, notas, prompts,
-   contactos y sus fotos, versiones, caja fuerte, calendario y etiquetas). El recorrido de archivos
-   de arriba las salta a propósito, pero ocupan disco y deben contar en el total. */
-const DATOS_APP = [
-  { id: 'trash',    nombre: 'Papelera' },
-  { id: 'notes',    nombre: 'Notas' },
-  { id: 'prompts',  nombre: 'Prompts' },
-  { id: 'contacts', nombre: 'Contactos' },
-  { id: 'codigo',   nombre: 'Código' },
-  { id: 'bases',    nombre: 'Bases' },
-  { id: 'pagos',    nombre: 'Pagos' },
-  { id: 'marcadores', nombre: 'Marcadores' },
-  { id: 'albums',   nombre: 'Álbumes' },
-  { id: 'perfil',   nombre: 'Foto de perfil' },
-  { id: 'juegos',   nombre: 'Juegos y logros' },
-  { id: 'transfer', nombre: 'Transferencias' },
-  { id: 'versions', nombre: 'Versiones' },
-  { id: 'clip',     nombre: 'Portapapeles' },
-  { id: 'vault',    nombre: 'Caja fuerte' },
-  { id: 'calendar', nombre: 'Calendario' },
-  { id: 'datos',    nombre: 'Ajustes y otros' },
-];
-// Carpeta o archivo dentro de .kcc -> categoría (lo no listado cae en «Ajustes y otros»)
-const KCC_A_DATOS = {
-  prompts: 'prompts', 'contacts.json': 'contacts', 'contact-photos': 'contacts', codigo: 'codigo', bases: 'bases',
-  pagos: 'pagos', marcadores: 'marcadores', perfil: 'perfil', games: 'juegos', 'game.json': 'juegos', 'game.json.bak': 'juegos',
-  transferencias: 'transfer', versions: 'versions', clip: 'clip', 'calendar.json': 'calendar', 'calendar.json.bak': 'calendar',
-};
-async function tamanoTodo(p) {
-  let bytes = 0, count = 0, st;
-  try { st = await fsp.lstat(p); } catch { return { bytes, count }; }
-  if (!st.isDirectory()) return { bytes: st.size, count: 1 };
-  let entradas;
-  try { entradas = await fsp.readdir(p, { withFileTypes: true }); } catch { return { bytes, count }; }
-  for (const e of entradas) {
-    const r = await tamanoTodo(path.join(p, e.name));
-    bytes += r.bytes; count += r.count;
-  }
-  return { bytes, count };
-}
-async function datosApp(user) {
-  const raiz = userRoot(user);
-  const acum = Object.fromEntries(DATOS_APP.map(d => [d.id, { bytes: 0, count: 0 }]));
-  const suma = async (id, ruta) => { const r = await tamanoTodo(ruta); acum[id].bytes += r.bytes; acum[id].count += r.count; };
-  let ocultos = [];
-  try { ocultos = (await fsp.readdir(raiz, { withFileTypes: true })).filter(e => isHidden(e.name)); } catch { /* sin carpeta */ }
-  for (const e of ocultos) {
-    const ruta = path.join(raiz, e.name);
-    if (e.name === TRASH_DIR) await suma('trash', ruta);
-    else if (e.name === NOTES_DIR) await suma('notes', ruta);
-    else if (e.name === '.vault') await suma('vault', ruta);
-    else if (e.name === '.albums') await suma('albums', ruta);
-    else if (e.name === '.kcc' && e.isDirectory()) {
-      for (const h of await fsp.readdir(ruta, { withFileTypes: true }).catch(() => [])) {
-        const hp = path.join(ruta, h.name);
-        await suma(KCC_A_DATOS[h.name] || 'datos', hp);
-      }
-    } else await suma('datos', ruta);
-  }
-  return DATOS_APP.map(d => ({ ...d, ...acum[d.id] }));
-}
-
-app.get('/api/stats', auth, async (req, res) => {
-  try {
-    // Recorrido asíncrono: con readdirSync el panel de admin bloqueaba el proceso entero
-    const byType = { image: { bytes: 0, count: 0 }, video: { bytes: 0, count: 0 },
-                     audio: { bytes: 0, count: 0 }, doc: { bytes: 0, count: 0 },
-                     other: { bytes: 0, count: 0 } };
-    async function walk(dir) {
-      let total = 0, count = 0;
-      const entries = await fsp.readdir(dir, { withFileTypes: true });
-      for (const e of entries) {
-        if (isHidden(e.name)) continue; // la papelera se contabiliza aparte
-        const full = path.join(dir, e.name);
-        try {
-          if (e.isDirectory()) {
-            const r = await walk(full);
-            total += r.total; count += r.count;
-          } else {
-            const size = (await fsp.stat(full)).size;
-            total += size; count++;
-            const t = byType[typeOf(e.name)];
-            t.bytes += size; t.count++;
-          }
-        } catch { /* archivo desaparecido a mitad del recorrido */ }
-      }
-      return { total, count };
-    }
-    const { total, count } = await walk(userRoot(req.user));
-    const app = await datosApp(req.user);
-    const appBytes = app.reduce((n, d) => n + d.bytes, 0);
-    // totalBytes incluye ahora TODO lo que el usuario guarda; filesBytes son solo sus archivos
-    const payload = { totalBytes: total + appBytes, filesBytes: total, appBytes, fileCount: count, byType, app };
-    try {
-      if (fsp.statfs) {
-        const disk = await fsp.statfs(DATA_ROOT);
-        payload.diskTotal = disk.blocks * disk.bsize;
-        payload.diskFree = disk.bavail * disk.bsize;
-      }
-    } catch { /* statfs no disponible en este Node */ }
-    res.json(payload);
-  } catch (err) {
-    sendError(res, err);
-  }
-});
 
 /* ---------------- Vaciado programado de las papeleras ----------------
    Hasta ahora lo caducado solo se borraba al abrir la papelera. Este barrido lo hace por su cuenta, para
