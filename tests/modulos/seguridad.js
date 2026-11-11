@@ -54,7 +54,7 @@ module.exports = async ({ req, prueba, igual, cierto, BASE, cookie }) => {
     const fd = new FormData(); fd.append('path', ''); fd.append('files', new Blob(['hola']), 'enlace-pw.txt');
     igual((await fetch(BASE + '/api/upload', { method: 'POST', headers: { Cookie: cookie() }, body: fd })).status, 200);
     const c = await req('POST', '/api/sharelinks', { path: 'enlace-pw.txt', days: 1, password: 'pw-correcta-1' }); igual(c.s, 200);
-    const id = c.j.link.id, d = (pw) => fetch(BASE + `/api/public/share/${id}/download?pw=${pw}`);
+    const id = c.j.link.id, d = (pw) => fetch(BASE + `/api/public/share/${id}/download`, { headers: { 'X-Clave': pw } });
     igual((await d('pw-correcta-1')).status, 200, 'la correcta entra');
     for (let i = 0; i < 10; i++) igual((await d('mala' + i)).status, 401);
     igual((await d('pw-correcta-1')).status, 401, 'tras 10 fallos, bloqueado una hora');

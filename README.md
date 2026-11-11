@@ -1293,6 +1293,7 @@ Menú de un archivo, carpeta o álbum → *Compartir enlace*. La dirección es c
 
 - **Caducidad configurable**: 1 hora, 1 día, 7, 30, 90 días, 1 año, **«Otro plazo…»** (días u horas) o **sin caducidad**. Desde *Administración → Enlaces* puedes cambiarla después (botón del reloj; `0` = sin caducidad) o revocar el enlace. Tope de 10 años.
 - **Código QR**: botón *Código QR* al crear el enlace y en la lista de enlaces; se genera en el navegador (librería `qrcode-generator`, en `public/vendor/qrcode/`) y se **descarga como imagen PNG** (`qr-<id>.png`, 370 px con margen), o copias el enlace desde la misma ventana.
+- **La contraseña no viaja en la URL**: quien recibe el enlace la manda una sola vez en una cabecera (`POST /api/public/share/<id>/acceso`) y recibe un token de 1 hora firmado con el hash de la contraseña; las descargas y miniaturas usan `?t=<token>`. Cambiar la contraseña del enlace invalida los tokens, y el límite de 10 fallos por hora sigue vigente.
 - Los datos siguen en `uploadlinks.json`; `PUT /api/sharelinks/<id>/caducidad` cambia el plazo y `POST /api/sharelinks/<id>/qr` anota la descarga del QR (para los logros). La ruta `/<12 caracteres>` solo responde si existe ese enlace; si no, la app sigue como siempre. Funciona detrás de Nginx sin tocar nada, porque `/cloud/` ya va entero a la app.
 - Logros *Escaneable* (QR descargados) y *Cuenta atrás* (enlaces con caducidad), un reto semanal y el título *Escaneable*. Código en `lib/enlaces.js`, `lib/enlaces-resumen.js` y `public/js/app/qr-enlace.js`.
 

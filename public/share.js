@@ -7,6 +7,20 @@ const linkId = location.pathname.split('/').filter(Boolean).pop() || '';
 const qs = (s) => encodeURIComponent(s);
 let info = null;
 let clavePw = '';
+let tokenAcceso = '';   // token temporal que se canjea por la contraseña (la contraseña no viaja en la URL)
+
+// Canjea la contraseña por un token; devuelve '' si no hace falta o 'mala' / 'error'
+async function canjea() {
+  if (!info.protegido) return '';
+  clavePw = $('clave').value;
+  try {
+    const r = await fetch(BASE + '/api/public/share/' + qs(linkId) + '/acceso', { method: 'POST', headers: { 'X-Clave': clavePw } });
+    if (r.status === 401) return 'mala';
+    if (!r.ok) return 'error';
+    tokenAcceso = (await r.json()).token || '';
+    return '';
+  } catch { return 'error'; }
+}
 
 function fmtSize(bytes) {
   if (!bytes) return '';
@@ -97,22 +111,10 @@ async function cargar() {
 }
 
 async function descargar() {
-  clavePw = $('clave').value;
+  const fallo = await canjea();
+  if (fallo) { aviso(fallo === 'mala' ? 'Contraseña incorrecta' : 'No se pudo descargar', 'err'); return; }
   const url = BASE + '/api/public/share/' + qs(linkId) + '/download' +
-    (info.protegido ? '?pw=' + qs(clavePw) : '');
-
-  if (info.protegido) {
-    try {
-      const res = await fetch(url, { method: 'HEAD' });
-      if (!res.ok) {
-        aviso(res.status === 401 ? 'Contraseña incorrecta' : 'No se pudo descargar', 'err');
-        return;
-      }
-    } catch {
-      aviso('Error de conexión', 'err');
-      return;
-    }
-  }
+    (info.protegido ? '?t=' + qs(tokenAcceso) : '');
   aviso('Descarga iniciada. Si no empieza sola, vuelve a pulsar.', 'ok');
   const a = document.createElement('a');
   a.href = url;
@@ -133,14 +135,15 @@ let galLbIndex = -1;
 function galUrl(accion, extra) {
   const p = new URLSearchParams();
   if (galSub) p.set('sub', galSub);
-  if (info.protegido) p.set('pw', clavePw);
+  if (info.protegido) p.set('t', tokenAcceso);
   if (extra) for (const k in extra) p.set(k, extra[k]);
   return `${BASE}/api/public/share/${qs(linkId)}/${accion}?${p.toString()}`;
 }
 
 async function verGaleria() {
-  clavePw = $('clave').value;
   aviso('');
+  const fallo = await canjea();
+  if (fallo) { aviso(fallo === 'mala' ? 'Contraseña incorrecta' : 'Error de conexión', 'err'); return; }
   try {
     const res = await fetch(galUrl('list'));
     if (!res.ok) {
