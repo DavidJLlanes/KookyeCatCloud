@@ -7,6 +7,7 @@ module.exports = [
   {
     files: ['**/*.js'],
     languageOptions: { ecmaVersion: 2023, sourceType: 'commonjs', globals: globals.node },
-    rules: { 'no-undef': 'error', 'no-unused-vars': ['warn', { args: 'none', caughtErrors: 'none' }] },
+    // `crypto` existe como global (WebCrypto) en Node y no tiene createHash/randomBytes: usarlo sin require falla en ejecución.
+    rules: { 'no-undef': 'error', 'no-restricted-globals': ['error', { name: 'crypto', message: "Importa el módulo: const crypto = require('crypto')" }], 'no-unused-vars': ['warn', { args: 'none', caughtErrors: 'none' }] },
   },
 ];

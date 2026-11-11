@@ -1692,6 +1692,7 @@ lib/
   pagos/             Pagos y recordatorios (modelo, fechas, valores, resumen, rutas)
   marcadores/        Marcadores web (modelo, favicon, red con defensa SSRF, resumen, rutas)
   perfil/            Foto y nombre visible del perfil (procesado de imagen y rutas)
+  calendar/          Calendario (fechas, modelo del evento, repetición, calendarios, eventos, importar, iCal, API interna)
   prompts/           Prompts de IA (base e índice, listado, categorías, fragmentos, parecidos, CRUD, imágenes, ComfyUI, importar/exportar, enganches)
   explorador/        Listar, crear carpetas, subir, buscar, borrar, mover y lotes
   transversal/       Lo que cruza módulos: iCal, búsqueda global, fechas de archivos y cableado calendario↔etiquetas↔notas
