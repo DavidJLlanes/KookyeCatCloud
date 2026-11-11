@@ -1041,7 +1041,8 @@ Recordatorios de pagos: qué pagas, a qué compañía, cuánto, cada cuánto y c
 
 - Datos en `<raíz>/.kcc/pagos/data.json`. Código en `lib/pagos/` (`modelo.js` forma y validación, `fechas.js`, `valores.js`, `resumen.js`, `index.js` rutas) y `public/js/pagos/`.
 - **Marcar como pagado** anota el pago y pasa la fecha al siguiente periodo conservando el día de cobro (31 ene → 28 feb → 31 mar). Un pago único queda finalizado. **Deshacer** recupera el estado anterior.
-- Compañía y categoría usan los [valores reutilizables](#valores-reutilizables) (sin duplicados «Mapfre»/«MAPFRE»).
+- Cada pago guarda también el **banco** (o cuenta de cargo) con el que se paga; sale como etiqueta en la tarjeta, se busca y filtra pulsándolo.
+- Compañía, banco y categoría usan los [valores reutilizables](#valores-reutilizables) (sin duplicados «Mapfre»/«MAPFRE»).
 - El próximo vencimiento aparece en el calendario «Pagos» (un evento por pago).
 - Borrar aparta el pago 30 días en `.kcc/borrados/pagos/`. Si otro dispositivo lo cambió antes, el guardado devuelve 409 y no lo pisa.
 - Exportación: entra en el botón ⤓ y en el ZIP de administración. Logros: familias `pg_*`.

@@ -26,6 +26,16 @@ module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
     await req('DELETE', '/api/pagos/' + r2.j.pago.id);
   });
 
+  await prueba('pagos: banco de pago (valor reutilizable, vacío válido, sin recortar en silencio)', async () => {
+    let r = await req('PUT', '/api/pagos/' + id, { banco: 'caixabank' }); igual(r.s, 200); igual(r.j.pago.banco, 'CaixaBank', 'se unifica con la lista de bancos');
+    r = await req('PUT', '/api/pagos/' + id, { banco: 'Mi cooperativa' }); igual(r.j.pago.banco, 'Mi cooperativa', 'admite bancos nuevos');
+    r = await req('PUT', '/api/pagos/' + id, { banco: '' }); igual(r.s, 200); igual(r.j.pago.banco, '', 'vacío es válido');
+    igual((await req('PUT', '/api/pagos/' + id, { banco: 'x'.repeat(121) })).s, 400, 'demasiado largo');
+    igual((await nuevo({ nombre: 'Sin banco' })).j.pago.banco, '', 'por defecto vacío');
+    r = await req('PUT', '/api/pagos/' + id, { banco: 'BBVA' }); igual(r.j.pago.banco, 'BBVA');
+    v0 = r.j.pago.updatedAt;
+  });
+
   await prueba('pagos: marcar como pagado avanza el periodo conservando el día de cobro; deshacer lo recupera', async () => {
     let r = await req('POST', `/api/pagos/${id}/pagado`, { fecha: '2026-01-30' }); igual(r.j.pago.fechaProxima, '2026-02-28', 'enero 31 → febrero 28');
     r = await req('POST', `/api/pagos/${id}/pagado`, {}); igual(r.j.pago.fechaProxima, '2026-03-31', 'vuelve al 31');

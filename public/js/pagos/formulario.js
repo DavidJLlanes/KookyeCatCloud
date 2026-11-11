@@ -12,9 +12,10 @@
 
   P.editor = function (p) {
     const nuevo = !p;
-    const base = p || { nombre: '', compania: '', categoria: '', importe: null, frecuencia: 'mensual', fechaProxima: K.d.ymd(new Date(P.S.hoy ? K.d.parse(P.S.hoy) : new Date())), avisoDias: 3, metodo: '', referencia: '', web: '', notas: '', activo: true, recordar: true, historial: [] };
+    const base = p || { nombre: '', compania: '', categoria: '', banco: '', importe: null, frecuencia: 'mensual', fechaProxima: K.d.ymd(new Date(P.S.hoy ? K.d.parse(P.S.hoy) : new Date())), avisoDias: 3, metodo: '', referencia: '', web: '', notas: '', activo: true, recordar: true, historial: [] };
     const nombre = entrada('text', base.nombre, { maxlength: 120, placeholder: 'Seguro del hogar, Luz, Netflix…', autocomplete: 'off' });
     const compania = K.campoValor({ campo: 'pagos.compania', value: base.compania, placeholder: 'Mapfre, Iberdrola…' });
+    const banco = K.campoValor({ campo: 'pagos.banco', value: base.banco, placeholder: 'Banco o cuenta de cargo' });
     const categoria = K.campoValor({ campo: 'pagos.categoria', value: base.categoria, placeholder: 'Seguros, Suministros…' });
     const importe = entrada('text', base.importe === null ? '' : String(base.importe).replace('.', ','), { inputmode: 'decimal', placeholder: '0,00' });
     const frecuencia = select(P.FRECUENCIAS, base.frecuencia);
@@ -29,7 +30,7 @@
     const f = el('div', 'pg-form');
     f.append(campo('Nombre', nombre, 'ancho'), campo('Compañía', compania.el), campo('Categoría', categoria.el),
       campo('Importe (€)', importe), campo('Frecuencia', frecuencia), campo('Próximo pago', fecha), campo('Avisar con (días)', aviso),
-      campo('Forma de pago', metodo), campo('Referencia', ref), campo('Web', web, 'ancho'), campo('Notas', notas, 'ancho'), activo, recordar);
+      campo('Forma de pago', metodo), campo('Banco', banco.el), campo('Referencia', ref), campo('Web', web, 'ancho'), campo('Notas', notas, 'ancho'), activo, recordar);
     if (!nuevo && (p.historial || []).length) {
       const h = el('div', 'pg-hist ancho'); h.appendChild(el('h4', null, `Pagos anotados (${p.nPagos || p.historial.length})`));
       p.historial.slice(0, 6).forEach(x => h.appendChild(el('div', 'pg-h-fila', `${P.fechaTxt(x.fecha)} · ${P.euros(x.importe)}`)));
@@ -38,7 +39,7 @@
       h.appendChild(des); f.appendChild(h);
     }
     const acciones = [{ label: 'Cancelar' }, { label: nuevo ? 'Crear' : 'Guardar', primary: true, onClick: async () => {
-      const cuerpo = { nombre: nombre.value, compania: compania.get(), categoria: categoria.get(), importe: importe.value, frecuencia: frecuencia.value, fechaProxima: fecha.value, avisoDias: aviso.value, metodo: metodo.value, referencia: ref.value, web: web.value, notas: notas.value, activo: activo.input.checked, recordar: recordar.input.checked };
+      const cuerpo = { nombre: nombre.value, compania: compania.get(), categoria: categoria.get(), banco: banco.get(), importe: importe.value, frecuencia: frecuencia.value, fechaProxima: fecha.value, avisoDias: aviso.value, metodo: metodo.value, referencia: ref.value, web: web.value, notas: notas.value, activo: activo.input.checked, recordar: recordar.input.checked };
       try {
         if (nuevo) await K.post('/api/pagos', cuerpo); else await K.put('/api/pagos/' + p.id, { ...cuerpo, base: p.updatedAt });
         K.toast(nuevo ? 'Pago creado' : 'Pago guardado'); K.sonidos && K.sonidos.reproduce('ok'); recarga();

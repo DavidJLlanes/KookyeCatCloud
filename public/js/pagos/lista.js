@@ -16,7 +16,7 @@
       if (S.estado === 'fin' && e.clase !== 'fin') return false;
       if (S.estado === 'todos' && e.clase === 'fin' && !S.q) return false;
       if (S.valor && norm(p[S.valor.prop]) !== norm(S.valor.valor)) return false;
-      return !q || [p.nombre, p.compania, p.categoria, p.referencia, p.notas].some(t => norm(t).includes(q));
+      return !q || [p.nombre, p.compania, p.banco, p.categoria, p.referencia, p.notas].some(t => norm(t).includes(q));
     }).sort((a, b) => P.estadoDe(a).orden - P.estadoDe(b).orden || (a.fechaProxima || '').localeCompare(b.fechaProxima || '') || a.nombre.localeCompare(b.nombre, 'es'));
   }
 
@@ -42,6 +42,7 @@
     const t = el('div', 'pg-tit'); t.append(el('b', null, p.nombre));
     const chips = el('div', 'pg-chips');
     if (p.compania) chips.appendChild(K.chipValor('pagos.compania', p.compania));
+    if (p.banco) chips.appendChild(K.chipValor('pagos.banco', p.banco));
     if (p.categoria) chips.appendChild(K.chipValor('pagos.categoria', p.categoria));
     if (chips.childNodes.length) t.appendChild(chips);
     cab.append(t, el('div', 'pg-importe', P.euros(p.importe)));
