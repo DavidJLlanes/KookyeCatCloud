@@ -1745,7 +1745,10 @@ lib/
 public/
   index.html         Página única (vistas, iconos SVG y los <script> en orden)
   js/app/*.js        Aplicación principal, troceada por áreas (antes un solo app.js): estado, markdown, tema, sesión,
-                     navegación, visores, papelera y subida, notas, enlaces, colecciones, administración, cuenta e inicio
+                     navegación, visores, papelera y subida, notas, enlaces, colecciones, administración, cuenta e inicio.
+                     navegacion/ (lista, agrupacion, arrastrar, menu-contextual, filas, busqueda-seleccion, mover) y
+                     visores/ (foto, documentos, hojas, texto, mapa, detalles) son scripts globales en orden
+  tests/ui/          Pruebas de interfaz con Playwright (no van en npm test) y sus huellas de referencia
   js/copias.js       Tarjeta de Administración: estado, crear copia, descargar y registro de intentos
   js/valores*.js     Valores reutilizables: normalización compartida con el servidor, campos con sugerencias, chips que filtran y pantalla de revisión
   js/pagos/, js/marcadores/, js/push/, js/sonidos/  Clientes de los módulos nuevos, un archivo por responsabilidad (datos, lista, formulario, ajustes…)

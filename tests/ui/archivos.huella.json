@@ -1,0 +1,82 @@
+{
+ "pc": {
+  "elementos": 6,
+  "carpetas": 2,
+  "migas": 2,
+  "vistaBtns": 0,
+  "vista_list": {
+   "filas": 6,
+   "tiles": 0
+  },
+  "vista_grid": {
+   "filas": 0,
+   "tiles": 6
+  },
+  "agrupar": "functionfunction",
+  "busqueda": 1,
+  "seleccion": 1,
+  "selbar": true,
+  "ctx": 13,
+  "dentro": "UI carpeta",
+  "migasDentro": 2,
+  "mover": 2,
+  "visorFoto": 1,
+  "visor_ui-texto.txt": [
+   true,
+   "ui-texto.txt 4 de 4 · 11 B · 11 nov hola mundo ",
+   10
+  ],
+  "visor_ui-datos.csv": [
+   true,
+   "ui-datos.csv 1 de 4 · 12 B · 11 nov a b 1 2 3 4",
+   10
+  ],
+  "visor_ui-nota.md": [
+   true,
+   "ui-nota.md 3 de 4 · 16 B · 11 nov Título texto",
+   10
+  ],
+  "funciones": "function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function",
+  "errores": []
+ },
+ "movil": {
+  "elementos": 6,
+  "carpetas": 2,
+  "migas": 2,
+  "vistaBtns": 0,
+  "vista_list": {
+   "filas": 6,
+   "tiles": 0
+  },
+  "vista_grid": {
+   "filas": 0,
+   "tiles": 6
+  },
+  "agrupar": "functionfunction",
+  "busqueda": 1,
+  "seleccion": 1,
+  "selbar": true,
+  "ctx": 13,
+  "dentro": "UI carpeta",
+  "migasDentro": 2,
+  "mover": 2,
+  "visorFoto": 1,
+  "visor_ui-texto.txt": [
+   true,
+   "ui-texto.txt 4 de 4 · 11 B · 11 nov hola mundo ",
+   10
+  ],
+  "visor_ui-datos.csv": [
+   true,
+   "ui-datos.csv 1 de 4 · 12 B · 11 nov a b 1 2 3 4",
+   10
+  ],
+  "visor_ui-nota.md": [
+   true,
+   "ui-nota.md 3 de 4 · 16 B · 11 nov Título texto",
+   10
+  ],
+  "funciones": "function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function,function",
+  "errores": []
+ }
+}
