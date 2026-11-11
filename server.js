@@ -59,6 +59,7 @@ const createPerfil = require('./lib/perfil');
 const createAnalisis = require('./lib/analisis');
 const createWeb = require('./lib/web');
 const createRutas = require('./lib/rutas');
+const createExplorador = require('./lib/explorador');
 const { sendError } = require('./lib/errores');
 const createArchivos = require('./lib/archivos');
 const { IMAGE_TYPES, HEIC_TYPES, VIDEO_TYPES, PREVIEW_TYPES, TEXT_RE, TEXT_MAX, THUMBABLE, DISPLAY_MAX, THUMB_SIZE, TILE_URL, TILE_ATTR, TILE_ORIGIN, bytesDeEntorno } = require('./lib/archivos/tipos');
@@ -116,8 +117,6 @@ const THUMBS_DIR = process.env.THUMBS_DIR || path.join(APP_DIR, '.thumbs');
 // Copia de seguridad: fuera de la web y de DATA_DIR (un único archivo, reemplazado en cada copia)
 const COPIAS_DIR = process.env.COPIAS_DIR || '/var/backups/kookyecatcloud';
 const { TRASH_DIR, TRASH_SWEEP_HOURS } = createPapelera;
-const SEARCH_LIMIT = 300;
-const BATCH_LIMIT = 500;
 // Enlaces: de subida (otros te dejan archivos) y de descarga (mandas tú algo).
 // Comparten archivo y se distinguen por el campo kind.
 // Bloc de notas: vive dentro de la carpeta del usuario, oculto del explorador
@@ -142,7 +141,7 @@ const DATA_ROOT = fs.realpathSync(DATA_DIR);
 // Rutas seguras de cada usuario (las carpetas compartidas se consultan al usarlas: shares se crea más abajo)
 const {
   safeResolve, userRoot, isHidden, assertVisible, resolveFor, userPath, mismoAlmacen,
-  esCompartida, sharesMueve, exists, freeName,
+  esCompartida, sharesMueve, exists, freeName, limpiaRel,
 } = createRutas({ DATA_ROOT, USERNAME_RE, shares: () => sharesMod });
 
 /**
@@ -469,99 +468,14 @@ const cuentasMod = createCuentas({
 app.use('/api', cuentasMod.router);
 app.use(actividadMod.router);   // /api/activity
 
-
-// --- Listar archivos/carpetas ---
-app.get('/api/files', auth, async (req, res) => {
-  try {
-    const rel = req.query.path || '';
-    // "@compartido" es la carpeta virtual con lo que otros usuarios te han compartido
-    if (limpiaRel(rel) === '@compartido') return res.json({ path: rel, items: sharesMod.entradasPara(req.user), perm: 'read' });
-    const dir = userPath(req, rel);
-    const entries = (await fsp.readdir(dir, { withFileTypes: true })).filter(e => !isHidden(e.name));
-    const items = await Promise.all(entries.map(async e => {
-      const full = path.join(dir, e.name);
-      let stat;
-      try { stat = await fsp.stat(full); } catch { return null; } // symlink roto o borrado a medias
-      return {
-        name: e.name,
-        isDir: stat.isDirectory(),
-        size: stat.size,
-        modified: stat.mtime,
-      };
-    }));
-    const visible = items.filter(Boolean);
-    visible.sort((a, b) => (b.isDir - a.isDir) || a.name.localeCompare(b.name));
-    if (limpiaRel(rel) === '' && sharesMod.hayPara(req.user)) visible.unshift({ name: '@compartido', isDir: true, size: 0, modified: new Date(), virtual: true });
-    const info = sharesMod.permDe(req.user, rel);
-    res.json({ path: rel, items: visible, ...(info ? { perm: info.perm, sharedBy: info.owner } : {}) });
-  } catch (err) {
-    sendError(res, err);
-  }
+// Explorador: listar, carpetas, subir, buscar, borrar, mover y lotes (lib/explorador)
+const exploradorMod = createExplorador({
+  express, multer, auth, userPath, isHidden, limpiaRel, mismoAlmacen, sharesMueve, exists, freeName, sendError, registrarActividad, MAX_UPLOAD_BYTES,
+  trash: () => papeleraMod.core.trashItem, shares: () => sharesMod, calendar: () => calendarMod.core, versions: () => versionsMod,
 });
+const { makeUploader } = exploradorMod.core;
+app.use(exploradorMod.router);
 
-// --- Crear carpeta ---
-app.post('/api/mkdir', auth, async (req, res) => {
-  try {
-    const { path: rel, name } = req.body || {};
-    if (!name || /[\\/]/.test(name) || name === '.' || name === '..') {
-      return res.status(400).json({ error: 'Nombre de carpeta inválido' });
-    }
-    const dir = userPath(req, path.join(rel || '', name));
-    await fsp.mkdir(dir, { recursive: false });
-    registrarActividad(req, 'carpeta_creada', { path: path.join(rel || '', name) });
-    res.json({ ok: true });
-  } catch (err) {
-    if (err.code === 'EEXIST') return res.status(409).json({ error: 'Ya existe una carpeta con ese nombre' });
-    sendError(res, err);
-  }
-});
-
-// --- Subir archivos ---
-// Un único constructor para la subida autenticada y la pública: solo cambia
-// cómo se resuelve la carpeta de destino.
-const nombresEnSubida = new Set();
-function makeUploader(resolveDir, limits) {
-  const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      try {
-        const dir = resolveDir(req);
-        fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
-      } catch (e) { cb(e); }
-    },
-    filename: (req, file, cb) => {
-      try {
-        const dir = resolveDir(req);
-        // basename() descarta cualquier ruta que venga en el nombre original del cliente
-        const safeName = path.basename(file.originalname).replace(/^\.+/, '') || 'archivo';
-        const ext = path.extname(safeName);
-        const base = path.basename(safeName, ext);
-        let target = path.join(dir, safeName);
-        let counter = 1;
-        // Nombres reservados por subidas en curso: dos subidas del mismo nombre a la vez ya no escriben el mismo archivo
-        while (fs.existsSync(target) || nombresEnSubida.has(target)) {
-          target = path.join(dir, `${base}_${counter}${ext}`);
-          counter++;
-        }
-        nombresEnSubida.add(target);
-        req.once('close', () => nombresEnSubida.delete(target));
-        cb(null, path.basename(target));
-      } catch (e) { cb(e); }
-    }
-  });
-  return multer({ storage, limits: limits || { fileSize: MAX_UPLOAD_BYTES } });
-}
-
-const upload = makeUploader(req => userPath(req, req.query.path || ''));
-
-app.post('/api/upload', auth, (req, res) => {
-  upload.array('files')(req, res, err => {
-    if (err) return res.status(err.status || 400).json({ error: err.message });
-    const subidos = (req.files || []).map(f => f.filename);
-    if (subidos.length) registrarActividad(req, 'archivo_subido', { path: req.query.path || '', archivos: subidos });
-    res.json({ ok: true, uploaded: subidos });
-  });
-});
 
 const officeMod = createOffice({ express, auth, userPath, soffice, thumbsDir: THUMBS_DIR, exists, sendError });
 const { convertirOffice } = officeMod.core;
@@ -583,158 +497,8 @@ app.get('/api/capabilities', auth, (req, res) => {
   });
 });
 
-// --- Buscar (recursivo desde la carpeta indicada) ---
-app.get('/api/search', auth, async (req, res) => {
-  try {
-    const q = String(req.query.q || '').trim().toLowerCase();
-    if (q.length < 2) return res.json({ items: [], truncated: false });
-    const startRel = String(req.query.path || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
-    const base = userPath(req, startRel);
-    const results = [];
-
-    async function walk(dir, rel) {
-      if (results.length >= SEARCH_LIMIT) return;
-      let entries;
-      try { entries = await fsp.readdir(dir, { withFileTypes: true }); } catch { return; }
-      for (const e of entries) {
-        if (results.length >= SEARCH_LIMIT) return;
-        if (isHidden(e.name)) continue;
-        const full = path.join(dir, e.name);
-        const childRel = rel ? `${rel}/${e.name}` : e.name;
-        if (e.name.toLowerCase().includes(q)) {
-          try {
-            const stat = await fsp.stat(full);
-            results.push({
-              name: e.name, isDir: stat.isDirectory(), size: stat.size,
-              modified: stat.mtime, dir: rel,
-            });
-          } catch { /* desaparecido a mitad del recorrido */ }
-        }
-        if (e.isDirectory()) await walk(full, childRel);
-      }
-    }
-
-    await walk(base, startRel);
-    res.json({ items: results, truncated: results.length >= SEARCH_LIMIT });
-  } catch (err) {
-    sendError(res, err);
-  }
-});
-
-// --- Eliminar (va a la papelera) ---
-app.delete('/api/files', auth, async (req, res) => {
-  try {
-    await trashItem(req.user, req.query.path);
-    registrarActividad(req, 'enviado_papelera', { path: req.query.path });
-    res.json({ ok: true });
-  } catch (err) {
-    sendError(res, err);
-  }
-});
-
-// --- Operaciones por lotes (mover / eliminar / renombrar varios) ---
-app.post('/api/batch', auth, async (req, res) => {
-  try {
-    const { op, paths, dest, pattern, start } = req.body || {};
-    if (!Array.isArray(paths) || !paths.length) return res.status(400).json({ error: 'No hay nada seleccionado' });
-    if (paths.length > BATCH_LIMIT) return res.status(400).json({ error: `Máximo ${BATCH_LIMIT} elementos por operación` });
-    if (!['move', 'delete', 'rename'].includes(op)) return res.status(400).json({ error: 'Operación no válida' });
-
-    // Renombrado en lote: patrón con {n} (número de secuencia) y {name} (nombre original sin extensión)
-    if (op === 'rename') {
-      const pat = String(pattern || '').trim();
-      if (!pat) return res.status(400).json({ error: 'Falta el patrón de nombres' });
-      const errores = [];
-      let hechos = 0;
-      const pad = String(paths.length).length;
-      let n = Number(start) > 0 ? Math.floor(Number(start)) : 1;
-      for (const rel of paths) {
-        try {
-          const from = userPath(req, rel);
-          const stat = await fsp.stat(from);
-          const dir = path.dirname(from);
-          const ext = stat.isDirectory() ? '' : path.extname(from);
-          const nombreOriginal = path.basename(from, ext);
-          const numero = String(n).padStart(pad, '0');
-          let nuevo = pat.replace(/\{n\}/g, numero).replace(/\{name\}/g, nombreOriginal);
-          nuevo = nuevo.replace(/[\\/]/g, '-').trim() || nombreOriginal;
-          let to = path.join(dir, nuevo + ext);
-          if (to !== from && await exists(to)) to = await freeName(dir, nuevo + ext);
-          if (to !== from) {
-            await fsp.rename(from, to);
-            const nuevaRel = path.posix.join(path.posix.dirname(limpiaRel(rel)), path.basename(to));
-            calendarMod.core.mueveOrigenArchivo(req.user, limpiaRel(rel), limpiaRel(nuevaRel)).catch(() => {});
-            versionsMod.mueve(req.user, rel, nuevaRel);
-            sharesMueve(req.user, rel, nuevaRel);
-          }
-          n++;
-          hechos++;
-        } catch (e) { errores.push({ path: rel, error: e.message }); }
-      }
-      registrarActividad(req, 'renombrado_lote', { cantidad: hechos, patron: pat });
-      return res.json({ ok: errores.length === 0, done: hechos, errors: errores });
-    }
-
-    const errors = [];
-    let done = 0;
-    // En serie a propósito: el índice de la papelera es un único archivo JSON
-    for (const rel of paths) {
-      try {
-        if (op === 'delete') {
-          await trashItem(req.user, rel);
-        } else {
-          const name = path.basename(String(rel).replace(/\\/g, '/'));
-          if (!mismoAlmacen(rel, dest || '')) throw new Error('No se puede mover entre tus archivos y una carpeta compartida, ni entre dos compartidas');
-          const from = userPath(req, rel);
-          const destDir = userPath(req, dest || '');
-          const to = path.join(destDir, name);
-          if (from === to) { done++; continue; }
-          // Mover una carpeta dentro de sí misma dejaría el árbol inaccesible
-          if (to === from || to.startsWith(from + path.sep)) throw new Error('No puedes mover una carpeta dentro de sí misma');
-          if (await exists(to)) throw new Error(`Ya existe "${name}" en el destino`);
-          await fsp.mkdir(destDir, { recursive: true });
-          await fsp.rename(from, to);
-          calendarMod.core.mueveOrigenArchivo(req.user, limpiaRel(rel), limpiaRel(path.posix.join(String(dest || ''), name))).catch(() => {});
-          versionsMod.mueve(req.user, rel, path.posix.join(String(dest || ''), name));
-          sharesMueve(req.user, rel, path.posix.join(String(dest || ''), name));
-        }
-        done++;
-      } catch (e) {
-        errors.push({ path: rel, error: e.message });
-      }
-    }
-    if (done) registrarActividad(req, op === 'delete' ? 'enviado_papelera_lote' : 'movido_lote', { cantidad: done });
-    res.json({ ok: errors.length === 0, done, errors });
-  } catch (err) {
-    sendError(res, err);
-  }
-});
-
 const papeleraMod = createPapelera({ express, auth, userRoot, resolveFor, shares: () => sharesMod, calendar: () => calendarMod.core, freeName: (...a) => freeName(...a), barridoUsuario: () => barridoUsuario, sendError, registrarActividad });
 app.use('/api', papeleraMod.router);
-
-// --- Renombrar / mover ---
-app.post('/api/move', auth, async (req, res) => {
-  try {
-    if (!mismoAlmacen(req.body?.from, req.body?.to)) return res.status(400).json({ error: 'No se puede mover entre tus archivos y una carpeta compartida, ni entre dos compartidas. Copia y borra.' });
-    const from = userPath(req, req.body?.from);
-    const to = userPath(req, req.body?.to);
-    if (from === to) return res.json({ ok: true });
-    // rename() machaca el destino en silencio: comprobarlo antes evita perder archivos
-    try {
-      await fsp.access(to);
-      return res.status(409).json({ error: 'Ya existe un archivo con ese nombre' });
-    } catch { /* destino libre, seguimos */ }
-    await fsp.rename(from, to);
-    calendarMod.core.mueveOrigenArchivo(req.user, limpiaRel(req.body?.from), limpiaRel(req.body?.to)).catch(() => {});
-    versionsMod.mueve(req.user, req.body?.from, req.body?.to);
-    sharesMueve(req.user, req.body?.from, req.body?.to);
-    registrarActividad(req, 'renombrado', { from: req.body?.from, to: req.body?.to });
-    res.json({ ok: true });
-  } catch (err) {
-    sendError(res, err);
-  }
-});
 
 const albumsMod = createAlbums({ express, auth, userRoot, resolveFor, enviarZip: (...a) => enviarZip(...a), sendError });
 const { readFavs, readAlbums } = albumsMod.core;
@@ -784,7 +548,6 @@ if (TRASH_SWEEP_HOURS > 0) {
 }
 
 /* ---------------- Módulos: etiquetas, calendario y prompts ---------------- */
-const limpiaRel = (p) => String(p || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
 
 // Suscripción iCal: sin cookie ni sesión (Google/Apple/Outlook no pueden enviarlas); el acceso
 // lo da un token de 256 bits en la URL, que el usuario puede regenerar o apagar cuando quiera.
