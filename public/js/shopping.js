@@ -43,6 +43,29 @@
     S.loading = K.get('/api/shopping').then(data => { S.data = data; S.data.products ||= []; S.data.entries ||= []; S.data.categories ||= []; S.built = true; paint(); }).catch(K.fail).finally(() => { S.loading = false; });
     return S.loading;
   }
+  // Efecto al añadir desde Productos: la tarjeta se ilumina, el botón confirma y una ficha vuela hasta «Pendientes»
+  function efectoAnadido(p, desde) {
+    K.sonidos && K.sonidos.reproduce && K.sonidos.reproduce('ok');
+    const card = [...root.querySelectorAll('.shop-product-card')].find(c => c.dataset.pid === p.id);
+    const tab = root.querySelector('.shop-tabs button[data-key="pending"]');
+    if (card) {
+      card.classList.add('shop-ok');
+      const b = card.querySelector('.btn.primary'); if (b) { b.classList.add('is-ok'); b.textContent = ''; b.append(icon('i-check'), el('span', null, 'Listo')); }
+      setTimeout(() => { card.classList.remove('shop-ok'); if (b) { b.classList.remove('is-ok'); b.textContent = ''; b.append(icon('i-plus'), el('span', null, 'Añadir')); } }, 1800);
+    }
+    if (tab) { tab.classList.remove('shop-bump'); void tab.offsetWidth; tab.classList.add('shop-bump'); }
+    if (!tab || !desde || window.matchMedia('(prefers-reduced-motion: reduce)').matches || !tab.animate) return;
+    const a = tab.getBoundingClientRect(), x0 = desde.left + desde.width / 2, y0 = desde.top + desde.height / 2;
+    const f = el('div', 'shop-vuela'); f.append(icon('i-plus'), el('span', null, p.name.length > 18 ? p.name.slice(0, 17) + '…' : p.name));
+    f.style.left = x0 + 'px'; f.style.top = y0 + 'px'; document.body.appendChild(f);
+    const dx = a.left + a.width / 2 - x0, dy = a.top + a.height / 2 - y0;
+    const anim = f.animate([
+      { transform: 'translate(-50%,-50%) scale(.6)', opacity: 0 },
+      { transform: 'translate(-50%,-50%) scale(1.08)', opacity: 1, offset: .18 },
+      { transform: `translate(calc(-50% + ${dx * .5}px),calc(-50% + ${dy * .5 - 46}px)) scale(1)`, opacity: 1, offset: .6 },
+      { transform: `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.45)`, opacity: .2 }], { duration: 750, easing: 'cubic-bezier(.4,0,.2,1)' });
+    anim.onfinish = anim.oncancel = () => f.remove();
+  }
   function button(label, iconName, fn, cls = 'btn') {
     const b = el('button', cls); b.type = 'button'; if (iconName) b.appendChild(icon(iconName)); b.appendChild(el('span', null, label)); b.addEventListener('click', fn); return b;
   }
@@ -64,7 +87,7 @@
     search.appendChild(input); bar.appendChild(search);
     const tabs = el('div', 'shop-tabs', null); tabs.setAttribute('role', 'tablist');
     [['pending', 'Pendientes', S.data.entries.filter(e => e.status === 'pending').length], ['bought', 'Comprados', boughtGroups().length], ['catalog', 'Productos', S.data.products.length]].forEach(([key, label, count]) => {
-      const b = el('button', S.tab === key ? 'is-active' : '', `${label} · ${count}`); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', S.tab === key ? 'true' : 'false'); b.addEventListener('click', () => { S.tab = key; paint(); }); tabs.appendChild(b);
+      const b = el('button', S.tab === key ? 'is-active' : '', `${label} · ${count}`); b.type = 'button'; b.dataset.key = key; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', S.tab === key ? 'true' : 'false'); b.addEventListener('click', () => { S.tab = key; paint(); }); tabs.appendChild(b);
     });
     bar.appendChild(tabs);
     const switcher = el('div', 'shop-view-switch'); switcher.setAttribute('role', 'group'); switcher.setAttribute('aria-label', 'Formato de visualización');
@@ -137,12 +160,15 @@
     const layout = S.layouts.catalog;
     const grid = el('div', `shop-product-grid ${layout === 'list' ? 'is-list' : 'is-grid'}`);
     products.forEach(p => {
-      const card = el('article', 'shop-product-card'); card.appendChild(productVisual(p, true));
+      const card = el('article', 'shop-product-card'); card.dataset.pid = p.id; card.appendChild(productVisual(p, true));
       const body = el('div', 'shop-card-body'); const h = el('h3', null, p.name); body.appendChild(h);
       const meta = productMeta(p); if (meta) body.appendChild(el('p', 'k-muted', meta));
       body.appendChild(el('small', 'shop-default-qty', `Cantidad habitual: ${fmt(p.defaultQuantity)}${p.unit ? ' ' + p.unit : ''}`));
       const actions = el('div', 'shop-card-actions');
-      actions.append(button('Añadir', 'i-plus', async () => { try { await K.post('/api/shopping/entries', { productId: p.id, quantity: p.defaultQuantity }); K.toast(`«${p.name}» añadido a pendientes`); await load(); } catch (e) { K.fail(e); } }, 'btn primary sm'));
+      actions.append(button('Añadir', 'i-plus', async (ev) => {
+        const desde = ev.currentTarget.getBoundingClientRect();
+        try { await K.post('/api/shopping/entries', { productId: p.id, quantity: p.defaultQuantity }); K.toast(`«${p.name}» añadido a pendientes`); await load(); efectoAnadido(p, desde); } catch (e) { K.fail(e); }
+      }, 'btn primary sm'));
       actions.append(button('Editar', 'i-pencil', () => editProduct(p), 'btn sm'));
       const del = el('button', 'icon-btn shop-remove'); del.type = 'button'; del.title = 'Eliminar producto del catálogo y de todas las listas'; del.appendChild(icon('i-trash'));
       del.addEventListener('click', async () => { if (!await K.confirm(`Se eliminará “${p.name}” del catálogo y también sus registros de compra.`, { ok: 'Eliminar', danger: true })) return; try { await K.del('/api/shopping/products/' + p.id); await load(); } catch (e) { K.fail(e); } }); actions.appendChild(del);

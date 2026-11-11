@@ -140,3 +140,16 @@
   .shop-entry-list.is-grid{grid-template-columns:minmax(0,1fr);}
   .shop-product-grid.is-grid{grid-template-columns:minmax(0,1fr);}
 }
+
+/* Efecto «añadido a pendientes» */
+.shop-product-card.shop-ok{border-color:#34d399;animation:shop-ok-aro .9s ease-out;}
+@keyframes shop-ok-aro{0%{box-shadow:0 0 0 0 rgba(52,211,153,.55);transform:scale(.97);}45%{transform:scale(1.015);}100%{box-shadow:0 0 0 16px rgba(52,211,153,0);transform:scale(1);}}
+.shop-product-card .btn.is-ok{background:#10b981;border-color:transparent;box-shadow:0 0 18px rgba(16,185,129,.45);animation:shop-ok-pop .4s cubic-bezier(.3,1.6,.5,1);}
+@keyframes shop-ok-pop{0%{transform:scale(.88);}100%{transform:scale(1);}}
+.shop-tabs button.shop-bump{animation:shop-bump .6s cubic-bezier(.3,1.6,.5,1) .55s;}
+@keyframes shop-bump{0%{transform:scale(1);}40%{transform:scale(1.14);background:var(--brand-soft);color:var(--accent-text);}100%{transform:scale(1);}}
+.shop-vuela{position:fixed;z-index:9999;pointer-events:none;display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:99px;
+  background:linear-gradient(135deg,#10b981,#34d399);color:#04140d;font:700 calc(12.5px*var(--fs,1)) var(--font);box-shadow:0 8px 24px rgba(16,185,129,.45);white-space:nowrap;}
+.shop-vuela svg{width:14px;height:14px;}
+@media (prefers-reduced-motion:reduce){.shop-product-card.shop-ok,.shop-product-card .btn.is-ok,.shop-tabs button.shop-bump{animation:none;}}
+.shop-product-card .btn.is-ok{flex:none;white-space:nowrap;padding-inline:10px;gap:5px;}
