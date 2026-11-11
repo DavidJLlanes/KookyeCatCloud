@@ -269,3 +269,13 @@ Encontrado y corregido:
 - **Fórmulas con varios niveles se rechazaban** («demasiados niveles») con solo tres funciones anidadas; el límite de profundidad cuenta ahora el anidado real (unos 18 niveles).
 
 Sin riesgo: la fórmula escrita con muchos paréntesis se rechaza por longitud antes de analizarse; un cuerpo de 600 kB se acepta pero los nombres se recortan a su máximo (comportamiento ya existente). Riesgos aceptados sin cambios: los de la auditoría anterior (minimatch vía archiver, bloqueo por IP, contraseñas antiguas cortas, push sin probar en móviles reales).
+
+## Decimotercera auditoría (11-11-2026): dependencias y fuzz de todas las rutas
+
+- **npm audit: 0 vulnerabilidades.** La de `minimatch` (denegación de servicio por amplificación) venía de `readdir-glob`, usado por `archiver` al hacer ZIP de carpetas. Se fuerza `minimatch ^11.0.8` solo dentro de `readdir-glob` (`overrides` en `package.json`), sin cambiar `archiver`.
+- **Fuzz de las 337 rutas** (8.000 peticiones como administrador y otras tantas como usuario normal: ids raros, `..`, byte nulo, `?path[]=`, cuerpos con objetos, `__proto__`, textos de 100 kB). Servidor vivo al final y ya sin errores 500 propios. Corregido:
+  - `?path=%00` y `?path[]=a` daban 500 en Archivos, vistas previas, texto, Office, EXIF, uso de disco y metadatos de foto: ahora 400 (la validación está en `lib/rutas.js`, para todas las rutas que resuelven archivos, incluido WebDAV).
+  - `POST /api/sharelinks` y `/api/uploadlinks` con `path` como objeto: ahora 4xx.
+  - `/api/export/__proto__` y `/api/game/arcade/__proto__` daban 500 (se buscaba la clave en un objeto normal): ahora 404 (`Object.hasOwn`).
+- Comprobado sin hallazgos: cabeceras (CSP, nosniff, X-Frame-Options, no-referrer), cookie `HttpOnly` y `SameSite=Strict`, bloqueo de intentos de inicio de sesión (429 a partir del sexto), ningún archivo interno servido (`/server.js`, `/.git/config`, `users.json`, `/lib/*` devuelven solo la página de la app), sin secretos en el repositorio (`.env.example` es solo plantilla).
+- Pendiente de valor bajo: añadir `Permissions-Policy` (cámara y ubicación solo para la propia app) y HSTS en nginx; no es un fallo.

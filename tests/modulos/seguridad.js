@@ -81,4 +81,12 @@ module.exports = async ({ req, prueba, igual, cierto, BASE, cookie }) => {
     const r = await fetch(BASE + '/api/no-existe-esta-ruta', { headers: { Cookie: cookie() } });
     igual(r.status, 404); cierto(/json/.test(r.headers.get('content-type')), 'JSON');
   });
+
+  await prueba('seguridad: rutas con byte nulo o repetidas (?path[]=), claves como __proto__ y cuerpos con objetos no dan 500', async () => {
+    for (const u of ['/api/files?path=%00', '/api/files?path[]=a', '/api/download?path[]=a', '/api/preview?path[]=a', '/api/text?path=%00', '/api/diskusage?path=%00', '/api/photometa?path=%00']) {
+      const r = await req('GET', u); igual(r.s, 400, u + ' → ' + r.s);
+    }
+    igual((await req('GET', '/api/export/__proto__')).s, 404); igual((await req('POST', '/api/game/arcade/__proto__', {})).s, 404); igual((await req('GET', '/api/export/constructor')).s, 404);
+    for (const u of ['/api/sharelinks', '/api/uploadlinks']) { const r = await req('POST', u, { path: { x: 1 }, nombre: [1] }); cierto(r.s >= 400 && r.s < 500, u + ' → ' + r.s); }
+  });
 };
