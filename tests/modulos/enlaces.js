@@ -17,6 +17,8 @@ module.exports = async ({ req, prueba, igual, cierto, BASE, cookie }) => {
     igual((await req('PUT', `/api/sharelinks/${b.j.link.id}/caducidad`, { days: 0 })).s, 200);
     igual((await req('GET', '/api/uploadlinks?kind=share')).j.find(l => l.id === b.j.link.id).expiresAt, null, 'ya no caduca');
     igual((await req('PUT', '/api/sharelinks/noexiste1234/caducidad', { days: 3 })).s, 404);
+    igual((await req('PUT', `/api/sharelinks/${b.j.link.id}/caducidad`, { days: 'abc' })).s, 400, 'un plazo no válido no quita la caducidad');
+    igual((await req('PUT', `/api/sharelinks/${b.j.link.id}/caducidad`, { days: -2 })).s, 400, 'plazo negativo');
     igual((await req('POST', `/api/sharelinks/${a.j.link.id}/qr`, {})).s, 200);
     igual((await req('POST', '/api/sharelinks/noexiste1234/qr', {})).s, 404);
     igual((await req('GET', `/api/public/share/${a.j.link.id}`)).s, 200, 'API pública con el id corto');
