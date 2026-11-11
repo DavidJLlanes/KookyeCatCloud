@@ -4,6 +4,8 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 
 ## Recomendaciones (orden de prioridad)
 
+> Comparación con Notion (solo uso personal) y orden sugerido de funciones nuevas: [docs/hoja-de-ruta-vs-notion.md](docs/hoja-de-ruta-vs-notion.md).
+
 ### Para hacer ya
 - [ ] Probar en el móvil real: desplazamiento de ventanas, barra inferior grande, bloqueo de zoom (también en el mapa), foto de contacto y actualización en directo.
 - [x] ~~Copia de seguridad automática de `DATA_DIR`, `users.json`, `.jwt-secret`, `shares.json` y `passkeys.json`.~~ Hecho: Administración → Copia de seguridad (archivo sin cifrar en `/var/backups/kookyecatcloud/`, diaria a las 3:00 con reintentos a las 4:00 y 5:00, comprobación y restauración documentada). Sin cifrar y sin copia fuera del VPS por decisión propia; descargarla a mano de vez en cuando.

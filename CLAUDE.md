@@ -30,6 +30,8 @@ Node 20 + Express 4 + JS vanilla (PWA). Respuestas al usuario en español, breve
 
 ## Organización del código (regla permanente, pedida por el propietario)
 
+> **Orden permanente del propietario (vale siempre, en todas las tareas):** crear una estructura de código perfecta, escalable y muy profesional, sin sobrecargar los archivos actuales con exceso de código. Crear archivos y carpetas nuevas siempre que haga falta.
+
 - **Ningún archivo crece sin control.** Pasadas ~300 líneas en un archivo nuevo, o al tocar uno de más de ~500, se trocea en carpeta (`lib/<modulo>/index.js` + archivos de una sola responsabilidad; `public/js/<modulo>/`). `server.js` solo arranca, configura y monta: la lógica va en `lib/`.
 - **Cada cambio deja el código mejor organizado que lo encontró:** si una función nueva no cabe con sensatez en un archivo pequeño, se crea el archivo adecuado en vez de añadirla al grande.
 - **Se trocea con red:** antes de mover código sin pruebas, se añade su prueba de humo en `tests/modulos/`; un movimiento no cambia comportamiento y se verifica con `npm run check && npm test` (y, si toca la interfaz, con Playwright).
