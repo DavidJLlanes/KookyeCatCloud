@@ -1,0 +1,138 @@
+{
+ "pc": {
+  "texto": "Juegos 3 en tu colección Mi perfil Estadísticas Añadir Próximos · 0 Deseados · 0 Pendientes · 1 Jugando · 1 Jugados · 1 Abandonados · 0 Todos los géneros Todas las plataformas PC PS5 Recientes Mejor n",
+  "UIs": 1,
+  "lista": [
+   [
+    "Mi perfil",
+    1,
+    0,
+    44,
+    265
+   ],
+   [
+    "Estadísticas",
+    0,
+    0,
+    0,
+    179
+   ],
+   [
+    "Más opciones",
+    0,
+    0,
+    0,
+    179
+   ],
+   [
+    "Añadir",
+    1,
+    1,
+    222,
+    179
+   ]
+  ],
+  "fichaTexto": "U UI Juego A Jugados · PC ★ 4/10 Terminado 11/11/2026 Sesión Tarjeta Carátula Copiar o mover a… Cerrar Eliminar Editar|U UI Juego A Jugados · PC ★ 4/10 Terminado 11/11/2026 Sesión Tarjeta Carátula Copiar o mover a…|U UI Juego A Jugados · PC ★ 4/10 Terminado 11/11/2026|UI Juego A Jugados · PC ★ 4/10 Terminado 11/11/2026",
+  "ficha": [
+   "Ver solo «PC»",
+   "Sesión",
+   "Tarjeta",
+   "Carátula",
+   "Copiar o mover a…",
+   "Cerrar",
+   "Eliminar",
+   "Editar"
+  ],
+  "ficha_clics": [
+   [
+    "Ver solo «PC»",
+    0
+   ],
+   [
+    "Sesión",
+    1
+   ],
+   [
+    "Copiar o mover a…",
+    1
+   ],
+   [
+    "Cerrar",
+    0
+   ],
+   [
+    "Editar",
+    1
+   ]
+  ],
+  "errores": []
+ },
+ "movil": {
+  "texto": "Juegos 3 en tu colección Mi perfil Estadísticas Añadir Próximos · 0 Deseados · 0 Pendientes · 1 Jugando · 1 Jugados · 1 Abandonados · 0 Todos los géneros Todas las plataformas PC PS5 Recientes Mejor n",
+  "UIs": 1,
+  "lista": [
+   [
+    "Mi perfil",
+    1,
+    0,
+    44,
+    265
+   ],
+   [
+    "Estadísticas",
+    0,
+    0,
+    0,
+    179
+   ],
+   [
+    "Más opciones",
+    0,
+    0,
+    0,
+    179
+   ],
+   [
+    "Añadir",
+    1,
+    1,
+    222,
+    179
+   ]
+  ],
+  "fichaTexto": "U UI Juego A Jugados · PC ★ 4/10 Terminado 11/11/2026 Sesión Tarjeta Carátula Copiar o mover a… Cerrar Eliminar Editar|U UI Juego A Jugados · PC ★ 4/10 Terminado 11/11/2026 Sesión Tarjeta Carátula Copiar o mover a…|U UI Juego A Jugados · PC ★ 4/10 Terminado 11/11/2026|UI Juego A Jugados · PC ★ 4/10 Terminado 11/11/2026",
+  "ficha": [
+   "Ver solo «PC»",
+   "Sesión",
+   "Tarjeta",
+   "Carátula",
+   "Copiar o mover a…",
+   "Cerrar",
+   "Eliminar",
+   "Editar"
+  ],
+  "ficha_clics": [
+   [
+    "Ver solo «PC»",
+    0
+   ],
+   [
+    "Sesión",
+    1
+   ],
+   [
+    "Copiar o mover a…",
+    1
+   ],
+   [
+    "Cerrar",
+    0
+   ],
+   [
+    "Editar",
+    1
+   ]
+  ],
+  "errores": []
+ }
+}

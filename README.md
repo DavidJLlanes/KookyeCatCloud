@@ -1725,7 +1725,7 @@ lib/
   holidays.js        Festivos de España calculados (sin servicios externos)
   prompts/           Biblioteca de prompts (cliente): estado, datos, estructura, lateral, gestion, filtros,
                      tarjetas, seleccion, copiar, ficha, editor, importar, registro (comparten K._prompts)
-  games.js           Colección de videojuegos, RAWG opcional y portadas
+  games/            Videojuegos (cliente): estado, vista, anadir, ficha, estadisticas, tarjetas, registro (K._games)
   bases.js           Bases de datos con columnas propias (un JSON por base)
   codigo/            Proyectos de código (servidor): constantes, base, proyectos, archivos, versiones, vista, transferencia, vinculos
   transferir.js      Copiar o mover entre Archivos y Código, con deshacer de 1 minuto e historial
@@ -1734,7 +1734,9 @@ lib/
                      motor.js (métricas, logros, retos, vista) y rutas-estado/partidas/tienda.js
   comfy.js           Lee metadatos de generación: ComfyUI, Automatic1111 / Forge, JSON y EXIF/XMP
   clip.js            Portapapeles compartido entre dispositivos y destino de «Compartir»
-  contacts.js        Contactos: API, búsqueda, importación y exportación vCard
+  contacts/         Contactos (cliente): estado, datos, vista, ficha, editor, importar, registro (K._contacts)
+  codigo/            (public/js) Código (cliente): estado, lista, proyecto, archivos, panel, subidas, versiones, vistaweb,
+                     registro (K._codigo)
   vcard.js           Lectura y escritura de vCard 3.0
   shopping.js        Lista y catálogo compartidos con imágenes WebP de 300 × 300
   notes-extra.js     Imágenes, menciones, backlinks, plantillas y exportación de notas

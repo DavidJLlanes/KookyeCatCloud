@@ -1,0 +1,170 @@
+{
+ "pc": {
+  "texto": "Contactos 2 contactos Nuevo contacto CONTACTOS Todos 2 Favoritos 0 ETIQUETAS Ponles etiquetas a tus contactos para agruparlos. Ordenar por nombre Ordenar por apellido Seleccionar U UP UIAna Prueba ana",
+  "UIs": 2,
+  "lista": [
+   [
+    "Nuevo contacto",
+    1,
+    26,
+    485,
+    243
+   ],
+   [
+    "Importar, exportar y más",
+    0,
+    0,
+    0,
+    243
+   ],
+   [
+    "Gestionar etiquetas",
+    1,
+    0,
+    142,
+    243
+   ],
+   [
+    "Seleccionar",
+    0,
+    0,
+    0,
+    282
+   ],
+   [
+    "Todos",
+    0,
+    0,
+    0,
+    282
+   ],
+   [
+    "Ninguno",
+    0,
+    0,
+    0,
+    282
+   ]
+  ],
+  "fichaTexto": "UP UIAna Prueba Llamar Correo Recordatorio Editar 600111222 Móvil ana@ui.es Personal Creado 11 nov|UP UIAna Prueba Llamar Correo Recordatorio Editar 600111222 Móvil ana@ui.es Personal Creado 11 nov",
+  "ficha": [
+   "Cerrar",
+   "Recordatorio",
+   "Editar",
+   "Más acciones",
+   "Copiar",
+   "Copiar"
+  ],
+  "ficha_clics": [
+   [
+    "Cerrar",
+    0
+   ],
+   [
+    "Recordatorio",
+    2
+   ],
+   [
+    "Editar",
+    1
+   ],
+   [
+    "Más acciones",
+    1
+   ],
+   [
+    "Copiar",
+    1
+   ],
+   [
+    "Copiar",
+    1
+   ]
+  ],
+  "errores": []
+ },
+ "movil": {
+  "texto": "Contactos 2 contactos Nuevo contacto Etiquetas Ordenar por nombre Ordenar por apellido Seleccionar U UP UIAna Prueba ana@ui.es UD UIBea Dos bea@ui.es",
+  "UIs": 2,
+  "lista": [
+   [
+    "Nuevo contacto",
+    1,
+    26,
+    485,
+    151
+   ],
+   [
+    "Importar, exportar y más",
+    0,
+    0,
+    0,
+    151
+   ],
+   [
+    "Etiquetas",
+    0,
+    0,
+    0,
+    243
+   ],
+   [
+    "Etiquetas",
+    0,
+    0,
+    0,
+    151
+   ],
+   [
+    "Marcar como favorito",
+    0,
+    0,
+    0,
+    151
+   ],
+   [
+    "Marcar como favorito",
+    0,
+    0,
+    0,
+    151
+   ]
+  ],
+  "fichaTexto": "UP UIAna Prueba Llamar Correo Recordatorio Editar 600111222 Móvil ana@ui.es Personal Creado 11 nov|UP UIAna Prueba Llamar Correo Recordatorio Editar 600111222 Móvil ana@ui.es Personal Creado 11 nov",
+  "ficha": [
+   "Cerrar",
+   "Recordatorio",
+   "Editar",
+   "Más acciones",
+   "Copiar",
+   "Copiar"
+  ],
+  "ficha_clics": [
+   [
+    "Cerrar",
+    0
+   ],
+   [
+    "Recordatorio",
+    2
+   ],
+   [
+    "Editar",
+    1
+   ],
+   [
+    "Más acciones",
+    1
+   ],
+   [
+    "Copiar",
+    1
+   ],
+   [
+    "Copiar",
+    1
+   ]
+  ],
+  "errores": []
+ }
+}
