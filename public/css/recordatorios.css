@@ -65,3 +65,9 @@
   .rc-cuando>:last-child{grid-column:1/-1;}
   .rc-fila{padding:10px;gap:9px;}
 }
+.rc-repite{display:flex;flex-direction:column;gap:8px;padding:8px 10px;border:1px solid var(--line,rgba(127,127,127,.25));border-radius:10px;}
+.rc-repite[hidden],.rc-dias[hidden]{display:none;}
+.rc-repite input[type=number]{width:72px;}
+.rc-dias{display:flex;gap:6px;flex-wrap:wrap;}
+.rc-dia{min-width:36px;height:36px;border-radius:50%;border:1px solid var(--line,rgba(127,127,127,.35));background:transparent;color:inherit;font-size:calc(13px*var(--fs,1));cursor:pointer;}
+.rc-dia.on{background:var(--b1,#3b82f6);border-color:var(--b1,#3b82f6);color:#fff;}

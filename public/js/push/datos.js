@@ -63,6 +63,10 @@
     const v = e.data && e.data.tipo === 'abrir-vista' && /^[a-z]{2,20}$/.test(String(e.data.vista)) ? e.data.vista : '';
     if (v && typeof switchTab === 'function' && document.getElementById('view-' + v)) switchTab(v);
   });
+  // Un botón del aviso (Hecho / Posponer) cambió algo: se repinta la lista si está abierta
+  if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', (e) => {
+    if (e.data && e.data.tipo === 'recordatorios-cambio' && K.recordatorios && K.recordatorios.cambio) K.recordatorios.cambio(false);
+  });
   P.abreDesdeAviso = function () {
     try {
       const u = new URL(location.href), v = u.searchParams.get('ver');

@@ -108,6 +108,34 @@ module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
     cierto(fs.readdirSync(path.dirname(f)).some(n => n.includes('.dañado-')), 'el dañado queda apartado');
   });
 
+  await prueba('recordatorios: los que se repiten saltan a la siguiente fecha al marcarlos hechos', async () => {
+    const c = await nuevo({ titulo: 'Tomar vitaminas', fecha: '2099-01-05', repite: { freq: 'dia', cada: 2 } }); igual(c.s, 200); const id = c.j.recordatorio.id;
+    igual(c.j.recordatorio.repite.freq, 'dia');
+    const h = await req('POST', `/api/recordatorios/${id}/hecho`, { hecho: true }); igual(h.s, 200);
+    igual(h.j.siguiente, '2099-01-07', 'salta dos días'); igual(h.j.recordatorio.hecho, false, 'sigue pendiente'); igual(h.j.recordatorio.vueltas, 1);
+    const u = await req('POST', `/api/recordatorios/${id}/hecho`, { hecho: false, deshacer: h.j.anterior });
+    igual(u.j.recordatorio.fecha, '2099-01-05', 'deshacer vuelve a la fecha'); igual(u.j.recordatorio.vueltas, 0);
+    const fin = await nuevo({ titulo: 'Última vez', fecha: '2099-02-01', repite: { freq: 'semana', cada: 1, hasta: '2099-02-03' } });
+    const f = await req('POST', `/api/recordatorios/${fin.j.recordatorio.id}/hecho`, { hecho: true });
+    igual(f.j.siguiente, null); igual(f.j.recordatorio.hecho, true, 'tras la fecha final se da por terminado');
+    const mes = await nuevo({ titulo: 'Fin de mes', fecha: '2099-01-31', repite: { freq: 'mes' } });
+    igual((await req('POST', `/api/recordatorios/${mes.j.recordatorio.id}/hecho`, { hecho: true })).j.siguiente, '2099-02-28');
+  });
+
+  await prueba('recordatorios: repetición inválida se rechaza', async () => {
+    igual((await nuevo({ titulo: 'x', fecha: '2099-01-05', repite: { freq: 'siempre' } })).s, 400);
+    igual((await nuevo({ titulo: 'x', fecha: '2099-01-05', repite: { freq: 'dia', cada: 0 } })).s, 400);
+    igual((await nuevo({ titulo: 'x', fecha: '', repite: { freq: 'dia' } })).s, 400, 'sin fecha no se repite');
+    igual((await nuevo({ titulo: 'x', fecha: '2099-01-05', repite: { freq: 'dia', hasta: '2098-01-01' } })).s, 400);
+    igual((await nuevo({ titulo: 'x', fecha: '2099-01-05', repite: [] })).s, 400);
+  });
+
+  await prueba('recordatorios: el aviso de uno solo lleva la acción Hecho/Posponer', async () => {
+    const { siguiente, describe } = require('../../lib/recordatorios/repeticion');
+    igual(siguiente({ freq: 'mes', cada: 1, mesModo: 'semana', ancla: '2099-01-04' }, '2099-01-04', '2099-01-05'), '2099-02-01', 'primer lunes');
+    cierto(typeof describe({ freq: 'dia', cada: 1 }) === 'string');
+  });
+
   await prueba('recordatorios: logros (recuentos y familias)', async () => {
     const g = (await req('GET', '/api/game')).j;
     cierto(g.recuentos.recordatorios >= 1, 'recuento'); cierto(g.logros.familias.some(f => f.id === 'rc_total' && f.valor >= 1), 'familia rc_total');

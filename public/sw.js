@@ -68,7 +68,9 @@ self.addEventListener('push', (e) => {
     icon: BASE + '/icons/icon-192.png',
     tag: d.etiqueta || 'kcc',            // un aviso nuevo de la misma sección sustituye al anterior
     renotify: true,
-    data: { vista: /^[a-z]{2,20}$/.test(String(d.vista)) ? d.vista : '' },
+    data: { vista: /^[a-z]{2,20}$/.test(String(d.vista)) ? d.vista : '', rec: d.accion && d.accion.tipo === 'recordatorio' && /^[A-Za-z0-9_-]{4,40}$/.test(String(d.accion.id)) ? d.accion.id : '' },
+    // Un aviso de un solo recordatorio se resuelve desde la propia notificación (iOS no muestra los botones: ahí se abre la app)
+    actions: d.accion && d.accion.tipo === 'recordatorio' ? [{ action: 'hecho', title: 'Hecho' }, { action: 'posponer', title: 'Posponer 1 h' }] : [],
   }));
 });
 
@@ -76,6 +78,17 @@ self.addEventListener('push', (e) => {
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const vista = (e.notification.data && e.notification.data.vista) || '';
+  const rec = (e.notification.data && e.notification.data.rec) || '';
+  if (rec && (e.action === 'hecho' || e.action === 'posponer')) {
+    const ruta = e.action === 'hecho' ? '/hecho' : '/posponer', cuerpo = e.action === 'hecho' ? { hecho: true } : { minutos: 60 };
+    e.waitUntil(fetch(BASE + '/api/recordatorios/' + rec + ruta, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) })
+      .then(async (r) => {
+        if (!r.ok) throw new Error('http ' + r.status);
+        (await self.clients.matchAll({ type: 'window' })).forEach(c => c.postMessage({ tipo: 'recordatorios-cambio' }));
+      })
+      .catch(() => self.registration.showNotification('No se pudo completar', { body: 'Abre la app e inténtalo desde Recordatorios.', tag: 'kcc-rec-error', data: { vista: 'recordatorios' } })));
+    return;
+  }
   const url = BASE + '/' + (vista ? '?ver=' + vista : '');
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((lista) => {
     const abierta = lista.find(c => new URL(c.url).origin === self.location.origin);

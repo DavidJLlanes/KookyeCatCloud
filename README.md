@@ -1067,10 +1067,12 @@ Sección propia (menú **Recordatorios**) con todos los recordatorios de la web.
 
 - Cada recordatorio tiene título, notas, fecha y hora (opcionales), aviso (a la hora, 10 min, 1 h, 1 día antes o sin aviso) y, si se quiere, un vínculo con el elemento desde el que se creó (pulsar el vínculo lo abre).
 - **Calendario opcional:** «Añadir también al calendario» crea un evento que sigue al recordatorio (y si lo mueves en el calendario, el recordatorio cambia). Sin marcarlo, el recordatorio funciona igual de forma independiente.
+- **Repetición:** diaria, semanal (eligiendo días), mensual (el mismo día del mes o «el primer lunes») o anual, cada N y con fecha final opcional. Al marcar «hecho» un recordatorio que se repite salta a la siguiente fecha (el 31 pasa a fin de mes sin descolocarse) y suma una vuelta; tras la fecha final se da por terminado.
+- **Botones en el aviso:** si el aviso es de un solo recordatorio, la notificación trae «Hecho» y «Posponer 1 h» y actúa sin abrir la app (en iPhone no se muestran los botones: se abre la app).
 - Se pueden marcar como hechos, posponer (10 min, 1 h, mañana, una semana), editar y eliminar (se guarda 30 días). El menú muestra cuántos están vencidos o para hoy.
 - **Avisos en el navegador:** al crear el primer recordatorio con aviso, si el dispositivo no recibe avisos se ofrece activarlos y Chrome pide permiso. Llegan con la app cerrada por Web Push (Chrome, Edge, Opera, Brave, Firefox, Safari en Mac y iPhone/iPad con la web instalada, Android y Samsung Internet) y, con la app abierta, también como aviso dentro de la web. Se configuran en Cuenta → Avisos → Recordatorios.
 - Los recordatorios que antes colgaban de notas y contactos como eventos del calendario se pasan solos a esta sección la primera vez que se abre.
-- Datos en `<raíz>/.kcc/recordatorios/data.json`. Código en `lib/recordatorios/` (`modelo.js`, `avisos.js`, `migracion.js`, `resumen.js`, `index.js`), `lib/push/fuentes/recordatorios.js` y `public/js/recordatorios/` (`datos`, `avisos`, `formulario`, `fila`, `lista`, `vinculado`, `index`). Pruebas en `tests/modulos/recordatorios.js`.
+- Datos en `<raíz>/.kcc/recordatorios/data.json`. Código en `lib/recordatorios/` (`modelo.js`, `repeticion.js`, `avisos.js`, `migracion.js`, `resumen.js`, `index.js`), `lib/push/fuentes/recordatorios.js` y `public/js/recordatorios/` (`datos`, `avisos`, `formulario`, `fila`, `lista`, `vinculado`, `index`). Pruebas en `tests/modulos/recordatorios.js`.
 
 ## Avisos push
 

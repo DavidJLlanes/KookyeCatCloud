@@ -12,7 +12,7 @@ Está basada en el conocimiento general de Notion, sin verificar con fuentes rec
    - Incrustados (YouTube, mapas, PDF).
    - Bloques sincronizados y mostrar una base dentro de una nota.
 4. **Recortador web.** Extensión del navegador que guarda una página entera, limpia, en la nube propia (Marcadores solo guarda el enlace).
-5. **Plantillas y repetición.** Plantillas de fila y de nota con botones («Nueva reunión» con su estructura) y **recordatorios y tareas recurrentes** (diario, semanal, el primer lunes del mes…).
+5. **Plantillas.** Plantillas de fila y de nota con botones («Nueva reunión» con su estructura). (La repetición de recordatorios ya está hecha: ver «Ya hecho».)
 
 ## Prioridad media
 
@@ -28,8 +28,9 @@ Todo en servidor propio y en archivos JSON legibles, gestor de archivos con WebD
 
 ## Orden sugerido
 
-Primero (5): repetición en Recordatorios, que es lo que más se usaría a diario y encaja con la estructura actual. Después (3), (4) y (6).
+Primero (3), (4) y (6); las plantillas (5) cuando haya hueco.
 
 ## Ya hecho
 
+- (5, parte) Repetición en Recordatorios, 11-11-2026: diaria, semanal (con días), mensual (día del mes o «el primer lunes»), anual, cada N y fecha final; avisos con botones «Hecho» y «Posponer 1 h».
 - (1) Bases más potentes, 11-11-2026: calendario, galería y línea de tiempo, relaciones, resúmenes, fórmulas, tipos nuevos, cambio de tipo y filtros/órdenes múltiples. La numeración de arriba se mantiene.

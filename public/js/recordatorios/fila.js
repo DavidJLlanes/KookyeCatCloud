@@ -21,13 +21,18 @@
     const f = el('div', `rc-fila ${R.estado(r)}`);
     const chk = el('input'); chk.type = 'checkbox'; chk.checked = r.hecho; chk.setAttribute('aria-label', r.hecho ? 'Marcar como pendiente' : 'Marcar como hecho');
     chk.addEventListener('change', async () => {
-      try { await K.post(`/api/recordatorios/${r.id}/hecho`, { hecho: chk.checked }); if (chk.checked) K.sonidos && K.sonidos.reproduce('ok'); await R.cambio(false); if (opciones.alCambiar) opciones.alCambiar(); }
+      try {
+        const res = await K.post(`/api/recordatorios/${r.id}/hecho`, { hecho: chk.checked });
+        if (chk.checked) K.sonidos && K.sonidos.reproduce('ok');
+        if (res.siguiente) K.toast(`Hecho. Próxima vez: ${R.dia(res.siguiente)}`);
+        await R.cambio(false); if (opciones.alCambiar) opciones.alCambiar(); }
       catch (e) { K.fail(e); chk.checked = !chk.checked; }
     });
     const txt = el('div', 'rc-txt');
     txt.appendChild(el('b', null, r.titulo));
     const meta = el('div', 'rc-meta'); meta.appendChild(el('span', 'rc-cuando-t', R.cuando(r)));
     if (r.fecha && r.antes >= 0 && !r.hecho) { const c = el('span', 'rc-ic'); c.title = 'Con aviso'; c.appendChild(icon('i-bell')); meta.appendChild(c); }
+    if (r.repite) { const c = el('span', 'rc-ic'); c.title = 'Se repite' + (r.vueltas ? ` · cumplido ${r.vueltas} ${r.vueltas === 1 ? 'vez' : 'veces'}` : ''); c.appendChild(icon('i-repeat')); meta.appendChild(c); }
     if (r.calendario) { const c = el('span', 'rc-ic'); c.title = 'También en el calendario'; c.appendChild(icon('i-calendar')); meta.appendChild(c); }
     if (r.vinculo && !opciones.sinVinculo) {
       const [nombre, ic] = R.TIPOS[r.vinculo.tipo] || ['', 'i-link'];

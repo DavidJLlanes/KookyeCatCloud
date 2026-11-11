@@ -25,6 +25,8 @@
     if (n === 0) return 'Hoy'; if (n === 1) return 'Mañana'; if (n === -1) return 'Ayer';
     return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
   };
+  R.REPITE = [['', 'No se repite'], ['dia', 'Cada día'], ['semana', 'Cada semana'], ['mes', 'Cada mes'], ['anio', 'Cada año']];
+  R.DIAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
   R.cuando = (r) => (r.fecha ? `${R.dia(r.fecha)}${r.hora ? ', ' + r.hora : ''}` : 'Sin fecha');
   R.pendientes = () => S.items.filter(r => !r.hecho);
 
