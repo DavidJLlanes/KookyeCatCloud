@@ -142,7 +142,7 @@
       const meta = productMeta(p); if (meta) body.appendChild(el('p', 'k-muted', meta));
       body.appendChild(el('small', 'shop-default-qty', `Cantidad habitual: ${fmt(p.defaultQuantity)}${p.unit ? ' ' + p.unit : ''}`));
       const actions = el('div', 'shop-card-actions');
-      actions.append(button('Añadir', 'i-plus', async () => { try { await K.post('/api/shopping/entries', { productId: p.id, quantity: p.defaultQuantity }); S.tab = 'pending'; await load(); } catch (e) { K.fail(e); } }, 'btn primary sm'));
+      actions.append(button('Añadir', 'i-plus', async () => { try { await K.post('/api/shopping/entries', { productId: p.id, quantity: p.defaultQuantity }); K.toast(`«${p.name}» añadido a pendientes`); await load(); } catch (e) { K.fail(e); } }, 'btn primary sm'));
       actions.append(button('Editar', 'i-pencil', () => editProduct(p), 'btn sm'));
       const del = el('button', 'icon-btn shop-remove'); del.type = 'button'; del.title = 'Eliminar producto del catálogo y de todas las listas'; del.appendChild(icon('i-trash'));
       del.addEventListener('click', async () => { if (!await K.confirm(`Se eliminará “${p.name}” del catálogo y también sus registros de compra.`, { ok: 'Eliminar', danger: true })) return; try { await K.del('/api/shopping/products/' + p.id); await load(); } catch (e) { K.fail(e); } }); actions.appendChild(del);

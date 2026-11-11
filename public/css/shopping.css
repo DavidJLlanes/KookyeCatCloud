@@ -25,7 +25,7 @@
 .shop-entry.is-bought .shop-entry-info strong{text-decoration:line-through;color:var(--muted);}
 .shop-entry-main{min-width:0;flex:1;display:flex;align-items:center;gap:11px;}
 .shop-check{width:36px;height:36px;flex:none;display:grid;place-items:center;border:1.5px solid var(--line-2);border-radius:50%;background:transparent;color:transparent;cursor:pointer;transition:all .18s;}
-.shop-check:hover{border-color:var(--accent-strong);color:var(--accent-text);}
+@media (hover:hover){.shop-check:hover{border-color:var(--accent-strong);color:var(--accent-text);}}   /* en táctil el :hover se queda pegado en el producto que sube */
 .shop-check:disabled{cursor:default;opacity:1;}
 .shop-check.checked{color:#fff;background:var(--brand);border-color:transparent;}
 .shop-product-image{width:52px;height:52px;flex:none;overflow:hidden;border-radius:12px;background:var(--surface-2);display:grid;place-items:center;color:var(--faint);}
