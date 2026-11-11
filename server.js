@@ -56,6 +56,8 @@ const createBases = require('./lib/bases');
 const createPagos = require('./lib/pagos');
 const createMarcadores = require('./lib/marcadores');
 const createPerfil = require('./lib/perfil');
+const { base32Encode, totpVerificar } = require('./lib/totp');
+const { isBlocked, registerFailure, clearFailures } = require('./lib/limitador');
 const createPush = require('./lib/push');
 const createCodigo = require('./lib/codigo');
 const createVinculos = require('./lib/vinculos');
@@ -258,53 +260,6 @@ function podarActividad() {
 }
 setTimeout(podarActividad, 5000).unref();
 setInterval(podarActividad, 10 * 60 * 1000).unref();
-
-/* ---------------- TOTP (RFC 6238), para la verificación en dos pasos ----------------
-   Implementado a mano para no añadir una dependencia solo por esto: son
-   40 líneas de base32 y HMAC-SHA1, ambos ya presentes en Node. */
-function base32Encode(buf) {
-  const alfabeto = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  let bits = '', salida = '';
-  for (const byte of buf) bits += byte.toString(2).padStart(8, '0');
-  for (let i = 0; i + 5 <= bits.length; i += 5) salida += alfabeto[parseInt(bits.slice(i, i + 5), 2)];
-  const resto = bits.length % 5;
-  if (resto) salida += alfabeto[parseInt(bits.slice(-resto).padEnd(5, '0'), 2)];
-  while (salida.length % 8) salida += '=';
-  return salida;
-}
-function base32Decode(str) {
-  const alfabeto = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  const limpio = String(str).toUpperCase().replace(/[^A-Z2-7]/g, '');
-  let bits = '';
-  for (const c of limpio) {
-    const v = alfabeto.indexOf(c);
-    if (v < 0) continue;
-    bits += v.toString(2).padStart(5, '0');
-  }
-  const bytes = [];
-  for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.slice(i, i + 8), 2));
-  return Buffer.from(bytes);
-}
-function totpEn(secretBuf, contador) {
-  const buf = Buffer.alloc(8);
-  buf.writeBigUInt64BE(BigInt(contador));
-  const hmac = crypto.createHmac('sha1', secretBuf).update(buf).digest();
-  const offset = hmac[hmac.length - 1] & 0xf;
-  const codigo = ((hmac[offset] & 0x7f) << 24 | (hmac[offset + 1] & 0xff) << 16 |
-                  (hmac[offset + 2] & 0xff) << 8 | (hmac[offset + 3] & 0xff)) % 1000000;
-  return String(codigo).padStart(6, '0');
-}
-// Ventana de ±1 paso (30 s): cubre el desfase de reloj típico entre servidor y móvil
-function totpVerificar(secretB32, token) {
-  if (!token) return false;
-  const secretBuf = base32Decode(secretB32);
-  const contador = Math.floor(Date.now() / 30000);
-  for (let e = -1; e <= 1; e++) {
-    if (totpEn(secretBuf, contador + e) === String(token).trim()) return true;
-  }
-  return false;
-}
-
 
 // Módulos nuevos. Se crean aquí, antes de las rutas, porque las rutas de archivos los usan.
 const labelsMod = createLabels({ express, userRoot, sendError });
@@ -651,33 +606,6 @@ function adminOnly(req, res, next) {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Solo administradores' });
   next();
 }
-
-// --- Limitador de intentos de login (en memoria) ---
-const MAX_ATTEMPTS = 5;
-const LOCK_MS = 15 * 60 * 1000;
-const attempts = new Map(); // clave -> { count, expires }
-
-function isBlocked(key) {
-  const entry = attempts.get(key);
-  if (!entry) return 0;
-  if (Date.now() > entry.expires) { attempts.delete(key); return 0; }
-  if (entry.count < MAX_ATTEMPTS) return 0;
-  return Math.ceil((entry.expires - Date.now()) / 1000);
-}
-function registerFailure(key) {
-  const entry = attempts.get(key);
-  if (entry && Date.now() <= entry.expires) {
-    entry.count++;
-    entry.expires = Date.now() + LOCK_MS;
-  } else {
-    attempts.set(key, { count: 1, expires: Date.now() + LOCK_MS });
-  }
-}
-function clearFailures(key) { attempts.delete(key); }
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of attempts) if (now > entry.expires) attempts.delete(key);
-}, 5 * 60 * 1000).unref();
 
 // --- Helpers de rutas seguras (evita path traversal) ---
 function invalidPath() {
