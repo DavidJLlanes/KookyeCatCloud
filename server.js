@@ -58,6 +58,8 @@ const createMarcadores = require('./lib/marcadores');
 const createPerfil = require('./lib/perfil');
 const createAnalisis = require('./lib/analisis');
 const createWeb = require('./lib/web');
+const createRutas = require('./lib/rutas');
+const { sendError } = require('./lib/errores');
 const createArchivos = require('./lib/archivos');
 const { IMAGE_TYPES, HEIC_TYPES, VIDEO_TYPES, PREVIEW_TYPES, TEXT_RE, TEXT_MAX, THUMBABLE, DISPLAY_MAX, THUMB_SIZE, TILE_URL, TILE_ATTR, TILE_ORIGIN, bytesDeEntorno } = require('./lib/archivos/tipos');
 const createSesiones = require('./lib/sesiones');
@@ -137,6 +139,11 @@ try {
 }
 // Raíz canónica: todas las rutas se validan contra ella con los symlinks ya resueltos
 const DATA_ROOT = fs.realpathSync(DATA_DIR);
+// Rutas seguras de cada usuario (las carpetas compartidas se consultan al usarlas: shares se crea más abajo)
+const {
+  safeResolve, userRoot, isHidden, assertVisible, resolveFor, userPath, mismoAlmacen,
+  esCompartida, sharesMueve, exists, freeName,
+} = createRutas({ DATA_ROOT, USERNAME_RE, shares: () => sharesMod });
 
 /**
  * Secreto de firma JWT. Nunca hay un valor por defecto conocido: se usa JWT_SECRET
@@ -439,104 +446,6 @@ app.get('/api/events', auth, eventsMod.manejador);
 function adminOnly(req, res, next) {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Solo administradores' });
   next();
-}
-
-// --- Helpers de rutas seguras (evita path traversal) ---
-function invalidPath() {
-  const err = new Error('Ruta inválida');
-  err.status = 400;
-  return err;
-}
-
-/**
- * Resuelve relPath dentro de root y garantiza que no se sale de ahí.
- * Compara contra root + separador para que un directorio hermano con el mismo
- * prefijo (/data/storage-backup) no cuele, y resuelve symlinks antes de validar.
- */
-function safeResolve(root, relPath) {
-  const target = path.resolve(root, path.join('.', relPath || ''));
-  if (target !== root && !target.startsWith(root + path.sep)) throw invalidPath();
-  // El destino puede no existir todavía (mkdir, mover): en ese caso valida el ancestro más cercano
-  let probe = target;
-  let real = null;
-  while (probe.length >= root.length) {
-    try { real = fs.realpathSync(probe); break; } catch { probe = path.dirname(probe); }
-  }
-  if (real && real !== root && !real.startsWith(root + path.sep)) throw invalidPath();
-  return target;
-}
-
-/**
- * Raíz de cada usuario: el admin ve todo el almacén, cada usuario normal
- * trabaja aislado dentro de <DATA_ROOT>/users/<username>.
- */
-function userRoot(user) {
-  if (user.role === 'admin') return DATA_ROOT;
-  if (!USERNAME_RE.test(user.username)) throw invalidPath();
-  const dir = path.join(DATA_ROOT, 'users', user.username);
-  fs.mkdirSync(dir, { recursive: true });
-  return fs.realpathSync(dir);
-}
-// Los nombres que empiezan por punto son internos (.trash) y no se exponen nunca:
-// ni se listan ni se pueden alcanzar desde la API pública.
-// Declaración, no constante: se usa al montar WebDAV, que va más arriba del archivo
-function isHidden(name) { return name.startsWith('.'); }
-function assertVisible(relPath) {
-  const parts = String(relPath || '').split(/[\\/]+/).filter(Boolean);
-  if (parts.some(isHidden)) throw invalidPath();
-}
-// opts.compartidos: acepta rutas "@compartido/<nombre>~<id>/…" (carpetas que otro usuario te compartió).
-// WebDAV y los módulos internos no las usan: llaman con 2 argumentos y esas rutas no existen para ellos.
-function resolveFor(user, relPath, opts) {
-  if (opts && opts.compartidos) {
-    const comp = sharesMod.parse(relPath);
-    if (comp) {
-      if (!comp.id) throw invalidPath();                         // "@compartido" a secas es solo un listado
-      return sharesMod.resolver(user, comp, !!opts.write).abs;
-    }
-  }
-  assertVisible(relPath);
-  return safeResolve(userRoot(user), relPath);
-}
-// Una petición que no es GET/HEAD modifica algo: sobre una carpeta compartida exige permiso de edición
-function userPath(req, relPath) {
-  return resolveFor(req.user, relPath, { compartidos: true, write: req.method !== 'GET' && req.method !== 'HEAD' });
-}
-// Mover entre tu almacén y una carpeta compartida (o entre dos compartidas) mezclaría almacenes de dueños distintos
-function mismoAlmacen(a, b) {
-  const x = sharesMod.parse(a), y = sharesMod.parse(b);
-  if (!x && !y) return true;
-  return !!x && !!y && x.id === y.id;
-}
-const esCompartida = (rel) => { try { return !!sharesMod.parse(rel); } catch { return true; } };
-const sharesMueve = (user, a, b) => { try { if (!sharesMod.parse(a)) sharesMod.mueve(user.username, a, b); } catch { /* ruta virtual */ } };
-// Errores del sistema (disco, permisos…) y fallos de programación nunca enseñan su texto: llevaría rutas del servidor.
-// Se cuentan en el registro y el cliente recibe un mensaje general.
-const ERRORES_SISTEMA = {
-  ENOENT: [404, 'No se ha encontrado'], ENOTDIR: [404, 'No se ha encontrado'], EACCES: [403, 'El servidor no tiene permiso para hacerlo'], EPERM: [403, 'El servidor no tiene permiso para hacerlo'],
-  ENOSPC: [507, 'No queda espacio en el disco del servidor'], EEXIST: [409, 'Ya existe'], EISDIR: [400, 'Eso es una carpeta'], EMFILE: [503, 'El servidor está ocupado: inténtalo de nuevo'], ENAMETOOLONG: [400, 'El nombre es demasiado largo'],
-};
-function sendError(res, err) {
-  const sistema = err && typeof err.code === 'string' && err.syscall && /^E[A-Z0-9]+$/.test(err.code);
-  const fallo = err instanceof TypeError || err instanceof RangeError || err instanceof ReferenceError;
-  if (sistema || fallo) {
-    const [estado, mensaje] = (sistema && ERRORES_SISTEMA[err.code]) || [500, 'Error interno del servidor'];
-    if (estado >= 500 || fallo) console.error('Error al responder:', err && err.stack || err);
-    return res.status(estado).json({ error: mensaje });
-  }
-  res.status(err.status || 400).json({ error: err.message });
-}
-async function exists(p) {
-  try { await fsp.access(p); return true; } catch { return false; }
-}
-// Devuelve una ruta libre añadiendo _1, _2… si el destino ya está ocupado
-async function freeName(dir, name) {
-  const ext = path.extname(name);
-  const base = path.basename(name, ext);
-  let target = path.join(dir, name);
-  let n = 1;
-  while (await exists(target)) target = path.join(dir, `${base}_${n++}${ext}`);
-  return target;
 }
 
 // --- Login ---
