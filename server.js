@@ -57,6 +57,7 @@ const createPagos = require('./lib/pagos');
 const createMarcadores = require('./lib/marcadores');
 const createPerfil = require('./lib/perfil');
 const createAnalisis = require('./lib/analisis');
+const createWeb = require('./lib/web');
 const { base32Encode, totpVerificar } = require('./lib/totp');
 const { isBlocked, registerFailure, clearFailures } = require('./lib/limitador');
 const createPush = require('./lib/push');
@@ -431,102 +432,11 @@ app.use((req, res, next) => {
 });
 app.use(cookieParser());
 
-// --- Cabeceras de seguridad ---
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  // Solo con HTTPS de verdad (cookies seguras) y sin includeSubDomains: otros subdominios del dominio pueden no tener HTTPS
-  if (SECURE_COOKIES) res.setHeader('Strict-Transport-Security', 'max-age=15552000');
-  // SAMEORIGIN y no DENY: el visor de PDF va dentro de un marco de la propia web.
-  // Otro sitio sigue sin poder enmarcarnos, que es de lo que protege esto.
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  res.setHeader('Referrer-Policy', 'no-referrer');
-  // object-src 'self' y no 'none': para enseñar un PDF dentro de un marco, Chrome lo
-  // trata como contenido de complemento y mira esta directiva del documento que lo
-  // enmarca. Con 'none' sale el recuadro gris de "no se pudo cargar". Sigue limitado
-  // al propio dominio, y todo se sirve con nosniff y con el tipo declarado.
-  // img-src incluye el servidor de tiles del mapa: es lo ÚNICO externo de toda la app.
-  // blob: es solo para la vista previa local de las imágenes que se están a punto de subir.
-  res.setHeader(
-    'Content-Security-Policy',
-    `default-src 'self'; img-src 'self' data: blob: ${TILE_ORIGIN}; style-src 'self' 'unsafe-inline'; ` +
-    "script-src 'self'; object-src 'self'; frame-src 'self'; base-uri 'none'; frame-ancestors 'self'"
-  );
-  next();
-});
-
-// Las páginas HTML y el manifest llevan rutas absolutas ("/app.js"): se reescriben con el
-// prefijo al servirlas. El resto de estáticos se sirven tal cual.
-const PUBLIC_DIR = path.join(APP_DIR, 'public');
-const plantillas = new Map();
-function enviaPlantilla(res, nombre, tipo) {
-  // Se cachea la plantilla ya reescrita, pero se vuelve a generar si el archivo cambia
-  const archivo = path.join(PUBLIC_DIR, nombre);
-  const mtime = fs.statSync(archivo).mtimeMs;
-  let hit = plantillas.get(nombre);
-  let texto = hit && hit.mtime === mtime ? hit.texto : undefined;
-  if (texto === undefined) {
-    texto = fs.readFileSync(archivo, 'utf8');
-    if (BASE_PATH) {
-      texto = nombre.endsWith('.json')
-        ? texto.replace(/("(?:id|start_url|scope|src|action|url)": ")\//g, `$1${BASE_PATH}/`)
-        : texto.replace(/((?:href|src)=")\/(?!\/)/g, `$1${BASE_PATH}/`);
-    }
-    if (nombre.endsWith('.html')) {
-      texto = texto.replace('<head>', `<head>
-<meta name="kcc-base" content="${BASE_PATH}">`);
-    }
-    plantillas.set(nombre, { texto, mtime });
-  }
-  // Las imágenes OG necesitan URL absoluta y el prefijo real de despliegue.
-  if (nombre === 'index.html') {
-    const proto = (res.req.headers['x-forwarded-proto'] || res.req.protocol || 'https').toString().split(',')[0].trim();
-    const host = res.req.get('host');
-    const origin = proto + '://' + host;
-    texto = texto.replaceAll('__KCC_OG_URL__', origin + BASE_PATH + '/og-image.jpg')
-      .replaceAll('__KCC_PAGE_URL__', origin + BASE_PATH + '/');
-  }
-  res.type(tipo).send(texto);
-}
-app.get('/manifest.json', (req, res) => enviaPlantilla(res, 'manifest.json', 'application/manifest+json'));
-// Identificador de la versión instalada: sale de la versión del paquete y del tamaño y la fecha de
-// cada archivo de public/. Cambia solo cuando se actualiza el código, y con él cambia el nombre de
-// la caché del service worker: así los navegadores detectan la actualización sin que haya que
-// acordarse de subir ningún número a mano.
-const APP_VERSION = require('./package.json').version;
-const ARRANQUE = Date.now();
-// Firma inmutable por proceso: el despliegue reinicia Node para activar el nuevo commit.
-// Prioridad: BUILD_ID del despliegue, HEAD de Git (lectura única), versión del paquete.
-function buildId() {
-  return BUILD_ID;
-}
-function readGitHead() {
-  try {
-    const dot = path.join(__dirname, '.git');
-    const gitDir = fs.statSync(dot).isDirectory() ? dot : path.resolve(__dirname, fs.readFileSync(dot, 'utf8').trim().replace(/^gitdir:\\s*/, ''));
-    const head = fs.readFileSync(path.join(gitDir, 'HEAD'), 'utf8').trim();
-    if (/^[a-f0-9]{40}$/i.test(head)) return head;
-    if (head.startsWith('ref: ')) {
-      const ref = head.slice(5).trim();
-      try { return fs.readFileSync(path.join(gitDir, ref), 'utf8').trim(); } catch {}
-      const packed = fs.readFileSync(path.join(gitDir, 'packed-refs'), 'utf8');
-      const line = packed.split('\\n').find(l => l.endsWith(' ' + ref));
-      if (line) return line.split(' ')[0];
-    }
-  } catch {}
-  return '';
-}
-const BUILD_ID = String(process.env.KCC_BUILD_ID || process.env.BUILD_ID || readGitHead() || APP_VERSION).trim().slice(0, 40);
-
-app.get('/sw.js', (req, res) => {
-  res.setHeader('Cache-Control', 'no-cache');
-  res.type('application/javascript').send(fs.readFileSync(path.join(PUBLIC_DIR, 'sw.js'), 'utf8').split('__BUILD__').join(buildId()));
-});
-// Versión instalada: pública y sin datos sensibles (la usa la tarjeta "Acerca de" y las comprobaciones)
-app.get('/api/version', (req, res) => {
-  res.setHeader('Cache-Control', 'no-store');
-  res.json({ version: APP_VERSION, build: buildId(), startedAt: ARRANQUE });
-});
-app.use(express.static(PUBLIC_DIR, { index: false }));
+// Cabeceras de seguridad, plantillas con prefijo, service worker, versión y archivos estáticos (lib/web)
+const webMod = createWeb({ express, APP_DIR, BASE_PATH, SECURE_COOKIES, tileOrigin: () => TILE_ORIGIN });
+const { enviaPlantilla } = webMod;
+app.use(webMod.cabeceras);
+webMod.montaEstaticos(app);
 
 // --- Auth middleware ---
 function auth(req, res, next) {
