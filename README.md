@@ -1727,7 +1727,7 @@ lib/
                      tarjetas, seleccion, copiar, ficha, editor, importar, registro (comparten K._prompts)
   games.js           Colección de videojuegos, RAWG opcional y portadas
   bases.js           Bases de datos con columnas propias (un JSON por base)
-  codigo.js          Proyectos de código: carpetas, archivos, versiones y vista web (un JSON por proyecto)
+  codigo/            Proyectos de código (servidor): constantes, base, proyectos, archivos, versiones, vista, transferencia, vinculos
   transferir.js      Copiar o mover entre Archivos y Código, con deshacer de 1 minuto e historial
   exportar.js        Exportación de JSON por sección y ZIP completo (administración)
   game/              Gamificación: niveles.js, logros.js, cosmeticos.js, retos.js (catálogos), utilidades.js,
@@ -1739,7 +1739,7 @@ lib/
   shopping.js        Lista y catálogo compartidos con imágenes WebP de 300 × 300
   notes-extra.js     Imágenes, menciones, backlinks, plantillas y exportación de notas
   versions.js        Historial de versiones de archivos de texto
-  vault.js           Caja fuerte cifrada (AES-256-GCM + scrypt)
+  vault/             Caja fuerte cifrada (servidor): constantes y cifrado, base, estado, contenido, subida, lectura, mover
   shares.js          Compartición entre usuarios
   webauthn.js        Passkeys sin dependencias (CBOR propio)
 public/
