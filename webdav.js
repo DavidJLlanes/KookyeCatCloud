@@ -36,7 +36,7 @@ function decodeHref(href, base = '') {
   return p.replace(/^\/dav\/?/, '').replace(/^\/+/, '').replace(/\/+$/, '');
 }
 
-function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '', alSobrescribir, alMover, alCambiar, aPapelera }) {
+function createDav({ isBlocked = () => 0, registerFailure = () => {}, clearFailures = () => {}, resolveFor, userRoot, loadUsers, isHidden, log, base = '', alSobrescribir, alMover, alCambiar, aPapelera }) {
   async function exists(p) {
     try { await fsp.access(p); return true; } catch { return false; }
   }
@@ -63,6 +63,15 @@ function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '', 
     const guardado = credenciales.get(clave);
     if (guardado && Date.now() < guardado.expira) return guardado.user;
 
+    // Mismo limitador que el login: sin él, WebDAV permitiría adivinar contraseñas sin freno
+    const ipKey = `ip:${req.ip}`;
+    const espera = isBlocked(ipKey);
+    if (espera) {
+      res.setHeader('Retry-After', String(espera));
+      res.status(429).end('Demasiados intentos fallidos');
+      return null;
+    }
+
     let usuario, clavePlano;
     try {
       const txt = Buffer.from(clave, 'base64').toString('utf8');
@@ -79,7 +88,8 @@ function createDav({ resolveFor, userRoot, loadUsers, isHidden, log, base = '', 
       bcrypt.compareSync(clavePlano || '', u.passwordHash) ||
       (u.apptokens || []).some(t => bcrypt.compareSync(clavePlano || '', t.hash))
     );
-    if (!valido) { reto(res); return null; }
+    if (!valido) { registerFailure(ipKey); reto(res); return null; }
+    clearFailures(ipKey);
 
     const user = { username: u.username, role: u.role };
     credenciales.set(clave, { user, expira: Date.now() + CACHE_CREDENCIALES_MS });

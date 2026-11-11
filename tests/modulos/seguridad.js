@@ -35,4 +35,34 @@ module.exports = async ({ req, prueba, igual, cierto, BASE, cookie }) => {
     igual((await fetch(BASE + '/api/me', { headers: { Cookie: ck } })).status, 401, 'el token no vale tras cerrar sesión');
     await req('DELETE', '/api/users/lola');
   });
+  await prueba('seguridad: un ZIP con cabeceras falsas no se infla sin tope', async () => {
+    const { zipSync } = require('fflate');
+    const sube = async (id, buf) => { const fd = new FormData(); fd.append('z', new Blob([buf]), 'a.zip'); fd.append('descomprimir', '1'); return fetch(BASE + `/api/codigo/${id}/zip`, { method: 'POST', headers: { Cookie: cookie() }, body: fd }); };
+    const c = await req('POST', '/api/codigo', { nombre: 'ZipFalso' }); igual(c.s, 200);
+    const honesto = Buffer.from(zipSync({ 'ok.txt': new Uint8Array([104, 105]) }));
+    igual((await sube(c.j.id, honesto)).status, 200, 'ZIP normal');
+    const grande = Buffer.from(zipSync({ 'big.bin': new Uint8Array(12 * 1024 * 1024) }, { level: 9 }));
+    igual((await sube(c.j.id, grande)).status, 400, 'honesto de 12 MB');
+    // Falsea el tamaño declarado (cabecera local en 22, directorio central en 24) a 100 bytes
+    const f = Buffer.from(grande);
+    f.writeUInt32LE(100, f.indexOf(Buffer.from([0x50, 0x4b, 0x03, 0x04])) + 22);
+    f.writeUInt32LE(100, f.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02])) + 24);
+    const r = await sube(c.j.id, f); cierto(r.status === 400, 'cabecera falsa debe rechazarse: ' + r.status);
+    await req('DELETE', `/api/codigo/${c.j.id}`);
+  });
+  await prueba('seguridad: la contraseña de un enlace compartido no se puede adivinar por fuerza bruta', async () => {
+    const fd = new FormData(); fd.append('path', ''); fd.append('files', new Blob(['hola']), 'enlace-pw.txt');
+    igual((await fetch(BASE + '/api/upload', { method: 'POST', headers: { Cookie: cookie() }, body: fd })).status, 200);
+    const c = await req('POST', '/api/sharelinks', { path: 'enlace-pw.txt', days: 1, password: 'pw-correcta-1' }); igual(c.s, 200);
+    const id = c.j.link.id, d = (pw) => fetch(BASE + `/api/public/share/${id}/download?pw=${pw}`);
+    igual((await d('pw-correcta-1')).status, 200, 'la correcta entra');
+    for (let i = 0; i < 10; i++) igual((await d('mala' + i)).status, 401);
+    igual((await d('pw-correcta-1')).status, 401, 'tras 10 fallos, bloqueado una hora');
+  });
+  await prueba('seguridad: WebDAV limita los intentos de contraseña como el login', async () => {
+    const dav = (clave) => fetch(BASE + '/dav/', { method: 'PROPFIND', headers: { Authorization: 'Basic ' + Buffer.from('admin:' + clave).toString('base64'), Depth: '0' } });
+    const est = []; for (let i = 0; i < 7; i++) est.push((await dav('mala-' + i)).status);
+    cierto(est.slice(0, 5).every(x => x === 401), 'primeros fallos 401: ' + est);
+    igual(est[6], 429, 'bloqueado tras 5 fallos');
+  });
 };

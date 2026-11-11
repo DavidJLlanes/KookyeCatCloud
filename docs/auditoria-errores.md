@@ -193,3 +193,18 @@ Pruebas de caja negra contra la app en marcha (archivos internos por la web, fug
 Sin hallazgos: ningún archivo interno (`.env`, `.jwt-secret`, `users.json`, `vapid.json`, código, `.git`, `docs`) se sirve por la web, con ni sin sesión; el cierre de sesión invalida el token; tras 5 fallos el inicio de sesión se bloquea 15 min por IP y por usuario; sin `X-Powered-By` ni CORS abierto.
 
 Riesgo conocido: el bloqueo por intentos permite a un atacante bloquear a un usuario concreto durante 15 minutos (compromiso aceptado frente a la fuerza bruta). Las contraseñas ya existentes de menos de 8 caracteres siguen valiendo hasta que se cambien.
+
+## Octava auditoría (seguridad y errores, 11-nov-2026)
+
+Sondeo de caja negra contra una copia temporal (rutas de administración, IDOR entre usuarios, ZIP, WebDAV, enlaces compartidos).
+
+**Corregido**
+- **ZIP de Código (memoria):** los topes de 10 MB/archivo y 50 MB totales se comprobaban con el tamaño que declara la cabecera, que un ZIP manipulado falsea; el servidor inflaba 150 MB antes de enterarse. Ahora `lib/descomprime.js` descomprime en flujo y corta en cuanto los bytes reales pasan el tope (400).
+- **WebDAV sin límite de intentos:** la autenticación Basic permitía adivinar contraseñas sin freno (y cada intento cuesta ~100 ms de CPU síncrona). Ahora usa el mismo limitador por IP que el login (5 fallos → 15 min, 429).
+- **Enlaces compartidos con contraseña:** sin freno en `list`, `thumb`, `view`, `file`. Ahora 10 fallos por hora y por IP+enlace.
+
+**Comprobado sin hallazgos:** recorridos `../` y `%2f` en WebDAV (quedan dentro de la raíz del usuario), acceso a rutas internas (`.kcc`, papelera), rutas de admin con usuario normal, IDOR en pagos/actividad/estadísticas.
+
+**Riesgos aceptados:** el bloqueo por IP puede usarse para impedir temporalmente el acceso desde una misma IP; las contraseñas cortas antiguas siguen valiendo hasta que se cambien.
+
+Pruebas nuevas en `tests/modulos/seguridad.js`.

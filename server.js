@@ -455,6 +455,7 @@ const app = express.Router();
 // Content-Type: application/json haría que express.json() se comiera el cuerpo
 // y el PUT escribiera un archivo vacío.
 app.use('/dav', createDav({
+  isBlocked, registerFailure, clearFailures,
   resolveFor,
   userRoot,
   loadUsers,
