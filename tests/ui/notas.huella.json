@@ -1,0 +1,158 @@
+{
+ "pc": {
+  "tipos": {
+   "h1": 1,
+   "p": 2,
+   "ul": 2,
+   "ol": 2,
+   "todo": 2,
+   "quote": 1,
+   "callout": 1,
+   "code": 1,
+   "table": 1,
+   "divider": 1
+  },
+  "mdIgual": false,
+  "mdLen": 216,
+  "props": 5,
+  "tras": {
+   "h1": 1,
+   "p": 3,
+   "ul": 2,
+   "ol": 2,
+   "todo": 2,
+   "quote": 1,
+   "callout": 1,
+   "code": 1,
+   "table": 1,
+   "divider": 1
+  },
+  "slash": 1,
+  "slashItems": 21,
+  "slashFiltrado": 1,
+  "trasSlash": {
+   "h1": 1,
+   "p": 3,
+   "ul": 2,
+   "ol": 2,
+   "todo": 3,
+   "quote": 1,
+   "callout": 1,
+   "code": 1,
+   "table": 1,
+   "divider": 1
+  },
+  "barra": 12,
+  "mencion": 0,
+  "trasDeshacer": {
+   "h1": 1,
+   "p": 3,
+   "ul": 2,
+   "ol": 2,
+   "todo": 3,
+   "quote": 1,
+   "callout": 1,
+   "code": 1,
+   "table": 1,
+   "divider": 1
+  },
+  "trasRehacer": {
+   "h1": 1,
+   "p": 3,
+   "ul": 2,
+   "ol": 2,
+   "todo": 3,
+   "quote": 1,
+   "callout": 1,
+   "code": 1,
+   "table": 1,
+   "divider": 1
+  },
+  "finTiene": [
+   true,
+   true
+  ],
+  "finLen": 246,
+  "celdas": 4,
+  "api": "clear,elegirImagen,flush,int,load,subeImagenes",
+  "errores": []
+ },
+ "movil": {
+  "tipos": {
+   "h1": 1,
+   "p": 2,
+   "ul": 2,
+   "ol": 2,
+   "todo": 2,
+   "quote": 1,
+   "callout": 1,
+   "code": 1,
+   "table": 1,
+   "divider": 1
+  },
+  "mdIgual": false,
+  "mdLen": 216,
+  "props": 5,
+  "tras": {
+   "h1": 1,
+   "p": 3,
+   "ul": 2,
+   "ol": 2,
+   "todo": 2,
+   "quote": 1,
+   "callout": 1,
+   "code": 1,
+   "table": 1,
+   "divider": 1
+  },
+  "slash": 1,
+  "slashItems": 21,
+  "slashFiltrado": 1,
+  "trasSlash": {
+   "h1": 1,
+   "p": 3,
+   "ul": 2,
+   "ol": 2,
+   "todo": 3,
+   "quote": 1,
+   "callout": 1,
+   "code": 1,
+   "table": 1,
+   "divider": 1
+  },
+  "barra": 12,
+  "mencion": 0,
+  "trasDeshacer": {
+   "h1": 1,
+   "p": 3,
+   "ul": 2,
+   "ol": 2,
+   "todo": 3,
+   "quote": 1,
+   "callout": 1,
+   "code": 1,
+   "table": 1,
+   "divider": 1
+  },
+  "trasRehacer": {
+   "h1": 1,
+   "p": 3,
+   "ul": 2,
+   "ol": 2,
+   "todo": 3,
+   "quote": 1,
+   "callout": 1,
+   "code": 1,
+   "table": 1,
+   "divider": 1
+  },
+  "finTiene": [
+   true,
+   true
+  ],
+  "finLen": 246,
+  "celdas": 4,
+  "api": "clear,elegirImagen,flush,int,load,subeImagenes",
+  "errores": []
+ }
+}

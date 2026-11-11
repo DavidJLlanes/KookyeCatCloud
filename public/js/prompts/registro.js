@@ -1,5 +1,5 @@
 'use strict';
-/* registro: parte de la biblioteca de prompts (ver prompts/estado.js). Comparte el espacio K._prompts. */
+/* prompts/registro.js: parte del módulo (se carga con el resto de prompts/ en index.html). Comparte el espacio K._prompts. */
 (function () {
   const C = (K._prompts = K._prompts || {});
   const { R, S } = C;

@@ -1,5 +1,5 @@
 'use strict';
-/* semana: parte de la biblioteca de prompts (ver prompts/estado.js). Comparte el espacio K._calendar. */
+/* calendar/semana.js: parte del módulo (se carga con el resto de calendar/ en index.html). Comparte el espacio K._calendar. */
 (function () {
   const C = (K._calendar = K._calendar || {});
   const { HH, S, SNAP } = C;

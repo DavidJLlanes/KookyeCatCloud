@@ -1717,7 +1717,8 @@ lib/
   office.js          Visor de Office (PDF con LibreOffice) y de hojas de cálculo (fábrica createOffice)
   cuentas.js         Login y 2FA, usuarios, sesiones abiertas y tokens de app (fábrica createCuentas)
   enlaces.js         Enlaces públicos: descarga (archivo, carpeta, álbum), subida y prompts (fábrica createEnlaces)
-  notes.js           Bloc de notas: árbol, cuerpos .md y papelera (fábrica createNotes)
+  notes/             Editor de bloques de las notas (cliente): inline, parser, bloques, tablas, modelo, seleccion,
+                     eventos, slash, menciones, barra, montaje, propiedades, registro (comparten K._notes)
   calendar/          Calendario (cliente): estado, datos, estructura, lateral, mes, semana, agenda, evento,
                      avisos, registro (comparten K._calendar)
   ical.js            Feed iCal (RFC 5545) de solo lectura
