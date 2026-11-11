@@ -1735,6 +1735,8 @@ lib/
   comfy.js           Lee metadatos de generación: ComfyUI, Automatic1111 / Forge, JSON y EXIF/XMP
   clip.js            Portapapeles compartido entre dispositivos y destino de «Compartir»
   contacts/         Contactos (cliente): estado, datos, vista, ficha, editor, importar, registro (K._contacts)
+  tetris/            (public/js) Tetris (cliente): estado, sonido, motor, dibujo, interfaz, entrada, pantallas (K._tetris)
+  arcade/            (public/js) 2048 y Breakout (cliente): estado, sonido, marco, g2048, breakout (K._arcade)
   codigo/            (public/js) Código (cliente): estado, lista, proyecto, archivos, panel, subidas, versiones, vistaweb,
                      registro (K._codigo)
   vcard.js           Lectura y escritura de vCard 3.0

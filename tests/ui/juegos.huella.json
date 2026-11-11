@@ -1,0 +1,68 @@
+{
+ "pc": {
+  "tetris": {
+   "botones": 17,
+   "pantalla": "← Volver a la app PUNTOS TIEMPO : LÍNEAS NIVEL II 🔊 RESERVA ENERGÍA Tetris · minutos Nivel · Novato · Récord Jugar Limpia líneas para cargar energía y gastarla",
+   "lienzos": 5,
+   "hayJugar": true,
+   "hudCambia": true,
+   "lienzoPintado": false,
+   "hudPresente": true,
+   "tras_p": "← Volver a la app PUNTOS TIEMPO : LÍNEAS NIVEL II 🔊 RESERVA ENERGÍA Pausa Continuar Terminar partida SIGUIENTE ◀ ▶ ⟳ ▼ "
+  },
+  "g2048": {
+   "botones": 14,
+   "pantalla": "← Volver a la app PUNTOS RÉCORD MOVS FICHA II 🔊 ENERGÍA Nivel · Novato · Récord Jugar Desliza para unir fichas iguales. Cada fusión carga energía para tus pote",
+   "lienzos": 1,
+   "hayJugar": true,
+   "hudCambia": true,
+   "lienzoPintado": true,
+   "hudPresente": true,
+   "tras_p": "← Volver a la app PUNTOS RÉCORD MOVS FICHA II 🔊 ENERGÍA Pausa Continuar Terminar partida ◀ ▲ ▼ ▶"
+  },
+  "breakout": {
+   "botones": 11,
+   "pantalla": "← Volver a la app PUNTOS NIVEL VIDAS LADRILLOS II 🔊 ENERGÍA Breakout Nivel · Novato · Récord Jugar Rebota la bola con la pala y rompe todos los ladrillos. Tien",
+   "lienzos": 1,
+   "hayJugar": true,
+   "hudCambia": true,
+   "lienzoPintado": true,
+   "hudPresente": true,
+   "tras_p": "← Volver a la app PUNTOS NIVEL VIDAS ♥♥♥ LADRILLOS II 🔊 ENERGÍA Pausa Continuar Terminar partida"
+  },
+  "errores": []
+ },
+ "movil": {
+  "tetris": {
+   "botones": 17,
+   "pantalla": "← Volver a la app PUNTOS TIEMPO : LÍNEAS NIVEL II 🔊 RESERVA ENERGÍA Tetris · minutos Nivel · Novato · Récord Jugar Limpia líneas para cargar energía y gastarla",
+   "lienzos": 5,
+   "hayJugar": true,
+   "hudCambia": true,
+   "lienzoPintado": false,
+   "hudPresente": true,
+   "tras_p": "← Volver a la app PUNTOS TIEMPO : LÍNEAS NIVEL II 🔊 RESERVA ENERGÍA Pausa Continuar Terminar partida SIGUIENTE ◀ ▶ ⟳ ▼ "
+  },
+  "g2048": {
+   "botones": 14,
+   "pantalla": "← Volver a la app PUNTOS RÉCORD MOVS FICHA II 🔊 ENERGÍA Nivel · Novato · Récord Jugar Desliza para unir fichas iguales. Cada fusión carga energía para tus pote",
+   "lienzos": 1,
+   "hayJugar": true,
+   "hudCambia": true,
+   "lienzoPintado": true,
+   "hudPresente": true,
+   "tras_p": "← Volver a la app PUNTOS RÉCORD MOVS FICHA II 🔊 ENERGÍA Pausa Continuar Terminar partida ◀ ▲ ▼ ▶"
+  },
+  "breakout": {
+   "botones": 11,
+   "pantalla": "← Volver a la app PUNTOS NIVEL VIDAS LADRILLOS II 🔊 ENERGÍA Breakout Nivel · Novato · Récord Jugar Rebota la bola con la pala y rompe todos los ladrillos. Tien",
+   "lienzos": 1,
+   "hayJugar": true,
+   "hudCambia": true,
+   "lienzoPintado": true,
+   "hudPresente": true,
+   "tras_p": "← Volver a la app PUNTOS NIVEL VIDAS ♥♥♥ LADRILLOS II 🔊 ENERGÍA Pausa Continuar Terminar partida"
+  },
+  "errores": []
+ }
+}
