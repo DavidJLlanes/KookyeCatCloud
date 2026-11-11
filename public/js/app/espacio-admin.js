@@ -126,7 +126,6 @@ async function loadLinks() {
 
       box.appendChild(row);
     }
-    if (window.K && K.perfil) K.perfil.lista();
   } catch {}
 }
 
@@ -205,6 +204,8 @@ async function loadAdmin() {
       }
       box.appendChild(row);
     }
+    // Las fotos y los nombres visibles se piden cuando las filas ya existen
+    if (window.K && K.perfil) K.perfil.lista();
   } catch {}
 }
 
