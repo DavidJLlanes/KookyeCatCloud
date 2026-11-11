@@ -1057,6 +1057,18 @@ Favoritos con nombre, dirección, descripción, color y carpetas. El icono (favi
 - **Seguridad (SSRF)**: el servidor nunca descarga de direcciones privadas, locales ni reservadas; resuelve el nombre y conecta a la dirección ya comprobada, revalida cada redirección y limita tamaño y tiempo. `KCC_ICONOS_LOCALES=1` lo relaja solo para las pruebas.
 - Borrar una carpeta mueve sus marcadores a «Sin carpeta». Borrar un marcador lo aparta 30 días.
 
+## Recordatorios
+
+Sección propia (menú **Recordatorios**) con todos los recordatorios de la web. Se crean aquí o desde cualquier sección con el botón **Recordar**
+(notas, contactos, archivos —clic derecho—, prompts y marcadores) y siempre se guardan en el mismo sitio, así que se ven todos juntos.
+
+- Cada recordatorio tiene título, notas, fecha y hora (opcionales), aviso (a la hora, 10 min, 1 h, 1 día antes o sin aviso) y, si se quiere, un vínculo con el elemento desde el que se creó (pulsar el vínculo lo abre).
+- **Calendario opcional:** «Añadir también al calendario» crea un evento que sigue al recordatorio (y si lo mueves en el calendario, el recordatorio cambia). Sin marcarlo, el recordatorio funciona igual de forma independiente.
+- Se pueden marcar como hechos, posponer (10 min, 1 h, mañana, una semana), editar y eliminar (se guarda 30 días). El menú muestra cuántos están vencidos o para hoy.
+- **Avisos en el navegador:** al crear el primer recordatorio con aviso, si el dispositivo no recibe avisos se ofrece activarlos y Chrome pide permiso. Llegan con la app cerrada por Web Push (Chrome, Edge, Opera, Brave, Firefox, Safari en Mac y iPhone/iPad con la web instalada, Android y Samsung Internet) y, con la app abierta, también como aviso dentro de la web. Se configuran en Cuenta → Avisos → Recordatorios.
+- Los recordatorios que antes colgaban de notas y contactos como eventos del calendario se pasan solos a esta sección la primera vez que se abre.
+- Datos en `<raíz>/.kcc/recordatorios/data.json`. Código en `lib/recordatorios/` (`modelo.js`, `avisos.js`, `migracion.js`, `resumen.js`, `index.js`), `lib/push/fuentes/recordatorios.js` y `public/js/recordatorios/` (`datos`, `avisos`, `formulario`, `fila`, `lista`, `vinculado`, `index`). Pruebas en `tests/modulos/recordatorios.js`.
+
 ## Avisos push
 
 Notificaciones en el móvil o el ordenador, también con la app cerrada. Se configuran en **Cuenta → Avisos**.
@@ -1693,6 +1705,7 @@ lib/
   labels.js          Etiquetas de color compartidas entre módulos
   pagos/             Pagos y recordatorios (modelo, fechas, valores, resumen, rutas)
   marcadores/        Marcadores web (modelo, favicon, red con defensa SSRF, resumen, rutas)
+  recordatorios/     Recordatorios (modelo, cuándo avisa cada uno, migración desde el calendario, resumen, rutas)
   perfil/            Foto y nombre visible del perfil (procesado de imagen y rutas)
   calendar/          Calendario (fechas, modelo del evento, repetición, calendarios, eventos, importar, iCal, API interna)
   prompts/           Prompts de IA (base e índice, listado, categorías, fragmentos, parecidos, CRUD, imágenes, ComfyUI, importar/exportar, enganches)
@@ -1757,7 +1770,7 @@ public/
   tests/ui/          Pruebas de interfaz con Playwright (no van en npm test) y sus huellas de referencia
   js/copias.js       Tarjeta de Administración: estado, crear copia, descargar y registro de intentos
   js/valores*.js     Valores reutilizables: normalización compartida con el servidor, campos con sugerencias, chips que filtran y pantalla de revisión
-  js/pagos/, js/marcadores/, js/push/, js/sonidos/  Clientes de los módulos nuevos, un archivo por responsabilidad (datos, lista, formulario, ajustes…)
+  js/pagos/, js/marcadores/, js/recordatorios/, js/push/, js/sonidos/  Clientes de los módulos nuevos, un archivo por responsabilidad (datos, lista, formulario, ajustes…)
   js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, recordatorios vinculados, portapapeles, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
   css/               Estilos: modules (barra lateral y componentes), calendar, prompts, sistema (versiones, caja fuerte,
                      passkeys), contacts, complementos (retoques, van los últimos) y uno por módulo (notes, shopping…)

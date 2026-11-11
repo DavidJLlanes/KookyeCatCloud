@@ -22,6 +22,7 @@
 <link rel="stylesheet" href="/css/perfil.css">
 <link rel="stylesheet" href="/css/pagos.css">
 <link rel="stylesheet" href="/css/marcadores.css">
+<link rel="stylesheet" href="/css/recordatorios.css">
 <link rel="stylesheet" href="/css/games.css">
 <link rel="stylesheet" href="/css/bases.css">
 <link rel="stylesheet" href="/css/codigo.css">
@@ -1292,6 +1293,7 @@
       <button class="tab" data-view="codigo"><svg class="ico"><use href="#i-code"/></svg><span>Código</span></button>
       <button class="tab" data-view="games"><svg class="ico"><use href="#i-gamepad"/></svg><span>Juegos</span></button>
       <button class="tab" data-view="calendar"><svg class="ico"><use href="#i-calendar"/></svg><span>Calendario</span></button>
+      <button class="tab" data-view="recordatorios"><svg class="ico"><use href="#i-bell"/></svg><span>Recordatorios</span></button>
       <button class="tab" data-view="prompts"><svg class="ico"><use href="#i-sparkle"/></svg><span>Prompts</span></button>
       <button class="tab" data-view="contacts"><svg class="ico"><use href="#i-contact"/></svg><span>Contactos</span></button>
       <button class="tab" data-view="clip"><svg class="ico"><use href="#i-copy"/></svg><span>Portapapeles</span></button>
@@ -1362,6 +1364,7 @@
   <main class="wrap kcc-view" id="view-bases" hidden></main>
   <main class="wrap kcc-view" id="view-pagos" hidden></main>
   <main class="wrap kcc-view" id="view-marcadores" hidden></main>
+  <main class="wrap kcc-view" id="view-recordatorios" hidden></main>
   <main class="wrap kcc-view" id="view-codigo" hidden></main>
 
   <!-- ---- Vista prompts ---- -->
@@ -1728,6 +1731,7 @@
       <button data-view="codigo"><svg class="ico"><use href="#i-code"/></svg>Código</button>
       <button data-view="games"><svg class="ico"><use href="#i-gamepad"/></svg>Juegos</button>
       <button data-view="calendar"><svg class="ico"><use href="#i-calendar"/></svg>Agenda</button>
+      <button data-view="recordatorios"><svg class="ico"><use href="#i-bell"/></svg>Avisos</button>
       <button data-view="prompts"><svg class="ico"><use href="#i-sparkle"/></svg>Prompts</button>
       <button data-view="contacts"><svg class="ico"><use href="#i-contact"/></svg>Contactos</button>
       <button data-view="clip"><svg class="ico"><use href="#i-copy"/></svg>Clip</button>
@@ -2030,7 +2034,6 @@
 <script src="/js/arcade/marco.js"></script>
 <script src="/js/arcade/g2048.js"></script>
 <script src="/js/arcade/breakout.js"></script>
-<script src="/js/vinculos.js"></script>
 <script src="/js/clip.js"></script>
 <script src="/js/contacts/estado.js"></script>
 <script src="/js/contacts/datos.js"></script>
@@ -2080,6 +2083,13 @@
 <script src="/js/marcadores/listado.js"></script>
 <script src="/js/marcadores/formulario.js"></script>
 <script src="/js/marcadores/index.js"></script>
+<script src="/js/recordatorios/datos.js"></script>
+<script src="/js/recordatorios/avisos.js"></script>
+<script src="/js/recordatorios/formulario.js"></script>
+<script src="/js/recordatorios/fila.js"></script>
+<script src="/js/recordatorios/lista.js"></script>
+<script src="/js/recordatorios/vinculado.js"></script>
+<script src="/js/recordatorios/index.js"></script>
 <script src="/js/transferir.js"></script>
 <script src="/js/codigo/estado.js"></script>
 <script src="/js/codigo/lista.js"></script>

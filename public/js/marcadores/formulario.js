@@ -30,6 +30,11 @@
       } catch (e) { K.fail(e); return false; }      // el formulario sigue abierto con lo escrito
     } }] });
     if (!nuevo) {
+      if (K.recordar) {
+        const rec = el('button', 'btn sm', 'Recordar…'); rec.type = 'button';
+        rec.addEventListener('click', () => { modal.close(); K.recordar('marcador', m.id, m.nombre); });
+        f.appendChild(rec);
+      }
       const del = el('button', 'btn danger sm mk-borrar', 'Eliminar marcador'); del.type = 'button';
       del.addEventListener('click', async () => {
         if (!await K.confirm(`Se eliminará «${m.nombre}». Se guarda 30 días por si te arrepientes.`, { ok: 'Eliminar', danger: true })) return;

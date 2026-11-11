@@ -57,6 +57,9 @@
       k.appendChild(hora(s.hora, 'Hora para eventos de todo el día', (v) => guarda({ calendario: { hora: v } }, false)));
       k.appendChild(el('small', 'k-faint', 'Los eventos con hora avisan cuando marque su recordatorio. Añade recordatorios al editar el evento.'));
     }));
+    cuerpo.appendChild(seccion('Recordatorios', 'Cada recordatorio avisa cuando le toca (a su hora, o con la antelación que elegiste al crearlo).', 'recordatorios', (k, s) => {
+      k.appendChild(hora(s.hora, 'Hora para los de todo el día', (v) => guarda({ recordatorios: { hora: v } }, false)));
+    }));
     cuerpo.appendChild(seccion('Contactos', 'Cumpleaños y otras fechas de tus contactos.', 'contactos', (k, s) => {
       k.appendChild(hora(s.hora, 'Hora del aviso', (v) => guarda({ contactos: { hora: v } }, false)));
       const g = el('div', 'pu-dias'); g.appendChild(el('span', null, 'Avisar'));

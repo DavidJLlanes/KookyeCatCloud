@@ -169,7 +169,7 @@
         const desde = ev.currentTarget.getBoundingClientRect();
         try { await K.post('/api/shopping/entries', { productId: p.id, quantity: p.defaultQuantity }); K.toast(`«${p.name}» añadido a pendientes`); await load(); efectoAnadido(p, desde); } catch (e) { K.fail(e); }
       }, 'btn primary sm'));
-      actions.append(button('Editar', 'i-pencil', () => editProduct(p), 'btn sm'));
+      const editar = button('Editar', 'i-pencil', () => editProduct(p), 'btn sm shop-edit'); editar.title = 'Editar producto'; editar.setAttribute('aria-label', `Editar ${p.name}`); actions.append(editar);
       const del = el('button', 'icon-btn shop-remove'); del.type = 'button'; del.title = 'Eliminar producto del catálogo y de todas las listas'; del.appendChild(icon('i-trash'));
       del.addEventListener('click', async () => { if (!await K.confirm(`Se eliminará “${p.name}” del catálogo y también sus registros de compra.`, { ok: 'Eliminar', danger: true })) return; try { await K.del('/api/shopping/products/' + p.id); await load(); } catch (e) { K.fail(e); } }); actions.appendChild(del);
       body.appendChild(actions); card.appendChild(body); grid.appendChild(card);

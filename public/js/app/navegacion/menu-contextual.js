@@ -38,6 +38,7 @@ function abrirCtx(x, y, item) {
     opcionCtx(menu, 'i-restore', 'Historial de envíos…', () => K.transferir.historial(() => refresh()));
     if (!sobreSeleccion) opcionCtx(menu, 'i-share', 'Compartir enlace…', () => openShare(item));
     if (window.KCC.fileCalendar) opcionCtx(menu, 'i-calendar', 'Fecha en el calendario…', () => window.KCC.fileCalendar(rutas));
+    if (!sobreSeleccion && K.recordar) opcionCtx(menu, 'i-bell', 'Recordar…', () => K.recordar('file', item.rel, nombreVisible(item.name)));
     if (window.KCC.toVault) opcionCtx(menu, 'i-lock', 'Mover a la caja fuerte…', () => window.KCC.toVault(rutas));
     if (window.KCC.shareMenu) window.KCC.shareMenu(menu, item, rutas, sobreSeleccion);
     if (!sobreSeleccion && !item.isDir && isTexto(item.name) && window.KCC.fileVersions) opcionCtx(menu, 'i-clock', 'Historial de versiones…', () => window.KCC.fileVersions(item));

@@ -162,6 +162,11 @@
       const cc = el('button', 'btn ghost sm'); cc.type = 'button'; cc.append(icon('i-pencil'), el('span', null, p.cal ? 'Cambiar fecha' : 'Añadir al calendario'));
       cc.addEventListener('click', () => editCalDate(p, m));
       calRow.appendChild(cc);
+      if (K.recordar) {
+        const rc = el('button', 'btn ghost sm'); rc.type = 'button'; rc.append(icon('i-bell'), el('span', null, 'Recordar'));
+        rc.addEventListener('click', () => { m.close(); K.recordar('prompt', p.id, p.title); });
+        calRow.appendChild(rc);
+      }
     }
     info.appendChild(calRow);
 

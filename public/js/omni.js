@@ -29,6 +29,8 @@
     { t: 'Avisos y notificaciones', s: 'Elegir qué te avisa y cuándo', i: 'i-bell', f: () => switchTab('cuenta') },
     { t: 'Nuevo pago', s: 'Apuntar un recibo o seguro', i: 'i-wallet', f: () => K.pagos.nuevo() },
     { t: 'Ir a Marcadores', s: 'Tus webs favoritas', i: 'i-bookmark', f: () => switchTab('marcadores') },
+    { t: 'Ir a Recordatorios', s: 'Lo que no quieres olvidar', i: 'i-bell', f: () => switchTab('recordatorios') },
+    { t: 'Nuevo recordatorio', s: 'Con aviso en el navegador', i: 'i-bell', f: () => K.recordatorios.nuevo() },
     { t: 'Nuevo marcador', s: 'Guardar una web', i: 'i-bookmark', f: () => K.marcadores.nuevo() },
     { t: 'Ir a Juegos', i: 'i-gamepad', f: () => switchTab('games') },
     { t: 'Ir a Calendario', i: 'i-calendar', f: () => switchTab('calendar') },

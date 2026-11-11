@@ -28,7 +28,14 @@
     if (!P.cfg) await P.carga();
     const reg = await registro();
     let sub = await reg.pushManager.getSubscription();
-    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: aBytes(P.cfg.clavePublica) });
+    if (!sub) {
+      try { sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: aBytes(P.cfg.clavePublica) }); }
+      catch (e) {
+        // Brave y otros navegadores sin servicios de Google no pueden suscribirse hasta que se permita en sus ajustes
+        const brave = navigator.brave && await navigator.brave.isBrave().catch(() => false);
+        throw new Error(brave ? 'Brave bloquea los avisos por defecto: en brave://settings/privacy activa «Usar los servicios de Google para mensajes push» y reinicia el navegador.' : 'Este navegador no ha podido registrarse en su servicio de avisos (' + (e && e.message ? e.message : 'error desconocido') + '). Prueba con otra red o desactiva el modo privado.');
+      }
+    }
     const r = await K.post('/api/push/dispositivos', { suscripcion: sub.toJSON() });
     P.cfg.dispositivos = r.dispositivos; P.cfg.ajustes = r.ajustes; P.mio = r.id;
     return r;

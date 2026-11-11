@@ -17,7 +17,7 @@ const TIPOS = [
 const TIPOS_APP = [
   { id: 'trash',    color: '#64748b' }, { id: 'notes',    color: '#e0c341' }, { id: 'prompts',  color: '#8b5cf6' },
   { id: 'contacts', color: '#22d3ee' }, { id: 'codigo',   color: '#34d399' }, { id: 'bases',    color: '#f97316' },
-  { id: 'pagos',    color: '#f472b6' }, { id: 'marcadores', color: '#60a5fa' }, { id: 'albums', color: '#a3e635' },
+  { id: 'pagos',    color: '#f472b6' }, { id: 'marcadores', color: '#60a5fa' }, { id: 'recordatorios', color: '#fbbf24' }, { id: 'albums', color: '#a3e635' },
   { id: 'perfil',   color: '#fb7185' }, { id: 'juegos',   color: '#c084fc' }, { id: 'transfer', color: '#2dd4bf' },
   { id: 'versions', color: '#a16207' }, { id: 'clip',     color: '#fbbf24' }, { id: 'vault',    color: '#ef4444' },
   { id: 'calendar', color: '#38bdf8' }, { id: 'datos',    color: '#94a3b8' },

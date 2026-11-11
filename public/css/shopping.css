@@ -54,12 +54,12 @@
 .shop-empty-icon{width:62px;height:62px;display:grid;place-items:center;border-radius:20px;background:var(--brand-soft);font-size:calc(28px*var(--fs,1));margin-bottom:12px;}
 .shop-empty h2{margin:0 0 5px;font-size:calc(19px*var(--fs,1));}
 .shop-empty p{max-width:390px;margin:0 0 18px;}
-.shop-product-grid.is-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr));align-items:stretch;gap:clamp(9px,1.3vw,14px);}
+.shop-product-grid.is-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));align-items:stretch;gap:clamp(9px,1.3vw,14px);}
 .shop-product-grid.is-list{display:grid;grid-template-columns:minmax(0,1fr);gap:9px;max-width:960px;margin:0 auto;}
 .shop-product-card{min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--glass);transition:transform .18s,border-color .18s;}
 .shop-product-card:hover{transform:translateY(-2px);border-color:var(--accent-line);}
 .shop-product-card>.shop-product-image{border-radius:0;width:100%;}
-.shop-card-body{min-width:0;padding:clamp(9px,1vw,12px);}
+.shop-card-body{container-type:inline-size;min-width:0;padding:clamp(9px,1vw,12px);}
 .shop-card-body h3{margin:0;font-size:calc(15px*var(--fs,1));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .shop-card-body p{margin:3px 0 5px;font-size:calc(12px*var(--fs,1));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .shop-default-qty{font-size:calc(11px*var(--fs,1));color:var(--faint);}
@@ -153,3 +153,10 @@
 .shop-vuela svg{width:14px;height:14px;}
 @media (prefers-reduced-motion:reduce){.shop-product-card.shop-ok,.shop-product-card .btn.is-ok,.shop-tabs button.shop-bump{animation:none;}}
 .shop-product-card .btn.is-ok{flex:none;white-space:nowrap;padding-inline:10px;gap:5px;}
+/* Tarjeta estrecha: Editar queda solo con el icono para que «Añadir» se lea entero (antes se cortaban los textos) */
+@container (max-width:215px){
+  .shop-card-actions{grid-template-columns:minmax(0,1fr) 36px 36px;}
+  .shop-card-actions .shop-remove{width:36px;height:36px;}
+  .shop-card-actions .shop-edit{padding-inline:0;}
+  .shop-card-actions .shop-edit span{display:none;}
+}
