@@ -86,7 +86,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | ✨ **Prompts de IA** | Biblioteca con categorías, etiquetas, variables, imágenes de muestra, comparación de versiones, estadísticas y creación desde metadatos de imágenes de ComfyUI / Automatic1111. |
 | 🏆 **Logros y Tetris** | Niveles y rangos, racha diaria, logros por cantidad de elementos (también Compra, favoritos, álbumes, Bases, Juegos, Pagos, Marcadores y Avisos), por uso y de seguridad, retos semanales, cosméticos y tres juegos (Tetris, 2048 y Breakout) táctiles y con música, con potenciadores que se desbloquean al subir de nivel. |
 | 🎮 **Juegos** | Colección de videojuegos con carátulas, notas, horas, lista de deseos y backlog, estadísticas, búsqueda opcional con RAWG, logros propios y tarjetas para compartir de cada juego y de tu perfil. |
-| 🗂️ **Bases** | Bases de datos propias al estilo AppFlowy: columnas a tu medida (texto, número, fecha, casilla, selección, etiquetas, enlace), vistas de tabla y tablero Kanban, plantillas, exportación CSV/JSON y logros propios. Cada base es su propio JSON. |
+| 🗂️ **Bases** | Bases de datos propias al estilo Notion: columnas a tu medida (también fórmulas, relaciones y resúmenes), vistas de tabla, tablero, calendario, galería y línea de tiempo, plantillas, exportación CSV/JSON y logros propios. Cada base es su propio JSON. |
 | </> **Código** | Proyectos tipo GitHub: carpetas y archivos, editor con colores, subida de archivos, carpetas y ZIP (con descompresión), versiones con comparación y restauración, vista web aislada (JavaScript solo si activas el interruptor) y descarga en ZIP. Límites: 50 MB y 1000 archivos por proyecto, 10 MB por archivo, 50 versiones. Con logros. |
 | 💳 **Pagos** | Recordatorios de recibos, seguros y suscripciones: compañía, importe, frecuencia y próxima fecha; «Pagado» pasa al siguiente periodo (con deshacer) y el vencimiento aparece en el calendario. [Más](#pagos) |
 | 🔖 **Marcadores web** | Favoritos con carpetas, colores y descripción; el icono de cada web se extrae solo (con defensa SSRF). Vista de tarjetas o lista deslizante. [Más](#marcadores-web) |
@@ -894,18 +894,20 @@ Retos semanales nuevos: añadir juegos a la colección y registrar horas jugadas
 
 ## Bases
 
-Bases de datos propias al estilo AppFlowy: tú defines las columnas y las miras como **tabla** o como **tablero Kanban**.
+Bases de datos propias al estilo Notion: tú defines las columnas y las miras como **tabla**, **tablero Kanban**, **calendario**, **galería** o **línea de tiempo**.
 
-- Tipos de columna: texto, número, fecha, casilla, selección, etiquetas (varias opciones con color) y enlace. El tipo no se puede cambiar una vez creada la columna.
-- Plantillas: proyectos, tareas, libros, gastos, clientes o vacía. Hasta 60 bases, 30 columnas y 5000 filas por base.
-- Vistas: cada base puede tener varias (tabla o tablero agrupado por una columna de selección), con orden y un filtro. En el tablero se arrastra con el ratón o se usa el botón ⇄ en el móvil.
+- **Tipos de columna**: texto, número, fecha, casilla, selección, etiquetas, enlace, **correo**, **teléfono**, **archivo** (de tu carpeta Archivos), **fórmula**, **relación** con otra base y **resumen** de las filas relacionadas. El tipo de una columna de datos **se puede cambiar**: los valores se convierten al guardar, avisa de los que no caben y deja una copia de la base 30 días (`.kcc/borrados/bases-antes-de-convertir/`).
+- **Fórmulas**: `{Precio} * {Cantidad}`, `SI({Hecha}; "Listo"; "Pendiente")`, `DIAS({Vence}; HOY())`… con operadores, textos, fechas y unas 35 funciones en español (ayuda en el editor, botón «Comprobar»). Analizador propio, sin `eval`; los errores salen como `#DIV/0`, `#REF`… sin romper la tabla. Renombrar una columna actualiza las fórmulas que la usan.
+- **Relaciones y resúmenes**: una columna de relación enlaza filas de otra base (o de la misma); un resumen cuenta, suma, promedia, da mínimo o máximo, valores distintos o % de casillas marcadas de lo enlazado. Si se borra una fila enlazada, el enlace desaparece solo.
+- **Vistas** (hasta 12 por base): tabla, tablero (agrupado por una selección), calendario mensual con detalle del día, galería con portada (columna Archivo) y línea de tiempo con zoom (inicio y fin opcional). Cada vista guarda **varios filtros** (unidos con «y»/«o»), **varios criterios de orden** y las **columnas que muestra**. Las vistas guardadas antes siguen funcionando.
+- Plantillas: proyectos, tareas, libros, gastos, clientes o vacía (con vistas de calendario ya montadas). Hasta 60 bases, 30 columnas y 5000 filas por base.
 - Edición directa en la tabla; pulsa el lápiz para abrir la ficha de la fila.
-- Exporta a CSV (Excel, con `;`) o JSON, e importa el JSON.
-- **Un JSON por base**: `<tu carpeta>/.kcc/bases/<id>.json`.
-- API: `/api/bases` (lista, crear, esquema, filas, `move`, exportar, importar).
-- **Logros de Bases**: 5 familias (Arquitecto de datos, Registro tras registro, Esquema a medida, Maestro del tablero, Tarea cumplida), 2 especiales (Esquema completo, Gran biblioteca), el título «Arquitecto de datos», 2 retos y la Copa del Arquitecto.
+- Exporta a CSV (Excel, con `;`, incluye el valor de las columnas calculadas) o JSON, e importa el JSON (sin relaciones ni resúmenes, que apuntan a bases de la copia original).
+- **Un JSON por base**: `<tu carpeta>/.kcc/bases/<id>.json`. Las columnas calculadas no se guardan: se calculan al leer.
+- API: `/api/bases` (lista, crear, esquema, filas, `move`, `formula` para comprobar una fórmula, exportar, importar).
+- Código: `lib/bases/` (modelo, fórmulas, cálculo, relaciones, conversión, CSV, rutas) y `public/js/bases/` (estado, datos, una vista por archivo, editores). Pruebas en `tests/modulos/bases.js`.
+- **Logros de Bases**: 7 familias (Arquitecto de datos, Registro tras registro, Esquema a medida, Maestro del tablero, Tarea cumplida, **Calculista**, **Tejedor de datos**), 3 especiales (Esquema completo, Gran biblioteca, **Todas las perspectivas**), los títulos «Arquitecto de datos» y «Hechicero de fórmulas», 3 retos y la Copa del Arquitecto.
 - Convención para módulos futuros (JSON propio y gamificación obligatoria): ver `CLAUDE.md`.
-
 
 ![Base Proyectos en vista de tablero](docs/capturas/bases.png)
 
@@ -1747,7 +1749,7 @@ lib/
   prompts/           Biblioteca de prompts (cliente): estado, datos, estructura, lateral, gestion, filtros,
                      tarjetas, seleccion, copiar, ficha, editor, importar, registro (comparten K._prompts)
   games/            Videojuegos (cliente): estado, vista, anadir, ficha, estadisticas, tarjetas, registro (K._games)
-  bases.js           Bases de datos con columnas propias (un JSON por base)
+  bases/             Bases: fórmulas, relaciones, resúmenes y 5 tipos de vista (un JSON por base)
   codigo/            Proyectos de código (servidor): constantes, base, proyectos, archivos, versiones, vista, transferencia, vinculos
   transferir.js      Copiar o mover entre Archivos y Código, con deshacer de 1 minuto e historial
   exportar.js        Exportación de JSON por sección y ZIP completo (administración)

@@ -5,12 +5,6 @@ Está basada en el conocimiento general de Notion, sin verificar con fuentes rec
 
 ## Prioridad alta
 
-1. **Bases de datos más potentes.** Ya hay tabla, tablero Kanban, filtro y orden (`lib/bases/`, `public/js/bases.js`). Falta:
-   - Vistas de **calendario**, **galería** y **línea de tiempo**.
-   - **Relaciones** entre bases (un libro enlazado a su autor) y **resúmenes** sobre las filas relacionadas.
-   - **Fórmulas**.
-   - Más tipos de columna: correo, teléfono, selección múltiple, archivo; y poder **cambiar el tipo** de una columna ya creada.
-   - Filtros y ordenaciones guardados por vista, más de uno a la vez.
 2. **Búsqueda y respuestas sobre todo lo propio (equivalente a Notion AI).** Preguntar «¿qué apunté sobre el VPS?» y recibir la respuesta, resumir notas largas, rellenar campos solos, transcribir reuniones. Se puede empezar por una búsqueda semántica propia.
 3. **Notas con más bloques.** Ya hay bloques, carpetas, tablas, imágenes y enlaces internos. Falta:
    - Columnas, desplegables (toggles) e índice automático.
@@ -34,4 +28,8 @@ Todo en servidor propio y en archivos JSON legibles, gestor de archivos con WebD
 
 ## Orden sugerido
 
-Primero (1) y (5): vistas de calendario y galería con relaciones entre Bases, y repetición en Recordatorios. Son lo que más se usaría a diario y encajan con la estructura actual. Después (3), (4) y (6).
+Primero (5): repetición en Recordatorios, que es lo que más se usaría a diario y encaja con la estructura actual. Después (3), (4) y (6).
+
+## Ya hecho
+
+- (1) Bases más potentes, 11-11-2026: calendario, galería y línea de tiempo, relaciones, resúmenes, fórmulas, tipos nuevos, cambio de tipo y filtros/órdenes múltiples. La numeración de arriba se mantiene.
