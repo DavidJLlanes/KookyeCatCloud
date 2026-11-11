@@ -58,6 +58,8 @@ const createMarcadores = require('./lib/marcadores');
 const createPerfil = require('./lib/perfil');
 const createAnalisis = require('./lib/analisis');
 const createWeb = require('./lib/web');
+const createSesiones = require('./lib/sesiones');
+const createActividad = require('./lib/actividad');
 const { base32Encode, totpVerificar } = require('./lib/totp');
 const { isBlocked, registerFailure, clearFailures } = require('./lib/limitador');
 const createPush = require('./lib/push');
@@ -182,76 +184,10 @@ if (!fs.existsSync(USERS_FILE)) {
 // para no filtrar por temporización qué nombres de usuario están dados de alta.
 const DUMMY_HASH = bcrypt.hashSync('timing-equalizer', 10);
 
-/* ---------------- Sesiones ----------------
-   El JWT sigue siendo la cookie, pero ya no basta por sí solo: cada uno lleva
-   un jti que apunta a un registro aquí. Cerrar una sesión en remoto borra su
-   registro, y el siguiente uso de ese token cae con 401 aunque no haya caducado. */
-function loadSessions() {
-  return store.leeJsonSync(SESSIONS_FILE, {});
-}
-function saveSessions(data) {
-  store.escribeJsonSync(SESSIONS_FILE, data, 0o600);
-}
-const sessions = loadSessions();
-let sessionsSucio = false;
-setInterval(() => { if (sessionsSucio) { sessionsSucio = false; saveSessions(sessions); } }, 5000).unref();
-
-function creaSesion(username, req) {
-  const jti = crypto.randomBytes(16).toString('hex');
-  sessions[jti] = {
-    jti, username,
-    createdAt: Date.now(),
-    lastSeenAt: Date.now(),
-    ip: req.ip,
-    ua: String(req.headers['user-agent'] || '').slice(0, 200),
-  };
-  sessionsSucio = true;
-  return jti;
-}
-function revocaSesion(jti) {
-  if (!sessions[jti]) return false;
-  delete sessions[jti];
-  vaultMod.cierraSesion(jti);                    // la caja fuerte de esa sesión se vuelve a bloquear
-  sessionsSucio = true;
-  return true;
-}
-
-/* ---------------- Registro de actividad ----------------
-   Un evento por línea (JSONL), fácil de seguir con tail -f. Se recorta solo
-   para que nadie tenga que acordarse de vaciarlo. */
-function registrarActividad(req, accion, detalle) {
-  try {
-    const entry = {
-      t: Date.now(),
-      user: (req.user && req.user.username) || (detalle && detalle.username) || null,
-      accion,
-      ip: req.ip,
-      detalle: detalle || {},
-    };
-    actividadEnVuelo++;
-    fs.appendFile(ACTIVITY_FILE, JSON.stringify(entry) + '\n', () => { actividadEnVuelo--; });
-  } catch { /* un fallo aquí no debe tumbar la petición real */ }
-}
-let actividadEnVuelo = 0;   // escrituras pendientes: la poda espera a que terminen para no perder ninguna línea
-// Poda el registro: quita lo que supera ACTIVITY_DIAS de antigüedad y recorta a ACTIVITY_MAX líneas
-// Síncrona y atómica: mientras corre no puede llegar ninguna línea nueva (el bucle está ocupado) y antes espera a que
-// terminen las que estaban escribiéndose; antes una línea registrada durante la poda podía perderse.
-function podarActividad() {
-  if (actividadEnVuelo) { setTimeout(podarActividad, 250).unref(); return; }
-  try {
-    let data; try { data = fs.readFileSync(ACTIVITY_FILE, 'utf8'); } catch { return; }
-    const desde = Date.now() - ACTIVITY_DIAS * 86400000;
-    const todas = data.split('\n').filter(Boolean);
-    let lineas = todas.filter((l) => { try { return JSON.parse(l).t >= desde; } catch { return false; } });
-    if (lineas.length > ACTIVITY_MAX) lineas = lineas.slice(-ACTIVITY_MAX);
-    if (lineas.length === todas.length) return;
-    const tmp = `${ACTIVITY_FILE}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`;
-    fs.writeFileSync(tmp, lineas.length ? lineas.join('\n') + '\n' : '');
-    fs.renameSync(tmp, ACTIVITY_FILE);
-  } catch (e) { console.warn('[actividad] no se pudo podar el registro:', e.message); }
-}
-setTimeout(podarActividad, 5000).unref();
-setInterval(podarActividad, 10 * 60 * 1000).unref();
+// Sesiones y registro de actividad (la caja fuerte se crea más abajo: se usa al cerrar una sesión)
+const { sessions, creaSesion, revocaSesion, toca: tocaSesion, marcaSucias: marcaSesionesSucias } = createSesiones({ SESSIONS_FILE, cierraCaja: (jti) => vaultMod.cierraSesion(jti) });
+const actividadMod = createActividad({ express, auth, sendError, ACTIVITY_FILE, ACTIVITY_MAX, ACTIVITY_DIAS });
+const { registrarActividad } = actividadMod;
 
 // Módulos nuevos. Se crean aquí, antes de las rutas, porque las rutas de archivos los usan.
 const labelsMod = createLabels({ express, userRoot, sendError });
@@ -447,10 +383,7 @@ function auth(req, res, next) {
     // Los tokens emitidos antes de que existiera esto no llevan jti: se dejan pasar,
     // así el despliegue no cierra la sesión de todo el mundo de golpe.
     if (payload.jti) {
-      const s = sessions[payload.jti];
-      if (!s) return res.status(401).json({ error: 'Sesión cerrada' });
-      s.lastSeenAt = Date.now();
-      sessionsSucio = true;
+      if (!tocaSesion(payload.jti)) return res.status(401).json({ error: 'Sesión cerrada' });
     }
     req.user = payload;
     next();
@@ -619,28 +552,14 @@ function abreSesion(req, res, user, accion) {
 
 const cuentasMod = createCuentas({
   express, auth, adminOnly, jwt, bcrypt, JWT_SECRET, DUMMY_HASH, loadUsers, saveUsers,
-  sessions, creaSesion, revocaSesion, marcaSesionesSucias: () => { sessionsSucio = true; },
+  sessions, creaSesion, revocaSesion, marcaSesionesSucias,
   isBlocked, registerFailure, clearFailures, totpVerificar, base32Encode,
   USERNAME_RE, MIN_PASSWORD, COOKIE_PATH, SECURE_COOKIES,
   shares: () => sharesMod, passkeys: () => passkeysMod, vault: () => vaultMod, registrarActividad,
 });
 app.use('/api', cuentasMod.router);
+app.use(actividadMod.router);   // /api/activity
 
-
-/* ---------------- Registro de actividad ---------------- */
-app.get('/api/activity', auth, async (req, res) => {
-  try {
-    const limite = Math.min(Number(req.query.limit) || 100, 500);
-    let datos = '';
-    try { datos = await fsp.readFile(ACTIVITY_FILE, 'utf8'); } catch { /* aún no hay actividad registrada */ }
-    let entradas = datos.split('\n').filter(Boolean)
-      .map(l => { try { return JSON.parse(l); } catch { return null; } })
-      .filter(Boolean);
-    if (req.user.role !== 'admin') entradas = entradas.filter(e => e.user === req.user.username);
-    entradas.reverse();
-    res.json({ items: entradas.slice(0, limite) });
-  } catch (err) { sendError(res, err); }
-});
 
 // --- Listar archivos/carpetas ---
 app.get('/api/files', auth, async (req, res) => {

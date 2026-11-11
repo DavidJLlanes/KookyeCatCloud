@@ -1683,7 +1683,7 @@ mismo servidor, esa es la única protección frente a la pérdida del propio VPS
 ## Estructura del proyecto
 
 ```text
-server.js            API Express, sesiones, rutas de archivos, enlaces, ZIP, service worker
+server.js            Arranque, configuración y rutas de archivos (listar, subir, descargar, vista previa, mover)
 webdav.js            Servidor WebDAV (montado antes del analizador de JSON)
 lib/
   store.js           Escritura atómica de JSON con cola por archivo
@@ -1691,7 +1691,14 @@ lib/
   labels.js          Etiquetas de color compartidas entre módulos
   pagos/             Pagos y recordatorios (modelo, fechas, valores, resumen, rutas)
   marcadores/        Marcadores web (modelo, favicon, red con defensa SSRF, resumen, rutas)
-  perfil/            Foto de perfil (procesado de imagen y rutas)
+  perfil/            Foto y nombre visible del perfil (procesado de imagen y rutas)
+  analisis/          Reparto de espacio: estadísticas por tipo y por módulo, espacio por carpeta, duplicados
+  web/               Cabeceras de seguridad (CSP, HSTS), plantillas con prefijo, versión instalada y service worker
+  sesiones.js        Sesiones (JWT con jti) y cierre en remoto
+  actividad.js       Registro de actividad (JSONL con poda automática) y su ruta
+  totp.js            Verificación en dos pasos (RFC 6238)
+  limitador.js       Límite de intentos fallidos (login, WebDAV)
+  descomprime.js     Descompresión de ZIP con topes sobre los bytes reales
   push/              Avisos push (ajustes, dispositivos, envío, programador y fuentes: pagos, calendario, contactos)
   valores.js         Valores reutilizables: catálogo por campo, unificación y revisión de duplicados (fábrica createValores)
   copias.js          Copia de seguridad: rutas de Administración, registro de intentos y comprobación de espacio (fábrica createCopias)
