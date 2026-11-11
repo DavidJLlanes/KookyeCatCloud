@@ -36,4 +36,4 @@ Node 20 + Express 4 + JS vanilla (PWA). Respuestas al usuario en español, breve
 - Tras mover, revisar que cada archivo nuevo importa lo que usa (`fs`, `fsp`, `path`, `crypto`…): un identificador sin importar solo falla en tiempo de ejecución y puede quedar tragado por un `try/catch`.
 - Al renombrar dependencias inyectadas con un reemplazo masivo (p. ej. `calendarMod.core.` → `calendar.`), comprobar que no quedan sombreadas por variables locales con el mismo nombre (`const { calendar } = req.body`): ya pasó y solo lo detectó una prueba.
 - Al acabar una tanda, actualizar la sección «Estructura del proyecto» del README.
-- Deuda pendiente de trocear (ir bajándola): `server.js` (ya solo ~600 líneas: arranque y montaje),`public/js/prompts.js`, `lib/prompts.js`, `public/js/calendar.js`, `public/js/notes.js`, `public/js/app/navegacion.js`, `public/js/app/visores.js`, `lib/game.js`, `lib/calendar.js`.
+- Deuda pendiente de trocear (ir bajándola): `server.js` (ya solo ~600 líneas: arranque y montaje),`public/js/prompts.js`, `public/js/calendar.js`, `public/js/notes.js`, `public/js/app/navegacion.js`, `public/js/app/visores.js`, `lib/game.js`, `lib/calendar.js`.
