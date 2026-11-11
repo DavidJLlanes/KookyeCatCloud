@@ -68,3 +68,8 @@
   .bs-filtro>*:nth-child(1),.bs-filtro>*:nth-child(2),.bs-filtro>*:nth-child(3){grid-column:1;}
   .bs-filtro>button{grid-column:2;grid-row:1;}
 }
+
+/* Plantillas de fila */
+.bs-nuevas{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;} .bs-nuevas .bs-nueva{margin-top:0;}
+.bs-plantlista{display:flex;flex-direction:column;gap:8px;} .bs-plantfila{display:flex;align-items:center;gap:6px;flex-wrap:wrap;} .bs-plantfila-n{flex:1;min-width:140px;font-weight:600;}
+.bs-plantcab{display:flex;gap:8px;} .bs-plant-ic{width:64px;text-align:center;} .bs-plantfecha{display:flex;gap:8px;flex-wrap:wrap;}

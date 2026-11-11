@@ -245,5 +245,16 @@
   botones();
   montaPanel();
 
-  K.notes = { plantillas, exportPdf, exportMd, exportTxt, bloquesAHtml };
+  // Para los botones de plantilla dentro de una nota (notes/ricos-boton.js): lista de plantillas y crear una nota desde una por su id
+  const VACIA = { id: 'vacia', name: 'Nota en blanco', icon: '📄', desc: 'Empezar desde cero', titulo: 'Nota sin título', body: '' };
+  async function listaPlantillas() {
+    let propias = []; try { propias = (await K.get('/api/note-templates')).templates; } catch { /* sin plantillas propias */ }
+    return [VACIA, ...BASICAS, ...propias];
+  }
+  async function creaDesdeId(id) {
+    const t = (await listaPlantillas()).find(x => x.id === id);
+    if (!t) { K.toast('Esa plantilla ya no existe'); return; }
+    await creaDesde(t);
+  }
+  K.notes = { listaPlantillas, creaDesdeId, plantillas, exportPdf, exportMd, exportTxt, bloquesAHtml };
 })();

@@ -123,4 +123,41 @@ module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
     const g = (await req('GET', `/api/game`)).j;
     cierto(g.logros.familias.some(f => f.id === 'db_calc' && f.valor >= 3), 'familia db_calc'); cierto(g.logros.familias.some(f => f.id === 'db_rel' && f.valor >= 1), 'familia db_rel');
   });
+
+  await prueba('bases: plantillas de fila (valores, fechas relativas, uso, límites, borrado con copia y concurrencia)', async () => {
+    const b = await crea('Reuniones'); const n = b.columns[0];
+    const r1 = await esquema(b, [...conserva(b), { nombre: 'Día', tipo: 'date' }, { nombre: 'Estado', tipo: 'select', opciones: [{ nombre: 'Pendiente' }, { nombre: 'Hecha' }] }, { nombre: 'Total', tipo: 'formula', expr: '1+1' }]); igual(r1.s, 200);
+    const [dia, estado] = [r1.j.columns[1], r1.j.columns[2]], pend = estado.opciones[0].id, base = r1.j;
+    const c = await req('POST', `/api/bases/${b.id}/plantillas`, { nombre: 'Nueva reunión', icono: '🗓️', valores: { [n.id]: 'Reunión ', [dia.id]: '{{manana}}', [estado.id]: pend, zzz: 'ajeno' } }); igual(c.s, 200);
+    igual(Object.keys(c.j.plantilla.valores).length, 3, 'solo columnas que existen');
+    igual((await req('POST', `/api/bases/${b.id}/plantillas`, { nombre: '' })).s, 400, 'sin nombre');
+    igual((await req('POST', `/api/bases/${b.id}/plantillas`, { nombre: 'x', valores: { [dia.id]: '{{ayer}}' } })).s, 400, 'fecha relativa desconocida');
+    igual((await req('POST', `/api/bases/${b.id}/plantillas`, { nombre: 'x', valores: [] })).s, 400, 'valores que no son un objeto');
+    const u = await req('POST', `/api/bases/${b.id}/plantillas/${c.j.plantilla.id}/usar`); igual(u.s, 200);
+    const hoy = new Date(Date.now() + 86400000).toISOString().slice(0, 10), real = u.j.row.c[dia.id];
+    cierto(/^\d{4}-\d{2}-\d{2}$/.test(real) && Math.abs(Date.parse(real) - Date.parse(hoy)) <= 86400000, 'mañana ya resuelto: ' + real);
+    igual(u.j.row.c[n.id], 'Reunión '); igual(u.j.row.c[estado.id], pend);
+    // quitar la opción usada: la plantilla sigue funcionando (lo que ya no encaja se descarta)
+    igual((await esquema(base, base.columns.map(x => (x.id === estado.id ? { ...x, opciones: [{ id: estado.opciones[1].id, nombre: 'Hecha' }] } : { ...x })))).s, 200);
+    igual((await req('POST', `/api/bases/${b.id}/plantillas/${c.j.plantilla.id}/usar`)).s, 200, 'plantilla con una opción borrada');
+    igual((await req('POST', `/api/bases/${b.id}/plantillas/zzzz/usar`)).s, 404);
+    const rs = await Promise.all(Array.from({ length: 8 }, (_, i) => req('POST', `/api/bases/${b.id}/plantillas`, { nombre: 'P' + i }))); cierto(rs.every(r => r.s === 200), 'altas a la vez');
+    igual((await req('GET', `/api/bases/${b.id}`)).j.plantillas.length, 9, 'ninguna se pisó');
+    for (let i = 0; i < 12; i++) await req('POST', `/api/bases/${b.id}/plantillas`, { nombre: 'Q' + i });
+    igual((await req('POST', `/api/bases/${b.id}/plantillas`, { nombre: 'sobra' })).s, 400, 'máximo 20');
+    igual((await req('PUT', `/api/bases/${b.id}/plantillas/${c.j.plantilla.id}`, { nombre: 'Renombrada' })).j.plantilla.nombre, 'Renombrada');
+    igual((await req('DELETE', `/api/bases/${b.id}/plantillas/${c.j.plantilla.id}`)).s, 200);
+    const dirB = path.join(DATA, '.kcc', 'borrados', 'bases-plantillas'); cierto(fs.existsSync(dirB) && fs.readdirSync(dirB).length >= 1, 'copia de la plantilla borrada');
+    const g = (await req('GET', '/api/game')).j, fam = (id) => g.logros.familias.find(f => f.id === id);
+    cierto(fam('db_plantillas').valor >= 1 && fam('db_usos').valor >= 2, 'logros de plantillas');
+  });
+
+  await prueba('notas: botón de plantilla (conteo) y borrado de plantillas de nota con copia', async () => {
+    const { cuentaBloques } = require('../../lib/notas-bloques');
+    igual(cuentaBloques('::boton nota:reunion Nueva reunión\n\n::boton fila:0123456789abcdef:fedcba9876543210 Tarea').boton, 2);
+    igual(cuentaBloques('::boton javascript:x Hola').boton, 0, 'destino no válido');
+    const t = await req('POST', '/api/note-templates', { name: 'Mi plantilla', body: '# Hola' }); igual(t.s, 200);
+    igual((await req('DELETE', '/api/note-templates/' + t.j.template.id)).s, 200);
+    const dirN = path.join(DATA, '.kcc', 'borrados', 'plantillas-de-nota'); cierto(fs.existsSync(dirN) && fs.readdirSync(dirN).length >= 1, 'copia de la plantilla de nota');
+  });
 };

@@ -31,12 +31,15 @@
     return ctl;
   }
 
+  B.campoFila = campo;
+
   B.editaFila = (r) => {
     const w = el('div', 'bs-form'); const val = { ...r.c };
     S.base.columns.forEach(c => { const l = el('div', 'bs-field'); l.appendChild(el('span', null, c.nombre)); l.appendChild(campo(c, r, val)); w.appendChild(l); });
     K.modal({
       title: B.titulo(r), content: w, cls: 'wide', actions: [
         { label: 'Cerrar' },
+        { label: 'Guardar como plantilla', onClick: () => { B.editaPlantilla(null, null, Object.fromEntries(Object.entries(val).filter(([k, v]) => { const c = B.col(k); return c && c.tipo !== 'relation' && v !== '' && v !== null && !(Array.isArray(v) && !v.length) && v !== false; }))); return false; } },
         { label: 'Eliminar', danger: true, onClick: async () => !(await B.borraFila(r)) ? false : true },
         { label: 'Guardar', primary: true, onClick: async () => { try { const d = await K.put(`/api/bases/${S.base.id}/rows/${r.id}`, { c: val }); Object.assign(r, d.row); B.repinta(); B.logros(); return true; } catch (e) { K.fail(e); return false; } } },
       ],

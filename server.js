@@ -307,6 +307,7 @@ async function contarExtrasApp(user) {
     r.compra_prod = (c.products || []).length;
     r.compra_hechas = (c.entries || []).filter(e => e.status === 'bought').length;
   } catch { /* sin compra */ }
+  try { r.nt_plantillas = ((await readJson(path.join(kccDir(userRoot(user)), 'note-templates.json'), { templates: [] })).templates || []).length; } catch { r.nt_plantillas = 0; }
   try { r.favoritos = (await readFavs(user)).length; } catch { /* sin favoritos */ }
   try { const al = await readAlbums(user); r.albumes = al.length; r.album_max = al.reduce((m, a) => Math.max(m, (a.items || []).length), 0); } catch { /* sin álbumes */ }
   try { const u = loadUsers().find(x => x.username === user.username); r.seg_2fa = u && u.twofaSecret ? 1 : 0; } catch { r.seg_2fa = 0; }

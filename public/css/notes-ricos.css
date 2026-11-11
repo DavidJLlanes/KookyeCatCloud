@@ -67,3 +67,8 @@
 .nb-sy-cab{display:flex;align-items:center;gap:8px;font-size:calc(12px*var(--fs,1));margin-bottom:4px;} .nb-sy-cab .btn{margin-left:auto;}
 .nb-sy-ic{color:var(--b1,#3b82f6);font-weight:700;}
 .is-roto .nb-sy-estado{color:var(--danger,#ef4444);}
+
+/* Botón de plantilla */
+.nb-bt{display:flex;align-items:center;gap:6px;} .nb-bt-ed{opacity:0;transition:opacity .15s;} .nb-block[data-t="boton"]:hover .nb-bt-ed,.nb-block[data-t="boton"]:focus-within .nb-bt-ed{opacity:1;}
+.nb-bt-form{display:flex;flex-direction:column;gap:10px;}
+.nb-block[data-t="boton"]{grid-template-columns:1fr;} .nb-block[data-t="boton"] > .nb-mk{display:none;} .nb-block[data-t="boton"] > .nb-c{grid-column:1;padding:0;}

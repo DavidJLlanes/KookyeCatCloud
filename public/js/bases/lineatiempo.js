@@ -40,6 +40,6 @@
       setTimeout(() => { wrap.scrollLeft = Math.max(0, x(hoy) - wrap.clientWidth / 3); }, 0);
     } else cont.appendChild(el('p', 'k-muted bs-vacio', S.base.rows.length ? 'Ninguna fila tiene fecha todavía.' : 'Aún no hay filas.'));
     if (sin.length) { const d = el('details', 'bs-sinfecha'); d.appendChild(el('summary', null, `Sin fecha (${sin.length})`)); sin.forEach(r => { const a = el('button', 'bs-fila-ar', B.titulo(r)); a.type = 'button'; a.addEventListener('click', () => B.editaFila(r)); d.appendChild(a); }); cont.appendChild(d); }
-    cont.appendChild(B.btn('Nueva fila', 'i-plus', async () => { const r = await B.nuevaFila(); if (r) B.editaFila(r); }, 'btn bs-nueva'));
+    cont.appendChild(B.botonesNueva('Nueva fila', async () => { const r = await B.nuevaFila(); if (r) B.editaFila(r); }));
   };
 })();

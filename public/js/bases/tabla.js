@@ -24,6 +24,6 @@
     });
     t.appendChild(tb); wrap.appendChild(t); cont.appendChild(wrap);
     if (!lista.length) cont.appendChild(el('p', 'k-muted bs-vacio', S.base.rows.length ? 'Ninguna fila coincide con el filtro o la búsqueda.' : 'Aún no hay filas.'));
-    cont.appendChild(B.btn('Nueva fila', 'i-plus', () => B.nuevaFila(), 'btn bs-nueva'));
+    cont.appendChild(B.botonesNueva('Nueva fila', () => B.nuevaFila()));
   };
 })();

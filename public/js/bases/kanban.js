@@ -39,7 +39,7 @@
       colu.appendChild(cuerpo); board.appendChild(colu);
     });
     cont.appendChild(board);
-    cont.appendChild(B.btn('Nueva tarjeta', 'i-plus', async () => { const r = await B.nuevaFila(); if (r) B.editaFila(r); }, 'btn bs-nueva'));
+    cont.appendChild(B.botonesNueva('Nueva tarjeta', async () => { const r = await B.nuevaFila(); if (r) B.editaFila(r); }));
   };
 
   function tarjeta(r, v, g, grupos) {

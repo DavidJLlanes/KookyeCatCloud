@@ -21,6 +21,6 @@
     cont.appendChild(grid);
     if (!lista.length) cont.appendChild(el('p', 'k-muted bs-vacio', S.base.rows.length ? 'Ninguna fila coincide con el filtro o la búsqueda.' : 'Aún no hay filas.'));
     if (!pc) cont.appendChild(el('p', 'k-faint bs-vacio', 'Para ver imágenes, añade una columna de tipo «Archivo» y elígela como portada en «Vista».'));
-    cont.appendChild(B.btn('Nueva ficha', 'i-plus', async () => { const r = await B.nuevaFila(); if (r) B.editaFila(r); }, 'btn bs-nueva'));
+    cont.appendChild(B.botonesNueva('Nueva ficha', async () => { const r = await B.nuevaFila(); if (r) B.editaFila(r); }));
   };
 })();

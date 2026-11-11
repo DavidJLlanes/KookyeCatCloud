@@ -7,7 +7,6 @@ Está basada en el conocimiento general de Notion, sin verificar con fuentes rec
 
 2. **Búsqueda y respuestas sobre todo lo propio (equivalente a Notion AI).** Preguntar «¿qué apunté sobre el VPS?» y recibir la respuesta, resumir notas largas, rellenar campos solos, transcribir reuniones. Se puede empezar por una búsqueda semántica propia.
 4. **Recortador web.** Extensión del navegador que guarda una página entera, limpia, en la nube propia (Marcadores solo guarda el enlace).
-5. **Plantillas.** Plantillas de fila y de nota con botones («Nueva reunión» con su estructura). (La repetición de recordatorios ya está hecha: ver «Ya hecho».)
 
 ## Prioridad media
 
@@ -23,10 +22,11 @@ Todo en servidor propio y en archivos JSON legibles, gestor de archivos con WebD
 
 ## Orden sugerido
 
-Primero (4) y (6); las plantillas (5) cuando haya hueco.
+Primero (4) y (6).
 
 ## Ya hecho
 
 - (3) Notas con más bloques, 11-11-2026: desplegables, columnas, índice automático, ecuaciones KaTeX, diagramas Mermaid, incrustados (YouTube, mapa con el Leaflet de la app, PDF), una base dentro de la nota y bloques sincronizados (módulo propio).
+- (5) Plantillas, 11-11-2026: plantillas de fila en Bases (con fechas relativas) y bloque «Botón» en notas que crea una nota o una fila desde una plantilla.
 - (5, parte) Repetición en Recordatorios, 11-11-2026: diaria, semanal (con días), mensual (día del mes o «el primer lunes»), anual, cada N y fecha final; avisos con botones «Hecho» y «Posponer 1 h».
 - (1) Bases más potentes, 11-11-2026: calendario, galería y línea de tiempo, relaciones, resúmenes, fórmulas, tipos nuevos, cambio de tipo y filtros/órdenes múltiples. La numeración de arriba se mantiene.
