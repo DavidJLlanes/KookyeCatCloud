@@ -1,6 +1,6 @@
 # KookyeCatCloud: convenciones del repositorio
 
-Node 20 + Express 4 + JS vanilla (PWA). Respuestas al usuario en español, breves. `npm run check` y `npm test` (pruebas de humo en `tests/smoke.js`, arrancan la app en una copia temporal) antes de cada commit.
+Node 20 + Express 4 + JS vanilla (PWA). Respuestas al usuario en español, breves. `npm run check` (sintaxis, persistencia y ESLint `no-undef`) y `npm test` (pruebas de humo en `tests/smoke.js`, arrancan la app en una copia temporal) antes de cada commit.
 
 ## Cada módulo nuevo (obligatorio)
 

@@ -1692,6 +1692,7 @@ lib/
   pagos/             Pagos y recordatorios (modelo, fechas, valores, resumen, rutas)
   marcadores/        Marcadores web (modelo, favicon, red con defensa SSRF, resumen, rutas)
   perfil/            Foto y nombre visible del perfil (procesado de imagen y rutas)
+  archivos/          Descargas y ZIP, vista previa, miniaturas y edición de texto (tipos, imágenes, descarga, previa, texto)
   analisis/          Reparto de espacio: estadísticas por tipo y por módulo, espacio por carpeta, duplicados
   web/               Cabeceras de seguridad (CSP, HSTS), plantillas con prefijo, versión instalada y service worker
   sesiones.js        Sesiones (JWT con jti) y cierre en remoto

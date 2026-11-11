@@ -39,7 +39,7 @@ const createPrompts = require('./lib/prompts');
 const createClip = require('./lib/clip');
 const { createGame } = require('./lib/game');
 const store = require('./lib/store');
-const { readJson, updateJson, kccDir } = store;
+const { readJson, kccDir } = store;
 const createContacts = require('./lib/contacts');
 const createNotesExtra = require('./lib/notes-extra');
 const createPdf = require('./lib/pdf');
@@ -58,6 +58,8 @@ const createMarcadores = require('./lib/marcadores');
 const createPerfil = require('./lib/perfil');
 const createAnalisis = require('./lib/analisis');
 const createWeb = require('./lib/web');
+const createArchivos = require('./lib/archivos');
+const { IMAGE_TYPES, HEIC_TYPES, VIDEO_TYPES, PREVIEW_TYPES, TEXT_RE, TEXT_MAX, THUMBABLE, DISPLAY_MAX, THUMB_SIZE, TILE_URL, TILE_ATTR, TILE_ORIGIN, bytesDeEntorno } = require('./lib/archivos/tipos');
 const createSesiones = require('./lib/sesiones');
 const createActividad = require('./lib/actividad');
 const { base32Encode, totpVerificar } = require('./lib/totp');
@@ -78,7 +80,7 @@ let sharp = null;
 try { sharp = require('sharp'); } catch { /* sin miniaturas optimizadas */ }
 
 // ffmpeg también es opcional: sin él, los vídeos salen con su distintivo en vez de fotograma
-const { execFileSync, spawn } = require('child_process');
+const { execFileSync } = require('child_process');
 let ffmpeg = false;
 try { execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' }); ffmpeg = true; } catch { /* sin miniaturas de vídeo */ }
 
@@ -111,13 +113,11 @@ const MIN_PASSWORD = 8;
 const THUMBS_DIR = process.env.THUMBS_DIR || path.join(APP_DIR, '.thumbs');
 // Copia de seguridad: fuera de la web y de DATA_DIR (un único archivo, reemplazado en cada copia)
 const COPIAS_DIR = process.env.COPIAS_DIR || '/var/backups/kookyecatcloud';
-const THUMB_SIZE = 480;
 const { TRASH_DIR, TRASH_SWEEP_HOURS } = createPapelera;
 const SEARCH_LIMIT = 300;
 const BATCH_LIMIT = 500;
 // Enlaces: de subida (otros te dejan archivos) y de descarga (mandas tú algo).
 // Comparten archivo y se distinguen por el campo kind.
-const ZIP_LIMIT = Number(process.env.ZIP_LIMIT || 200);
 // Bloc de notas: vive dentro de la carpeta del usuario, oculto del explorador
 const { NOTES_DIR } = createNotes;
 // Sesiones (para poder cerrarlas en remoto) y registro de actividad
@@ -654,334 +654,14 @@ app.post('/api/upload', auth, (req, res) => {
   });
 });
 
-/* --- Descargar carpetas o selecciones como ZIP --- */
-// Content-Disposition con acentos: nombre en ASCII y la versión real en filename*
-function cabeceraDescarga(res, nombre) {
-  const ascii = nombre.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
-  res.setHeader('Content-Disposition',
-    `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(nombre)}`);
-}
-
-async function enviarZip(res, entradas, nombreZip) {
-  res.setHeader('Content-Type', 'application/zip');
-  cabeceraDescarga(res, nombreZip);
-  const zip = new ZipArchive({ zlib: { level: 6 } });
-  zip.on('warning', err => { if (err.code !== 'ENOENT') console.warn('zip', err.message); });
-  zip.on('error', err => {
-    console.warn('zip', err.message);
-    // Ya se están enviando bytes: no queda más que cortar
-    res.destroy();
-  });
-  zip.pipe(res);
-  for (const e of entradas) {
-    if (e.isDir) zip.directory(e.abs, e.name);
-    else zip.file(e.abs, { name: e.name });
-  }
-  await zip.finalize();
-}
-
-app.get('/api/zip', auth, async (req, res) => {
-  try {
-    const lista = [].concat(req.query.p || []).filter(Boolean);
-    if (!lista.length) return res.status(400).json({ error: 'No has indicado qué descargar' });
-    if (lista.length > ZIP_LIMIT) return res.status(400).json({ error: `Máximo ${ZIP_LIMIT} elementos por ZIP` });
-
-    const entradas = [];
-    for (const rel of lista) {
-      const abs = userPath(req, rel);
-      const stat = await fsp.stat(abs);
-      entradas.push({ abs, name: path.basename(abs), isDir: stat.isDirectory() });
-    }
-    const nombre = entradas.length === 1
-      ? `${entradas[0].name.replace(/\.[^.]+$/, '')}.zip`
-      : `KookyeCatCloud-${new Date().toISOString().slice(0, 10)}.zip`;
-    await enviarZip(res, entradas, nombre);
-  } catch (err) {
-    if (!res.headersSent) sendError(res, err);
-  }
-});
-
-// --- Descargar archivo ---
-// ?as=jpg convierte un HEIC al vuelo; ?as=pdf convierte un documento de Office
-// con LibreOffice (reutilizando la misma caché que la vista previa). Sin ?as,
-// se descarga el original tal cual.
-app.get('/api/download', auth, async (req, res) => {
-  try {
-    const file = userPath(req, req.query.path);
-    const ext = path.extname(file).toLowerCase();
-    const as = String(req.query.as || '').toLowerCase();
-
-    if (as === 'jpg' && HEIC_TYPES[ext]) {
-      if (!sharp) return res.status(501).json({ error: 'Este servidor no puede convertir HEIC' });
-      const buf = await sharp(file, { failOn: 'none' }).rotate().withMetadata().jpeg({ quality: 92 }).toBuffer();   // conserva EXIF y GPS
-      cabeceraDescarga(res, path.basename(file, ext) + '.jpg');
-      registrarActividad(req, 'descarga_convertida', { path: req.query.path, as });
-      return res.status(200).type('image/jpeg').send(buf);
-    }
-    if (as === 'pdf' && OFFICE_RE.test(file)) {
-      if (!soffice) return res.status(501).json({ error: 'Este servidor no tiene LibreOffice instalado' });
-      const stat = await fsp.stat(file);
-      const key = crypto.createHash('sha1').update(`${file}|${stat.size}|${stat.mtimeMs}|office`).digest('hex');
-      const cached = path.join(THUMBS_DIR, `${key}.pdf`);
-      if (!await exists(cached)) {
-        const trabajo = path.join(THUMBS_DIR, `conv-${key}-${process.pid}`);
-        await fsp.mkdir(trabajo, { recursive: true });
-        try {
-          await convertirOffice(file, trabajo);
-          const generado = (await fsp.readdir(trabajo)).find(f => f.toLowerCase().endsWith('.pdf'));
-          if (!generado) throw new Error('LibreOffice no generó ningún PDF');
-          await fsp.rename(path.join(trabajo, generado), cached);
-        } finally { fsp.rm(trabajo, { recursive: true, force: true }).catch(() => {}); }
-      }
-      cabeceraDescarga(res, path.basename(file, ext) + '.pdf');
-      registrarActividad(req, 'descarga_convertida', { path: req.query.path, as });
-      return res.sendFile(cached, { headers: { 'Content-Type': 'application/pdf' } });
-    }
-
-    // Siempre como adjunto y sin tipo interpretable: un .html subido no se ejecuta en el dominio
-    res.download(file, path.basename(file), { headers: { 'Content-Type': 'application/octet-stream' } }, err => {
-      if (err && !res.headersSent) res.status(404).json({ error: 'No encontrado' });
-    });
-  } catch (err) {
-    sendError(res, err);
-  }
-});
-
-// --- Previsualización y reproducción ---
-// Los navegadores no pintan HEIC, así que se convierte al vuelo. El resto se sirve tal cual:
-// el servidor de ficheros de Express ya responde a rangos, y con eso el vídeo se puede saltar.
-const IMAGE_TYPES = {
-  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif',
-  '.webp': 'image/webp', '.bmp': 'image/bmp', '.avif': 'image/avif',
-};
-const HEIC_TYPES = { '.heic': 'image/heic', '.heif': 'image/heif' };
-const VIDEO_TYPES = {
-  '.mp4': 'video/mp4', '.m4v': 'video/x-m4v', '.webm': 'video/webm', '.mov': 'video/quicktime',
-  '.mkv': 'video/x-matroska', '.ogv': 'video/ogg',
-};
-const AUDIO_TYPES = {
-  '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.aac': 'audio/aac', '.wav': 'audio/wav',
-  '.ogg': 'audio/ogg', '.oga': 'audio/ogg', '.opus': 'audio/opus', '.flac': 'audio/flac',
-};
-const PREVIEW_TYPES = { ...IMAGE_TYPES, ...HEIC_TYPES, ...VIDEO_TYPES, ...AUDIO_TYPES, '.pdf': 'application/pdf' };
-// Texto plano y código: se devuelven como JSON y el cliente los pinta con textContent
-const TEXT_RE = /\.(txt|md|markdown|csv|tsv|log|json|xml|svg|yml|yaml|ini|conf|cfg|toml|env|js|mjs|cjs|ts|jsx|tsx|css|scss|less|html?|php|py|rb|go|rs|java|kt|c|h|cpp|hpp|cs|sh|bash|zsh|sql|ps1|bat|srt|vtt|gitignore|dockerfile|makefile)$/i;
-// Admite bytes ("524288") o con sufijo ("512KB", "1MB"); si el valor no vale, usa el de por defecto
-// en vez de dejar NaN, que rompía la lectura de cualquier texto.
-function bytesDeEntorno(valor, porDefecto) {
-  const m = /^\s*(\d+(?:[.,]\d+)?)\s*([kmg]?)b?\s*$/i.exec(String(valor ?? ''));
-  if (!m) return porDefecto;
-  const n = Number(m[1].replace(',', '.')) * ({ '': 1, k: 1024, m: 1024 ** 2, g: 1024 ** 3 }[m[2].toLowerCase()]);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : porDefecto;
-}
-const TEXT_MAX = bytesDeEntorno(process.env.TEXT_MAX, 512 * 1024);
-const { OFFICE_RE } = createOffice;
-
-// Mapa de fotos. El servidor de tiles es lo único externo que carga la app, así que
-// se declara aquí y de aquí sale el permiso de la CSP: cambiar TILE_URL basta.
-const TILE_URL = process.env.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-const TILE_ATTR = process.env.TILE_ATTR ||
-  '&copy; colaboradores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-const TILE_ORIGIN = (() => {
-  try { return new URL(TILE_URL.replace(/\{[sxyz]\}/g, '1')).origin; }
-  catch { return 'https://tile.openstreetmap.org'; }
-})();
-const THUMBABLE = { ...IMAGE_TYPES, ...HEIC_TYPES };
-const DISPLAY_MAX = Number(process.env.DISPLAY_MAX || 2200);
-
-// Convierte a WebP y cachea; devuelve la ruta del archivo cacheado
-async function convertirCache(file, stat, ancho, sufijo) {
-  const key = crypto.createHash('sha1')
-    .update(`${file}|${stat.size}|${stat.mtimeMs}|${ancho}|${sufijo}`).digest('hex');
-  const cached = path.join(THUMBS_DIR, `${key}.webp`);
-  if (await exists(cached)) return cached;
-  const buf = await sharp(file, { failOn: 'none' })
-    .rotate()
-    .resize(ancho, ancho, { fit: 'inside', withoutEnlargement: true })
-    .webp({ quality: 82 })
-    .toBuffer();
-  const tmp = `${cached}.${process.pid}.tmp`;
-  await fsp.writeFile(tmp, buf);
-  await fsp.rename(tmp, cached);
-  return cached;
-}
-
-app.get('/api/preview', auth, async (req, res) => {
-  try {
-    const file = userPath(req, req.query.path);
-    const ext = path.extname(file).toLowerCase();
-    const type = PREVIEW_TYPES[ext];
-    // Sin esta lista blanca, subir un .html y abrirlo por aquí daría XSS en el propio dominio
-    if (!type) return res.status(415).json({ error: 'Este tipo de archivo no se puede previsualizar' });
-
-    res.setHeader('Cache-Control', 'private, max-age=3600');
-
-    if (ext === '.pdf') {
-      // Solo la restricción de marco. Nada de default-src 'none': el visor de PDF
-      // de Chrome monta un <embed> dentro del propio documento, y esa directiva
-      // arrastra object-src 'none', con lo que el visor se bloquea a sí mismo y
-      // enseña un recuadro gris. Corre en su propio proceso, sin acceso a la sesión.
-      res.setHeader('Content-Security-Policy', "frame-ancestors 'self'");
-      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-      res.setHeader('Content-Disposition', 'inline');
-      return res.sendFile(file, { headers: { 'Content-Type': 'application/pdf' } }, err => {
-        if (err && !res.headersSent) res.status(404).json({ error: 'No encontrado' });
-      });
-    }
-
-    res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
-
-    if (HEIC_TYPES[ext]) {
-      if (!sharp) return res.status(415).json({ error: 'Este servidor no puede convertir HEIC' });
-      const stat = await fsp.stat(file);
-      const conv = await convertirCache(file, stat, DISPLAY_MAX, 'view');
-      return res.sendFile(conv, { headers: { 'Content-Type': 'image/webp' } });
-    }
-    res.sendFile(file, { headers: { 'Content-Type': type } }, err => {
-      if (err && !res.headersSent) res.status(404).json({ error: 'No encontrado' });
-    });
-  } catch (err) {
-    sendError(res, err);
-  }
-});
-
-// --- Miniaturas para la cuadrícula ---
-// Saca un fotograma del vídeo con ffmpeg y lo deja cacheado
-function fotogramaVideo(file, destino) {
-  return new Promise((resolve, reject) => {
-    const args = [
-      '-y', '-loglevel', 'error',
-      '-ss', '1',                 // un segundo dentro: el primer fotograma suele ser negro
-      '-i', file,
-      '-frames:v', '1',
-      '-vf', `scale=${THUMB_SIZE}:${THUMB_SIZE}:force_original_aspect_ratio=increase,crop=${THUMB_SIZE}:${THUMB_SIZE}`,
-      destino,
-    ];
-    const p = spawn('ffmpeg', args, { stdio: 'ignore' });
-    const temporizador = setTimeout(() => p.kill('SIGKILL'), 20000);
-    p.on('error', err => { clearTimeout(temporizador); reject(err); });
-    p.on('close', code => {
-      clearTimeout(temporizador);
-      if (code === 0) return resolve();
-      // Vídeo más corto que un segundo: se reintenta desde el principio
-      const p2 = spawn('ffmpeg', args.map(a => (a === '1' ? '0' : a)), { stdio: 'ignore' });
-      p2.on('error', reject);
-      p2.on('close', c2 => (c2 === 0 ? resolve() : reject(new Error('ffmpeg falló'))));
-    });
-  });
-}
-
-app.get('/api/thumb', auth, async (req, res) => {
-  try {
-    const file = userPath(req, req.query.path);
-    const ext = path.extname(file).toLowerCase();
-    const esVideo = !!VIDEO_TYPES[ext];
-    const tipo = THUMBABLE[ext];
-    if (!tipo && !esVideo) return res.status(415).json({ error: 'Sin miniatura para este tipo' });
-    if (esVideo && !ffmpeg) return res.status(415).json({ error: 'Este servidor no tiene ffmpeg' });
-
-    res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
-    res.setHeader('Cache-Control', 'private, max-age=86400');
-
-    // Sin sharp la app sigue funcionando: se envía el original, solo que pesa más
-    if (!esVideo && !sharp) return res.sendFile(file, { headers: { 'Content-Type': tipo } });
-
-    const stat = await fsp.stat(file);
-    // La clave incluye tamaño y mtime: si el archivo cambia, la miniatura se regenera sola
-    const key = crypto.createHash('sha1')
-      .update(`${file}|${stat.size}|${stat.mtimeMs}|${THUMB_SIZE}|thumb`).digest('hex');
-    const cached = path.join(THUMBS_DIR, `${key}.webp`);
-
-    if (!await exists(cached)) {
-      const tmp = `${cached}.${process.pid}.tmp`;
-      if (esVideo) {
-        const tmpImg = `${tmp}.webp`;
-        await fotogramaVideo(file, tmpImg);
-        await fsp.rename(tmpImg, cached);
-      } else {
-        const buf = await sharp(file, { failOn: 'none' })
-          .rotate() // respeta la orientación EXIF de las fotos de móvil
-          .resize(THUMB_SIZE, THUMB_SIZE, { fit: 'cover', position: 'centre' })
-          .webp({ quality: 78 })
-          .toBuffer();
-        await fsp.writeFile(tmp, buf);
-        await fsp.rename(tmp, cached);
-      }
-    }
-    res.sendFile(cached, { headers: { 'Content-Type': 'image/webp' } }, err => {
-      if (err && !res.headersSent) res.status(404).json({ error: 'No encontrado' });
-    });
-  } catch (err) {
-    sendError(res, err);
-  }
-});
-
-// --- Texto plano, Markdown, CSV y código ---
-app.get('/api/text', auth, async (req, res) => {
-  try {
-    const file = userPath(req, req.query.path);
-    const base = path.basename(file);
-    // Se admite por extensión o por nombre completo (Makefile, Dockerfile…)
-    if (!TEXT_RE.test(base) && !/^(makefile|dockerfile|licen[cs]e|readme)$/i.test(base)) {
-      return res.status(415).json({ error: 'Este archivo no es de texto' });
-    }
-    const stat = await fsp.stat(file);
-    if (stat.isDirectory()) return res.status(400).json({ error: 'Es una carpeta' });
-
-    // Se lee solo el principio: un log de 2 GB no puede tumbar el servidor
-    const leer = Math.min(stat.size, TEXT_MAX);
-    const fh = await fsp.open(file, 'r');
-    const buf = Buffer.alloc(leer);
-    try { await fh.read(buf, 0, leer, 0); } finally { await fh.close(); }
-
-    res.json({
-      text: buf.toString('utf8'),
-      truncated: stat.size > TEXT_MAX,
-      size: stat.size,
-      shown: leer,
-      mtime: stat.mtimeMs,   // «base» para el guardado: detecta si el archivo cambió en otro sitio mientras se editaba
-    });
-  } catch (err) {
-    sendError(res, err);
-  }
-});
-
-// Guardar un archivo de texto editado desde el propio visor
-app.put('/api/text', auth, express.json({ limit: '2mb' }), async (req, res) => {
-  try {
-    const file = userPath(req, req.query.path);
-    const base = path.basename(file);
-    if (!TEXT_RE.test(base) && !/^(makefile|dockerfile|licen[cs]e|readme)$/i.test(base)) {
-      return res.status(415).json({ error: 'Este archivo no es de texto' });
-    }
-    const stat = await fsp.stat(file);
-    if (stat.isDirectory()) return res.status(400).json({ error: 'Es una carpeta' });
-    // Un archivo más grande que lo que el visor carga NO se puede guardar desde aquí: el editor solo tenía el principio y
-    // guardar habría cortado el resto del archivo
-    if (stat.size > TEXT_MAX) return res.status(413).json({ error: 'Este archivo es demasiado grande para editarlo aquí: solo se mostraba el principio.' });
-    const contenido = String(req.body?.text ?? '');
-    if (Buffer.byteLength(contenido) > TEXT_MAX) return res.status(400).json({ error: 'Demasiado grande para editar aquí' });
-    const baseM = Number(req.body?.base);
-    if (Number.isFinite(baseM) && baseM > 0 && stat.mtimeMs > baseM + 1) {
-      const actual = await fsp.readFile(file, 'utf8').catch(() => null);
-      if (actual !== null && actual !== contenido) return res.status(409).json({ error: 'El archivo se cambió en otro sitio mientras lo editabas. Copia tu texto, cierra y vuelve a abrirlo.' });
-    }
-    // Si no cambia nada, no se reescribe ni se crea una versión de más
-    if (stat.size <= TEXT_MAX * 4 && await fsp.readFile(file, 'utf8').then(t => t === contenido, () => false)) return res.json({ ok: true, unchanged: true });
-    await versionsMod.snapshot(req.user, req.query.path, file);     // guarda lo que había antes
-    // Escritura atómica: un corte a mitad no deja el archivo truncado
-    const tmpE = path.join(path.dirname(file), `.kcc-edicion-${crypto.randomBytes(6).toString('hex')}`);
-    try { await fsp.writeFile(tmpE, contenido, 'utf8'); await fsp.rename(tmpE, file); } catch (e) { await fsp.rm(tmpE, { force: true }).catch(() => {}); throw e; }
-    registrarActividad(req, 'archivo_editado', { path: req.query.path });
-    res.json({ ok: true, mtime: (await fsp.stat(file)).mtimeMs });
-  } catch (err) {
-    sendError(res, err);
-  }
-});
-
 const officeMod = createOffice({ express, auth, userPath, soffice, thumbsDir: THUMBS_DIR, exists, sendError });
 const { convertirOffice } = officeMod.core;
 app.use('/api', officeMod.router);
+
+// Descargas, ZIP, vista previa, miniaturas y texto (lib/archivos)
+const archivosMod = createArchivos({ express, ZipArchive, auth, userPath, sendError, registrarActividad, sharp, ffmpeg, soffice, THUMBS_DIR, exists, convertirOffice, versions: () => versionsMod });
+const { cabeceraDescarga, enviarZip, convertirCache, fotogramaVideo } = archivosMod.core;
+app.use(archivosMod.router);
 
 const fotosMod = createFotos({ express, auth, userRoot, userPath, isHidden, sharp, thumbsDir: THUMBS_DIR, IMAGE_TYPES, HEIC_TYPES, sendError });
 app.use('/api', fotosMod.router);
@@ -1148,7 +828,7 @@ app.post('/api/move', auth, async (req, res) => {
 });
 
 const albumsMod = createAlbums({ express, auth, userRoot, resolveFor, enviarZip: (...a) => enviarZip(...a), sendError });
-const { readFavs, readAlbums, albumArchivos, nombreSeguro } = albumsMod.core;
+const { readFavs, readAlbums } = albumsMod.core;
 app.use('/api', albumsMod.router);
 const enlacesMod = createEnlaces({
   express, auth, jsonMedio, bcrypt, appDir: APP_DIR, thumbsDir: THUMBS_DIR, loadUsers, sendError, registrarActividad,
