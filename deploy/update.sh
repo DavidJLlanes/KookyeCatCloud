@@ -43,7 +43,8 @@ HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:${PORT_APP:-4000}${BASE_APP}/api/vers
 
 # Ganchos sustituibles (así el script se puede probar sin systemd)
 NPM_CMD="${NPM_CMD:-npm}"
-CHECK_CMD="${CHECK_CMD:-$NPM_CMD run check --silent}"
+# En producción solo hay dependencias de ejecución (sin ESLint): se usa la comprobación de despliegue
+CHECK_CMD="${CHECK_CMD:-$NPM_CMD run check:despliegue --silent}"
 RESTART_CMD="${RESTART_CMD:-systemctl restart $SERVICE}"
 HEALTH_CMD="${HEALTH_CMD:-curl -fsS --max-time 4 -o /dev/null $HEALTH_URL}"
 CHOWN_CMD="${CHOWN_CMD:-chown -R $APP_USER:$APP_USER $APP_DIR}"

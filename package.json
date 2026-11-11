@@ -8,6 +8,7 @@
     "start": "node server.js",
     "test": "node tests/smoke.js",
     "check": "node tests/sintaxis.js && node tests/auditoria.js && eslint .",
+    "check:despliegue": "node tests/sintaxis.js && node tests/auditoria.js",
     "lint": "eslint ."
   },
   "dependencies": {
