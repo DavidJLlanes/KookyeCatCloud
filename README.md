@@ -1176,6 +1176,11 @@ y se restauran con su rama entera; caducan a los mismos `TRASH_TTL_DAYS` que los
 `NOTES_LIMIT` (5000) topa el número de elementos y `NOTE_MAX_CHARS` (500 000) el tamaño de una
 nota. Las rutas de notas, prompts y calendario aceptan hasta 2 MB de cuerpo (30 MB la
 importación de prompts), frente a los 100 kB del resto de la API.
+Las imágenes se insertan con el botón **Insertar imagen** de la barra del editor (o escribiendo `/imagen`, pegando con Ctrl+V o
+arrastrando). En el móvil la ventana ofrece **Fotos y archivos** (galería) y **Hacer foto**; en PC, **Subir imágenes**. Antes de subir,
+la foto se optimiza en el propio dispositivo: JPEG/HEIC (iPhone) pasan a JPEG de 2560 px como máximo, PNG/WebP solo se reducen si son
+enormes, y GIF, SVG o formatos que el navegador no lee (HEIC en Chrome) se suben tal cual. Código en `public/js/notes-imagenes/`
+(`optimiza`, `subida`, `insertar`, `selector`, `boton`).
 Al pulsar una imagen de una nota se abre en el visor de la app (`KZoom.lightbox`, con todas las
 imágenes de la nota para pasar de una a otra; `public/js/notes/visor.js`), no en una pestaña nueva.
 
@@ -1732,6 +1737,7 @@ lib/
   office.js          Visor de Office (PDF con LibreOffice) y de hojas de cálculo (fábrica createOffice)
   cuentas.js         Login y 2FA, usuarios, sesiones abiertas y tokens de app (fábrica createCuentas)
   enlaces.js         Enlaces públicos: descarga (archivo, carpeta, álbum), subida y prompts (fábrica createEnlaces)
+  notes-imagenes/    Imágenes de las notas (cliente): optimizar, subir, insertar, ventana de elección y botón de la barra
   notes/             Editor de bloques de las notas (cliente): inline, parser, bloques, tablas, visor, modelo, seleccion,
                      eventos, slash, menciones, barra, montaje, propiedades, registro (comparten K._notes)
   calendar/          Calendario (cliente): estado, datos, estructura, lateral, mes, semana, agenda, evento,

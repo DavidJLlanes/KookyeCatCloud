@@ -1,89 +1,10 @@
 'use strict';
 /* ---------------------------------------------------------------
-   Notas: imágenes (subir o elegir de tu nube), backlinks, exportación a Markdown y PDF,
+   Notas: backlinks, exportación a Markdown y PDF,
    y plantillas de nota (de serie y propias). Usa el editor de notes.js a través de NB.int.
 --------------------------------------------------------------- */
 (function () {
   const INT = () => NB.int;
-  const DIR_ADJUNTOS = 'Adjuntos de notas';
-  const IMG_EXT = /\.(png|jpe?g|gif|webp|avif|bmp|svg|heic|heif)$/i;
-
-  /* ============ Imágenes ============ */
-  // Inserta bloques de imagen; si el bloque actual es un párrafo vacío, lo sustituye
-  function insertaImagenes(rutas, w) {
-    const I = INT();
-    let ref = w || I.host().lastElementChild;
-    rutas.forEach((ruta, k) => {
-      const b = I.makeBlock({ t: 'image', src: 'kcc:file/' + I.refArchivo(ruta), text: '' });
-      const vacio = k === 0 && ref && ref.dataset.t === 'p' && !I.contentOf(ref).textContent.trim();
-      if (vacio) { ref.replaceWith(b); } else if (ref) { ref.after(b); } else { I.host().appendChild(b); }
-      ref = b;
-    });
-    if (!ref.nextElementSibling) I.insertAfter(ref, { t: 'p', text: '' });
-    I.change(true);
-  }
-
-  async function sube(files) {
-    const rutas = [];
-    for (const f of files) {
-      if (f.size > 30 * 1024 * 1024) { K.toast(`“${f.name}” es demasiado grande para una nota (máx. 30 MB)`); continue; }
-      const fd = new FormData(); fd.append('files', f, f.name || 'imagen.png');
-      const res = await api(BASE + '/api/upload?path=' + encodeURIComponent(DIR_ADJUNTOS), { method: 'POST', body: fd });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j.error || 'No se pudo subir la imagen');
-      rutas.push(DIR_ADJUNTOS + '/' + j.uploaded[0]);
-    }
-    if (rutas.length) K.bus.emit('files');
-    return rutas;
-  }
-
-  NB.subeImagenes = async function (files, w) {
-    try {
-      K.toast(`Subiendo ${files.length} imagen${files.length === 1 ? '' : 'es'}…`);
-      const rutas = await sube(files);
-      if (rutas.length) { insertaImagenes(rutas, w); K.toast('Imagen añadida'); }
-    } catch (e) { K.fail(e); }
-  };
-
-  NB.elegirImagen = function (w) {
-    const root = el('div');
-    const up = el('label', 'btn'); up.style.cssText = 'display:flex;width:100%;justify-content:center;margin-bottom:14px;cursor:pointer';
-    up.append(icon('i-upload'), document.createTextNode(' Subir desde este dispositivo'));
-    const fi = el('input'); fi.type = 'file'; fi.accept = 'image/*'; fi.multiple = true; fi.hidden = true; up.appendChild(fi);
-    root.appendChild(up);
-    const busca = el('input'); busca.placeholder = 'O busca una imagen de tus archivos…'; root.appendChild(busca);
-    const grid = el('div'); grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:9px;margin-top:12px;max-height:46vh;overflow:auto';
-    root.appendChild(grid);
-    const m = K.modal({ title: 'Insertar imagen', content: root, cls: 'wide', actions: [{ label: 'Cancelar' }] });
-
-    const pinta = (items, vacio) => {
-      grid.textContent = '';
-      if (!items.length) { const p = el('p', 'k-faint', vacio); p.style.gridColumn = '1/-1'; grid.appendChild(p); return; }
-      items.forEach(it => {
-        const b = el('button'); b.type = 'button'; b.title = it.rel;
-        b.style.cssText = 'aspect-ratio:1;border:1px solid var(--line);border-radius:12px;overflow:hidden;padding:0;background:#000;cursor:pointer';
-        const im = el('img'); im.loading = 'lazy'; im.alt = it.name; im.src = BASE + '/api/thumb?path=' + encodeURIComponent(it.rel); im.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block';
-        b.appendChild(im);
-        b.addEventListener('click', () => { m.close(); insertaImagenes([it.rel], w); });
-        grid.appendChild(b);
-      });
-    };
-    // Por defecto, las últimas imágenes de la carpeta de adjuntos de las notas
-    K.get('/api/files?' + K.qs({ path: DIR_ADJUNTOS })).then(r => {
-      pinta(r.items.filter(i => !i.isDir && IMG_EXT.test(i.name)).slice(0, 60).map(i => ({ name: i.name, rel: DIR_ADJUNTOS + '/' + i.name })), 'Aún no has subido imágenes a tus notas. Busca una en tus archivos o súbela.');
-    }).catch(() => pinta([], 'Busca una imagen por su nombre.'));
-    busca.addEventListener('input', K.debounce(async () => {
-      const q = busca.value.trim();
-      if (q.length < 2) return;
-      try { const r = await K.get('/api/search?' + K.qs({ q })); pinta(r.items.filter(i => !i.isDir && IMG_EXT.test(i.name)).slice(0, 60).map(i => ({ name: i.name, rel: (i.dir ? i.dir + '/' : '') + i.name })), 'No hay imágenes con ese nombre.'); }
-      catch (e) { K.fail(e); }
-    }, 250));
-    fi.addEventListener('change', async () => {
-      if (!fi.files.length) return;
-      m.close();
-      NB.subeImagenes([...fi.files], w);
-    });
-  };
 
   /* ============ Backlinks ============ */
   let panel = null;

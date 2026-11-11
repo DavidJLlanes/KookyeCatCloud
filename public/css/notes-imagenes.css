@@ -1,0 +1,14 @@
+/* Imágenes de notas (js/notes-imagenes/) */
+.ni{display:grid;gap:12px;}
+.ni-ops{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+.ni-op{display:grid;justify-items:center;gap:4px;padding:16px 10px;border:1px dashed var(--accent-line,rgba(128,128,128,.45));border-radius:16px;background:var(--brand-soft,rgba(99,102,241,.08));cursor:pointer;text-align:center;min-height:48px;}
+.ni-op:hover,.ni-op:focus-within{border-style:solid;}
+.ni-op .ico{width:26px;height:26px;}
+.ni-op b{font-size:calc(14px*var(--fs,1));}
+.ni-op small{font-size:calc(12px*var(--fs,1));}
+.ni-tip{margin:0;font-size:calc(12.5px*var(--fs,1));}
+.ni input[type=search]{font-size:max(16px,calc(16px*var(--fs,1)));}
+.ni-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:9px;max-height:42vh;overflow:auto;}
+.ni-vacio{grid-column:1/-1;margin:0;}
+.ni-th{aspect-ratio:1;border:1px solid var(--line);border-radius:12px;overflow:hidden;padding:0;background:#000;cursor:pointer;}
+.ni-th img{width:100%;height:100%;object-fit:cover;display:block;}

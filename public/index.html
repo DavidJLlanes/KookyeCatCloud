@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="/css/pagos.css">
 <link rel="stylesheet" href="/css/marcadores.css">
 <link rel="stylesheet" href="/css/recordatorios.css">
+<link rel="stylesheet" href="/css/notes-imagenes.css">
 <link rel="stylesheet" href="/css/games.css">
 <link rel="stylesheet" href="/css/bases.css">
 <link rel="stylesheet" href="/css/codigo.css">
@@ -1416,6 +1417,7 @@
             <button class="icon-btn solo-movil" id="btn-notes-back" title="Volver" aria-label="Volver a la lista"><svg class="ico" style="transform:rotate(180deg)"><use href="#i-caret"/></svg></button>
             <input id="note-title" class="note-title" placeholder="Título de la nota" maxlength="120">
             <span class="guardado" id="note-saved"></span>
+            <button class="icon-btn" id="btn-note-image" title="Insertar imagen" aria-label="Insertar imagen"><svg class="ico"><use href="#i-image"/></svg></button>
             <button class="icon-btn" id="btn-note-delete" title="Eliminar nota" aria-label="Eliminar nota"><svg class="ico"><use href="#i-trash"/></svg></button>
           </div>
           <textarea id="note-body" class="note-body" placeholder="Escribe aquí…" spellcheck="true"></textarea>
@@ -2064,6 +2066,11 @@
 <script src="/js/notes/propiedades.js"></script>
 <script src="/js/notes/registro.js"></script>
 <script src="/js/notes-extra.js"></script>
+<script src="/js/notes-imagenes/optimiza.js"></script>
+<script src="/js/notes-imagenes/subida.js"></script>
+<script src="/js/notes-imagenes/insertar.js"></script>
+<script src="/js/notes-imagenes/selector.js"></script>
+<script src="/js/notes-imagenes/boton.js"></script>
 <script src="/js/shopping.js"></script>
 <script src="/js/games/estado.js"></script>
 <script src="/js/games/vista.js"></script>
