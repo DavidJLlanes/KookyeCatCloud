@@ -194,7 +194,7 @@ async function loadAdmin() {
       const av = el('div', 'av', u.username.charAt(0).toUpperCase());
       av.dataset.user = u.username;
       row.appendChild(av);
-      row.appendChild(el('div', 'un', u.username));
+      const un = el('div', 'un', u.username); un.dataset.user = u.username; row.appendChild(un);
       row.appendChild(el('span', 'pill' + (u.role === 'admin' ? ' admin' : ''), u.role));
       if (u.username !== 'admin') {
         const del = el('button', 'icon-btn');

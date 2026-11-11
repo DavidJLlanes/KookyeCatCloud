@@ -34,4 +34,13 @@ module.exports = async ({ req, prueba, igual, cierto, DATA, BASE, cookie }) => {
     cierto(fs.readdirSync(path.join(DATA, '.kcc', 'borrados', 'perfil')).length >= 1, 'copia en borrados');
     igual((await req('DELETE', '/api/perfil/avatar')).s, 200, 'quitar otra vez no falla');
   });
+  await prueba('perfil: nombre visible (se limpia, tope de 40, vacío lo quita y la lista es solo de administradores)', async () => {
+    igual((await req('GET', '/api/perfil')).j.nombre, '');
+    const r = await req('PUT', '/api/perfil', { nombre: '  David \n  Jiménez  ' }); igual(r.s, 200); igual(r.j.nombre, 'David Jiménez');
+    igual((await req('GET', '/api/perfil')).j.nombre, 'David Jiménez');
+    igual((await req('GET', '/api/perfil/nombres')).j.admin, 'David Jiménez');
+    igual((await req('PUT', '/api/perfil', { nombre: 'x'.repeat(41) })).s, 400, 'demasiado largo');
+    igual((await req('GET', '/api/perfil')).j.nombre, 'David Jiménez', 'el rechazo no borra');
+    igual((await req('PUT', '/api/perfil', { nombre: '' })).j.nombre, '');
+  });
 };
