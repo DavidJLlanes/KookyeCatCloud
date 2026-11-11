@@ -3,7 +3,7 @@
 // (típico al mover código entre archivos) solo explota en tiempo de ejecución y un try/catch lo puede tragar.
 const globals = require('globals');
 module.exports = [
-  { ignores: ['node_modules/**', 'public/**', '.thumbs/**'] },
+  { ignores: ['node_modules/**', 'public/**', 'tests/ui/**', '.thumbs/**'] },
   {
     files: ['**/*.js'],
     languageOptions: { ecmaVersion: 2023, sourceType: 'commonjs', globals: globals.node },

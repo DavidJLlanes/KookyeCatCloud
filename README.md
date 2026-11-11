@@ -1721,7 +1721,8 @@ lib/
   calendar.js        Eventos, tareas y repetición; ganchos con notas, prompts y archivos
   ical.js            Feed iCal (RFC 5545) de solo lectura
   holidays.js        Festivos de España calculados (sin servicios externos)
-  prompts.js         Biblioteca de prompts e imágenes WebP
+  prompts/           Biblioteca de prompts (cliente): estado, datos, estructura, lateral, gestion, filtros,
+                     tarjetas, seleccion, copiar, ficha, editor, importar, registro (comparten K._prompts)
   games.js           Colección de videojuegos, RAWG opcional y portadas
   bases.js           Bases de datos con columnas propias (un JSON por base)
   codigo.js          Proyectos de código: carpetas, archivos, versiones y vista web (un JSON por proyecto)

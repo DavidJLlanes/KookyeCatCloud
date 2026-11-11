@@ -1,0 +1,37 @@
+{
+ "pc": {
+  "tarjetas": 3,
+  "botones": 29,
+  "rail": 2,
+  "vistas": 3,
+  "filas": 3,
+  "busqueda": 1,
+  "filtrosAbierto": false,
+  "selbar": 3,
+  "menu": 0,
+  "detalle": true,
+  "detalleTexto": true,
+  "variables": 29,
+  "editor": 21,
+  "api": "comparar,copiar,detail,extraMenu,filtrar,kindIcon,kindLabel,newPrompt,open,pro,reload",
+  "errores": []
+ },
+ "movil": {
+  "tarjetas": 3,
+  "botones": 29,
+  "rail": 2,
+  "vistas": 3,
+  "filas": 3,
+  "busqueda": 1,
+  "filtrosAbierto": false,
+  "selbar": 3,
+  "menu": 0,
+  "detalle": true,
+  "detalleTexto": true,
+  "variables": 29,
+  "editor": 21,
+  "railMovil": true,
+  "api": "comparar,copiar,detail,extraMenu,filtrar,kindIcon,kindLabel,newPrompt,open,pro,reload",
+  "errores": []
+ }
+}
