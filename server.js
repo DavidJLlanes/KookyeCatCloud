@@ -617,7 +617,7 @@ app.use((err, req, res, next) => {
   if (err && err.type === 'entity.parse.failed') return res.status(400).json({ error: 'El cuerpo de la petición no es un JSON válido' });
   if (err && err.type === 'entity.too.large') return res.status(413).json({ error: 'El contenido es demasiado grande' });
   if (status && status < 500) return res.status(status).json({ error: err.expose || (err.constructor && err.constructor.name === 'HttpError') ? err.message : 'Petición no válida' });
-  console.error('Error no controlado en', req.method, req.originalUrl, '-', err && err.stack || err);
+  console.error('Error no controlado en', req.method, req.baseUrl + req.path, '-', err && err.stack || err);
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 // Un fallo suelto en una promesa no debe tumbar el servidor entero
