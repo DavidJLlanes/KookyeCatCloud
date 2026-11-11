@@ -88,7 +88,7 @@ $('action-download').addEventListener('click', () => {
   hide('action-modal');
   if (item) downloadRel(item.rel);
 });
-$('action-share').addEventListener('click', () => {
+$('action-enlace').addEventListener('click', () => {
   const item = state.selected;
   hide('action-modal');
   if (item) openShare(item);
