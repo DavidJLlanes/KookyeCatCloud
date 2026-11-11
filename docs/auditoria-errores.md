@@ -290,3 +290,9 @@ Sin riesgo: la fórmula escrita con muchos paréntesis se rechaza por longitud a
   - «Deshacer» con una fecha mal formada borraba la fecha del recordatorio (200): ahora 400 y no toca nada.
 - **Un fallo de datos en Notas:** un bloque sincronizado editado justo antes de abrir otra nota podía no llegar a guardarse; ahora se guarda al cambiar de nota (`NB.flush`) y al cerrar la pestaña.
 - Pendiente de valor bajo: Mermaid pesa 5,3 MB (solo se descarga si una nota tiene un diagrama).
+
+## Decimoquinta auditoría (11-11-2026): repaso completo tras la 14
+
+- Rutas regeneradas (342, con las de bloques sincronizados): sin sesión solo responden las públicas de siempre; un usuario normal no entra en ninguna ruta de administración (solo `diskusage` y `shares/users`, ya revisadas). Fuzz de 8.199 peticiones como administrador y como usuario normal: ningún 500 (quedan los 501 por falta de `COMFY_URL` y la búsqueda de juegos sin clave, esperados) y el servidor sigue vivo; el registro del servidor no tiene ningún `TypeError`, `ReferenceError` ni promesa sin capturar.
+- **Denegación de servicio por expresiones regulares:** el lector de bloques de las notas y el contador del servidor con líneas de 2 MB (`:::toggle` con espacios, `$$` sin cerrar, `::embed` larguísimo, 200.000 `::toc`, 500.000 vallas) tardan 1-51 ms; las repeticiones (20.000 saltos de «primer lunes», o un recordatorio muy atrasado) 0-87 ms.
+- ESLint sin avisos en los archivos nuevos y `npm audit` a 0. Sin hallazgos nuevos.
