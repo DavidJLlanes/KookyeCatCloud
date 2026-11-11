@@ -52,6 +52,7 @@ function updateSelbar() {
     ? 'Selecciona elementos'
     : `${n} seleccionado${n > 1 ? 's' : ''}`;
   ['sel-move', 'sel-download', 'sel-delete'].forEach(id => { $(id).disabled = n === 0; });
+  $('sel-share').disabled = n !== 1;   // compartir con enlace: un solo elemento
 }
 // La barra de acciones de selección flota sobre el contenido y tapaba las últimas filas, que ya no se podían
 // marcar. Se mide su altura real y se reserva ese hueco al final de la página mientras esté visible.

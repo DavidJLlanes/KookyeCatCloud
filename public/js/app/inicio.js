@@ -75,6 +75,7 @@ $('sel-all').addEventListener('click', () => {
 $('sel-delete').addEventListener('click', bulkDelete);
 $('sel-download').addEventListener('click', bulkDownload);
 $('sel-move').addEventListener('click', () => openMove(selectedItems().map(i => i.rel)));
+$('sel-share').addEventListener('click', () => { const [it] = selectedItems(); if (it) openShare(it); });
 $('btn-move-here').addEventListener('click', confirmMove);
 
 $('action-open').addEventListener('click', () => {
