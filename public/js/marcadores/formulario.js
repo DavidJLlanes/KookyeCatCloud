@@ -6,6 +6,12 @@
   const campo = (texto, nodo, cls = '') => { const l = el('label', 'mk-campo ' + cls); l.append(el('span', null, texto), nodo); return l; };
   async function recarga() { await M.carga(); M.pinta(); M.logros(); M.autoIconos(); }
 
+  // Elimina un marcador (con confirmación; se guarda 30 días). Devuelve true si se borró.
+  M.elimina = async (m) => {
+    if (!await K.confirm(`Se eliminará «${m.nombre}». Se guarda 30 días por si te arrepientes.`, { ok: 'Eliminar', danger: true })) return false;
+    try { await K.del('/api/marcadores/' + m.id); K.toast('Marcador eliminado'); await recarga(); return true; } catch (e) { K.fail(e); return false; }
+  };
+
   M.editor = function (m) {
     const nuevo = !m;
     const base = m || { nombre: '', url: '', descripcion: '', color: '', carpeta: S.carpeta && S.carpeta !== 'todas' ? S.carpeta : '' };
@@ -36,10 +42,7 @@
         f.appendChild(rec);
       }
       const del = el('button', 'btn danger sm mk-borrar', 'Eliminar marcador'); del.type = 'button';
-      del.addEventListener('click', async () => {
-        if (!await K.confirm(`Se eliminará «${m.nombre}». Se guarda 30 días por si te arrepientes.`, { ok: 'Eliminar', danger: true })) return;
-        try { await K.del('/api/marcadores/' + m.id); modal.close(); K.toast('Marcador eliminado'); recarga(); } catch (e) { K.fail(e); }
-      });
+      del.addEventListener('click', async () => { if (await M.elimina(m)) modal.close(); });
       f.appendChild(del);
     }
     setTimeout(() => url.focus(), 40);

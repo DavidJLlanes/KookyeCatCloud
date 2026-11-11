@@ -10,6 +10,12 @@
 
   async function recarga() { await P.carga(); P.pinta(); P.logros(); }
 
+  // Elimina un pago (con confirmación; se guarda 30 días). Devuelve true si se borró.
+  P.elimina = async (p) => {
+    if (!await K.confirm(`Se eliminará «${p.nombre}». Se guarda 30 días por si te arrepientes.`, { ok: 'Eliminar', danger: true })) return false;
+    try { await K.del('/api/pagos/' + p.id); K.toast('Pago eliminado'); await recarga(); return true; } catch (e) { K.fail(e); return false; }
+  };
+
   P.editor = function (p) {
     const nuevo = !p;
     const base = p || { nombre: '', compania: '', categoria: '', banco: '', importe: null, frecuencia: 'mensual', fechaProxima: K.d.ymd(new Date(P.S.hoy ? K.d.parse(P.S.hoy) : new Date())), avisoDias: 3, metodo: '', referencia: '', web: '', notas: '', activo: true, recordar: true, historial: [] };
@@ -38,6 +44,8 @@
       des.addEventListener('click', async () => { try { await K.post(`/api/pagos/${p.id}/deshacer`); modal.close(); K.toast('Último pago deshecho'); recarga(); } catch (e) { K.fail(e); } });
       h.appendChild(des); f.appendChild(h);
     }
+    if (nuevo) f.appendChild(el('p', 'k-faint ancho', 'Guarda el pago y podrás adjuntar la póliza o el recibo.'));
+    else f.appendChild(P.seccionAdjuntos(p, () => { P.logros(); recarga(); }));
     const acciones = [{ label: 'Cancelar' }, { label: nuevo ? 'Crear' : 'Guardar', primary: true, onClick: async () => {
       const cuerpo = { nombre: nombre.value, compania: compania.get(), categoria: categoria.get(), banco: banco.get(), importe: importe.value, frecuencia: frecuencia.value, fechaProxima: fecha.value, avisoDias: aviso.value, metodo: metodo.value, referencia: ref.value, web: web.value, notas: notas.value, activo: activo.input.checked, recordar: recordar.input.checked };
       try {
@@ -48,10 +56,7 @@
     const modal = K.modal({ title: nuevo ? 'Nuevo pago' : 'Editar pago', cls: 'pg-modal', content: f, actions: acciones });
     if (!nuevo) {
       const del = el('button', 'btn danger sm pg-borrar', 'Eliminar pago'); del.type = 'button';
-      del.addEventListener('click', async () => {
-        if (!await K.confirm(`Se eliminará «${p.nombre}». Se guarda 30 días por si te arrepientes.`, { ok: 'Eliminar', danger: true })) return;
-        try { await K.del('/api/pagos/' + p.id); modal.close(); K.toast('Pago eliminado'); recarga(); } catch (e) { K.fail(e); }
-      });
+      del.addEventListener('click', async () => { if (await P.elimina(p)) modal.close(); });
       f.appendChild(del);
     }
     setTimeout(() => nombre.focus(), 40);

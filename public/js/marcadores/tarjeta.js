@@ -12,6 +12,7 @@
     const c = el('div', 'mk-card'); if (m.color) c.style.setProperty('--c', m.color);
     const a = enlace(m, 'mk-card-a'); a.append(M.icono(m, 'grande'), el('span', 'mk-nombre', m.nombre));
     c.append(a, editar(m));
+    if (K.deslizar) K.deslizar(c, { alBorrar: () => M.elimina(m) });
     return c;
   };
 
@@ -27,6 +28,7 @@
     const carp = M.carpetaDe(m), cel = el('div', 'mk-celda mk-c-carp');
     if (carp) { const p = el('span', 'mk-pastilla', carp.nombre); if (carp.color) p.style.setProperty('--c', carp.color); cel.appendChild(p); }
     f.append(nombre, url, el('div', 'mk-celda mk-c-desc', m.descripcion || ''), cel, el('div', 'mk-celda mk-c-vis', String(m.visitas || 0)), el('div', 'mk-celda mk-c-fecha', fecha(m.createdAt)));
+    if (K.deslizar) K.deslizar(f, { alBorrar: () => M.elimina(m) });
     return f;
   };
 })();

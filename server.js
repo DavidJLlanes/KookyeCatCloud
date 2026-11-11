@@ -50,6 +50,7 @@ const createFotos = require('./lib/fotos');
 const createOffice = require('./lib/office');
 const createCuentas = require('./lib/cuentas');
 const createEnlaces = require('./lib/enlaces');
+const { resumenEnlaces } = require('./lib/enlaces-resumen');
 const createShopping = require('./lib/shopping');
 const createGames = require('./lib/games');
 const createBases = require('./lib/bases');
@@ -337,6 +338,7 @@ async function contarContenido(user) {
     etiquetas: (etq.labels || []).length,
     prompts,
     enlaces: loadLinks().filter(l => l.owner === user.username).length,
+    ...resumenEnlaces(loadLinks().filter(l => l.owner === user.username)),
     ...resumenBloques(notas.items),
     ...extras, ...extrasApp,
   };
@@ -515,7 +517,7 @@ const enlacesMod = createEnlaces({
   express, auth, jsonMedio, bcrypt, appDir: APP_DIR, thumbsDir: THUMBS_DIR, loadUsers, sendError, registrarActividad,
   resolveFor, userPath, assertVisible, safeResolve, isHidden, esCompartida, exists,
   enviaPlantilla, enviarZip, cabeceraDescarga, makeUploader, MAX_UPLOAD_BYTES,
-  albums: albumsMod.core, promptsCore: promptsMod.core, events: eventsMod,
+  albums: albumsMod.core, promptsCore: promptsMod.core, events: eventsMod, alCambiar: alCambiarContenido,
   IMAGE_TYPES, HEIC_TYPES, VIDEO_TYPES, THUMBABLE, PREVIEW_TYPES, THUMB_SIZE, DISPLAY_MAX,
   sharp, ffmpeg, fotogramaVideo, convertirCache,
 });

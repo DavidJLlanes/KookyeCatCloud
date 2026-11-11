@@ -29,4 +29,6 @@ Primero (4) y (6).
 - (3) Notas con más bloques, 11-11-2026: desplegables, columnas, índice automático, ecuaciones KaTeX, diagramas Mermaid, incrustados (YouTube, mapa con el Leaflet de la app, PDF), una base dentro de la nota y bloques sincronizados (módulo propio).
 - (5) Plantillas, 11-11-2026: plantillas de fila en Bases (con fechas relativas) y bloque «Botón» en notas que crea una nota o una fila desde una plantilla.
 - (5, parte) Repetición en Recordatorios, 11-11-2026: diaria, semanal (con días), mensual (día del mes o «el primer lunes»), anual, cada N y fecha final; avisos con botones «Hecho» y «Posponer 1 h».
+- (1, parte) Bases, 11-11-2026 (tarde): relaciones de doble sentido, agrupar la tabla, fila de totales y arrastrar filas; en Notas, bloques anidados en columnas y vista elegible de una base; en Pagos, gráfico anual y documentos adjuntos.
+- Compartir, 11-11-2026 (tarde): enlaces cortos `/cloud/<12 caracteres>`, caducidad configurable y QR en PNG.
 - (1) Bases más potentes, 11-11-2026: calendario, galería y línea de tiempo, relaciones, resúmenes, fórmulas, tipos nuevos, cambio de tipo y filtros/órdenes múltiples. La numeración de arriba se mantiene.

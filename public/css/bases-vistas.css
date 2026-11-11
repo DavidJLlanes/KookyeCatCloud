@@ -73,3 +73,18 @@
 .bs-nuevas{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;} .bs-nuevas .bs-nueva{margin-top:0;}
 .bs-plantlista{display:flex;flex-direction:column;gap:8px;} .bs-plantfila{display:flex;align-items:center;gap:6px;flex-wrap:wrap;} .bs-plantfila-n{flex:1;min-width:140px;font-weight:600;}
 .bs-plantcab{display:flex;gap:8px;} .bs-plant-ic{width:64px;text-align:center;} .bs-plantfecha{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* Tabla: asa de reordenar, grupos y fila de totales */
+.bs-tabla th.asa,.bs-tabla td.asa{width:1%;padding:0 2px;text-align:center;}
+.bs-asa{cursor:grab;touch-action:none;font-size:calc(16px*var(--fs,1));line-height:1;color:var(--faint);user-select:none;}
+.bs-asa.apagada{opacity:.35;cursor:not-allowed;}
+.bs-tabla tr.arrastra{opacity:.55;background:var(--glass-2);}
+.bs-tabla tr.drop-antes td{box-shadow:inset 0 3px 0 var(--accent-strong);}
+.bs-tabla tr.drop-despues td{box-shadow:inset 0 -3px 0 var(--accent-strong);}
+.bs-tabla tr.bs-grupo td{background:var(--surface-2);padding:0;border-bottom:1px solid var(--line);}
+.bs-grupo-bt{display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;border:0;background:none;color:var(--text);font:inherit;font-weight:700;cursor:pointer;text-align:left;}
+.bs-grupo-bt b::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--o,var(--faint));margin-right:8px;}
+.bs-tabla tfoot td{position:sticky;bottom:0;background:var(--surface-2);border-top:2px solid var(--line);padding:4px 8px;vertical-align:top;}
+.bs-tot-val{display:block;font-weight:700;font-size:calc(14px*var(--fs,1));min-height:1.2em;padding:2px 4px;}
+.bs-tabla td select.bs-tot-sel{min-width:0;width:100%;padding:2px 4px;font-size:calc(11px*var(--fs,1));color:var(--faint);opacity:.55;}
+.bs-tabla td select.bs-tot-sel:focus,.bs-tabla td:hover select.bs-tot-sel{opacity:1;}

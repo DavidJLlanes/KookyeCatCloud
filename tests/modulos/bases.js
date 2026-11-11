@@ -160,4 +160,59 @@ module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
     igual((await req('DELETE', '/api/note-templates/' + t.j.template.id)).s, 200);
     const dirN = path.join(DATA, '.kcc', 'borrados', 'plantillas-de-nota'); cierto(fs.existsSync(dirN) && fs.readdirSync(dirN).length >= 1, 'copia de la plantilla de nota');
   });
+
+  await prueba('bases: relación de doble sentido (entre bases y consigo misma), reordenar filas, agrupar y totales', async () => {
+    let A = await crea('Proyectos'); let T = await crea('Tareas');
+    const tA = A.columns[0].id, tT = T.columns[0].id;
+    const a1 = (await fila(A, { [tA]: 'Web' })).j.row, a2 = (await fila(A, { [tA]: 'App' })).j.row;
+    const t1 = (await fila(T, { [tT]: 'Diseño' })).j.row, t2 = (await fila(T, { [tT]: 'Código' })).j.row;
+    // Proyecto.Tareas ⇄ Tarea.Proyecto (la gemela se crea sola y se rellena con lo que ya hubiera)
+    let r = await esquema(A, [...conserva(A), { nombre: 'Tareas', tipo: 'relation', destino: T.id, doble: true }]); igual(r.s, 200, JSON.stringify(r.j));
+    A = r.j; const colA = A.columns[1]; cierto(colA.inversa, 'la columna recuerda su gemela');
+    T = (await req('GET', `/api/bases/${T.id}`)).j; const colT = T.columns.find(c => c.id === colA.inversa);
+    cierto(colT && colT.tipo === 'relation' && colT.destino === A.id && colT.inversa === colA.id && colT.nombre === 'Proyectos', 'gemela en la otra base');
+    igual((await req('PUT', `/api/bases/${A.id}/rows/${a1.id}`, { c: { [colA.id]: [t1.id, t2.id] } })).s, 200);
+    let T2 = (await req('GET', `/api/bases/${T.id}`)).j;
+    igual(T2.rows.find(x => x.id === t1.id).c[colT.id].join(), a1.id, 'lo que se enlaza aquí aparece allí');
+    // y al revés: editar la gemela cambia la original
+    igual((await req('PUT', `/api/bases/${T.id}/rows/${t1.id}`, { c: { [colT.id]: [a2.id] } })).s, 200);
+    A = (await req('GET', `/api/bases/${A.id}`)).j;
+    igual(A.rows.find(x => x.id === a1.id).c[colA.id].join(), t2.id, 'quitar desde la gemela lo quita de la original');
+    igual(A.rows.find(x => x.id === a2.id).c[colA.id].join(), t1.id, 'y añadir también');
+    // fila nueva ya enlazada
+    const t3 = (await fila(T, { [tT]: 'Pruebas', [colT.id]: [a1.id] })).j.row;
+    A = (await req('GET', `/api/bases/${A.id}`)).j; cierto(A.rows.find(x => x.id === a1.id).c[colA.id].includes(t3.id), 'fila nueva enlazada');
+    // dejar de sincronizar: las dos columnas siguen, sin gemela
+    r = await esquema(A, A.columns.map(c => (c.id === colA.id ? { ...c, doble: false } : { ...c }))); igual(r.s, 200);
+    cierto(!r.j.columns.find(c => c.id === colA.id).inversa, 'sin gemela');
+    cierto(!(await req('GET', `/api/bases/${T.id}`)).j.columns.find(c => c.id === colT.id).inversa, 'la otra tampoco');
+    // consigo misma
+    let P = await crea('Personas'); const nP = P.columns[0].id;
+    const p1 = (await fila(P, { [nP]: 'Ana' })).j.row, p2 = (await fila(P, { [nP]: 'Luis' })).j.row;
+    r = await esquema(P, [...conserva(P), { nombre: 'Hijos', tipo: 'relation', destino: P.id, doble: true }]); igual(r.s, 200, JSON.stringify(r.j)); P = r.j;
+    igual(P.columns.length, 3, 'se crea la gemela en la misma base');
+    igual((await req('PUT', `/api/bases/${P.id}/rows/${p1.id}`, { c: { [P.columns[1].id]: [p2.id] } })).s, 200);
+    P = (await req('GET', `/api/bases/${P.id}`)).j; igual(P.rows.find(x => x.id === p2.id).c[P.columns[2].id].join(), p1.id, 'inversa en la misma base');
+    // reordenar a mano
+    const o1 = await req('POST', `/api/bases/${T.id}/orden`, { id: t3.id, antes: t1.id }); igual(o1.s, 200);
+    igual(o1.j.ids[0], t3.id, 'la fila sube'); igual((await req('GET', `/api/bases/${T.id}`)).j.rows[0].id, t3.id, 'queda guardado');
+    igual((await req('POST', `/api/bases/${T.id}/orden`, { id: t3.id })).j.ids.slice(-1)[0], t3.id, 'sin «antes»: al final');
+    igual((await req('POST', `/api/bases/${T.id}/orden`, { id: 'ffffffffffffffff' })).s, 404); igual((await req('POST', `/api/bases/${T.id}/orden`, { id: t1.id, antes: 'ffffffffffffffff' })).s, 404);
+    igual((await req('GET', `/api/bases/${T.id}`)).j.rows.length, 3, 'no se pierde ninguna fila');
+    // agrupar la tabla y totales: se guardan limpios
+    const vistas = [{ ...T.views[0], agrupaPor: T.columns[0].id, totales: { [T.columns[0].id]: 'cuenta', zzz: 'suma', [colT.id]: 'veneno' } }];
+    const v = await req('PUT', `/api/bases/${T.id}/schema`, { vistas }); igual(v.s, 200);
+    igual(v.j.views[0].agrupaPor, T.columns[0].id); igual(JSON.stringify(v.j.views[0].totales), JSON.stringify({ [T.columns[0].id]: 'cuenta' }), 'totales inválidos descartados');
+    const g = (await req('GET', '/api/game')).j, fam = (id) => g.logros.familias.find(f => f.id === id);
+    cierto(fam('db_doble').valor >= 1 && fam('db_orden').valor >= 1 && fam('db_grupos').valor >= 1, 'logros de doble sentido, orden y grupos');
+  });
+
+  await prueba('notas: bloques dentro de columnas y bases con vista elegida (conteo)', async () => {
+    const { cuentaBloques } = require('../../lib/notas-bloques');
+    const c = cuentaBloques(':::columns\n- uno\n- dos\n\n- [ ] t\n![](kcc:file/a.png)\n:::col\n1. a\ntexto\n:::\n- fuera de las columnas');
+    igual(c.columns, 1); igual(c.anidados, 5, 'lista, tarea e imagen dentro de las columnas; lo de fuera no cuenta');
+    const v = cuentaBloques('::base 0123456789abcdef fedcba9876543210\n::base 0123456789abcdef\n::base 0123456789abcdef zz');
+    igual(v.base, 2); igual(v.vistas, 1, 'solo la base con id de vista válido');
+    cierto(!('anidados' in { nb_tipos: 1 }) && cuentaBloques('').anidados === 0);
+  });
 };

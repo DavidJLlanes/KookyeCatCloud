@@ -3,7 +3,7 @@
 // escritura concurrente, lectura dañada, valores vacíos, borrado con copia y logros.
 const fs = require('fs'), path = require('path');
 
-module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
+module.exports = async ({ req, prueba, igual, cierto, DATA, BASE, cookie }) => {
   const nuevo = (extra = {}) => req('POST', '/api/pagos', { nombre: 'Seguro hogar', compania: 'Mapfre', categoria: 'Seguros', importe: '12,50', frecuencia: 'mensual', fechaProxima: '2026-01-31', ...extra });
   let id, v0;
 
@@ -89,5 +89,29 @@ module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
     const g = (await req('GET', '/api/game')).j;
     cierto(g.recuentos.pagos >= 1, 'recuento de pagos'); cierto(g.logros.familias.some(f => f.id === 'pg_total' && f.valor >= 1), 'familia pg_total');
     cierto(g.logros.familias.some(f => f.id === 'pg_pagados'), 'familia pg_pagados');
+  });
+
+  await prueba('pagos: documentos adjuntos (PDF o imagen), servidos con seguridad y borrados con copia', async () => {
+    const p = (await nuevo({ nombre: 'Seguro coche', categoria: 'Seguros' })).j.pago;
+    const sube = (cuerpo, nombre = 'poliza.pdf', tipo = 'application/pdf') => fetch(`${BASE}/api/pagos/${p.id}/adjuntos`, { method: 'POST', headers: { Cookie: cookie(), 'Content-Type': tipo, 'X-Nombre': encodeURIComponent(nombre) }, body: cuerpo });
+    const pdf = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(200, 1)]);
+    const ok = await sube(pdf); igual(ok.status, 200); const a = (await ok.json()).adjunto; igual(a.tipo, 'application/pdf'); igual(a.nombre, 'poliza.pdf');
+    igual((await sube(Buffer.from('<script>alert(1)</script>'), 'x.pdf')).status, 400, 'una cabecera falsa se rechaza por el contenido');
+    igual((await sube(Buffer.alloc(0))).status, 400, 'vacío');
+    const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(40)]);
+    igual((await sube(png, 'recibo', 'image/png')).status, 200, 'imagen sin extensión en el nombre');
+    const g = await fetch(`${BASE}/api/pagos/${p.id}/adjuntos/${a.id}`, { headers: { Cookie: cookie() } });
+    igual(g.status, 200); igual(g.headers.get('content-type'), 'application/pdf'); cierto((g.headers.get('content-security-policy') || '').includes('sandbox'), 'sandbox'); igual(g.headers.get('x-content-type-options'), 'nosniff');
+    igual((await fetch(`${BASE}/api/pagos/${p.id}/adjuntos/${a.id}`)).status, 401, 'sin sesión no se ve');
+    const lista = (await req('GET', '/api/pagos')).j.pagos.find(x => x.id === p.id); igual(lista.adjuntos.length, 2);
+    // editar el pago no pierde los documentos
+    igual((await req('PUT', `/api/pagos/${p.id}`, { nombre: 'Seguro coche 2', base: lista.updatedAt })).s, 200);
+    igual((await req('GET', '/api/pagos')).j.pagos.find(x => x.id === p.id).adjuntos.length, 2, 'los documentos sobreviven a la edición');
+    const g2 = (await req('GET', '/api/game')).j; cierto(g2.logros.familias.find(f => f.id === 'pg_polizas').valor >= 1, 'logro Papeles en regla');
+    igual((await req('DELETE', `/api/pagos/${p.id}/adjuntos/${a.id}`)).s, 200);
+    const dirB = path.join(DATA, '.kcc', 'borrados', 'pagos-adjuntos'); cierto(fs.existsSync(dirB) && fs.readdirSync(dirB).length >= 1, 'copia del documento quitado');
+    igual((await req('DELETE', `/api/pagos/${p.id}/adjuntos/${a.id}`)).s, 404);
+    igual((await req('DELETE', `/api/pagos/${p.id}`)).s, 200);
+    cierto(fs.readdirSync(dirB).some(n => n.includes('todos')), 'al borrar el pago, sus documentos se apartan');
   });
 };

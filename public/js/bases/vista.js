@@ -16,10 +16,11 @@
     const fec = B.select(pares(de('date')), d.fecha || (de('date')[0] || {}).id || '');
     const fin = B.select(pares(de('date'), 'Sin fecha de fin'), d.fechaFin || '');
     const por = B.select(pares(de('file'), 'Sin imagen'), d.portada || '');
+    const gru = B.select(pares(S.base.columns, 'Sin agrupar'), d.agrupaPor || ''); const fGru = B.campo('Agrupar las filas por', gru);
     const fAgr = B.campo('Agrupar tarjetas por', agr), fFec = B.campo('Columna de fecha', fec), fFin = B.campo('Fecha de fin (opcional)', fin), fPor = B.campo('Imagen de portada', por);
-    const alt = () => { fAgr.hidden = tipo.value !== 'kanban'; fFec.hidden = !['calendar', 'timeline'].includes(tipo.value); fFin.hidden = tipo.value !== 'timeline'; fPor.hidden = tipo.value !== 'gallery'; };
+    const alt = () => { fGru.hidden = tipo.value !== 'table'; fAgr.hidden = tipo.value !== 'kanban'; fFec.hidden = !['calendar', 'timeline'].includes(tipo.value); fFin.hidden = tipo.value !== 'timeline'; fPor.hidden = tipo.value !== 'gallery'; };
     tipo.addEventListener('change', alt); alt();
-    w.append(B.campo('Nombre', nom), B.campo('Tipo de vista', tipo), fAgr, fFec, fFin, fPor);
+    w.append(B.campo('Nombre', nom), B.campo('Tipo de vista', tipo), fGru, fAgr, fFec, fFin, fPor);
 
     // Filtros
     const filtros = el('div', 'bs-lista-f'); const unir = B.select([['y', 'Se cumplen todos los filtros'], ['o', 'Se cumple alguno de los filtros']], d.unir || 'y');
@@ -62,7 +63,7 @@
       const t = tipo.value;
       if (t === 'kanban' && !agr.value) { K.toast('Para un tablero necesitas una columna de tipo Selección'); return false; }
       if ((t === 'calendar' || t === 'timeline') && !fec.value) { K.toast('Para esta vista necesitas una columna de tipo Fecha'); return false; }
-      const nv = { ...(v || {}), nombre: nom.value, tipo: t, agrupa: t === 'kanban' ? agr.value : undefined, fecha: ['calendar', 'timeline'].includes(t) ? fec.value : undefined, fechaFin: t === 'timeline' ? fin.value : undefined, portada: t === 'gallery' ? por.value : undefined, unir: unir.value, filtros: d.filtros, ordenes: d.ordenes, ocultas: d.ocultas };
+      const nv = { ...(v || {}), nombre: nom.value, tipo: t, agrupa: t === 'kanban' ? agr.value : undefined, agrupaPor: t === 'table' ? gru.value : undefined, totales: t === 'table' ? (v && v.totales) || {} : undefined, fecha: ['calendar', 'timeline'].includes(t) ? fec.value : undefined, fechaFin: t === 'timeline' ? fin.value : undefined, portada: t === 'gallery' ? por.value : undefined, unir: unir.value, filtros: d.filtros, ordenes: d.ordenes, ocultas: d.ocultas };
       const vistas = nueva ? [...S.base.views, nv] : S.base.views.map(x => x.id === v.id ? nv : x);
       const b = await B.guardaEsquema({ vistas }); if (!b) return false;
       if (nueva) S.vista = b.views[b.views.length - 1].id; S.ordenLocal = null; B.pinta(); B.logros(); return true;

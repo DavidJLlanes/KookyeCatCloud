@@ -1,0 +1,4 @@
+/* Deslizar para eliminar (K.deslizar) */
+.sw-fila{will-change:transform;}
+.sw-fila.sw-listo{background-color:color-mix(in srgb,#ef4444 18%,var(--surface,#000));outline:2px solid #ef4444;outline-offset:-2px;}
+tr.sw-fila.sw-listo td{background-color:color-mix(in srgb,#ef4444 18%,var(--surface,#000));}

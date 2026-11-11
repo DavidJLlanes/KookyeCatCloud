@@ -45,6 +45,7 @@
     if (p.banco) chips.appendChild(K.chipValor('pagos.banco', p.banco));
     if (p.categoria) chips.appendChild(K.chipValor('pagos.categoria', p.categoria));
     if (chips.childNodes.length) t.appendChild(chips);
+    if ((p.adjuntos || []).length) t.appendChild(el('small', 'pg-clip k-faint', `📎 ${p.adjuntos.length} documento${p.adjuntos.length === 1 ? '' : 's'}`));
     cab.append(t, el('div', 'pg-importe', P.euros(p.importe)));
     const pie = el('div', 'pg-pie');
     const fecha = el('div', 'pg-fecha'); fecha.append(el('span', 'pg-estado', e.texto), el('small', 'k-faint', `${P.fechaTxt(p.fechaProxima)} · ${P.nombreDe(P.FRECUENCIAS, p.frecuencia)}`));
@@ -54,6 +55,7 @@
     pie.append(fecha, acc); c.append(cab, pie);
     c.addEventListener('click', () => P.editor(p));
     c.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target === c) P.editor(p); });
+    if (K.deslizar) K.deslizar(c, { alBorrar: () => P.elimina(p) });
     return c;
   }
 
@@ -69,6 +71,7 @@
       page.appendChild(v); return;
     }
     page.appendChild(resumen());
+    page.appendChild(P.graficoAnual());
     const barra = el('div', 'pg-barra');
     const busca = el('input'); busca.type = 'search'; busca.placeholder = 'Buscar por nombre, compañía…'; busca.value = S.q; busca.setAttribute('aria-label', 'Buscar pagos');
     busca.addEventListener('input', K.debounce(() => { S.q = busca.value; pintaLista(); }, 150));

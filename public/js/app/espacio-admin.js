@@ -117,6 +117,18 @@ async function loadLinks() {
       copiar.addEventListener('click', () => copiarEnlace(l.id, l.kind));
       row.appendChild(copiar);
 
+      if (compartido) {
+        const qr = el('button', 'icon-btn');
+        qr.appendChild(icon('i-link'));
+        qr.title = 'Código QR'; qr.setAttribute('aria-label', 'Código QR del enlace');
+        qr.addEventListener('click', () => K.qrEnlace(urlDelEnlace(l.id, l.kind), l.id, l.label));
+        row.appendChild(qr);
+        const cad = el('button', 'icon-btn');
+        cad.appendChild(icon('i-clock'));
+        cad.title = 'Cambiar caducidad'; cad.setAttribute('aria-label', 'Cambiar caducidad');
+        cad.addEventListener('click', () => K.cambiaCaducidad(l, loadLinks));
+        row.appendChild(cad);
+      }
       const borrar = el('button', 'icon-btn');
       borrar.appendChild(icon('i-trash'));
       borrar.title = 'Revocar';
@@ -129,7 +141,7 @@ async function loadLinks() {
   } catch {}
 }
 
-const urlDelEnlace = (id, kind) => `${location.origin}${BASE}/${kind === 'share' ? 's' : 'u'}/${id}`;
+const urlDelEnlace = (id, kind) => kind === 'share' ? urlCorta(id) : `${location.origin}${BASE}/u/${id}`;
 
 async function copiarEnlace(id, kind) {
   copiarTexto(urlDelEnlace(id, kind), 'Enlace copiado al portapapeles');

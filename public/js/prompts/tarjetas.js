@@ -159,6 +159,7 @@
     body.appendChild(foot);
     c.appendChild(body);
     activate(c, p);
+    if (!S.q.trash && K.deslizar) K.deslizar(c, { alBorrar: () => bulk([p.id], 'delete'), etiqueta: 'Papelera' });
     return c;
   }
 

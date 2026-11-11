@@ -19,8 +19,7 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [ ] Cuota de almacenamiento por usuario con aviso y límite.
 
 ### Más adelante
-- [ ] Notas: probar los vídeos de YouTube incrustados en un navegador real con internet, bloques anidados (columnas con listas o imágenes dentro) y mostrar una vista concreta de una base.
-- [ ] Pagos: gráfico de gasto anual por compañía y adjuntar la póliza.
+- [ ] Notas: probar los vídeos de YouTube incrustados en un navegador real con internet.
 - [ ] Avisos push: acciones en el propio aviso («Marcar como pagado», «Posponer»), avisos para Compras y Bases si hace falta, y probar en el móvil real (Android e iPhone instalado).
 - [ ] Recordatorios: probar los avisos y sus botones «Hecho/Posponer» en un móvil real (la repetición ya está hecha).
 - [ ] Marcadores: importar/exportar HTML de favoritos del navegador y detectar enlaces rotos.
@@ -95,7 +94,7 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 
 - [x] Copiar o mover entre Archivos y Código (fase 1), con deshacer de 1 minuto, previsualización, historial y logro «Mudanzas».
 - [x] Copiar o mover desde Portapapeles, Notas y Contactos a Archivos y Código (fase 2).
-- [ ] Bases: relaciones de doble sentido (que la otra base vea quién la enlaza), agrupar la tabla por una columna, fila de totales al pie y arrastrar para reordenar columnas. La fórmula no puede usar columnas de otras bases salvo mediante un resumen.
+- [ ] Bases: arrastrar para reordenar columnas (las filas ya se reordenan). La fórmula no puede usar columnas de otras bases salvo mediante un resumen.
 - [x] Bases y Juegos en CSV, y arrastrar archivos a la pestaña Código en escritorio (fase 3). Pendiente: Código → Código.
 - [x] Gamificación revisada: Portapapeles («Copión»), especial «Caja fuerte», títulos para todos los módulos y recuentos al instante.
 - [x] Auditoría: el deshacer de Portapapeles/Notas ya no engorda ops.json; un envío que falla a medias se revierte; el icono de Mudanzas existía solo en el código.

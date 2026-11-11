@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="/css/notes-ricos.css">
 <link rel="stylesheet" href="/css/games.css">
 <link rel="stylesheet" href="/css/bases.css">
+<link rel="stylesheet" href="/css/deslizar.css">
 <link rel="stylesheet" href="/css/bases-vistas.css">
 <link rel="stylesheet" href="/css/codigo.css">
 <script src="/js/textsize.js"></script>
@@ -1834,11 +1835,19 @@
       </label>
       <label class="field"><span>Caducidad</span>
         <select id="share-days">
+          <option value="0.0417">1 hora</option>
+          <option value="1">1 día</option>
           <option value="7">7 días</option>
           <option value="30" selected>30 días</option>
           <option value="90">90 días</option>
+          <option value="365">1 año</option>
           <option value="0">Sin caducidad</option>
+          <option value="custom">Otro plazo…</option>
         </select>
+      </label>
+      <label class="field" id="share-custom" hidden><span>Caduca dentro de</span>
+        <span style="display:flex;gap:8px"><input id="share-custom-n" type="number" min="1" max="3650" value="3" inputmode="numeric" style="flex:1">
+        <select id="share-custom-u" style="flex:1"><option value="1">días</option><option value="0.0416667">horas</option></select></span>
       </label>
       <label class="field"><span>Contraseña (opcional)</span>
         <input id="share-pass" type="password" autocomplete="new-password" placeholder="Sin contraseña">
@@ -1849,7 +1858,8 @@
         <code id="share-url"></code>
         <button class="icon-btn" id="btn-copy-share" title="Copiar" aria-label="Copiar enlace"><svg class="ico"><use href="#i-copy"/></svg></button>
       </div>
-      <p class="dav-nota">Cualquiera con este enlace podrá descargarlo. Puedes revocarlo desde Administración.</p>
+      <p class="dav-nota">Cualquiera con este enlace podrá descargarlo. Puedes revocarlo o cambiar su caducidad desde Administración.</p>
+      <button class="btn" id="btn-qr-share" type="button"><svg class="ico"><use href="#i-link"/></svg> Código QR</button>
     </div>
     <div class="modal-actions">
       <button class="btn" data-close="share-modal">Cerrar</button>
@@ -1992,6 +2002,9 @@
 <script src="/js/app/cuenta.js"></script>
 <script src="/js/app/inicio.js"></script>
 <script src="/js/kit.js"></script>
+<script src="/js/deslizar.js"></script>
+<script src="/vendor/qrcode/qrcode.js"></script>
+<script src="/js/app/qr-enlace.js"></script>
 <script src="/js/guardar.js"></script>
 <script src="/js/valores-clave.js"></script>
 <script src="/js/valores.js"></script>
@@ -2064,10 +2077,12 @@
 <script src="/js/notes/slash.js"></script>
 <script src="/js/notes/ricos.js"></script>
 <script src="/js/notes/ricos-estructura.js"></script>
+<script src="/js/notes/ricos-columnas.js"></script>
 <script src="/js/notes/ricos-indice.js"></script>
 <script src="/js/notes/ricos-ecuacion.js"></script>
 <script src="/js/notes/ricos-diagrama.js"></script>
 <script src="/js/notes/ricos-incrustado.js"></script>
+<script src="/js/notes/ricos-base-vistas.js"></script>
 <script src="/js/notes/ricos-base.js"></script>
 <script src="/js/notes/ricos-sincronizado.js"></script>
 <script src="/js/notes/ricos-boton.js"></script>
@@ -2096,6 +2111,8 @@
 <script src="/js/bases/consulta.js"></script>
 <script src="/js/bases/selectores.js"></script>
 <script src="/js/bases/celdas.js"></script>
+<script src="/js/bases/tabla-totales.js"></script>
+<script src="/js/bases/tabla-orden.js"></script>
 <script src="/js/bases/tabla.js"></script>
 <script src="/js/bases/kanban.js"></script>
 <script src="/js/bases/calendario.js"></script>
@@ -2110,6 +2127,8 @@
 <script src="/js/bases/index.js"></script>
 <script src="/js/pagos/datos.js"></script>
 <script src="/js/pagos/lista.js"></script>
+<script src="/js/pagos/grafico.js"></script>
+<script src="/js/pagos/adjuntos.js"></script>
 <script src="/js/pagos/formulario.js"></script>
 <script src="/js/pagos/index.js"></script>
 <script src="/js/marcadores/datos.js"></script>

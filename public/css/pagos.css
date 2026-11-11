@@ -50,3 +50,29 @@
   .pg-form{grid-template-columns:minmax(0,1fr);}
   .pg-lista{grid-template-columns:minmax(0,1fr);}
 }
+
+/* Gráfico de gasto anual y documentos adjuntos */
+.pg-grafico{border:1px solid var(--line);border-radius:14px;background:var(--glass);padding:10px 14px;}
+.pg-grafico>summary{cursor:pointer;font-weight:700;font-size:calc(15px*var(--fs,1));}
+.pg-graf-nav{display:flex;align-items:center;gap:12px;margin:8px 0;}
+.pg-graf-nav b{font-size:calc(18px*var(--fs,1));min-width:3.2em;text-align:center;}
+.pg-graf-tot{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:calc(13px*var(--fs,1));margin-bottom:10px;}
+.pg-graf-tot .prev{color:var(--faint);}
+.pg-barras{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;align-items:end;height:170px;}
+.pg-bcol{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0;}
+.pg-bval{font-size:calc(10px*var(--fs,1));color:var(--faint);height:1.3em;white-space:nowrap;}
+.pg-bpila{flex:1;width:100%;display:flex;flex-direction:column;justify-content:flex-end;}
+.pg-bpila i{display:block;width:100%;}
+.pg-bpila i.pag{background:var(--accent-strong);border-radius:0 0 3px 3px;}
+.pg-bpila i.prev{background:repeating-linear-gradient(135deg,var(--accent-line) 0 4px,transparent 4px 8px);border:1px dashed var(--accent-line);border-bottom:0;border-radius:3px 3px 0 0;}
+.pg-bmes{font-size:calc(10px*var(--fs,1));color:var(--faint);margin-top:4px;}
+.pg-cats{display:grid;gap:6px;margin-top:6px;}
+.pg-cat{display:grid;grid-template-columns:minmax(80px,28%) 1fr auto;gap:8px;align-items:center;font-size:calc(13px*var(--fs,1));}
+.pg-cat-b{height:8px;border-radius:4px;background:var(--glass-2);overflow:hidden;}
+.pg-cat-b i{display:block;height:100%;background:var(--accent-strong);}
+.pg-clip{display:block;margin-top:2px;}
+.pg-adj{display:grid;gap:6px;}
+.pg-adj h4{margin:6px 0 0;}
+.pg-adj-fila{display:flex;align-items:center;gap:8px;}
+.pg-adj-nombre{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--accent-text);}
+.pg-bpila i[hidden]{display:none;}

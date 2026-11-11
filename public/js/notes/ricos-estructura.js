@@ -1,10 +1,8 @@
 'use strict';
-/* notes/ricos-estructura.js: desplegables (toggle) y columnas.
-     :::toggle Título            :::columns
-     texto del cuerpo            texto de la columna 1
-     :::                         :::col
-                                 texto de la columna 2
-                                 :::                                                                                      */
+/* notes/ricos-estructura.js: desplegables (toggle). Las columnas viven en ricos-columnas.js.
+     :::toggle Título
+     texto del cuerpo
+     :::                                                                                                              */
 (function () {
   const C = (K._notes = K._notes || {});
   const el2 = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt !== undefined) n.textContent = txt; return n; };
@@ -30,34 +28,5 @@
     },
     tras: (w) => { w.classList.add('is-open'); const b = w.querySelector('.nb-tb'); if (b) C.ricoFoco({ querySelectorAll: () => [b] }); return true; },
     lee: (w, b) => ({ ...b, text: C.leeSub(w.querySelector('.nb-tt')).replace(/<br>/g, ' '), body: C.leeSub(w.querySelector('.nb-tb')), open: w.classList.contains('is-open') }),
-  });
-
-  /* ---------- Columnas ---------- */
-  const MAX_COLS = 4;
-  C.registraRico('columns', {
-    slash: ['Columnas', 'Texto en 2 columnas (hasta 4)', '▥'],
-    nuevo: () => ({ cols: ['', ''] }),
-    alCrear: (w) => { const s = w.querySelector('.nb-sub'); if (s) s.focus(); },
-    parse(lines, i) {
-      if (!/^:::columns\s*$/.test(lines[i])) return null;
-      const cols = [[]]; i++;
-      while (i < lines.length && !/^:::\s*$/.test(lines[i])) { if (/^:::col\s*$/.test(lines[i])) { if (cols.length < MAX_COLS) cols.push([]); } else cols[cols.length - 1].push(lines[i]); i++; }
-      while (cols.length < 2) cols.push([]);
-      return { b: { t: 'columns', cols: cols.map(C.desescapa) }, next: i + 1 };
-    },
-    md: (b) => [':::columns', ...(b.cols || ['', '']).flatMap((c, k) => [...(k ? [':::col'] : []), ...C.lineasMd(c)]), ':::'].join('\n'),
-    pinta(w, c, b) {
-      const rejilla = el2('div', 'nb-cols');
-      const dibuja = (cols) => {
-        rejilla.textContent = ''; rejilla.dataset.n = cols.length;
-        cols.forEach(txt => rejilla.appendChild(C.subEditable('nb-col', txt, 'Escribe aquí')));
-      };
-      dibuja(b.cols && b.cols.length ? b.cols : ['', '']);
-      const barra = el2('div', 'nb-cols-tools');
-      const mas = boton('btn ghost sm', 'Añadir una columna', '+ Columna', () => { const v = [...rejilla.querySelectorAll('.nb-col')].map(C.leeSub); if (v.length < MAX_COLS) { v.push(''); dibuja(v); C.change(true); } });
-      const menos = boton('btn ghost sm', 'Quitar la última columna', '− Columna', () => { const v = [...rejilla.querySelectorAll('.nb-col')].map(C.leeSub); if (v.length > 2) { v.pop(); dibuja(v); C.change(true); } });
-      barra.append(mas, menos); c.append(rejilla, barra);
-    },
-    lee: (w, b) => ({ ...b, cols: [...w.querySelectorAll('.nb-col')].map(C.leeSub) }),
   });
 })();

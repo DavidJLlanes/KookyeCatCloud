@@ -36,6 +36,10 @@
       const s = B.select(otras, c.destino || ''); if (!c.destino) { c.destino = otras[0][0]; s.value = c.destino; }
       s.addEventListener('change', () => { c.destino = s.value; });
       caja.appendChild(B.campo('Se relaciona con', s));
+      const dob = el('input'); dob.type = 'checkbox'; dob.checked = c.doble === undefined ? !!c.inversa : !!c.doble; c.doble = dob.checked;
+      dob.addEventListener('change', () => { c.doble = dob.checked; });
+      const l = el('label', 'bs-check'); l.append(dob, el('span', null, 'Doble sentido: crear la columna inversa en la otra base y mantenerlas sincronizadas'));
+      caja.appendChild(l);
     } else if (c.tipo === 'rollup') ajustesResumen(c, cols, caja, redibuja);
     return caja;
   }
@@ -86,7 +90,7 @@
     const redibuja = dibuja;
     dibuja();
     K.modal({ title: 'Columnas', sub: 'Puedes cambiar el tipo de una columna: sus valores se convierten al guardar', content: w, cls: 'wide', actions: [{ label: 'Cancelar' }, { label: 'Guardar', primary: true, onClick: async () => {
-      const columnas = cols.map(c => ({ id: c.id, nombre: c.nombre, tipo: c.tipo, opciones: c.opciones, expr: c.expr, destino: c.destino, relacion: c._rel ? (c._rel.id || c._rel.nombre) : c.relacion, columna: c.columna, func: c.func }));
+      const columnas = cols.map(c => ({ id: c.id, nombre: c.nombre, tipo: c.tipo, opciones: c.opciones, expr: c.expr, destino: c.destino, doble: c.tipo === 'relation' ? c.doble : undefined, relacion: c._rel ? (c._rel.id || c._rel.nombre) : c.relacion, columna: c.columna, func: c.func }));
       const b = await B.guardaEsquema({ columnas, conocidas: S.base.columns.map(c => c.id), vistas: S.base.views });
       if (!b) return false; B.pinta(); B.logros(); return true;
     } }] });

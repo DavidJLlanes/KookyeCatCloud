@@ -7,6 +7,12 @@
   const manana = () => K.d.ymd(K.d.add(new Date(), 1));
 
   // r: recordatorio a editar (null: nuevo) · ini: { titulo, vinculo, fecha } con lo que ya se sabe al crearlo desde otra sección
+  // Elimina un recordatorio (con confirmación; se guarda 30 días). Devuelve true si se borró.
+  R.elimina = async (r) => {
+    if (!await K.confirm(`Se eliminará «${r.titulo}». Se guarda 30 días por si te arrepientes.`, { ok: 'Eliminar', danger: true })) return false;
+    try { await K.del('/api/recordatorios/' + r.id); K.toast('Recordatorio eliminado'); R.cambio(r.calendario); return true; } catch (e) { K.fail(e); return false; }
+  };
+
   R.editor = function (r, ini = {}) {
     const nuevo = !r;
     const base = r || { titulo: ini.titulo || '', notas: '', fecha: ini.fecha === undefined ? manana() : ini.fecha, hora: '09:00', antes: 0, calendario: false, repite: null, vinculo: ini.vinculo || null };
@@ -78,10 +84,7 @@
 
     if (!nuevo) {
       const del = el('button', 'btn danger sm rc-borrar', 'Eliminar recordatorio'); del.type = 'button';
-      del.addEventListener('click', async () => {
-        if (!await K.confirm(`Se eliminará «${r.titulo}». Se guarda 30 días por si te arrepientes.`, { ok: 'Eliminar', danger: true })) return;
-        try { await K.del('/api/recordatorios/' + r.id); modal.close(); K.toast('Recordatorio eliminado'); R.cambio(r.calendario); } catch (e) { K.fail(e); }
-      });
+      del.addEventListener('click', async () => { if (await R.elimina(r)) modal.close(); });
       f.appendChild(del);
     }
     sync();

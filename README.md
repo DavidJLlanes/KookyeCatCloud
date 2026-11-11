@@ -78,7 +78,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 | 📁 **Archivos organizados** | Gestiona carpetas, favoritos, papelera y descargas ZIP. |
 | 📷 **Tu biblioteca de fotos** | Explora álbumes, línea de tiempo, álbumes inteligentes (año, cámara, lugar), datos EXIF y un mapa de fotos. Los álbumes se descargan en ZIP y se comparten con un enlace. |
 | 🎬 **Vistas previas** | Consulta fotos, vídeos, audio y documentos desde el navegador, con zoom en las imágenes. |
-| 🔗 **Compartir fácilmente** | Crea enlaces de subida y descarga con caducidad y contraseña opcional para las descargas. |
+| 🔗 **Compartir fácilmente** | Enlaces cortos de descarga (`/cloud/k3x9tq7mw2ab`) y de subida, con caducidad configurable o sin ella, contraseña opcional y código QR descargable. |
 | 💻 **Acceso con WebDAV** | Conecta tu nube desde el explorador o una app compatible. |
 | 📝 **Notas tipo Notion** | Editor de bloques con carpetas, colores, etiquetas y enlaces internos. |
 | 🛒 **Lista de la compra** | Catálogo y compras compartidos, cantidades, categorías e imágenes con recorte cuadrado. |
@@ -110,6 +110,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 ### Novedades
 
+- **11 nov 2026 (tarde)** · **Enlaces cortos y QR**: los enlaces de descarga ahora son `…/cloud/k3x9tq7mw2ab` (12 letras y números al azar), con caducidad a tu medida (1 hora, 1 día, 7, 30, 90, 365, «otro plazo» o sin caducidad, y se puede cambiar después) y un **código QR** descargable en PNG · **Notas**: columnas con listas, tareas e imágenes dentro y elegir qué vista de una base se ve en la nota · **Bases**: relaciones de doble sentido, agrupar la tabla por una columna, fila de totales y arrastrar filas para reordenarlas · **Pagos**: gráfico del gasto del año y documentos adjuntos (póliza en PDF o imagen) · **Deslizar para eliminar** en móvil (Pagos, Recordatorios, Marcadores, Prompts y filas de Bases) · logros nuevos para todo ello.
 - **11 nov 2026** · **Notas con más bloques**: desplegables, columnas, índice automático, ecuaciones LaTeX, diagramas Mermaid, incrustados (YouTube, mapas, PDF), una base dentro de la nota y bloques sincronizados entre notas · **Plantillas de fila en Bases y botones de plantilla en Notas** («Nueva reunión» con su estructura) · **Recordatorios que se repiten** (diario, semanal, mensual, «el primer lunes», anual) con botones «Hecho» y «Posponer» en el aviso · **Bases más potentes**: vistas de calendario, galería y línea de tiempo, fórmulas, relaciones entre bases y resúmenes, columnas de correo, teléfono y archivo, cambio de tipo de columna y varios filtros y órdenes por vista · nueva sección **Recordatorios** (con su propio JSON, creables desde notas, contactos, archivos, prompts y marcadores, calendario opcional y avisos push para todos los navegadores) · subida de imágenes optimizada en Notas para PC, Android e iPhone y visor de imágenes en la propia app · tarjetas de Compra arregladas en escritorio · nuevos logros y trofeos (Calculista, Tejedor de datos, Todas las perspectivas, Memoria de elefante…) · dos auditorías de errores y seguridad: `npm audit` a 0, rutas de archivo y claves especiales sin errores 500, importación de bases grandes · código de Bases y Notas troceado en carpetas.
 - **9 nov 2026** · Avisos push (pagos, calendario y contactos) con ajustes por sección, horas y horario de silencio · Pagos · Marcadores web con favicon automático · Sonidos suaves · Foto de perfil con recorte cuadrado (WebP 300 × 300) · contraseñas de 8 a 72 caracteres, HSTS y errores sin rutas del servidor · recorrido de seguridad documentado en [`docs/auditoria-errores.md`](docs/auditoria-errores.md) (siete auditorías) · pruebas por módulo en `tests/modulos/` (98 pruebas de humo).
 - **4 nov 2026** · Persistencia a prueba de fallos: lectura que distingue «no existe» de «ilegible», copias `.bak`, escritura atómica y borrados con copia de 30 días.
@@ -901,14 +902,16 @@ Bases de datos propias al estilo Notion: tú defines las columnas y las miras co
 - **Fórmulas**: `{Precio} * {Cantidad}`, `SI({Hecha}; "Listo"; "Pendiente")`, `DIAS({Vence}; HOY())`… con operadores, textos, fechas y unas 35 funciones en español (ayuda en el editor, botón «Comprobar»). Analizador propio, sin `eval`; los errores salen como `#DIV/0`, `#REF`… sin romper la tabla. Renombrar una columna actualiza las fórmulas que la usan.
 - **Relaciones y resúmenes**: una columna de relación enlaza filas de otra base (o de la misma); un resumen cuenta, suma, promedia, da mínimo o máximo, valores distintos o % de casillas marcadas de lo enlazado. Si se borra una fila enlazada, el enlace desaparece solo.
 - **Vistas** (hasta 12 por base): tabla, tablero (agrupado por una selección), calendario mensual con detalle del día, galería con portada (columna Archivo) y línea de tiempo con zoom (inicio y fin opcional). Cada vista guarda **varios filtros** (unidos con «y»/«o»), **varios criterios de orden** y las **columnas que muestra**. Las vistas guardadas antes siguen funcionando.
+- **Relaciones de doble sentido**: al crear una relación marca *Doble sentido* y la otra base (o la misma) recibe una columna inversa que se mantiene sola: lo que enlazas en un lado aparece en el otro, también al crear filas y al quitar enlaces. Se puede dejar de sincronizar sin perder ninguna de las dos columnas (`lib/bases/doble.js`).
+- **Tabla más potente**: *Agrupar las filas por* cualquier columna (grupos plegables con su contador; las selecciones respetan el orden y el color de sus opciones), **fila de totales** al pie con una operación por columna (contar, con valor, vacías, distintos, suma, media, mínimo, máximo, % marcadas) guardada en la vista, y un asa ⠿ para **arrastrar filas** y reordenarlas con ratón o con el dedo (`POST /api/bases/<id>/orden`; solo cuando la vista no tiene orden por columna ni agrupación).
 - **Plantillas de fila**: guarda una fila como molde («Nueva reunión», «Tarea semanal») desde la ficha (*Guardar como plantilla*) o desde *Plantillas*. Cada plantilla tiene icono, nombre y valores por columna; las fechas aceptan `{{hoy}}`, `{{manana}}`, `{{semana}}` y `{{mes}}`. Salen como botones junto a «Nueva fila» en todas las vistas (hasta 3 más un gestor), hasta 20 por base, y al usarlas se abre la ficha de la fila nueva. Se guardan en la propia base (`plantillas`); al borrar una queda copia 30 días.
 - Plantillas de base: proyectos, tareas, libros, gastos, clientes o vacía (con vistas de calendario ya montadas). Hasta 60 bases, 30 columnas y 5000 filas por base.
 - Edición directa en la tabla; pulsa el lápiz para abrir la ficha de la fila.
 - Exporta a CSV (Excel, con `;`, incluye el valor de las columnas calculadas) o JSON, e importa el JSON (sin relaciones ni resúmenes, que apuntan a bases de la copia original).
 - **Un JSON por base**: `<tu carpeta>/.kcc/bases/<id>.json`. Las columnas calculadas no se guardan: se calculan al leer.
-- API: `/api/bases` (lista, crear, esquema, filas, `move`, `formula` para comprobar una fórmula, exportar, importar).
+- API: `/api/bases` (lista, crear, esquema, filas, `move`, `orden`, `formula` para comprobar una fórmula, exportar, importar).
 - Código: `lib/bases/` (modelo, fórmulas, cálculo, relaciones, conversión, CSV, rutas) y `public/js/bases/` (estado, datos, una vista por archivo, editores). Pruebas en `tests/modulos/bases.js`.
-- **Logros de Bases**: 7 familias (Arquitecto de datos, Registro tras registro, Esquema a medida, Maestro del tablero, Tarea cumplida, **Calculista**, **Tejedor de datos**), 3 especiales (Esquema completo, Gran biblioteca, **Todas las perspectivas**), los títulos «Arquitecto de datos» y «Hechicero de fórmulas», 3 retos y la Copa del Arquitecto.
+- **Logros de Bases** (además de lo siguiente: *Ida y vuelta*, *A mano*, *Por grupos* y *Sumas y sigue*, un reto de reordenar y el título *Ida y vuelta*): 7 familias (Arquitecto de datos, Registro tras registro, Esquema a medida, Maestro del tablero, Tarea cumplida, **Calculista**, **Tejedor de datos**), 3 especiales (Esquema completo, Gran biblioteca, **Todas las perspectivas**), los títulos «Arquitecto de datos» y «Hechicero de fórmulas», 3 retos y la Copa del Arquitecto.
 - Convención para módulos futuros (JSON propio y gamificación obligatoria): ver `CLAUDE.md`.
 
 ![Base Proyectos en vista de tablero](docs/capturas/bases.png)
@@ -1048,6 +1051,8 @@ Recordatorios de pagos: qué pagas, a qué compañía, cuánto, cada cuánto y c
 - Cada pago guarda también el **banco** (o cuenta de cargo) con el que se paga; sale como etiqueta en la tarjeta, se busca y filtra pulsándolo.
 - Compañía, banco y categoría usan los [valores reutilizables](#valores-reutilizables) (sin duplicados «Mapfre»/«MAPFRE»).
 - El próximo vencimiento aparece en el calendario «Pagos» (un evento por pago).
+- **Gráfico del gasto del año**: barras por mes con lo ya pagado (del historial) y lo que falta según los pagos activos (rayado), total del año, selector de año y desglose por categoría.
+- **Documentos adjuntos** (la póliza, un recibo…): hasta 8 por pago, PDF o imagen (JPG, PNG, WebP) de hasta 15 MB. Se comprueba el contenido real del archivo, se sirven con `nosniff` y `sandbox`, viven en `.kcc/pagos/adjuntos/<pago>/` y al quitarlos o borrar el pago se apartan 30 días en `.kcc/borrados/pagos-adjuntos/`. Logros *Papeles en regla* y *Año redondo*, un reto y el título *Papeles en regla*. Código en `lib/pagos/adjuntos.js` y `public/js/pagos/{grafico,adjuntos}.js`.
 - Borrar aparta el pago 30 días en `.kcc/borrados/pagos/`. Si otro dispositivo lo cambió antes, el guardado devuelve 409 y no lo pisa.
 - Exportación: entra en el botón ⤓ y en el ZIP de administración. Logros: familias `pg_*`.
 
@@ -1139,6 +1144,8 @@ imagen, `+` y `-` hacen zoom y `0` lo restablece. Está en `public/js/zoom.js`.
 
 ## Móvil: desplazamiento y tamaños táctiles
 
+**Deslizar para eliminar**: en pantallas táctiles, arrastra una fila hacia la izquierda más allá del umbral (se tiñe de rojo) y suéltala para eliminarla, con la misma confirmación y la misma copia de 30 días que el botón de siempre. Está en Pagos, Recordatorios, Marcadores web, Prompts (van a la papelera) y filas de Bases; no está donde borrar es definitivo (contactos, archivos con selección). El ratón no lo usa. Código en `public/js/deslizar.js` (`K.deslizar(elemento, { alBorrar })`).
+
 Las ventanas altas (como el detalle de un prompt) se desplazan con el dedo y llevan un botón de
 cerrar fijo arriba. La barra inferior usa iconos de 26 px y botones de al menos 78×60 px, se
 desliza hacia los lados y centra sola la pestaña activa; el resto de botones tiene una zona táctil
@@ -1157,14 +1164,15 @@ Editor estilo Notion sobre las mismas carpetas y el mismo autoguardado de siempr
   Tab), citas, código, avisos de colores y separadores. Escribe **`/`** para insertar, o usa
   atajos de Markdown (`# `, `- `, `1. `, `[] `, `> `, tres comillas invertidas, `---`).
 - **Bloques ricos** (también con **`/`**), cada uno con su sintaxis en el `.md`, legible a mano:
-  - **Desplegable** (`:::toggle Título` … `:::`) y **Columnas** de 2 a 4 (`:::columns` … `:::col` … `:::`).
+  - **Desplegable** (`:::toggle Título` … `:::`) y **Columnas** de 2 a 4 (`:::columns` … `:::col` … `:::`). Cada columna admite **bloques dentro**: párrafos, listas, listas numeradas, tareas e imágenes (botones bajo cada columna; Enter crea el siguiente elemento y Enter en uno vacío sale de la lista). En el `.md` son líneas normales separadas por una línea en blanco (`- uno`, `1. uno`, `- [ ] tarea`, `![](kcc:file/…)`), así que se leen a mano. Código en `public/js/notes/ricos-columnas.js`.
   - **Índice** automático (`::toc`): lista los títulos de la nota y se actualiza solo; pulsar uno lleva a él.
   - **Ecuación** LaTeX (`$$` … `$$`) con KaTeX, **Diagrama** Mermaid (un bloque de código ```` ```mermaid ````; la vista sale debajo). Ambas librerías están en `public/vendor/` y solo se cargan si la nota las usa.
   - **Incrustar** (`::embed <referencia> [pie]`): vídeo de YouTube (por `youtube-nocookie.com`, el único dominio externo que permite la política de seguridad para marcos), mapa con el Leaflet de la app (`geo:lat,lon,zoom`, sin salir de tu servidor) y PDF de tu nube.
-  - **Base de datos** (`::base <id>`): tabla de lectura con las primeras filas de una de tus bases y botón «Abrir».
+  - **Base de datos** (`::base <id> [<vista>]`): una de tus bases dentro de la nota, de solo lectura, con **la vista que elijas** en el selector del bloque (tabla, tablero, galería, calendario o línea de tiempo, con los filtros, el orden y las columnas ocultas de esa vista) y botón «Abrir». Sin vista, la primera.
   - **Bloque sincronizado** (`::sync <id>`): el mismo texto en varias notas; al editarlo en una cambia en todas. El texto vive en `<raíz>/.kcc/sincronizados/data.json` (`lib/sincronizados/`, API `/api/sincronizados`), con aviso si otro dispositivo lo cambió, papelera de 30 días y «Desvincular» para dejarlo como texto normal. Entra en la exportación de Notas.
   - **Botón de plantilla** (`::boton nota:<id> Etiqueta` o `::boton fila:<base>:<plantilla> Etiqueta`): un botón dentro de la nota que crea una nota nueva desde una plantilla de nota o una fila nueva desde una plantilla de fila de una base, y la abre. Se inserta con `/` → *Botón*. Código en `public/js/notes/ricos-boton.js`; las plantillas de nota entran en la exportación de Notas y al borrarlas queda copia 30 días.
   - Logros de plantillas: *Molde*, *Producción en serie*, *Botonero* y *Moldes de nota*, un reto semanal y el título *Plantillero*.
+  - Logros de anidado y vistas: *Muñecas rusas* y *Mirador*, y el título *Muñeca rusa*.
   - Logros: familias *Maquetador*, *Académico*, *Mundo en una nota*, *Doble vida* y *Fuente única*, el especial *Maestro de bloques*, un reto semanal, el título *Arquitecto de notas* y la copa del Cronista. Los bloques se cuentan al guardar la nota (`lib/notas-bloques.js`).
 - **Formato en móvil y táctil**: al seleccionar texto aparece la barra de formato (botones de 44 px, debajo de la selección para no chocar con el menú nativo) con negrita, cursiva, tachado, código, resaltado, enlace, Título 1-3, viñetas y tareas. Sin selección, escribe `/` para insertar bloques.
 - **Formato**: negrita, cursiva, tachado, resaltado, código y enlaces (barra flotante al
@@ -1278,6 +1286,15 @@ archivos, en **Compartido conmigo**.
   usuario, desaparece. En **Cuenta → Compartir con usuarios** ves lo que compartes y lo que
   comparten contigo, y puedes cambiarlo o quitarlo.
 - Los favoritos y los álbumes no admiten elementos de carpetas compartidas.
+
+## Enlaces públicos cortos y código QR
+
+Menú de un archivo, carpeta o álbum → *Compartir enlace*. La dirección es corta y sin carpetas intermedias: `https://tu-dominio/cloud/k3x9tq7mw2ab` (12 caracteres de letras y números al azar, con al menos una letra y un número; los enlaces antiguos `/s/<id>` siguen funcionando).
+
+- **Caducidad configurable**: 1 hora, 1 día, 7, 30, 90 días, 1 año, **«Otro plazo…»** (días u horas) o **sin caducidad**. Desde *Administración → Enlaces* puedes cambiarla después (botón del reloj; `0` = sin caducidad) o revocar el enlace. Tope de 10 años.
+- **Código QR**: botón *Código QR* al crear el enlace y en la lista de enlaces; se genera en el navegador (librería `qrcode-generator`, en `public/vendor/qrcode/`) y se **descarga como imagen PNG** (`qr-<id>.png`, 370 px con margen), o copias el enlace desde la misma ventana.
+- Los datos siguen en `uploadlinks.json`; `PUT /api/sharelinks/<id>/caducidad` cambia el plazo y `POST /api/sharelinks/<id>/qr` anota la descarga del QR (para los logros). La ruta `/<12 caracteres>` solo responde si existe ese enlace; si no, la app sigue como siempre. Funciona detrás de Nginx sin tocar nada, porque `/cloud/` ya va entero a la app.
+- Logros *Escaneable* (QR descargados) y *Cuenta atrás* (enlaces con caducidad), un reto semanal y el título *Escaneable*. Código en `lib/enlaces.js`, `lib/enlaces-resumen.js` y `public/js/app/qr-enlace.js`.
 
 ## Actualizaciones
 
@@ -1724,7 +1741,7 @@ lib/
   store.js           Escritura atómica de JSON con cola por archivo
   events.js          Avisos en directo (Server-Sent Events)
   labels.js          Etiquetas de color compartidas entre módulos
-  pagos/             Pagos y recordatorios (modelo, fechas, valores, resumen, rutas)
+  pagos/             Pagos y recordatorios (modelo, fechas, valores, resumen, rutas, `adjuntos.js` con las pólizas)
   sincronizados/     Bloques sincronizados de las notas (modelo, resumen, rutas); notas-bloques.js cuenta los bloques ricos
   marcadores/        Marcadores web (modelo, favicon, red con defensa SSRF, resumen, rutas)
   recordatorios/     Recordatorios (modelo, cuándo avisa cada uno, migración desde el calendario, resumen, rutas)
@@ -1753,7 +1770,8 @@ lib/
   fotos.js           EXIF, mapa e índice de fotos (fábrica createFotos)
   office.js          Visor de Office (PDF con LibreOffice) y de hojas de cálculo (fábrica createOffice)
   cuentas.js         Login y 2FA, usuarios, sesiones abiertas y tokens de app (fábrica createCuentas)
-  enlaces.js         Enlaces públicos: descarga (archivo, carpeta, álbum), subida y prompts (fábrica createEnlaces)
+  enlaces.js         Enlaces públicos: descarga (archivo, carpeta, álbum), subida y prompts, URL corta `/cloud/<12>`, caducidad y QR (fábrica createEnlaces)
+  enlaces-resumen.js Contadores de enlaces para los logros (QR, con caducidad, perpetuos)
   notes-imagenes/    Imágenes de las notas (cliente): optimizar, subir, insertar, ventana de elección y botón de la barra
   notes/             Editor de bloques de las notas (cliente): inline, parser, bloques, tablas, visor, modelo, seleccion,
                      eventos, slash, ricos (marco de los bloques ricos) y ricos-boton/estructura/indice/ecuacion/diagrama/
@@ -1765,7 +1783,7 @@ lib/
   prompts/           Biblioteca de prompts (cliente): estado, datos, estructura, lateral, gestion, filtros,
                      tarjetas, seleccion, copiar, ficha, editor, importar, registro (comparten K._prompts)
   games/            Videojuegos (cliente): estado, vista, anadir, ficha, estadisticas, tarjetas, registro (K._games)
-  bases/             Bases: fórmulas, relaciones, resúmenes, plantillas de fila (`plantillas-filas.js`) y 5 tipos de vista (un JSON por base)
+  bases/             Bases: fórmulas, relaciones, resúmenes, plantillas de fila (`plantillas-filas.js`) y 5 tipos de vista (un JSON por base); `doble.js` (relaciones de doble sentido) y `orden-filas.js` (reordenar a mano)
   codigo/            Proyectos de código (servidor): constantes, base, proyectos, archivos, versiones, vista, transferencia, vinculos
   transferir.js      Copiar o mover entre Archivos y Código, con deshacer de 1 minuto e historial
   exportar.js        Exportación de JSON por sección y ZIP completo (administración)
@@ -1794,6 +1812,10 @@ public/
   tests/ui/          Pruebas de interfaz con Playwright (no van en npm test) y sus huellas de referencia
   js/copias.js       Tarjeta de Administración: estado, crear copia, descargar y registro de intentos
   js/valores*.js     Valores reutilizables: normalización compartida con el servidor, campos con sugerencias, chips que filtran y pantalla de revisión
+  js/bases/tabla-totales.js, tabla-orden.js  Agrupar, fila de totales y arrastrar filas en la tabla de Bases
+  js/notes/ricos-columnas.js, ricos-base-vistas.js  Columnas con bloques dentro y vistas de una base en una nota
+  js/deslizar.js     Gesto «deslizar para eliminar» (K.deslizar) · js/app/qr-enlace.js  QR descargable y cambio de caducidad · vendor/qrcode/  librería del QR
+  js/pagos/grafico.js, adjuntos.js  Gráfico anual y documentos adjuntos de Pagos
   js/pagos/, js/marcadores/, js/recordatorios/, js/push/, js/sonidos/  Clientes de los módulos nuevos, un archivo por responsabilidad (datos, lista, formulario, ajustes…)
   js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, recordatorios vinculados, portapapeles, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
   css/               Estilos: modules (barra lateral y componentes), calendar, prompts, sistema (versiones, caja fuerte,

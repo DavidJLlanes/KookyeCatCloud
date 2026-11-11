@@ -23,11 +23,25 @@ function openShare(item) {
   $('share-label').value = item.name;
   $('share-pass').value = '';
   $('share-days').value = '30';
+  hide('share-custom');
   show('share-form');
   hide('share-result');
   show('btn-create-share');
   show('share-modal');
 }
+
+// URL pública: las nuevas son cortas (…/cloud/k3x9tq7mw2ab); las antiguas (32 caracteres) siguen en /s/
+const urlCorta = (id) => `${location.origin}${BASE}/${id.length === 12 ? '' : 's/'}${id}`;
+function diasElegidos() {
+  const v = $('share-days').value;
+  if (v !== 'custom') return Number(v);
+  return Math.max(0, Number($('share-custom-n').value) || 0) * Number($('share-custom-u').value);
+}
+document.addEventListener('change', (e) => { if (e.target && e.target.id === 'share-days') $('share-custom').hidden = e.target.value !== 'custom'; });
+document.addEventListener('click', (e) => {
+  const b = e.target && e.target.closest && e.target.closest('#btn-qr-share');
+  if (b && state.ultimoEnlace) K.qrEnlace(state.ultimoEnlace.url, state.ultimoEnlace.id, state.ultimoEnlace.label);
+});
 
 async function crearCompartir() {
   const item = state.compartiendo;
@@ -37,12 +51,13 @@ async function crearCompartir() {
       path: item.rel,
       album: item.album || undefined,
       label: $('share-label').value.trim() || item.name,
-      days: Number($('share-days').value),
+      days: diasElegidos(),
       password: $('share-pass').value || undefined,
     });
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'No se pudo crear'); return; }
-    const url = `${location.origin}${BASE}/s/${data.link.id}`;
+    const url = urlCorta(data.link.id);
+    state.ultimoEnlace = { url, id: data.link.id, label: data.link.label };
     $('share-url').textContent = url;
     hide('share-form');
     hide('btn-create-share');

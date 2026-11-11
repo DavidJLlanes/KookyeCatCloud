@@ -47,6 +47,7 @@
     if (!r.hecho) { const p = accion('i-clock', 'Posponer', () => menuPosponer(r, p)); acc.appendChild(p); }
     acc.appendChild(accion('i-pencil', 'Editar', () => { if (opciones.antesDeAbrir) opciones.antesDeAbrir(); R.editor(r); }));
     f.appendChild(acc);
+    if (K.deslizar) K.deslizar(f, { alBorrar: () => R.elimina(r) });
     return f;
   };
 })();
