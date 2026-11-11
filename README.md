@@ -1164,6 +1164,8 @@ y se restauran con su rama entera; caducan a los mismos `TRASH_TTL_DAYS` que los
 `NOTES_LIMIT` (5000) topa el número de elementos y `NOTE_MAX_CHARS` (500 000) el tamaño de una
 nota. Las rutas de notas, prompts y calendario aceptan hasta 2 MB de cuerpo (30 MB la
 importación de prompts), frente a los 100 kB del resto de la API.
+Al pulsar una imagen de una nota se abre en el visor de la app (`KZoom.lightbox`, con todas las
+imágenes de la nota para pasar de una a otra; `public/js/notes/visor.js`), no en una pestaña nueva.
 
 
 ![Editor de notas con la lista a la izquierda](docs/capturas/notas.png)
@@ -1717,7 +1719,7 @@ lib/
   office.js          Visor de Office (PDF con LibreOffice) y de hojas de cálculo (fábrica createOffice)
   cuentas.js         Login y 2FA, usuarios, sesiones abiertas y tokens de app (fábrica createCuentas)
   enlaces.js         Enlaces públicos: descarga (archivo, carpeta, álbum), subida y prompts (fábrica createEnlaces)
-  notes/             Editor de bloques de las notas (cliente): inline, parser, bloques, tablas, modelo, seleccion,
+  notes/             Editor de bloques de las notas (cliente): inline, parser, bloques, tablas, visor, modelo, seleccion,
                      eventos, slash, menciones, barra, montaje, propiedades, registro (comparten K._notes)
   calendar/          Calendario (cliente): estado, datos, estructura, lateral, mes, semana, agenda, evento,
                      avisos, registro (comparten K._calendar)

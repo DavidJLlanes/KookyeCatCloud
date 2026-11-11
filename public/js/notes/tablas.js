@@ -7,6 +7,7 @@
   const focusBlock = (...a) => C.focusBlock(...a);
   const inlineHtml = (...a) => C.inlineHtml(...a);
   const makeBlock = (...a) => C.makeBlock(...a);
+  const abreImagen = (...a) => C.abreImagen(...a);
 
   /* ---------- Tablas e imágenes ---------- */
   function construyeTabla(rows) {
@@ -98,7 +99,7 @@
     const img = document.createElement('img'); img.alt = ''; img.loading = 'lazy';
     img.src = BASE + '/api/preview?path=' + encodeURIComponent(ruta);
     img.addEventListener('error', () => { fig.classList.add('rota'); fig.title = 'No se encuentra: ' + ruta; });
-    img.addEventListener('click', () => window.open(img.src, '_blank', 'noopener'));
+    img.addEventListener('click', () => abreImagen(img));
     const del = document.createElement('button'); del.type = 'button'; del.className = 'nb-img-del'; del.title = 'Quitar la imagen'; del.textContent = '×';
     fig.append(img, del); mk.appendChild(fig);
   }
