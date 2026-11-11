@@ -11,52 +11,54 @@ const TIPOS = [
   { id: 'video', nombre: 'Vídeos',     color: '#d95926' },
   { id: 'audio', nombre: 'Audio',      color: '#199e70' },
   { id: 'doc',   nombre: 'Documentos', color: '#c98500' },
-  { id: 'other', nombre: 'Otros',      color: '#d55181' },
-  // Datos de la propia app (carpetas ocultas de cada usuario)
-  { id: 'trash',    nombre: 'Papelera',             color: '#64748b', app: true },
-  { id: 'notes',    nombre: 'Notas',                color: '#e0c341', app: true },
-  { id: 'prompts',  nombre: 'Prompts',              color: '#8b5cf6', app: true },
-  { id: 'contacts', nombre: 'Contactos',            color: '#22d3ee', app: true },
-  { id: 'versions', nombre: 'Versiones',            color: '#a16207', app: true },
-  { id: 'vault',    nombre: 'Caja fuerte',          color: '#ef4444', app: true },
-  { id: 'datos',    nombre: 'Calendario y ajustes', color: '#94a3b8', app: true },
+  { id: 'other', nombre: 'Otros archivos', color: '#d55181' },
 ];
+// Datos de la propia app (carpetas ocultas de cada usuario), un color por módulo
+const TIPOS_APP = [
+  { id: 'trash',    color: '#64748b' }, { id: 'notes',    color: '#e0c341' }, { id: 'prompts',  color: '#8b5cf6' },
+  { id: 'contacts', color: '#22d3ee' }, { id: 'codigo',   color: '#34d399' }, { id: 'bases',    color: '#f97316' },
+  { id: 'pagos',    color: '#f472b6' }, { id: 'marcadores', color: '#60a5fa' }, { id: 'albums', color: '#a3e635' },
+  { id: 'perfil',   color: '#fb7185' }, { id: 'juegos',   color: '#c084fc' }, { id: 'transfer', color: '#2dd4bf' },
+  { id: 'versions', color: '#a16207' }, { id: 'clip',     color: '#fbbf24' }, { id: 'vault',    color: '#ef4444' },
+  { id: 'calendar', color: '#38bdf8' }, { id: 'datos',    color: '#94a3b8' },
+];
+const COLOR_APP = Object.fromEntries(TIPOS_APP.map(t => [t.id, t.color]));
 
-function renderByType(byType, total) {
-  const caja = $('bytype');
-  if (!byType || !total) { caja.hidden = true; return; }
-  const datos = TIPOS.map(t => ({ ...t, ...(byType[t.id] || { bytes: 0, count: 0 }) }))
-                     .filter(t => t.bytes > 0);
-  if (!datos.length) { caja.hidden = true; return; }
+function pctTxt(pct) { return pct > 0 && pct < 1 ? '<1%' : Math.round(pct) + '%'; }
 
-  const barra = $('bt-bar');
-  const leyenda = $('bt-legend');
-  barra.textContent = '';
-  leyenda.textContent = '';
-
+// Una barra apilada + leyenda en forma de tabla (valor exacto sin depender del color)
+function grupoReparto(titulo, datos) {
+  const sub = datos.reduce((n, d) => n + d.bytes, 0), cuenta = datos.reduce((n, d) => n + d.count, 0);
+  const g = el('div', 'bt-grupo');
+  const cab = el('div', 'bt-cab'); cab.appendChild(el('h4', null, titulo));
+  const tot = el('div', 'tot', fmtSize(sub)); tot.appendChild(el('span', null, ` · ${cuenta} archivo${cuenta === 1 ? '' : 's'}`)); cab.appendChild(tot);
+  g.appendChild(cab);
+  const barra = el('div', 'bt-bar'); barra.setAttribute('role', 'img'); barra.setAttribute('aria-label', titulo);
+  const leyenda = el('div', 'bt-legend');
   for (const t of datos) {
-    const pct = (t.bytes / total) * 100;
-    const seg = el('div', 'bt-seg');
-    seg.style.background = t.color;
-    seg.style.flex = `${t.bytes} 0 0`;
-    seg.tabIndex = 0;
-    const texto = `${t.nombre}: ${fmtSize(t.bytes)} · ${pct.toFixed(1)}% · ${t.count} archivo${t.count === 1 ? '' : 's'}`;
-    seg.setAttribute('aria-label', texto);
-    seg.addEventListener('mouseenter', e => mostrarTip(e, t, pct));
-    seg.addEventListener('mousemove', moverTip);
-    seg.addEventListener('mouseleave', ocultarTip);
+    const pct = (t.bytes / sub) * 100;
+    const seg = el('div', 'bt-seg'); seg.style.background = t.color; seg.style.flex = `${t.bytes} 0 0`; seg.tabIndex = 0;
+    seg.setAttribute('aria-label', `${t.nombre}: ${fmtSize(t.bytes)} · ${pct.toFixed(1)}% · ${t.count} archivo${t.count === 1 ? '' : 's'}`);
+    seg.addEventListener('mouseenter', e => mostrarTip(e, t, pct)); seg.addEventListener('mousemove', moverTip); seg.addEventListener('mouseleave', ocultarTip);
     barra.appendChild(seg);
-
-    // La leyenda hace de tabla: cada categoría con su valor exacto, sin depender del color
-    const item = el('div', 'bt-item');
-    const dot = el('span', 'bt-dot');
-    dot.style.background = t.color;
-    item.appendChild(dot);
-    item.appendChild(el('span', 'lbl', t.nombre));
-    item.appendChild(el('span', 'val', fmtSize(t.bytes)));
-    item.appendChild(el('span', 'pc', pct.toFixed(0) + '%'));
+    const item = el('div', 'bt-item'); item.title = t.nombre;
+    const dot = el('span', 'bt-dot'); dot.style.background = t.color; item.appendChild(dot);
+    item.appendChild(el('span', 'lbl', t.nombre)); item.appendChild(el('span', 'val', fmtSize(t.bytes))); item.appendChild(el('span', 'pc', pctTxt(pct)));
     leyenda.appendChild(item);
   }
+  g.appendChild(barra); g.appendChild(leyenda);
+  return g;
+}
+
+// byType: tipos de archivo; app: datos de la app [{id, nombre, bytes, count}]
+function renderByType(byType, app) {
+  const caja = $('bytype');
+  const archivos = TIPOS.map(t => ({ ...t, ...(byType && byType[t.id] || { bytes: 0, count: 0 }) })).filter(t => t.bytes > 0).sort((a, b) => b.bytes - a.bytes);
+  const datos = (app || []).filter(d => d.bytes > 0).map(d => ({ ...d, color: COLOR_APP[d.id] || '#94a3b8' })).sort((a, b) => b.bytes - a.bytes);
+  caja.textContent = '';
+  if (!archivos.length && !datos.length) { caja.hidden = true; return; }
+  if (archivos.length) caja.appendChild(grupoReparto('Tus archivos', archivos));
+  if (datos.length) caja.appendChild(grupoReparto('Datos de la app', datos));
   caja.hidden = false;
 }
 
@@ -177,7 +179,7 @@ async function loadAdmin() {
       $('stat-free').textContent = 'n/d';
       hide('usage-wrap');
     }
-    renderByType({ ...s.byType, ...Object.fromEntries((s.app || []).map(d => [d.id, { bytes: d.bytes, count: d.count }])) }, s.totalBytes);
+    renderByType(s.byType, s.app);
   } catch {}
 
   loadLinks();

@@ -1537,11 +1537,26 @@ const DATOS_APP = [
   { id: 'notes',    nombre: 'Notas' },
   { id: 'prompts',  nombre: 'Prompts' },
   { id: 'contacts', nombre: 'Contactos' },
+  { id: 'codigo',   nombre: 'Código' },
+  { id: 'bases',    nombre: 'Bases' },
+  { id: 'pagos',    nombre: 'Pagos' },
+  { id: 'marcadores', nombre: 'Marcadores' },
+  { id: 'albums',   nombre: 'Álbumes' },
+  { id: 'perfil',   nombre: 'Foto de perfil' },
+  { id: 'juegos',   nombre: 'Juegos y logros' },
+  { id: 'transfer', nombre: 'Transferencias' },
   { id: 'versions', nombre: 'Versiones' },
   { id: 'clip',     nombre: 'Portapapeles' },
   { id: 'vault',    nombre: 'Caja fuerte' },
-  { id: 'datos',    nombre: 'Calendario y ajustes' },
+  { id: 'calendar', nombre: 'Calendario' },
+  { id: 'datos',    nombre: 'Ajustes y otros' },
 ];
+// Carpeta o archivo dentro de .kcc -> categoría (lo no listado cae en «Ajustes y otros»)
+const KCC_A_DATOS = {
+  prompts: 'prompts', 'contacts.json': 'contacts', 'contact-photos': 'contacts', codigo: 'codigo', bases: 'bases',
+  pagos: 'pagos', marcadores: 'marcadores', perfil: 'perfil', games: 'juegos', 'game.json': 'juegos', 'game.json.bak': 'juegos',
+  transferencias: 'transfer', versions: 'versions', clip: 'clip', 'calendar.json': 'calendar', 'calendar.json.bak': 'calendar',
+};
 async function tamanoTodo(p) {
   let bytes = 0, count = 0, st;
   try { st = await fsp.lstat(p); } catch { return { bytes, count }; }
@@ -1565,14 +1580,11 @@ async function datosApp(user) {
     if (e.name === TRASH_DIR) await suma('trash', ruta);
     else if (e.name === NOTES_DIR) await suma('notes', ruta);
     else if (e.name === '.vault') await suma('vault', ruta);
+    else if (e.name === '.albums') await suma('albums', ruta);
     else if (e.name === '.kcc' && e.isDirectory()) {
       for (const h of await fsp.readdir(ruta, { withFileTypes: true }).catch(() => [])) {
         const hp = path.join(ruta, h.name);
-        if (h.name === 'prompts') await suma('prompts', hp);
-        else if (h.name === 'contacts.json' || h.name === 'contact-photos') await suma('contacts', hp);
-        else if (h.name === 'versions') await suma('versions', hp);
-        else if (h.name === 'clip') await suma('clip', hp);
-        else await suma('datos', hp);
+        await suma(KCC_A_DATOS[h.name] || 'datos', hp);
       }
     } else await suma('datos', ruta);
   }
