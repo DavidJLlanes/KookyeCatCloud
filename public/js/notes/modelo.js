@@ -28,6 +28,7 @@
   function readBlock(w) {
     const t = w.dataset.t, c = w.querySelector('.nb-c');
     const b = { t, i: +w.dataset.i || 0 };
+    if (C.RICOS[t]) return C.RICOS[t].lee(w, b);
     if (t === 'table') {
       b.rows = [...w.querySelectorAll('tr')].map(tr => [...tr.children].map(td => inlineMd(td).replace(/\|/g, '\\|').replace(/^(<br>)+|(<br>)+$/g, '')));
       return b;
@@ -69,6 +70,7 @@
     clearTimeout(EST.histTimer);
     EST.histTimer = setTimeout(snapshot, structural ? 80 : 700);
     renumber();
+    if (C.ricosRefresca) C.ricosRefresca();
   }
   function snapshot() {
     const md = serialize();

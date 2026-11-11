@@ -110,7 +110,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 ### Novedades
 
-- **11 nov 2026** · **Bases más potentes**: vistas de calendario, galería y línea de tiempo, fórmulas, relaciones entre bases y resúmenes, columnas de correo, teléfono y archivo, cambio de tipo de columna y varios filtros y órdenes por vista · nueva sección **Recordatorios** (con su propio JSON, creables desde notas, contactos, archivos, prompts y marcadores, calendario opcional y avisos push para todos los navegadores) · subida de imágenes optimizada en Notas para PC, Android e iPhone y visor de imágenes en la propia app · tarjetas de Compra arregladas en escritorio · nuevos logros y trofeos (Calculista, Tejedor de datos, Todas las perspectivas, Memoria de elefante…) · dos auditorías de errores y seguridad: `npm audit` a 0, rutas de archivo y claves especiales sin errores 500, importación de bases grandes · código de Bases y Notas troceado en carpetas.
+- **11 nov 2026** · **Notas con más bloques**: desplegables, columnas, índice automático, ecuaciones LaTeX, diagramas Mermaid, incrustados (YouTube, mapas, PDF), una base dentro de la nota y bloques sincronizados entre notas · **Recordatorios que se repiten** (diario, semanal, mensual, «el primer lunes», anual) con botones «Hecho» y «Posponer» en el aviso · **Bases más potentes**: vistas de calendario, galería y línea de tiempo, fórmulas, relaciones entre bases y resúmenes, columnas de correo, teléfono y archivo, cambio de tipo de columna y varios filtros y órdenes por vista · nueva sección **Recordatorios** (con su propio JSON, creables desde notas, contactos, archivos, prompts y marcadores, calendario opcional y avisos push para todos los navegadores) · subida de imágenes optimizada en Notas para PC, Android e iPhone y visor de imágenes en la propia app · tarjetas de Compra arregladas en escritorio · nuevos logros y trofeos (Calculista, Tejedor de datos, Todas las perspectivas, Memoria de elefante…) · dos auditorías de errores y seguridad: `npm audit` a 0, rutas de archivo y claves especiales sin errores 500, importación de bases grandes · código de Bases y Notas troceado en carpetas.
 - **9 nov 2026** · Avisos push (pagos, calendario y contactos) con ajustes por sección, horas y horario de silencio · Pagos · Marcadores web con favicon automático · Sonidos suaves · Foto de perfil con recorte cuadrado (WebP 300 × 300) · contraseñas de 8 a 72 caracteres, HSTS y errores sin rutas del servidor · recorrido de seguridad documentado en [`docs/auditoria-errores.md`](docs/auditoria-errores.md) (siete auditorías) · pruebas por módulo en `tests/modulos/` (98 pruebas de humo).
 - **4 nov 2026** · Persistencia a prueba de fallos: lectura que distingue «no existe» de «ilegible», copias `.bak`, escritura atómica y borrados con copia de 30 días.
 
@@ -400,7 +400,7 @@ Pestaña **Mapa** con las fotos que guardan coordenadas, sobre Leaflet + OpenStr
 
 Leaflet va **alojado aquí** (`public/vendor/leaflet/`, 185 KB): ningún CDN. Lo único que sale
 fuera son los tiles del mapa, y por eso `img-src` de la CSP incluye el servidor de tiles —es la
-única excepción de toda la aplicación. Se cambia de proveedor con `TILE_URL` y `TILE_ATTR`, y el
+única excepción de imágenes de toda la aplicación (la otra es `frame-src`: `youtube-nocookie.com`, solo para los vídeos incrustados en Notas). Se cambia de proveedor con `TILE_URL` y `TILE_ATTR`, y el
 permiso de la CSP se deriva solo de esa URL.
 
 Los puntos cercanos se agrupan en círculos con el número de fotos; al acercar se separan. La
@@ -1155,6 +1155,14 @@ Editor estilo Notion sobre las mismas carpetas y el mismo autoguardado de siempr
 - **Bloques**: texto, títulos 1-3, listas con viñetas, numeradas y de tareas (anidables con
   Tab), citas, código, avisos de colores y separadores. Escribe **`/`** para insertar, o usa
   atajos de Markdown (`# `, `- `, `1. `, `[] `, `> `, tres comillas invertidas, `---`).
+- **Bloques ricos** (también con **`/`**), cada uno con su sintaxis en el `.md`, legible a mano:
+  - **Desplegable** (`:::toggle Título` … `:::`) y **Columnas** de 2 a 4 (`:::columns` … `:::col` … `:::`).
+  - **Índice** automático (`::toc`): lista los títulos de la nota y se actualiza solo; pulsar uno lleva a él.
+  - **Ecuación** LaTeX (`$$` … `$$`) con KaTeX, **Diagrama** Mermaid (un bloque de código ```` ```mermaid ````; la vista sale debajo). Ambas librerías están en `public/vendor/` y solo se cargan si la nota las usa.
+  - **Incrustar** (`::embed <referencia> [pie]`): vídeo de YouTube (por `youtube-nocookie.com`, el único dominio externo que permite la política de seguridad para marcos), mapa con el Leaflet de la app (`geo:lat,lon,zoom`, sin salir de tu servidor) y PDF de tu nube.
+  - **Base de datos** (`::base <id>`): tabla de lectura con las primeras filas de una de tus bases y botón «Abrir».
+  - **Bloque sincronizado** (`::sync <id>`): el mismo texto en varias notas; al editarlo en una cambia en todas. El texto vive en `<raíz>/.kcc/sincronizados/data.json` (`lib/sincronizados/`, API `/api/sincronizados`), con aviso si otro dispositivo lo cambió, papelera de 30 días y «Desvincular» para dejarlo como texto normal. Entra en la exportación de Notas.
+  - Logros: familias *Maquetador*, *Académico*, *Mundo en una nota*, *Doble vida* y *Fuente única*, el especial *Maestro de bloques*, un reto semanal, el título *Arquitecto de notas* y la copa del Cronista. Los bloques se cuentan al guardar la nota (`lib/notas-bloques.js`).
 - **Formato en móvil y táctil**: al seleccionar texto aparece la barra de formato (botones de 44 px, debajo de la selección para no chocar con el menú nativo) con negrita, cursiva, tachado, código, resaltado, enlace, Título 1-3, viñetas y tareas. Sin selección, escribe `/` para insertar bloques.
 - **Formato**: negrita, cursiva, tachado, resaltado, código y enlaces (barra flotante al
   seleccionar, o Ctrl+B / I / E / K). Arrastra el asa ⠿ para reordenar bloques.
@@ -1714,6 +1722,7 @@ lib/
   events.js          Avisos en directo (Server-Sent Events)
   labels.js          Etiquetas de color compartidas entre módulos
   pagos/             Pagos y recordatorios (modelo, fechas, valores, resumen, rutas)
+  sincronizados/     Bloques sincronizados de las notas (modelo, resumen, rutas); notas-bloques.js cuenta los bloques ricos
   marcadores/        Marcadores web (modelo, favicon, red con defensa SSRF, resumen, rutas)
   recordatorios/     Recordatorios (modelo, cuándo avisa cada uno, migración desde el calendario, resumen, rutas)
   perfil/            Foto y nombre visible del perfil (procesado de imagen y rutas)
@@ -1744,7 +1753,8 @@ lib/
   enlaces.js         Enlaces públicos: descarga (archivo, carpeta, álbum), subida y prompts (fábrica createEnlaces)
   notes-imagenes/    Imágenes de las notas (cliente): optimizar, subir, insertar, ventana de elección y botón de la barra
   notes/             Editor de bloques de las notas (cliente): inline, parser, bloques, tablas, visor, modelo, seleccion,
-                     eventos, slash, menciones, barra, montaje, propiedades, registro (comparten K._notes)
+                     eventos, slash, ricos (marco de los bloques ricos) y ricos-estructura/indice/ecuacion/diagrama/
+                     incrustado/base/sincronizado, menciones, barra, montaje, propiedades, registro (comparten K._notes)
   calendar/          Calendario (cliente): estado, datos, estructura, lateral, mes, semana, agenda, evento,
                      avisos, registro (comparten K._calendar)
   ical.js            Feed iCal (RFC 5545) de solo lectura

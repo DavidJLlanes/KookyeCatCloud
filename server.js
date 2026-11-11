@@ -55,6 +55,8 @@ const createGames = require('./lib/games');
 const createBases = require('./lib/bases');
 const createPagos = require('./lib/pagos');
 const createMarcadores = require('./lib/marcadores');
+const createSincronizados = require('./lib/sincronizados');
+const { resumenBloques } = require('./lib/notas-bloques');
 const createRecordatorios = require('./lib/recordatorios');
 const createPerfil = require('./lib/perfil');
 const createAnalisis = require('./lib/analisis');
@@ -235,7 +237,8 @@ const transferMod = createTransferir({ express, userRoot, resuelve: (user, r, wr
     get bases() { return basesMod.core; },
     get juegos() { return gamesMod.core; },
   } });
-const modulosConLogros = [gamesMod, basesMod, codigoMod, transferMod, valoresMod, pagosMod, marcadoresMod, recordatoriosMod, perfilMod, pushMod];
+const sincronizadosMod = createSincronizados({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido });
+const modulosConLogros = [sincronizadosMod, gamesMod, basesMod, codigoMod, transferMod, valoresMod, pagosMod, marcadoresMod, recordatoriosMod, perfilMod, pushMod];
 
 // Versiones de archivos de texto (se crea aquí porque WebDAV y las rutas de archivos la usan)
 const versionsMod = createVersions({
@@ -333,6 +336,7 @@ async function contarContenido(user) {
     etiquetas: (etq.labels || []).length,
     prompts,
     enlaces: loadLinks().filter(l => l.owner === user.username).length,
+    ...resumenBloques(notas.items),
     ...extras, ...extrasApp,
   };
 }
@@ -574,6 +578,7 @@ app.use('/api/games', auth, gamesMod.router);
 app.use('/api/bases', auth, basesMod.router);
 app.use('/api/pagos', auth, pagosMod.router);
 app.use('/api/marcadores', auth, marcadoresMod.router);
+app.use('/api/sincronizados', auth, sincronizadosMod.router);
 app.use('/api/recordatorios', auth, recordatoriosMod.router);
 app.use('/api/perfil', auth, perfilMod.router);
 app.use('/api/push', auth, pushMod.router);

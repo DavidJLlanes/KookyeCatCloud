@@ -29,6 +29,7 @@
     EST.slashBlock = w;
     const norm = (x) => x.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
     const items = SLASH.filter(s => !q || norm(s[1]).includes(norm(q)) || norm(s[2]).includes(norm(q)) || s[0].toLowerCase().includes(q.toLowerCase()));
+    if (q) { const nq = norm(q); items.sort((x, y) => norm(y[1]).includes(nq) - norm(x[1]).includes(nq)); }     // primero los que llevan lo escrito en el nombre
     if (!items.length) { closeSlash(); return; }
     if (!EST.slash) {
       EST.slash = document.createElement('div'); EST.slash.className = 'k-pop nb-slash'; EST.slash.style.width = '280px';
@@ -85,6 +86,7 @@
       if (code === '@event') { K.calendar.newEvent({ date: new Date() }); return; }
       pickLink(w, code === '@prompt' ? 'prompt' : code === '@file' ? 'file' : 'note'); return;
     }
+    if (C.slashRico(code, w)) return;
     if (code === 'table' || code === 'image') {
       if (code === 'image') { if (NB.elegirImagen) NB.elegirImagen(w); return; }
       const vacio = !c.textContent.trim();

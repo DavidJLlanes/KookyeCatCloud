@@ -33,6 +33,7 @@
     else if (b.t === 'code') c.textContent = b.text;
     else if (b.t !== 'divider') c.innerHTML = inlineHtml(b.text || '');
     if (b.t === 'divider') { c.contentEditable = 'false'; c.appendChild(document.createElement('hr')); }
+    if (C.RICOS[b.t]) { c.contentEditable = 'false'; c.textContent = ''; C.RICOS[b.t].pinta(w, c, b); }
     w.append(grip, add, mk, c);
     decorate(w);
     return w;
@@ -51,6 +52,7 @@
     } else if (t === 'callout') { const k = CALLOUTS[w.dataset.k || 'NOTE']; mk.textContent = k[0]; w.style.setProperty('--c', k[2]); }
     else if (t === 'image') pintaImagen(w, mk);
     else if (t === 'table') pintaTools(mk);
+    if (C.ricoDecora) C.ricoDecora(w);
     c.dataset.ph = { image: 'Pie de foto (opcional)', p: 'Escribe “/” para ver los comandos', h1: 'Título 1', h2: 'Título 2', h3: 'Título 3', ul: 'Elemento de lista', ol: 'Elemento de lista', todo: 'Tarea', quote: 'Cita', callout: 'Escribe un aviso', code: 'Código' }[t] || '';
   }
 

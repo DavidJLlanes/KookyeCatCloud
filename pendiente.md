@@ -19,6 +19,7 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [ ] Cuota de almacenamiento por usuario con aviso y límite.
 
 ### Más adelante
+- [ ] Notas: probar los vídeos de YouTube incrustados en un navegador real con internet, bloques anidados (columnas con listas o imágenes dentro) y mostrar una vista concreta de una base.
 - [ ] Pagos: gráfico de gasto anual por compañía y adjuntar la póliza.
 - [ ] Avisos push: acciones en el propio aviso («Marcar como pagado», «Posponer»), avisos para Compras y Bases si hace falta, y probar en el móvil real (Android e iPhone instalado).
 - [ ] Recordatorios: probar los avisos y sus botones «Hecho/Posponer» en un móvil real (la repetición ya está hecha).

@@ -28,7 +28,7 @@
    "divider": 1
   },
   "slash": 1,
-  "slashItems": 21,
+  "slashItems": 29,
   "slashFiltrado": 1,
   "trasSlash": {
    "h1": 1,
@@ -74,7 +74,7 @@
   ],
   "finLen": 246,
   "celdas": 4,
-  "api": "clear,elegirImagen,flush,int,load,subeImagenes",
+  "api": "clear,elegirImagen,flush,imagenes,int,load,subeImagenes",
   "errores": []
  },
  "movil": {
@@ -106,7 +106,7 @@
    "divider": 1
   },
   "slash": 1,
-  "slashItems": 21,
+  "slashItems": 29,
   "slashFiltrado": 1,
   "trasSlash": {
    "h1": 1,
@@ -152,7 +152,7 @@
   ],
   "finLen": 246,
   "celdas": 4,
-  "api": "clear,elegirImagen,flush,int,load,subeImagenes",
+  "api": "clear,elegirImagen,flush,imagenes,int,load,subeImagenes",
   "errores": []
  }
 }

@@ -25,6 +25,7 @@
       if (cel) { cel.focus(); const r = document.createRange(); r.selectNodeContents(cel); r.collapse(!end); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
       return;
     }
+    if (C.RICOS[w.dataset.t]) { C.ricoFoco(w, end); return; }
     const c = contentOf(w); if (!c) return; c.focus();
     const r = document.createRange(); r.selectNodeContents(c); r.collapse(!end);
     const s = getSelection(); s.removeAllRanges(); s.addRange(r);

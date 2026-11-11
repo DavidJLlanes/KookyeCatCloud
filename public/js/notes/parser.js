@@ -32,6 +32,7 @@
         while (i < lines.length && !/^```\s*$/.test(lines[i])) buf.push(lines[i++]);
         i++; push('code', buf.join('\n'), { lang: m[1] || '' }); continue;
       }
+      { const rico = C.parseRico(lines, i); if (rico) { blocks.push({ i: 0, text: '', ...rico.b }); i = rico.next; continue; } }
       if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(ln) && !/^\s*[-*]\s+\S/.test(ln)) { push('divider', ''); i++; continue; }
       if ((m = /^(#{1,3})\s+(.*)$/.exec(ln))) { push('h' + m[1].length, m[2]); i++; continue; }
       if ((m = /^(\s*)[-*+]\s+\[( |x|X)\]\s?(.*)$/.exec(ln))) { push('todo', m[3], { i: Math.min(3, Math.floor(m[1].length / 2)), done: m[2] !== ' ' }); i++; continue; }
@@ -54,10 +55,10 @@
       if ((m = /^!\[([^\]]*)\]\((kcc:file\/[^)\s]+)\)\s*$/.exec(ln))) { push('image', m[1], { src: m[2] }); i++; continue; }
       if (/^&nbsp;\s*$/.test(ln)) { push('p', ''); i++; continue; }
       const buf = [];
-      while (i < lines.length && lines[i].trim() && !/^(#{1,3}\s|```|\s*[-*+]\s|\s*\d+[.)]\s|>)/.test(lines[i]) && !/^\s*([-*_])(\s*\1){2,}\s*$/.test(lines[i])
+      while (i < lines.length && lines[i].trim() && !/^(#{1,3}\s|```|\s*[-*+]\s|\s*\d+[.)]\s|>|:::|::[a-z]|\$\$)/.test(lines[i]) && !/^\s*([-*_])(\s*\1){2,}\s*$/.test(lines[i])
         && !/^!\[[^\]]*\]\(kcc:file\//.test(lines[i]) && !(/^\s*\|/.test(lines[i]) && SEP.test(lines[i + 1] || ''))) buf.push(lines[i++]);
       if (!buf.length) { buf.push(lines[i++]); }
-      push('p', buf.join('<br>').replace(/^\\(?=[#>\-*+\d`])/, ''));
+      push('p', buf.join('<br>').replace(/^\\(?=[#>\-*+\d`:$])/, ''));
     }
     if (!blocks.length) push('p', '');
     return blocks;
@@ -65,6 +66,7 @@
 
   function blockMd(b, n) {
     const ind = '  '.repeat(b.i || 0);
+    if (C.RICOS && C.RICOS[b.t]) return C.RICOS[b.t].md(b);
     if (b.t === 'divider') return '---';
     if (b.t === 'code') return '```' + (b.lang || '') + '\n' + b.text + '\n```';
     if (b.t === 'table') {
@@ -78,7 +80,7 @@
     if (b.t === 'p') {
       if (!tx) return '&nbsp;';
       // Los saltos suaves van como saltos de línea normales: el .md sigue siendo legible a mano
-      return tx.split('<br>').map(l => l.replace(/^(?=[#>\-*+]\s|\d+[.)]\s|```|(?:[-*_]\s*){3,}$|&nbsp;$)/, '\\')).join('\n');
+      return tx.split('<br>').map(l => l.replace(/^(?=[#>\-*+]\s|\d+[.)]\s|```|:::|::[a-z]|\$\$|(?:[-*_]\s*){3,}$|&nbsp;$)/, '\\')).join('\n');
     }
     if (b.t === 'h1') return '# ' + tx;
     if (b.t === 'h2') return '## ' + tx;

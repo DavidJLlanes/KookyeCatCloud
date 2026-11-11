@@ -22,6 +22,7 @@
     EST.store = old; EST.store.hidden = true;
     EST.host = document.createElement('div'); EST.host.id = 'nb'; EST.host.className = 'nb'; EST.host.setAttribute('role', 'textbox'); EST.host.setAttribute('aria-multiline', 'true');
     old.after(EST.host);
+    C.ricosMonta(EST.host);
     EST.host.addEventListener('keydown', onKeydown);
     EST.host.addEventListener('input', onInput);
     EST.host.addEventListener('paste', onPaste);

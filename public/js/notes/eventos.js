@@ -50,6 +50,7 @@
       if (k === 'd' && e.shiftKey) { e.preventDefault(); const cp = makeBlock(readBlock(w)); w.after(cp); change(true); return; }
     }
 
+    if (C.RICOS[t] && C.ricoTecla(e, w)) return;
     if (t === 'table') { tablaTecla(e, w); return; }
     if (EST.mention && handleMentionKey(e)) return;
     if (EST.slash && handleSlashKey(e)) return;
@@ -84,7 +85,7 @@
       if (!prev) return;
       e.preventDefault();
       if (prev.dataset.t === 'divider') { prev.remove(); focusBlock(w); change(true); return; }
-      if (prev.dataset.t === 'table' || prev.dataset.t === 'image') { focusBlock(prev, true); return; }
+      if (prev.dataset.t === 'table' || prev.dataset.t === 'image' || C.RICOS[prev.dataset.t]) { focusBlock(prev, true); return; }
       const pc = contentOf(prev);
       const len = pc.textContent.length;
       if (prev.dataset.t === 'code') { pc.textContent += c.textContent; } else pc.innerHTML += c.innerHTML;
@@ -96,7 +97,7 @@
     }
     if (e.key === 'Delete' && atEnd(c) && !e.isComposing) {
       const nx = w.nextElementSibling;
-      if (nx && !['divider', 'code', 'table', 'image'].includes(nx.dataset.t) && !['code', 'image'].includes(t)) { e.preventDefault(); c.innerHTML += contentOf(nx).innerHTML; nx.remove(); change(true); }
+      if (nx && !['divider', 'code', 'table', 'image'].includes(nx.dataset.t) && !C.RICOS[nx.dataset.t] && !['code', 'image'].includes(t)) { e.preventDefault(); c.innerHTML += contentOf(nx).innerHTML; nx.remove(); change(true); }
       return;
     }
 
@@ -129,7 +130,7 @@
   function onInput(e) {
     const c = e.target.closest && e.target.closest('.nb-c'); if (!c) return;
     const w = blockOf(c); if (!w) return;
-    if (w.dataset.t === 'table') { change(); return; }
+    if (w.dataset.t === 'table' || C.RICOS[w.dataset.t]) { change(); return; }
     const txt = c.textContent.replace(/\u00a0/g, ' ');
     // Atajos de Markdown al principio de un bloque de texto
     if (w.dataset.t === 'p' && !(e.inputType || '').startsWith('delete')) {
@@ -153,6 +154,7 @@
   function onPaste(e) {
     const c = e.target.closest && e.target.closest('.nb-c'); if (!c) return;
     const w = blockOf(c);
+    if (C.RICOS[w.dataset.t]) return;     // lo que se pega dentro de un bloque rico lo recoge ricos.js
     const imgs = [...((e.clipboardData && e.clipboardData.files) || [])].filter(f => /^image\//.test(f.type));
     if (imgs.length && NB.subeImagenes) { e.preventDefault(); NB.subeImagenes(imgs, w); return; }
     const text = (e.clipboardData || window.clipboardData).getData('text/plain');
