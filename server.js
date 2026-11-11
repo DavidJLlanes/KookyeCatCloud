@@ -60,6 +60,7 @@ const createAnalisis = require('./lib/analisis');
 const createWeb = require('./lib/web');
 const createRutas = require('./lib/rutas');
 const createExplorador = require('./lib/explorador');
+const montaTransversal = require('./lib/transversal');
 const { sendError } = require('./lib/errores');
 const createArchivos = require('./lib/archivos');
 const { IMAGE_TYPES, HEIC_TYPES, VIDEO_TYPES, PREVIEW_TYPES, TEXT_RE, TEXT_MAX, THUMBABLE, DISPLAY_MAX, THUMB_SIZE, TILE_URL, TILE_ATTR, TILE_ORIGIN, bytesDeEntorno } = require('./lib/archivos/tipos');
@@ -522,7 +523,7 @@ app.use(analisisMod.router);   // sus rutas ya llevan /api
 
 /* ---------------- Bloc de notas ----------------
    Vive en lib/notes.js; aquí se crea y se exponen sus funciones al resto del servidor. */
-const { trashItem, papeleraDias, purgeExpired } = papeleraMod.core;
+const { papeleraDias, purgeExpired } = papeleraMod.core;
 const notesMod = createNotes({ express, auth, userRoot, sendError, papeleraDias, calendar: () => calendarMod.core, extraeLinks: (b) => notesExtra.extraeLinks(b) });
 const { readNotes, writeNotes, notaFile, descendientes, notasFuente, purgarNotasCaducadas, enCola: enColaNotas } = notesMod.core;
 app.use('/api', notesMod.router);
@@ -548,18 +549,6 @@ if (TRASH_SWEEP_HOURS > 0) {
 }
 
 /* ---------------- Módulos: etiquetas, calendario y prompts ---------------- */
-
-// Suscripción iCal: sin cookie ni sesión (Google/Apple/Outlook no pueden enviarlas); el acceso
-// lo da un token de 256 bits en la URL, que el usuario puede regenerar o apagar cuando quiera.
-app.get(/^\/ical\/([a-f0-9]{64})\.ics$/, async (req, res) => {
-  try {
-    const user = await calendarMod.core.userPorToken(req.params[0]);
-    const feed = user && await calendarMod.core.icsFeed(user, `${req.protocol}://${req.get('host')}${BASE_PATH}/`);
-    if (!feed) return res.status(404).type('text/plain').send('No encontrado');
-    res.set({ 'Cache-Control': 'private, max-age=300', 'Content-Disposition': 'inline; filename="calendario.ics"' });
-    res.type('text/calendar; charset=utf-8').send(feed);
-  } catch (err) { res.status(500).type('text/plain').send('Error'); }
-});
 
 // Extras de notas: backlinks, exportación y plantillas (cada ruta lleva su propio auth)
 const notesExtra = createNotesExtra({ express, auth, userRoot, sendError, readNotes, writeNotes, enCola: enColaNotas, notaFile, descendientes, resolveFor, ZipArchive });
@@ -594,78 +583,11 @@ app.use('/api', createExportar({ express, auth, adminOnly, userRoot, dataRoot: D
 const copiasMod = createCopias({ express, auth, adminOnly, sendError, registrarActividad, alCambiar: alCambiarContenido, dataRoot: DATA_ROOT, appDir: APP_DIR, copiasDir: COPIAS_DIR });
 app.use('/api/admin/copias', copiasMod.router);
 modulosConLogros.push(copiasMod);   // Copias a mano aportan recuentos a la gamificación (ver CLAUDE.md)
-calendarMod.core.registraOrigen('prompt', (user, id, ev) => promptsMod.core.setCal(user, id, ev));
-calendarMod.core.registraOrigen('game', (user, id, ev) => gamesMod.core.setCal(user, id, ev));
-calendarMod.core.registraOrigen('note', async (user, id, ev) => {
-  const data = await readNotes(user);
-  const it = data.items.find(i => i.id === id);
-  if (!it) return;
-  if (ev) it.cal = { date: ev.start.slice(0, 10), time: ev.allDay ? '' : ev.start.slice(11, 16) };
-  else delete it.cal;
-  await writeNotes(user, data);
-});
-labelsMod.registrarContador((user) => calendarMod.core.usoEtiquetas(user));
-labelsMod.registrarLimpieza((user, id) => calendarMod.core.quitaEtiqueta(user, id));
-labelsMod.registrarContador(async (user) => {
-  const uso = {};
-  (await readNotes(user)).items.forEach(i => (i.labels || []).forEach(l => { uso[l] = (uso[l] || 0) + 1; }));
-  return uso;
-});
-labelsMod.registrarLimpieza(async (user, id) => {
-  const data = await readNotes(user);
-  let tocado = false;
-  data.items.forEach(i => { if ((i.labels || []).includes(id)) { i.labels = i.labels.filter(l => l !== id); tocado = true; } });
-  if (tocado) await writeNotes(user, data);
-});
-
-// Pone, mueve o quita la fecha de calendario de archivos ya subidos. Con pocos archivos
-// cada uno tiene su evento; con muchos (una subida de fotos) se crea uno solo para la carpeta.
-app.post('/api/files/calendar', auth, async (req, res) => {
-  try {
-    const { paths, calendar } = req.body || {};
-    if (!Array.isArray(paths) || !paths.length || paths.length > 500) return res.status(400).json({ error: 'Selección no válida' });
-    const rels = [];
-    for (const rel of paths) {
-      const abs = userPath(req, rel);
-      await fsp.stat(abs);
-      rels.push(limpiaRel(rel));
-    }
-    if (!calendar || rels.length <= 3) {
-      for (const rel of rels) await calendarMod.core.sincronizaOrigen(req.user, 'file', rel, path.posix.basename(rel), calendar || null);
-    } else {
-      const carpetas = new Set(rels.map(r => path.posix.dirname(r)));
-      const dir = carpetas.size === 1 ? [...carpetas][0] : '.';
-      const ref = dir === '.' ? '' : dir;
-      const titulo = `${rels.length} archivos subidos${ref ? ' a ' + ref : ''}`;
-      await calendarMod.core.sincronizaOrigen(req.user, 'file', ref || '/', titulo, calendar);
-    }
-    res.json({ ok: true });
-  } catch (err) { sendError(res, err); }
-});
-
-// Búsqueda global: notas, prompts y eventos (los archivos ya tienen /api/search)
-app.get('/api/omni', auth, async (req, res) => {
-  try {
-    const q = String(req.query.q || '').toLowerCase().trim().slice(0, 100);
-    if (q.length < 2) return res.json({ notes: [], prompts: [], events: [] });
-    const data = await readNotes(req.user);
-    const notes = [];
-    for (const it of data.items) {
-      if (notes.length >= 20) break;
-      if (it.title.toLowerCase().includes(q)) { notes.push({ id: it.id, title: it.title, type: it.type }); continue; }
-      if (it.type === 'note') {
-        try {
-          const body = await fsp.readFile(notaFile(req.user, it.id), 'utf8');
-          if (body.toLowerCase().includes(q)) notes.push({ id: it.id, title: it.title, type: it.type });
-        } catch {}
-      }
-    }
-    const [prompts, events] = await Promise.all([
-      promptsMod.core.buscar(req.user, q),
-      calendarMod.core.buscar(req.user, q),
-    ]);
-    res.json({ notes, prompts, events: events.map(e => ({ id: e.id, title: e.title, start: e.start, allDay: e.allDay, calendarId: e.calendarId })) });
-  } catch (err) { sendError(res, err); }
+// Rutas y conexiones entre módulos (lib/transversal)
+montaTransversal({
+  app, auth, sendError, userPath, limpiaRel, BASE_PATH,
+  labels: labelsMod, calendar: calendarMod.core, prompts: promptsMod.core, games: gamesMod.core,
+  readNotes, writeNotes, notaFile,
 });
 
 // SPA fallback

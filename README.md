@@ -1692,6 +1692,10 @@ lib/
   pagos/             Pagos y recordatorios (modelo, fechas, valores, resumen, rutas)
   marcadores/        Marcadores web (modelo, favicon, red con defensa SSRF, resumen, rutas)
   perfil/            Foto y nombre visible del perfil (procesado de imagen y rutas)
+  explorador/        Listar, crear carpetas, subir, buscar, borrar, mover y lotes
+  transversal/       Lo que cruza módulos: iCal, búsqueda global, fechas de archivos y cableado calendario↔etiquetas↔notas
+  rutas.js           Rutas seguras por usuario (anti path traversal) y nombres libres
+  errores.js         Respuesta de errores sin filtrar rutas del servidor
   archivos/          Descargas y ZIP, vista previa, miniaturas y edición de texto (tipos, imágenes, descarga, previa, texto)
   analisis/          Reparto de espacio: estadísticas por tipo y por módulo, espacio por carpeta, duplicados
   web/               Cabeceras de seguridad (CSP, HSTS), plantillas con prefijo, versión instalada y service worker
