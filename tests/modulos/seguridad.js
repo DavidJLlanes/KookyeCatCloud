@@ -59,10 +59,22 @@ module.exports = async ({ req, prueba, igual, cierto, BASE, cookie }) => {
     for (let i = 0; i < 10; i++) igual((await d('mala' + i)).status, 401);
     igual((await d('pw-correcta-1')).status, 401, 'tras 10 fallos, bloqueado una hora');
   });
+  await prueba('seguridad: WebDAV deja de aceptar la clave vieja al cambiar la contraseña o borrar al usuario', async () => {
+    igual((await req('POST', '/api/users', { username: 'davu', password: 'clave-larga-1' })).s, 200);
+    const dav = (clave) => fetch(BASE + '/dav/', { method: 'PROPFIND', headers: { Authorization: 'Basic ' + Buffer.from('davu:' + clave).toString('base64'), Depth: '0' } });
+    igual((await dav('clave-larga-1')).status, 207);
+    igual((await req('POST', '/api/users/davu/password', { password: 'clave-nueva-22' })).s, 200);
+    igual((await dav('clave-larga-1')).status, 401, 'la clave vieja ya no vale aunque estuviera en caché');
+    igual((await dav('clave-nueva-22')).status, 207);
+    igual((await req('DELETE', '/api/users/davu')).s, 200);
+    igual((await dav('clave-nueva-22')).status, 401, 'usuario borrado');
+  });
   await prueba('seguridad: WebDAV limita los intentos de contraseña como el login', async () => {
     const dav = (clave) => fetch(BASE + '/dav/', { method: 'PROPFIND', headers: { Authorization: 'Basic ' + Buffer.from('admin:' + clave).toString('base64'), Depth: '0' } });
     const est = []; for (let i = 0; i < 7; i++) est.push((await dav('mala-' + i)).status);
-    cierto(est.slice(0, 5).every(x => x === 401), 'primeros fallos 401: ' + est);
-    igual(est[6], 429, 'bloqueado tras 5 fallos');
+    cierto(est.slice(0, 2).every(x => x === 401), 'primeros fallos 401: ' + est);   // la prueba anterior ya gastó algún intento
+    igual(est[6], 429, 'bloqueado tras 5 fallos: ' + est);
+    const l = await fetch(BASE + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'nadie', password: 'x' }) });
+    igual(l.status, 401, 'el bloqueo de WebDAV no bloquea el login web');
   });
 };

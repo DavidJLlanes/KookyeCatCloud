@@ -208,3 +208,17 @@ Sondeo de caja negra contra una copia temporal (rutas de administración, IDOR e
 **Riesgos aceptados:** el bloqueo por IP puede usarse para impedir temporalmente el acceso desde una misma IP; las contraseñas cortas antiguas siguen valiendo hasta que se cambien.
 
 Pruebas nuevas en `tests/modulos/seguridad.js`.
+
+## Novena auditoría (seguridad y errores, 11-nov-2026)
+
+Repaso de lo añadido desde la octava (nombre visible, reparto de espacio, limitador de WebDAV) y de las dependencias.
+
+**Corregido**
+- **El limitador de WebDAV compartía clave con el login web:** un cliente montado con una contraseña vieja que reintenta habría bloqueado también la entrada por la web (15 min). Ahora WebDAV cuenta sus fallos aparte (`dav:<ip>`).
+- **Caché de credenciales de WebDAV (5 min):** seguía aceptando una contraseña ya cambiada, un token de aplicación revocado o un usuario borrado. Ahora cada acierto de caché comprueba que el usuario exista y que sus claves no hayan cambiado, y usa el rol actual.
+
+**Comprobado sin hallazgos:** nombre visible (se pinta con `textContent`, se limpia de caracteres de control, tope de 40, cambios concurrentes por `updateJson`, lista de nombres solo para administradores); reparto de espacio (`lstat`, no sigue enlaces simbólicos); descompresión con topes reales.
+
+**Dependencias:** `npm audit` sigue indicando 3 avisos moderados de `minimatch` (DoS por patrones) a través de `archiver`; el patrón es fijo y no lo controla el usuario, así que se mantiene como riesgo aceptado hasta que `archiver` publique una versión corregida sin cambios incompatibles.
+
+Pruebas nuevas en `tests/modulos/seguridad.js`.

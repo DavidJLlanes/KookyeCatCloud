@@ -55,16 +55,23 @@ function createDav({ isBlocked = () => 0, registerFailure = () => {}, clearFailu
     res.status(401).end('No autenticado');
   }
 
+  const firmaClaves = (u) => [u.passwordHash, ...(u.apptokens || []).map(t => t.hash)].join('|');
+
   function autenticar(req, res) {
     const cab = req.headers.authorization || '';
     if (!cab.startsWith('Basic ')) { reto(res); return null; }
 
     const clave = cab.slice(6);
     const guardado = credenciales.get(clave);
-    if (guardado && Date.now() < guardado.expira) return guardado.user;
+    if (guardado && Date.now() < guardado.expira) {
+      // La caché no sobrevive a un cambio de contraseña, a revocar un token ni a borrar al usuario
+      const vivo = loadUsers().find(x => x.username === guardado.user.username);
+      if (vivo && firmaClaves(vivo) === guardado.firma) return { username: vivo.username, role: vivo.role };
+      credenciales.delete(clave);
+    }
 
     // Mismo limitador que el login: sin él, WebDAV permitiría adivinar contraseñas sin freno
-    const ipKey = `ip:${req.ip}`;
+    const ipKey = `dav:${req.ip}`;   // propio: un cliente WebDAV con la clave vieja no debe bloquear el login web
     const espera = isBlocked(ipKey);
     if (espera) {
       res.setHeader('Retry-After', String(espera));
@@ -92,7 +99,7 @@ function createDav({ isBlocked = () => 0, registerFailure = () => {}, clearFailu
     clearFailures(ipKey);
 
     const user = { username: u.username, role: u.role };
-    credenciales.set(clave, { user, expira: Date.now() + CACHE_CREDENCIALES_MS });
+    credenciales.set(clave, { user, firma: firmaClaves(u), expira: Date.now() + CACHE_CREDENCIALES_MS });
     return user;
   }
 
