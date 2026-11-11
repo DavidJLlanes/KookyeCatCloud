@@ -1718,7 +1718,8 @@ lib/
   cuentas.js         Login y 2FA, usuarios, sesiones abiertas y tokens de app (fábrica createCuentas)
   enlaces.js         Enlaces públicos: descarga (archivo, carpeta, álbum), subida y prompts (fábrica createEnlaces)
   notes.js           Bloc de notas: árbol, cuerpos .md y papelera (fábrica createNotes)
-  calendar.js        Eventos, tareas y repetición; ganchos con notas, prompts y archivos
+  calendar/          Calendario (cliente): estado, datos, estructura, lateral, mes, semana, agenda, evento,
+                     avisos, registro (comparten K._calendar)
   ical.js            Feed iCal (RFC 5545) de solo lectura
   holidays.js        Festivos de España calculados (sin servicios externos)
   prompts/           Biblioteca de prompts (cliente): estado, datos, estructura, lateral, gestion, filtros,

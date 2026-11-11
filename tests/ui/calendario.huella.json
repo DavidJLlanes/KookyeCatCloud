@@ -1,0 +1,74 @@
+{
+ "pc": {
+  "botones": 60,
+  "tarjetasLaterales": 3,
+  "mes": 1,
+  "celdas": 6,
+  "titulo": true,
+  "vistas": 4,
+  "vista0": {
+   "activa": 1,
+   "uis": 6,
+   "nodos": 165
+  },
+  "vista1": {
+   "activa": 1,
+   "uis": 3,
+   "nodos": 78
+  },
+  "vista2": {
+   "activa": 1,
+   "uis": 3,
+   "nodos": 48
+  },
+  "vista3": {
+   "activa": 1,
+   "uis": 15,
+   "nodos": 113
+  },
+  "siguienteCambia": true,
+  "hoyVuelve": true,
+  "busqueda": 4,
+  "modalNuevo": 25,
+  "modalEvento": 25,
+  "menu": 0,
+  "api": "goto,hide,newEvent,reload",
+  "errores": []
+ },
+ "movil": {
+  "botones": 60,
+  "tarjetasLaterales": 3,
+  "mes": 1,
+  "celdas": 6,
+  "titulo": true,
+  "vistas": 4,
+  "vista0": {
+   "activa": 1,
+   "uis": 6,
+   "nodos": 165
+  },
+  "vista1": {
+   "activa": 1,
+   "uis": 3,
+   "nodos": 78
+  },
+  "vista2": {
+   "activa": 1,
+   "uis": 3,
+   "nodos": 48
+  },
+  "vista3": {
+   "activa": 1,
+   "uis": 15,
+   "nodos": 113
+  },
+  "siguienteCambia": true,
+  "hoyVuelve": true,
+  "busqueda": 4,
+  "modalNuevo": 25,
+  "modalEvento": 25,
+  "menu": 0,
+  "api": "goto,hide,newEvent,reload",
+  "errores": []
+ }
+}
