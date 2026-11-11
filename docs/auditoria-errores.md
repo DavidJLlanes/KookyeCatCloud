@@ -245,3 +245,17 @@ Revisión tras el troceo de ~20 archivos (servidor y cliente) y sondeo de caja n
 **Riesgos aceptados:** los mismos de la octava y novena (`minimatch` vía `archiver`, bloqueo por IP).
 
 Pruebas: `tests/modulos/seguridad.js` (404 de la API) y `tests/ui/todas-las-vistas.js`.
+
+## Undécima auditoría (Recordatorios, imágenes de notas, calendario y push)
+
+Alcance: lo añadido en la jornada (módulo Recordatorios, migración desde el calendario, fuente push, subida optimizada de imágenes en notas).
+
+- **Acceso y aislamiento:** sin sesión todas las rutas nuevas dan 401; un usuario normal no ve, edita, posterga, marca ni borra recordatorios ajenos (404). El barrido de autorización de las 336 rutas no cambia respecto a la décima auditoría.
+- **Entradas raras:** cuerpos `[]`, `null`, texto, `__proto__`/`constructor`, JSON roto, campos con el tipo equivocado, ids con `..`, `%2e%2e` o 5000 caracteres, minutos negativos, enormes o no numéricos y cuerpos de 100 kB: ningún 500 y ningún cambio en prototipos. Los 535 pedidos del barrido general solo devuelven el 501 esperado de ComfyUI sin configurar.
+- **XSS:** título, notas y vínculo con `<img onerror>` y `<svg onload>` se pintan como texto en la lista, el formulario y el panel; no se ejecuta nada.
+- **Vínculos:** el vínculo es solo texto (tipo de una lista cerrada); abrirlo pasa por las rutas normales con los permisos del usuario, así que una ruta inventada no da acceso a nada.
+- **Push:** la lista de servicios admitidos (anti-SSRF) no cambia; solo se reconocen mejor Opera y Samsung en el nombre del dispositivo. Horas no válidas de Recordatorios se rechazan (400).
+- **Vistas:** las 23 vistas abren sin errores de JavaScript como administrador y como usuario normal, en móvil y escritorio.
+- **Corregido:** la optimización de imágenes no intenta decodificar archivos de más de 80 MB (en un móvil agotaría la memoria); se suben tal cual y el límite de 30 MB los rechaza con aviso.
+- **Observaciones sin riesgo:** en los ajustes de avisos, un valor que no sea booleano apaga el interruptor (igual que en el resto de secciones) y un objeto de sección mal formado se ignora. Un recordatorio atado a un archivo no sigue al archivo si lo renombras (solo se pierde el vínculo; el recordatorio sigue).
+- **Riesgos aceptados (sin cambios):** aviso moderado de `minimatch` vía `archiver`, bloqueo por IP abusable 15 min, contraseñas cortas antiguas válidas hasta que se cambien, push sin probar en móviles reales. Las horas de los avisos usan la zona de la app (`APP_TZ`, Europe/Madrid): quien use la web desde otra zona verá los avisos a la hora de Madrid.

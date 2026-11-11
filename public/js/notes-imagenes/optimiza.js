@@ -21,6 +21,7 @@
   I.optimiza = async function (f) {
     const tipo = tipoDe(f);
     if (!/^image\/(jpeg|png|webp|heic|heif)$/.test(tipo)) return f;
+    if (f.size > 80 * 1024 * 1024) return f;                              // enorme: no se intenta decodificar (el móvil se quedaría sin memoria); la subida lo rechaza
     let bmp;
     try { bmp = await createImageBitmap(f); } catch { return f; }          // p. ej. HEIC en Chrome: se sube tal cual
     try {
