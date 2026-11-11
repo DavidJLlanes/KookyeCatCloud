@@ -77,4 +77,8 @@ module.exports = async ({ req, prueba, igual, cierto, BASE, cookie }) => {
     const l = await fetch(BASE + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'nadie', password: 'x' }) });
     igual(l.status, 401, 'el bloqueo de WebDAV no bloquea el login web');
   });
+  await prueba('seguridad: una ruta de la API inexistente da 404 en JSON (no la página de la app)', async () => {
+    const r = await fetch(BASE + '/api/no-existe-esta-ruta', { headers: { Cookie: cookie() } });
+    igual(r.status, 404); cierto(/json/.test(r.headers.get('content-type')), 'JSON');
+  });
 };

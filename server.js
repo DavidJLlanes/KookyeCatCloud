@@ -590,6 +590,9 @@ montaTransversal({
   readNotes, writeNotes, notaFile,
 });
 
+// Una ruta de la API que no existe es un 404 en JSON, no la página de la app con un 200
+app.all('/api/*', (req, res) => res.status(404).json({ error: 'No existe' }));
+
 // SPA fallback
 app.get('*', (req, res) => {
   enviaPlantilla(res, 'index.html', 'html');

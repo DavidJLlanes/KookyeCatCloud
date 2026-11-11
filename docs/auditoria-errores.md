@@ -222,3 +222,26 @@ Repaso de lo añadido desde la octava (nombre visible, reparto de espacio, limit
 **Dependencias:** `npm audit` sigue indicando 3 avisos moderados de `minimatch` (DoS por patrones) a través de `archiver`; el patrón es fijo y no lo controla el usuario, así que se mantiene como riesgo aceptado hasta que `archiver` publique una versión corregida sin cambios incompatibles.
 
 Pruebas nuevas en `tests/modulos/seguridad.js`.
+
+## Décima auditoría (seguridad y errores, 11-nov-2026)
+
+Revisión tras el troceo de ~20 archivos (servidor y cliente) y sondeo de caja negra contra una copia temporal.
+
+**Corregido**
+- **Despliegue:** `deploy/update.sh` ejecutaba `npm run check`, que incluye ESLint (dependencia de desarrollo, ausente con `npm ci --omit=dev`), y revertía una actualización correcta. Ahora usa `check:despliegue` (sintaxis + auditoría de persistencia).
+- **Administración, foto y nombre visibles en «Usuarios»:** se pedían al terminar de cargar los enlaces compartidos, antes de que existieran las filas de la lista (carrera entre dos peticiones). Ahora se piden tras pintar la lista.
+- **Rutas `/api/...` inexistentes** devolvían la página de la app con un 200; ahora 404 en JSON.
+
+**Comprobado sin hallazgos**
+- Sin sesión solo responden las rutas públicas esperadas (manifiesto, versión, enlaces compartidos, passkeys). Un usuario normal no accede a rutas de administración y no ve ni modifica datos de otro (prompts, código, contactos, juegos, bases, notas, calendario; listados vacíos).
+- 523 peticiones vacías o inválidas a las 330 rutas: ningún 500 (solo el 501 esperado de ComfyUI sin configurar).
+- SSRF en Marcadores: 12 variantes de dirección interna (127.0.0.1, localhost, [::1], decimal, hexadecimal, 0.0.0.0, IPv4 mapeada en IPv6, nip.io, metadatos 169.254.169.254) no llegan a un servidor interno de prueba.
+- Recorridos `../`, `%2f`, rutas absolutas y barras invertidas: 11.327 peticiones a todas las rutas GET y a archivos internos (`users.json`, `.jwt-secret`, `.git`, `server.js`…), sin fugas.
+- XSS: el Markdown de notas escapa todo y solo admite `http(s):` y `mailto:`; hay pocos `innerHTML` y con datos escapados; CSP con `script-src 'self'`.
+- Cookie de sesión `HttpOnly; SameSite=Strict`; sin cabeceras CORS; un POST de formulario entre sitios no se interpreta.
+- Cliente: ningún identificador sin declarar en los 146 scripts, caché sin archivos que falten y todas las vistas (22) sin errores de JavaScript ni de consola como administrador y como usuario normal, en móvil y escritorio.
+- Dependencias de ejecución completas en `dependencies` (`sharp` es opcional y tolerado).
+
+**Riesgos aceptados:** los mismos de la octava y novena (`minimatch` vía `archiver`, bloqueo por IP).
+
+Pruebas: `tests/modulos/seguridad.js` (404 de la API) y `tests/ui/todas-las-vistas.js`.
