@@ -69,7 +69,7 @@
 }
 
 /* Acceso a la IA: píldora con degradado junto a la ruta de Archivos */
-.ia-acceso{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 14px 0 11px;margin:0 auto 0 4px;border-radius:999px;border:1px solid transparent;color:#fff;font:inherit;font-weight:650;font-size:calc(13.5px*var(--fs,1));cursor:pointer;white-space:nowrap;flex:none;
+.ia-acceso{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 14px 0 11px;margin:0 0 0 auto;border-radius:999px;border:1px solid transparent;color:#fff;font:inherit;font-weight:650;font-size:calc(13.5px*var(--fs,1));cursor:pointer;white-space:nowrap;flex:none;
   background:linear-gradient(135deg,#6366f1,#a855f7 60%,#ec4899);box-shadow:0 4px 14px -4px rgba(168,85,247,.7),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .15s,box-shadow .15s,filter .15s;}
 .ia-acceso .ico{width:16px;height:16px;fill:currentColor;stroke:none;animation:ia-brillo 3.2s ease-in-out infinite;}
 .ia-acceso:hover{filter:brightness(1.1);box-shadow:0 6px 18px -4px rgba(168,85,247,.85),inset 0 1px 0 rgba(255,255,255,.3);}

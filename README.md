@@ -110,7 +110,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 ### Novedades
 
-- **12 nov 2026 (noche)** · **Botón «Preguntar a la IA»** junto a «Inicio» en Archivos, con degradado (en móvil, «IA»): abre Buscar directamente en modo IA.
+- **12 nov 2026 (noche)** · **Botón «Preguntar a la IA»** en la barra de Archivos, junto a los iconos de vista, con degradado (en móvil, «IA»): abre Buscar directamente en modo IA.
 - **12 nov 2026 (noche)** · **IA de Buscar arreglada y más ágil**: la respuesta no salía por un error de JavaScript al pintarla (`S is not defined`); corregido. «Ver modelos» y «Probar conexión» ahora aceptan respuestas comprimidas (la lista de OpenRouter es enorme), guardan la lista 10 min, comprueban la clave al instante (`/key`) antes de probar el modelo (máx. 30 s con mensaje claro) y muestran segundos de espera. Si un modelo «razona» y no deja texto se avisa, y preguntas como «¿Cuántas notas tengo?» reciben los recuentos reales. ESLint ahora también vigila `public/js` (identificadores sin definir) para que esto no vuelva a pasar.
 - **12 nov 2026 (más tarde)** · **Rendimiento, accesibilidad y seguridad** (repaso con la guía [modern-web-guidance](https://github.com/GoogleChrome/modern-web-guidance) de Chrome y dos auditorías, la 16 y la 17):
   - **Carpetas enormes**: la lista de archivos se pinta por tandas y cede el hilo, así que una carpeta de 5.000 archivos pasa de ~6 s con la interfaz congelada a menos de 1 s.
