@@ -69,3 +69,10 @@
   body.selbar-on .app{padding-bottom:calc(var(--selbar-h, 0px) + 60px);}
   .toast{bottom:36px;}
 }
+
+/* Barra superior estrecha: menos aire entre botones para que el acceso a la IA quepa sin desbordar */
+@media (max-width:420px){
+  .topbar .wrap{gap:8px;}
+  .top-actions{gap:5px;}
+  .brand{gap:9px;}
+}

@@ -116,7 +116,10 @@ input:focus,select:focus{outline:none;border-color:var(--accent-strong);
 .brand-text strong{font-size:calc(15.5px*var(--fs,1));font-weight:700;letter-spacing:-.02em;}
 .brand-text span{font-size:calc(10.5px*var(--fs,1));color:var(--faint);letter-spacing:.04em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.top-actions{display:flex;align-items:center;gap:9px;}
+.top-actions{display:flex;align-items:center;gap:9px;flex:none;}
+/* El nombre de la app cede sitio (con «…») antes de que la barra se desborde */
+.topbar .brand{flex:0 1 auto;}
+.brand-text strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .user-chip{display:flex;align-items:center;gap:9px;padding:5px 14px 5px 5px;border-radius:99px;
   background:var(--glass);border:1px solid var(--line);font-size:calc(13px*var(--fs,1));font-weight:600;}
 .user-chip .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
