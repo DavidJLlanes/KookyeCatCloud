@@ -317,3 +317,10 @@ Sin riesgo: la fórmula escrita con muchos paréntesis se rechaza por longitud a
 - **PDF:** un tramo de 200 o más espacios seguidos tardaba 12 s en una tabla y 5 s en un aviso (no era una regex, era la maquetación). Se acorta a 8 espacios antes de maquetar.
 - **Prueba nueva** `tests/modulos/redos.js`: rutas con barras, notas con `[` sin cerrar, PDF con espacios y documentos con espacios enormes deben responder en pocos segundos. 209/209 pruebas.
 - **Norma:** toda expresión nueva se pasa por `recheck` (`scan.js`) antes de entrar.
+
+### Repaso con modern-web-guidance (12-11-2026)
+
+- `js/ime.js`: el Intro que confirma una palabra con teclados IME (japonés, chino, coreano) ya no ejecuta la acción de ningún campo.
+- `color-scheme` sigue al tema (barras de desplazamiento y selectores nativos oscuros en los temas oscuros); el subrayado de enlaces de Markdown usa `text-decoration`.
+- Cabeceras nuevas (`lib/web/cabeceras.js`): `Permissions-Policy` (micrófono, geolocalización, pagos, USB, serie y Bluetooth apagados), `Cross-Origin-Opener-Policy: same-origin-allow-popups` y `form-action 'self'` en la CSP. Prueba: `tests/modulos/cabeceras.js`.
+- Ya cumplido y comprobado: CSP con `script-src 'self'` sin `unsafe-*`, `base-uri 'none'`, `frame-ancestors 'self'`, `nosniff`, HSTS, cookies `HttpOnly`+`SameSite`, `autocomplete` correcto en los formularios. No se aplicó `__Host-` (la app cuelga de `/cloud/`, y ese prefijo exige `Path=/`) ni CORP (rompería enlaces compartidos incrustados en otros sitios).
