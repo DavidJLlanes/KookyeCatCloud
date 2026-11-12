@@ -1837,6 +1837,7 @@ lib/
   enlaces.js         Enlaces públicos: descarga (archivo, carpeta, álbum), subida y prompts, URL corta `/cloud/<12>`, caducidad y QR (fábrica createEnlaces)
   enlaces-resumen.js Contadores de enlaces para los logros (QR, con caducidad, perpetuos, revocados)
   enlaces-gestion.js Zona Enlaces: caducidad, contraseña, nombre, revocar y limpiar (con copia 30 días)
+  html-tokens.js     Lector de HTML en tiempo lineal (tokens, atributos, bloques, etiquetas): saneado de Documentos e importadores, sin expresiones regulares que se cuelguen
   documentos/        Documentos: `index.js` (rutas), `sanear.js` (lista blanca de HTML), `modelo.js`, `plantillas.js`, `exportar.js`, `resumen.js`
   importar/          Importadores: `plan.js` (detecta y analiza), `carpeta.js`, `enex.js`, `docx.js`, `html-md.js`, `csv.js`, `contactos-csv.js`, `ejecuta-notas.js`, `ejecuta-tablas.js`, `index.js`
   busqueda/          Búsqueda global sin IA (índice BM25 `indice.js`, `texto.js`, un lector por módulo en `fuentes/`)

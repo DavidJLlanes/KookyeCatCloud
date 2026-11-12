@@ -96,6 +96,18 @@
     cuerpo.addEventListener('keydown', teclas);
     cuerpo.addEventListener('paste', (e) => D.alPegar(e, D.cambio));
     cuerpo.addEventListener('click', alClic);
+    // Soltar texto o HTML arrastrado desde otra página: pasa por el mismo saneado que pegar (si no, el navegador lo mete tal cual)
+    let arrastreInterno = false;
+    cuerpo.addEventListener('dragstart', () => { arrastreInterno = true; });
+    cuerpo.addEventListener('dragend', () => { arrastreInterno = false; });
+    cuerpo.addEventListener('drop', (e) => {
+      if (arrastreInterno) { arrastreInterno = false; setTimeout(D.cambio, 0); return; }   // mover texto dentro del propio documento
+      const dt = e.dataTransfer; if (!dt || !(dt.types || []).some(t => t === 'text/html' || t === 'text/plain')) { e.preventDefault(); return; }
+      e.preventDefault();
+      const r = document.caretRangeFromPoint ? document.caretRangeFromPoint(e.clientX, e.clientY) : null;
+      if (r) { const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+      D.alPegar({ clipboardData: dt, preventDefault() {} }, D.cambio);
+    });
     if (tactil) {
       // La barra solo estorba cuando no se está escribiendo: aparece con el foco y se acopla encima del teclado
       barra.classList.add('dc-oculta');

@@ -102,6 +102,13 @@ module.exports = async ({ req, prueba, igual, cierto, DATA, BASE, cookie }) => {
     igual((await fetch(BASE + '/api/importar/analizar', { method: 'POST', body: fd })).status, 401, 'analizar sin sesión');
   });
 
+  await prueba('importar: HTML y Markdown maliciosos (miles de etiquetas sin cerrar) no cuelgan el servidor', async () => {
+    const malo = zipSync({ 'a.md': strToU8('<aside'.repeat(60000) + '<img'.repeat(60000)), 'b.html': strToU8('<a "'.repeat(120000)), 'c.md': strToU8('a' + ' '.repeat(300000) + 'b') });
+    const t0 = Date.now(); const a = await sube('malo.zip', Buffer.from(malo), 'apple');
+    igual(a.s, 200, JSON.stringify(a.j).slice(0, 200)); cierto(Date.now() - t0 < 5000, 'tarda ' + (Date.now() - t0) + ' ms');
+    const ia = await req('POST', '/api/ia/proveedores/__proto__/modelos'); igual(ia.s, 404, 'proveedor «__proto__»');
+  });
+
   await prueba('importar: CSV → base nueva con tipos, base existente y contactos', async () => {
     const csv = 'Nombre;Edad;Alta;Activo;Estado\nAna;31;03/02/2024;Sí;Abierto\nLuis;27;15/03/2024;No;Cerrado\nEva;40;01/12/2023;Sí;Abierto\nIgor;x;mal;No;Abierto\n';
     const a = await sube('personas.csv', Buffer.from(csv, 'latin1'));
@@ -147,7 +154,9 @@ module.exports = async ({ req, prueba, igual, cierto, DATA, BASE, cookie }) => {
     const r2 = await ejecuta({ token: a.j.token, notas: false, tablas: [{ tabla: 0, destino: 'contactos', campos: ['', ''] }] });
     cierto(r2.j.errores.length === 1, 'contactos sin campos');
     const antes = (await items()).length;
-    const tandas = await Promise.all([1, 2, 3].map(i => sube(`n${i}.md`, Buffer.from('# Nota ' + i + '\n\ncuerpo')).then(x => ejecuta({ token: x.j.token, destino: '' }))));
+    const analizados = [];   // los análisis van de dos en dos en todo el servidor: se analizan uno a uno y se importan a la vez
+    for (const i of [1, 2, 3]) analizados.push(await sube(`n${i}.md`, Buffer.from('# Nota ' + i + '\n\ncuerpo')));
+    const tandas = await Promise.all(analizados.map(x => ejecuta({ token: x.j.token, destino: '' })));
     cierto(tandas.every(x => x.s === 200 && x.j.notas && x.j.notas.notas === 1), JSON.stringify(tandas.map(x => x.j)));
     igual((await items()).length, antes + 3 * 2, 'tres importaciones a la vez: 3 carpetas raíz + 3 notas, sin pisarse');
     const raices = (await items()).filter(i => i.type === 'folder' && i.title.startsWith('Importado de'));

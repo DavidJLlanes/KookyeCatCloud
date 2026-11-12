@@ -106,6 +106,18 @@ module.exports = async ({ req, prueba, igual, cierto, DATA, BASE, cookie }) => {
     cierto(a.every(x => x.s === 200) && new Set(a.map(x => x.j.documento.id)).size === 5, 'cinco altas a la vez');
   });
 
+  await prueba('documentos: claves del prototipo como plantilla y HTML malicioso enorme sin colgar el servidor', async () => {
+    for (const k of ['__proto__', 'constructor', 'toString']) {
+      const r = await req('POST', '/api/documentos', { plantilla: k }); igual(r.s, 200, k);
+      cierto(r.j.documento.title === 'Documento sin título' && typeof r.j.documento.html === 'string', 'plantilla en blanco con ' + k);
+      igual((await req('POST', '/api/bases', { plantilla: k })).s, 200, 'bases con plantilla ' + k);
+    }
+    const id = (await req('POST', '/api/documentos', { title: 'ReDoS' })).j.documento.id;
+    for (const malo of ['<a "'.repeat(150000), '<!--'.repeat(250000), '<a x'.repeat(150000)]) {
+      const t0 = Date.now(); const r = await put(id, { html: malo }); igual(r.s, 200); cierto(Date.now() - t0 < 4000, 'tarda ' + (Date.now() - t0) + ' ms');
+    }
+  });
+
   await prueba('documentos: aparecen en la búsqueda global y dan logros', async () => {
     const id = (await req('POST', '/api/documentos', { title: 'Buscable', html: '<p>El ' + marca + 'raro vive en Australia</p>' })).j.documento.id;
     const r = (await req('GET', '/api/busqueda?q=' + marca + 'raro')).j; cierto(r.resultados.some(x => x.fuente === 'documentos' && x.id === id), 'búsqueda: ' + JSON.stringify(r.fuentes));
