@@ -56,6 +56,11 @@
   // Abrir la vista con una consulta ya escrita (Ctrl K → «Ver todos los resultados»)
   B.abreCon = (q) => { S.q = q || ''; S.modo = 'buscar'; S.m = ''; switchTab('buscar'); };
 
+  // Acceso rápido a la IA, siempre visible bajo la barra superior
+  B.abreIA = () => { S.modo = 'ia'; S.error = ''; switchTab('buscar'); if (!S.config) B.cargaConfig().then(B.pintaTodo).catch(() => {}); };
+  const acceso = document.getElementById('btn-ia');
+  if (acceso) acceso.addEventListener('click', B.abreIA);
+
   K.registerView('buscar', {
     async open() {
       if (!caja || !root.contains(caja.inp)) esqueleto();
