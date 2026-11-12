@@ -110,6 +110,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 ### Novedades
 
+- **12 nov 2026** · **Zona Enlaces**: una pestaña nueva para ver y gestionar todos los enlaces que has creado (descarga, subida y prompts): buscar, filtrar por tipo y estado, copiar, abrir, QR, cambiar caducidad o contraseña, poner nombre y revocar (también deslizando) · 
 - **11 nov 2026 (tarde)** · **Enlaces cortos y QR**: los enlaces de descarga ahora son `…/cloud/k3x9tq7mw2ab` (12 letras y números al azar), con caducidad a tu medida (1 hora, 1 día, 7, 30, 90, 365, «otro plazo» o sin caducidad, y se puede cambiar después) y un **código QR** descargable en PNG · **Notas**: columnas con listas, tareas e imágenes dentro y elegir qué vista de una base se ve en la nota · **Bases**: relaciones de doble sentido, agrupar la tabla por una columna, fila de totales y arrastrar filas para reordenarlas · **Pagos**: gráfico del gasto del año y documentos adjuntos (póliza en PDF o imagen) · **Deslizar para eliminar** en móvil (Pagos, Recordatorios, Marcadores, Prompts y filas de Bases) · logros nuevos para todo ello.
 - **11 nov 2026** · **Notas con más bloques**: desplegables, columnas, índice automático, ecuaciones LaTeX, diagramas Mermaid, incrustados (YouTube, mapas, PDF), una base dentro de la nota y bloques sincronizados entre notas · **Plantillas de fila en Bases y botones de plantilla en Notas** («Nueva reunión» con su estructura) · **Recordatorios que se repiten** (diario, semanal, mensual, «el primer lunes», anual) con botones «Hecho» y «Posponer» en el aviso · **Bases más potentes**: vistas de calendario, galería y línea de tiempo, fórmulas, relaciones entre bases y resúmenes, columnas de correo, teléfono y archivo, cambio de tipo de columna y varios filtros y órdenes por vista · nueva sección **Recordatorios** (con su propio JSON, creables desde notas, contactos, archivos, prompts y marcadores, calendario opcional y avisos push para todos los navegadores) · subida de imágenes optimizada en Notas para PC, Android e iPhone y visor de imágenes en la propia app · tarjetas de Compra arregladas en escritorio · nuevos logros y trofeos (Calculista, Tejedor de datos, Todas las perspectivas, Memoria de elefante…) · dos auditorías de errores y seguridad: `npm audit` a 0, rutas de archivo y claves especiales sin errores 500, importación de bases grandes · código de Bases y Notas troceado en carpetas.
 - **9 nov 2026** · Avisos push (pagos, calendario y contactos) con ajustes por sección, horas y horario de silencio · Pagos · Marcadores web con favicon automático · Sonidos suaves · Foto de perfil con recorte cuadrado (WebP 300 × 300) · contraseñas de 8 a 72 caracteres, HSTS y errores sin rutas del servidor · recorrido de seguridad documentado en [`docs/auditoria-errores.md`](docs/auditoria-errores.md) (siete auditorías) · pruebas por módulo en `tests/modulos/` (98 pruebas de humo).
@@ -1297,6 +1298,16 @@ Menú de un archivo, carpeta o álbum → *Compartir enlace*. La dirección es c
 - Los datos siguen en `uploadlinks.json`; `PUT /api/sharelinks/<id>/caducidad` cambia el plazo y `POST /api/sharelinks/<id>/qr` anota la descarga del QR (para los logros). La ruta `/<12 caracteres>` solo responde si existe ese enlace; si no, la app sigue como siempre. Funciona detrás de Nginx sin tocar nada, porque `/cloud/` ya va entero a la app.
 - Logros *Escaneable* (QR descargados) y *Cuenta atrás* (enlaces con caducidad), un reto semanal y el título *Escaneable*. Código en `lib/enlaces.js`, `lib/enlaces-resumen.js` y `public/js/app/qr-enlace.js`.
 
+## Zona Enlaces
+
+Pestaña *Enlaces* (escritorio y móvil): todos tus enlaces públicos en un solo sitio, de tres tipos: **descarga** (`/cloud/<12>`, `/s/<id>`), **subida** (`/u/<id>`) y **prompts** (`/p/<id>`).
+
+- **Qué se ve**: cuatro contadores (activos, caducados, con contraseña, descargas), buscador, filtros por tipo y por estado, y una tarjeta por enlace con destino, estado, caducidad, uso (descargas, archivos, visitas) y la dirección.
+- **Acciones**: copiar, abrir, código QR, cambiar la caducidad (valores predefinidos u «Otro plazo…»), poner, cambiar o quitar la contraseña, dar un nombre y **revocar** (botón o deslizar la tarjeta). *Quitar caducados* revoca de golpe los que ya no sirven.
+- **API**: `GET /api/uploadlinks` (lista), `PUT /api/links/<id>/caducidad`, `PUT /api/links/<id>/clave`, `PUT /api/links/<id>/etiqueta`, `DELETE /api/links/<id>` (y la ruta antigua `DELETE /api/uploadlinks/<id>`), `POST /api/links/limpiar-caducados`. Revocar dos veces el mismo enlace devuelve 404 y las revocaciones simultáneas no se pisan (se vuelve a leer la lista antes de guardar).
+- **Nada se borra en el acto**: el enlace revocado se aparta 30 días en `.kcc/borrados/enlaces/`. El contador de revocados vive en `.kcc/enlaces/stats.json`.
+- Logro *Puertas cerradas* (enlaces revocados), un reto semanal y el título *Portero*. Código en `lib/enlaces-gestion.js`, `public/js/enlaces/` (`datos.js`, `acciones.js`, `lista.js`, `index.js`) y `public/css/enlaces.css`.
+
 ## Actualizaciones
 
 ### En el navegador y en el móvil
@@ -1772,7 +1783,8 @@ lib/
   office.js          Visor de Office (PDF con LibreOffice) y de hojas de cálculo (fábrica createOffice)
   cuentas.js         Login y 2FA, usuarios, sesiones abiertas y tokens de app (fábrica createCuentas)
   enlaces.js         Enlaces públicos: descarga (archivo, carpeta, álbum), subida y prompts, URL corta `/cloud/<12>`, caducidad y QR (fábrica createEnlaces)
-  enlaces-resumen.js Contadores de enlaces para los logros (QR, con caducidad, perpetuos)
+  enlaces-resumen.js Contadores de enlaces para los logros (QR, con caducidad, perpetuos, revocados)
+  enlaces-gestion.js Zona Enlaces: caducidad, contraseña, nombre, revocar y limpiar (con copia 30 días)
   notes-imagenes/    Imágenes de las notas (cliente): optimizar, subir, insertar, ventana de elección y botón de la barra
   notes/             Editor de bloques de las notas (cliente): inline, parser, bloques, tablas, visor, modelo, seleccion,
                      eventos, slash, ricos (marco de los bloques ricos) y ricos-boton/estructura/indice/ecuacion/diagrama/
@@ -1817,6 +1829,7 @@ public/
   js/notes/ricos-columnas.js, ricos-base-vistas.js  Columnas con bloques dentro y vistas de una base en una nota
   js/deslizar.js     Gesto «deslizar para eliminar» (K.deslizar) · js/app/qr-enlace.js  QR descargable y cambio de caducidad · vendor/qrcode/  librería del QR
   js/pagos/grafico.js, adjuntos.js  Gráfico anual y documentos adjuntos de Pagos
+  js/enlaces/        Zona Enlaces (datos, acciones, lista, index) + css/enlaces.css
   js/pagos/, js/marcadores/, js/recordatorios/, js/push/, js/sonidos/  Clientes de los módulos nuevos, un archivo por responsabilidad (datos, lista, formulario, ajustes…)
   js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, recordatorios vinculados, portapapeles, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
   css/               Estilos: modules (barra lateral y componentes), calendar, prompts, sistema (versiones, caja fuerte,

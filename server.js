@@ -338,7 +338,7 @@ async function contarContenido(user) {
     etiquetas: (etq.labels || []).length,
     prompts,
     enlaces: loadLinks().filter(l => l.owner === user.username).length,
-    ...resumenEnlaces(loadLinks().filter(l => l.owner === user.username)),
+    ...resumenEnlaces(loadLinks().filter(l => l.owner === user.username), enlacesMod.core.stats(user)),
     ...resumenBloques(notas.items),
     ...extras, ...extrasApp,
   };
@@ -514,7 +514,7 @@ const albumsMod = createAlbums({ express, auth, userRoot, resolveFor, enviarZip:
 const { readFavs, readAlbums } = albumsMod.core;
 app.use('/api', albumsMod.router);
 const enlacesMod = createEnlaces({
-  express, auth, jsonMedio, bcrypt, appDir: APP_DIR, thumbsDir: THUMBS_DIR, loadUsers, sendError, registrarActividad,
+  express, auth, jsonMedio, bcrypt, userRoot, appDir: APP_DIR, thumbsDir: THUMBS_DIR, loadUsers, sendError, registrarActividad,
   resolveFor, userPath, assertVisible, safeResolve, isHidden, esCompartida, exists,
   enviaPlantilla, enviarZip, cabeceraDescarga, makeUploader, MAX_UPLOAD_BYTES,
   albums: albumsMod.core, promptsCore: promptsMod.core, events: eventsMod, alCambiar: alCambiarContenido,

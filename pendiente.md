@@ -34,7 +34,7 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 
 ### Archivos
 - [ ] Versiones de archivo: guardar las últimas N versiones al sobrescribir y poder restaurarlas.
-- [ ] Enlaces públicos más completos: caducidad, contraseña, límite de descargas y aviso de descarga.
+- [ ] Enlaces públicos más completos: límite de descargas y aviso de descarga (caducidad, contraseña y zona de gestión ya hechas: pestaña *Enlaces*).
 - [ ] Detección de duplicados por hash, con opción de liberar espacio.
 - [ ] Búsqueda en el contenido de notas, textos y PDFs, no solo por nombre.
 - [ ] Vista previa de más formatos: PDF, Markdown, audio, vídeo con miniaturas y documentos Office.
