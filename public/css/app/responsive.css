@@ -1,0 +1,71 @@
+/* Adaptación a móvil y tabletas (va la última: sobrescribe lo anterior).
+   Antes estaba en línea en index.html; el orden de carga de css/app/*.css importa (ver index.html). */
+/* ---------- Responsive ---------- */
+@media (max-width:820px){
+  #file-list .tile{contain-intrinsic-size:auto 164px;}
+  .wrap{padding:0 14px;}
+  .tabs{display:none;}
+  .mobilenav{display:block;}
+  .brand-text span{display:none;}
+  .user-chip{padding:4px;}
+  .user-chip .txt{display:none;}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;}
+  .grid .badge-file{width:48px;height:48px;border-radius:15px;}
+  .toolbar .btn .lbl{display:none;}
+  .toolbar .btn{padding:11px 14px;}
+  .toolbar .btn.primary .lbl{display:inline;}
+  .lb-nav{width:40px;height:40px;}
+  /* Objetivos táctiles cómodos y sin apreturas en el visor */
+  .lb-top{gap:8px;padding-left:calc(12px + var(--safe-left));padding-right:calc(12px + var(--safe-right));}
+  .lb-tools{gap:4px;}
+  .lb-tools .icon-btn{width:44px;height:44px;}
+  .lb-tools .cerrar{width:48px;height:48px;}
+  .lb-title b{font-size:calc(13.5px*var(--fs,1));}
+  .lb-title span{font-size:calc(11px*var(--fs,1));}
+  .lb-exif{left:calc(12px + var(--safe-left));right:calc(12px + var(--safe-right));
+    width:auto;top:auto;bottom:calc(12px + var(--safe-bottom));max-height:62%;}
+  .view-head h2{font-size:calc(19px*var(--fs,1));}
+  .search{max-width:none;}
+  /* En móvil, lista y editor de notas se turnan a pantalla completa. La altura real
+     del nav inferior (--mobilenav-h) la mide app.js con el tamaño ya renderizado,
+     porque calcularla a mano con un valor fijo no cuadra igual en todos los
+     navegadores ni en la PWA instalada. */
+  #view-notes{height:calc(100dvh - var(--header-h) - var(--safe-top) - var(--mobilenav-h));}
+  .notes{grid-template-columns:1fr;flex:1;min-height:0;}
+  .notes.editando .notes-side{display:none;}
+  .notes:not(.editando) .notes-editor{display:none;}
+  #view-map{height:calc(100dvh - var(--header-h) - var(--safe-top) - var(--mobilenav-h));}
+  /* Barra de selección: cuadrícula de botones grandes con el texto debajo del icono
+     (antes eran 8 botones apretados en una fila que se desplazaba de lado) */
+  .selbar{width:calc(100% - 20px);bottom:calc(var(--mobilenav-h, 72px) + 10px + var(--safe-bottom));
+    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px;overflow:visible;max-height:46dvh;overflow-y:auto;}
+  .selbar .n{grid-column:1 / -1;margin:0;padding:2px 44px 2px 4px;font-size:calc(14px*var(--fs,1));align-self:center;}
+  .selbar .btn{flex-direction:column;gap:3px;min-height:48px;padding:8px 2px;font-size:calc(11.5px*var(--fs,1));line-height:1.15;border-radius:14px;}
+  .selbar .btn .ico{width:21px;height:21px;}
+  .selbar .btn .lbl{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .selbar #sel-cancel{position:absolute;top:6px;right:6px;min-height:40px;width:40px;padding:0;}
+  .selbar #sel-delete{color:#ff8b94;grid-column:span 2;}
+  body .pr-selbar{width:calc(100% - 20px);max-width:none;bottom:calc(var(--mobilenav-h, 72px) + 10px + var(--safe-bottom));
+    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px;overflow:visible;max-height:46dvh;overflow-y:auto;}
+  body .pr-selbar .n{grid-column:1 / -1;padding:2px 44px 2px 4px;font-size:calc(14px*var(--fs,1));}
+  body .pr-selbar .btn{flex-direction:column;gap:3px;min-height:54px;padding:8px 2px;font-size:calc(11.5px*var(--fs,1));line-height:1.15;border-radius:14px;}
+  body .pr-selbar .btn .ico{width:21px;height:21px;}
+  body .pr-selbar .btn.ghost{position:absolute;top:6px;right:6px;min-height:40px;width:40px;padding:0;}
+  body .ct-selbar .btn,body .notes-selbar .btn{min-height:44px;padding:8px 14px;}
+  /* Zonas táctiles de al menos 40 px (antes varias medían 30-34 px y costaba acertar) */
+  .chip{min-height:40px;}
+  #btn-grid,#btn-list{min-width:42px;min-height:40px;}
+  .seg button{min-height:40px;}
+  .ct-fav{min-width:42px;min-height:42px;}
+  .tile .dots{min-width:38px;min-height:38px;}
+  .crumbs .current,.crumbs a,.crumbs button{min-height:40px;display:inline-flex;align-items:center;}
+  /* Con la barra de selección abierta se deja hueco bajo el contenido para poder llegar a la última fila */
+  body.selbar-on .app{padding-bottom:calc(var(--selbar-h, 0px) + var(--mobilenav-h, 72px) + 28px + var(--safe-bottom));}
+  .solo-movil{display:grid;}
+}
+@media (min-width:821px){
+  .app{padding-bottom:40px;}
+  .upbar,.selbar{bottom:28px;}
+  body.selbar-on .app{padding-bottom:calc(var(--selbar-h, 0px) + 60px);}
+  .toast{bottom:36px;}
+}
