@@ -247,11 +247,12 @@ async function deleteUser(username) {
 }
 
 async function changeMyPassword() {
-  const password = $('my-newpass').value;
+  const password = $('my-newpass').value, actual = $('my-curpass').value;
+  if (!actual) { showToast('Escribe tu contraseña actual'); return; }
   if (!password || password.length < 8) { showToast('Mínimo 8 caracteres'); return; }
   try {
-    const res = await post(BASE + '/api/users/' + qs(state.user.username) + '/password', { password });
-    if (res.ok) { showToast('Contraseña actualizada'); $('my-newpass').value = ''; }
+    const res = await post(BASE + '/api/users/' + qs(state.user.username) + '/password', { password, actual });
+    if (res.ok) { showToast('Contraseña actualizada. Tus demás sesiones se han cerrado.'); $('my-newpass').value = ''; $('my-curpass').value = ''; }
     else showToast(await errorOf(res, 'No se pudo cambiar'));
   } catch { showToast('Error de conexión'); }
 }

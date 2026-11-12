@@ -19,6 +19,7 @@ const bcrypt = require('bcryptjs');
 
 const MAX_DEPTH = 1;                       // Depth: infinity se responde como 1
 const CACHE_CREDENCIALES_MS = 5 * 60 * 1000;
+const DUMMY = bcrypt.hashSync('kcc-dav-igualador', 8);   // iguala el tiempo cuando el usuario no existe
 
 const escapeXml = (s) => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -55,9 +56,9 @@ function createDav({ isBlocked = () => 0, registerFailure = () => {}, clearFailu
     res.status(401).end('No autenticado');
   }
 
-  const firmaClaves = (u) => [u.passwordHash, ...(u.apptokens || []).map(t => t.hash)].join('|');
+  const firmaClaves = (u) => [u.passwordHash, u.twofaSecret ? '2fa' : '', ...(u.apptokens || []).map(t => t.hash)].join('|');
 
-  function autenticar(req, res) {
+  async function autenticar(req, res) {
     const cab = req.headers.authorization || '';
     if (!cab.startsWith('Basic ')) { reto(res); return null; }
 
@@ -89,12 +90,13 @@ function createDav({ isBlocked = () => 0, registerFailure = () => {}, clearFailu
 
     const u = loadUsers().find(x => x.username === usuario);
     // bcrypt cuesta ~100 ms, de ahí la caché: un montaje hace decenas de peticiones seguidas.
-    // Vale tanto la contraseña de la cuenta como cualquiera de sus tokens de aplicación,
-    // para poder montar la unidad sin escribir la contraseña real en el cliente.
-    const valido = !!u && (
-      bcrypt.compareSync(clavePlano || '', u.passwordHash) ||
-      (u.apptokens || []).some(t => bcrypt.compareSync(clavePlano || '', t.hash))
-    );
+    // Vale cualquiera de sus tokens de aplicación y, solo si la cuenta NO tiene verificación en dos pasos, también su
+    // contraseña (con 2FA, la contraseña sola no puede abrir los archivos por otra puerta).
+    let valido = false;
+    if (u) {
+      for (const t of (u.apptokens || [])) if (await bcrypt.compare(clavePlano || '', t.hash).catch(() => false)) { valido = true; break; }
+      if (!valido && !u.twofaSecret) valido = await bcrypt.compare(clavePlano || '', u.passwordHash).catch(() => false);
+    } else await bcrypt.compare(clavePlano || '', DUMMY).catch(() => false);   // mismo tiempo exista o no el usuario
     if (!valido) { registerFailure(ipKey); reto(res); return null; }
     clearFailures(ipKey);
 
@@ -155,7 +157,7 @@ function createDav({ isBlocked = () => 0, registerFailure = () => {}, clearFailu
   }
 
   return async function dav(req, res) {
-    const user = autenticar(req, res);
+    const user = await autenticar(req, res);
     if (!user) return;
     // Avisa a las pestañas abiertas cuando un cliente WebDAV cambia algo
     if (alCambiar && /^(PUT|DELETE|MKCOL|MOVE|COPY)$/.test(req.method)) {

@@ -182,6 +182,14 @@ function loadUsers() {
 }
 function saveUsers(users) {
   store.escribeJsonSync(USERS_FILE, users, 0o600);
+  usuariosCache = null;
+}
+// Usuario actual por nombre para cada petición: caché que se rehace al guardar o si el archivo cambia por fuera
+let usuariosCache = null;
+function usuarioVivo(username) {
+  let mtime = 0; try { mtime = fs.statSync(USERS_FILE).mtimeMs; } catch { /* sin archivo */ }
+  if (!usuariosCache || usuariosCache.mtime !== mtime) usuariosCache = { mtime, mapa: new Map(loadUsers().map(u => [u.username, u])) };
+  return usuariosCache.mapa.get(username) || null;
 }
 
 // Bootstrap: crea admin por defecto si no hay usuarios
@@ -200,7 +208,7 @@ if (!fs.existsSync(USERS_FILE)) {
 const DUMMY_HASH = bcrypt.hashSync('timing-equalizer', 10);
 
 // Sesiones y registro de actividad (la caja fuerte se crea más abajo: se usa al cerrar una sesión)
-const { sessions, creaSesion, revocaSesion, toca: tocaSesion, marcaSucias: marcaSesionesSucias } = createSesiones({ SESSIONS_FILE, cierraCaja: (jti) => vaultMod.cierraSesion(jti) });
+const { sessions, creaSesion, revocaSesion, revocaUsuario, toca: tocaSesion, marcaSucias: marcaSesionesSucias } = createSesiones({ SESSIONS_FILE, cierraCaja: (jti) => vaultMod.cierraSesion(jti) });
 const actividadMod = createActividad({ express, auth, sendError, ACTIVITY_FILE, ACTIVITY_MAX, ACTIVITY_DIAS });
 const { registrarActividad } = actividadMod;
 
@@ -394,24 +402,23 @@ app.use(cookieParser());
 const webMod = createWeb({ express, APP_DIR, BASE_PATH, SECURE_COOKIES, tileOrigin: () => TILE_ORIGIN });
 const { enviaPlantilla } = webMod;
 app.use(webMod.cabeceras);
+app.use(webMod.mismoOrigen);
 webMod.montaEstaticos(app);
 
 // --- Auth middleware ---
+// Solo vale un JWT de sesión completo: con jti vivo (cerrable en remoto), sin `stage` (el paso pendiente de la verificación
+// en dos pasos no es una sesión) y de un usuario que sigue existiendo. El rol se toma del archivo de usuarios, no del token.
 function auth(req, res, next) {
   const token = req.cookies.token || (req.headers.authorization || '').replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'No autenticado' });
-  try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    // Los tokens emitidos antes de que existiera esto no llevan jti: se dejan pasar,
-    // así el despliegue no cierra la sesión de todo el mundo de golpe.
-    if (payload.jti) {
-      if (!tocaSesion(payload.jti)) return res.status(401).json({ error: 'Sesión cerrada' });
-    }
-    req.user = payload;
-    next();
-  } catch {
-    return res.status(401).json({ error: 'Token inválido' });
-  }
+  let payload;
+  try { payload = jwt.verify(token, JWT_SECRET); } catch { return res.status(401).json({ error: 'Token inválido' }); }
+  if (!payload || payload.stage || !payload.jti) return res.status(401).json({ error: 'Token inválido' });
+  const u = usuarioVivo(payload.username);
+  if (!u) { revocaSesion(payload.jti); return res.status(401).json({ error: 'Sesión cerrada' }); }
+  if (!tocaSesion(payload.jti)) return res.status(401).json({ error: 'Sesión cerrada' });
+  req.user = { ...payload, role: u.role };
+  next();
 }
 // Toda escritura correcta de la API invalida los recuentos de logros del usuario (así los logros salen al instante,
 // no con la caché de 45 s). Cubre todos los módulos sin tener que añadir el aviso en cada uno.
@@ -476,7 +483,7 @@ function abreSesion(req, res, user, accion) {
 
 const cuentasMod = createCuentas({
   express, auth, adminOnly, jwt, bcrypt, JWT_SECRET, DUMMY_HASH, loadUsers, saveUsers,
-  sessions, creaSesion, revocaSesion, marcaSesionesSucias,
+  sessions, creaSesion, revocaSesion, revocaUsuario, marcaSesionesSucias,
   isBlocked, registerFailure, clearFailures, totpVerificar, base32Encode,
   USERNAME_RE, MIN_PASSWORD, COOKIE_PATH, SECURE_COOKIES,
   shares: () => sharesMod, passkeys: () => passkeysMod, vault: () => vaultMod, registrarActividad,
