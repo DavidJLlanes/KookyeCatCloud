@@ -124,6 +124,7 @@ K.modal = function ({ title, sub, cls = '', content, actions = [], onClose, dism
       overlay.remove();
       const i = _pila.indexOf(h); if (i >= 0) _pila.splice(i, 1);
       if (foco) foco.cierra();                        // el foco vuelve a quien abrió el diálogo (kit-foco.js)
+      if (K.atrasCierra) K.atrasCierra();             // y se libera la entrada del historial del gesto «atrás» (kit-atras.js)
       if (onClose) onClose(valor);
     },
   };
@@ -149,9 +150,11 @@ K.modal = function ({ title, sub, cls = '', content, actions = [], onClose, dism
   h.dismiss = dismiss;
   _pila.push(h);
   document.body.appendChild(overlay);
+  if (K.atrasAbre) K.atrasAbre();
   if (K.modalAccesible) foco = K.modalAccesible(modal, overlay, { title, danger: actions.some((a) => a.danger) });
   return h;
 };
+K.modalSuperior = () => _pila[_pila.length - 1] || null;
 // Cierra todos los diálogos abiertos (p. ej. al pulsar un valor para filtrar desde una ficha)
 K.cierraModales = () => { [..._pila].forEach(h => h.close()); };
 document.addEventListener('keydown', (e) => {

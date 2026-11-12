@@ -78,6 +78,45 @@ async function ejecuta(nombre, opciones) {
   await fila.click({ button: 'right' }); await p.waitForTimeout(100); await p.keyboard.press('Escape');
   await fila.click({ button: 'right' }); await p.waitForTimeout(100);
   ok(await p.evaluate(() => document.querySelectorAll('#ctxmenu [role=menuitem]').length) === await p.evaluate(() => document.querySelectorAll('#ctxmenu button').length), `${nombre}: reabrir el menú contextual no duplica nada`);
+
+  // --- Menú contextual de Notas (misma capa, otras opciones)
+  await p.evaluate(() => { menuNota(60, 60, { id: 'x1', title: 'Nota de prueba', type: 'note', parent: '' }); });
+  await p.waitForTimeout(100);
+  ok(await p.evaluate(() => document.getElementById('ctxmenu').getAttribute('role') === 'menu' && document.querySelectorAll('#ctxmenu [role=menuitem]').length >= 2 && document.activeElement.getAttribute('role') === 'menuitem'), `${nombre}: el menú contextual de Notas tiene roles y foco`);
+  await p.keyboard.press('Escape'); await p.waitForTimeout(100);
+
+  // --- Gesto «atrás» (botón atrás del móvil): cierra el diálogo y no saca de la app
+  const url0 = p.url();
+  const atras = async () => { await p.goBack({ waitUntil: 'commit', timeout: 5000 }).catch(() => {}); await p.waitForTimeout(250); };
+  const abiertos = () => p.evaluate(() => document.querySelectorAll('.overlay:not([hidden]) .modal').length);
+  const estado = () => p.evaluate(() => !!(history.state && history.state.kccModal));
+  await p.evaluate(() => { K.modal({ title: 'Ficha A', actions: [{ label: 'Cerrar' }] }); });
+  await p.waitForSelector('.overlay:not([hidden]) .modal');
+  ok(await estado(), `${nombre}: abrir un diálogo añade una entrada de historial`);
+  await atras();
+  ok(await abiertos() === 0 && p.url() === url0, `${nombre}: «atrás» cierra el diálogo y se queda en la app (${p.url() === url0 ? 'misma URL' : p.url()})`);
+  await p.evaluate(() => { K.modal({ title: 'Ficha B', actions: [{ label: 'Cerrar' }] }); });
+  await p.waitForSelector('.overlay:not([hidden]) .modal'); await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+  ok(await abiertos() === 0 && !(await estado()), `${nombre}: cerrar con Esc libera la entrada del historial`);
+
+  // Anidados: confirmación encima de una ficha; cada «atrás» cierra uno
+  await p.evaluate(() => { K.modal({ title: 'Ficha C', actions: [{ label: 'Cerrar' }] }); K.confirm('¿Seguro?'); });
+  await p.waitForFunction(() => document.querySelectorAll('.overlay:not([hidden]) .modal').length === 2);
+  await atras(); ok(await abiertos() === 1, `${nombre}: con dos diálogos, el primer «atrás» cierra solo el de encima`);
+  ok(await estado(), `${nombre}: la entrada se mantiene mientras quede uno`);
+  await atras(); ok(await abiertos() === 0 && p.url() === url0, `${nombre}: el segundo «atrás» cierra el otro`);
+
+  // Con cambios sin guardar: «atrás» pregunta; cancelar mantiene el diálogo (y repone la entrada)
+  await p.evaluate(() => { const t = document.createElement('textarea'); t.id = 'texto-largo'; K.modal({ title: 'Redacta', content: t, actions: [{ label: 'Cancelar' }, { label: 'Guardar', primary: true }] }); });
+  await p.waitForSelector('#texto-largo'); await p.fill('#texto-largo', 'Esto es un texto bastante largo que no quiero perder');
+  await atras(); await p.waitForSelector('.overlay:not([hidden]) .modal-actions .btn.danger', { timeout: 3000 }).catch(() => {});
+  ok(await abiertos() === 2, `${nombre}: con cambios sin guardar, «atrás» pregunta antes de descartar`);
+  await p.locator('.overlay:not([hidden]) .modal').last().locator('.btn', { hasText: 'Cancelar' }).click(); await p.waitForTimeout(200);
+  ok(await abiertos() === 1 && await estado(), `${nombre}: al cancelar, el diálogo sigue abierto y «atrás» sigue protegido`);
+  await atras(); await p.waitForTimeout(100);
+  ok(await abiertos() === 2, `${nombre}: el segundo «atrás» vuelve a preguntar`);
+  await p.click('.overlay:not([hidden]) .modal-actions .btn.danger'); await p.waitForTimeout(400);
+  ok(await abiertos() === 0 && p.url() === url0, `${nombre}: tras descartar se cierra todo sin salir de la app`);
   ok(errores.length === 0, `${nombre}: sin errores de JavaScript ${errores.join(' | ').slice(0, 120)}`);
   await b.close();
 }
