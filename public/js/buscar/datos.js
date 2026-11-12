@@ -46,6 +46,6 @@
   B.busca = (q, m) => K.get('/api/busqueda?' + K.qs({ q, m: m || '', n: 60 }));
   B.cargaConfig = async () => { B.S.config = await K.get('/api/ia/config'); return B.S.config; };
   // ¿Hay un proveedor listo para usar?
-  B.nombreProv = (id) => { const p = S.config && S.config.proveedores.find(x => x.id === id); return p ? p.nombre : id; };
+  B.nombreProv = (id) => { const p = B.S.config && B.S.config.proveedores.find(x => x.id === id); return p ? p.nombre : id; };
   B.iaLista = () => { const c = B.S.config; if (!c) return null; const p = c.proveedores.find(x => x.id === c.activo); return p && p.listo ? p : null; };
 })();

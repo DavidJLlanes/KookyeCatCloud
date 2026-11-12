@@ -110,6 +110,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 ### Novedades
 
+- **12 nov 2026 (noche)** · **IA de Buscar arreglada y más ágil**: la respuesta no salía por un error de JavaScript al pintarla (`S is not defined`); corregido. «Ver modelos» y «Probar conexión» ahora aceptan respuestas comprimidas (la lista de OpenRouter es enorme), guardan la lista 10 min, comprueban la clave al instante (`/key`) antes de probar el modelo (máx. 30 s con mensaje claro) y muestran segundos de espera. Si un modelo «razona» y no deja texto se avisa, y preguntas como «¿Cuántas notas tengo?» reciben los recuentos reales. ESLint ahora también vigila `public/js` (identificadores sin definir) para que esto no vuelva a pasar.
 - **12 nov 2026 (más tarde)** · **Rendimiento, accesibilidad y seguridad** (repaso con la guía [modern-web-guidance](https://github.com/GoogleChrome/modern-web-guidance) de Chrome y dos auditorías, la 16 y la 17):
   - **Carpetas enormes**: la lista de archivos se pinta por tandas y cede el hilo, así que una carpeta de 5.000 archivos pasa de ~6 s con la interfaz congelada a menos de 1 s.
   - **Diálogos y menús accesibles**: nombre y foco inicial seguros, el Tab no se escapa del diálogo, el foco vuelve a quien lo abrió, menús con flechas, Inicio/Fin y Esc. **El botón o gesto «atrás» del móvil cierra el diálogo abierto** en vez de sacarte de la app (y pregunta si hay cambios sin guardar). El Intro que confirma una palabra con teclados japonés, chino o coreano ya no ejecuta acciones por error.
@@ -1912,7 +1913,7 @@ deploy/              update.sh y temporizador systemd de autoactualización
 Las convenciones para módulos nuevos (JSON propio por módulo y gamificación obligatoria) están en
 `CLAUDE.md`.
 
-`npm run check` revisa la sintaxis de todo el código del servidor, la persistencia, las expresiones regulares (ReDoS) y ESLint. No hay paso de build: lo que
+`npm run check` revisa la sintaxis de todo el código del servidor, la persistencia, las expresiones regulares (ReDoS) y ESLint (servidor y cliente: un identificador sin definir en `public/js` falla la comprobación). No hay paso de build: lo que
 ves en `public/` es lo que se sirve.
 
 ## Solución de problemas

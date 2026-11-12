@@ -1,7 +1,7 @@
 'use strict';
 // Pruebas de humo de la capa de IA con un proveedor falso local (compatible con OpenAI): claves cifradas que nunca vuelven al
 // cliente, consentimiento, listado de modelos, preguntar con fuentes, resumir, errores del proveedor, SSRF y logros.
-const fs = require('fs'), path = require('path'), http = require('http');
+const fs = require('fs'), path = require('path'), http = require('http'), zlib = require('zlib');
 
 module.exports = async ({ req, prueba, igual, cierto, DATA, BASE, cookie }) => {
   const vistos = [];
@@ -11,8 +11,13 @@ module.exports = async ({ req, prueba, igual, cierto, DATA, BASE, cookie }) => {
     q.on('end', () => {
       vistos.push({ url: q.url, auth: q.headers.authorization || '', cuerpo });
       if (modo === 'clave') { r.writeHead(401, { 'Content-Type': 'application/json' }); return r.end('{"error":{"message":"bad key sk-secreto-1234"}}'); }
+      if (q.url.endsWith('/models') && modo === 'gzip') {   // lista enorme (>2 MB descomprimida) que viaja comprimida
+        const gran = JSON.stringify({ data: Array.from({ length: 30000 }, (_, i) => ({ id: 'm' + i + ':free', name: 'Modelo número ' + i + ' '.repeat(60) })) });
+        r.writeHead(200, { 'Content-Type': 'application/json', 'Content-Encoding': 'gzip' }); return r.end(zlib.gzipSync(gran));
+      }
       if (q.url.endsWith('/models')) { r.writeHead(200, { 'Content-Type': 'application/json' }); return r.end(JSON.stringify({ data: [{ id: 'modelo-a' }, { id: 'modelo-b:free' }] })); }
       r.writeHead(200, { 'Content-Type': 'application/json' });
+      if (modo === 'razona') return r.end(JSON.stringify({ choices: [{ message: { content: null, reasoning: 'pensando…' } }] }));
       r.end(JSON.stringify({ choices: [{ message: { content: 'Según tus notas, el servidor está en IONOS [1].' } }], usage: { total_tokens: 9 } }));
     });
   });
@@ -75,6 +80,24 @@ module.exports = async ({ req, prueba, igual, cierto, DATA, BASE, cookie }) => {
       modo = 'ok';
       // una dirección privada que no es la permitida por KCC_IA_PERMITE_LOCAL (aquí activada) sigue exigiendo http(s) y sin credenciales
       igual((await req('PUT', '/api/ia/proveedores/personalizado', { base: 'http://usuario:clave@127.0.0.1:1/v1' })).s, 400, 'sin usuario ni contraseña en la dirección');
+    });
+
+    await prueba('ia: lista de modelos grande y comprimida, caché, modelo que razona y preguntas de recuento', async () => {
+      igual((await req('PUT', '/api/ia/proveedores/personalizado', { base, modelo: 'modelo-a' })).s, 200);
+      modo = 'gzip'; vistos.length = 0;
+      const g = await req('POST', '/api/ia/proveedores/personalizado/modelos', { refrescar: true });
+      igual(g.s, 200, JSON.stringify(g.j).slice(0, 200)); cierto(g.j.modelos.length === 600, 'lista gzip de más de 2 MB recortada a 600');
+      const n = vistos.length;
+      const c = await req('POST', '/api/ia/proveedores/personalizado/modelos', {});
+      cierto(c.j.cache && vistos.length === n, 'la segunda vez sale de la caché sin llamar al proveedor');
+      modo = 'razona';
+      const r = await req('POST', '/api/ia/preguntar', { pregunta: `¿dónde está el servidor ${marca}?` });
+      igual(r.s, 200); cierto(/no devolvió texto/.test(r.j.respuesta) && /razona/.test(r.j.respuesta), 'aviso claro si el modelo no deja texto: ' + r.j.respuesta);
+      modo = 'ok'; vistos.length = 0;
+      const k = await req('POST', '/api/ia/preguntar', { pregunta: '¿Cuántas notas tengo?' });
+      igual(k.s, 200, JSON.stringify(k.j));
+      const env = vistos.find(v => v.url.endsWith('/chat/completions'));
+      cierto(env && /<recuento>[\s\S]*Notas: \d+/.test(env.cuerpo), 'la pregunta de «cuántas» recibe los recuentos reales');
     });
 
     await prueba('ia: quitar la clave, sin sesión y logros', async () => {

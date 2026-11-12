@@ -39,6 +39,13 @@
       const lista = document.createElement('datalist'); lista.id = 'bu-modelos';
       f.append(campo('Modelo', modelo), lista);
       const fila = el('div', 'bu-aj-fila');
+      const estado = el('p', 'k-faint'); estado.setAttribute('role', 'status'); estado.setAttribute('aria-live', 'polite');
+      // Mensaje de progreso con segundos mientras se espera (las listas y los modelos gratuitos pueden tardar)
+      const espera = async (txt, tarea) => {
+        const t0 = Date.now(); estado.textContent = txt;
+        const reloj = setInterval(() => { estado.textContent = `${txt} ${Math.round((Date.now() - t0) / 1000)} s`; }, 1000);
+        try { return await tarea(); } finally { clearInterval(reloj); estado.textContent = ''; }
+      };
       const cargar = el('button', 'btn sm', 'Ver modelos disponibles'); cargar.type = 'button';
       let soloG = null, todos = [];
       const rellena = () => { lista.textContent = ''; todos.filter(m => !soloG || !soloG.checked || m.gratis).slice(0, 400).forEach(m => { const o = document.createElement('option'); o.value = m.id; o.label = m.gratis ? `${m.nombre} (gratis)` : m.nombre; lista.appendChild(o); }); };
@@ -47,7 +54,7 @@
         cargar.disabled = true;
         try {
           if (clave && clave.value.trim()) await K.put('/api/ia/proveedores/' + p.id, { clave: clave.value.trim(), base: base ? base.value : undefined });
-          todos = (await K.post(`/api/ia/proveedores/${p.id}/modelos`)).modelos; rellena();
+          todos = (await espera('Pidiendo la lista de modelos…', () => K.post(`/api/ia/proveedores/${p.id}/modelos`))).modelos; rellena();
           K.toast(`${todos.length} modelos (${todos.filter(m => m.gratis).length} gratuitos). Escribe en el campo para elegir uno.`);
           modelo.focus();
         } catch (e) { K.fail(e); }
@@ -69,10 +76,11 @@
       const bProbar = el('button', 'btn', 'Probar conexión'); bProbar.type = 'button';
       bProbar.addEventListener('click', async () => {
         bProbar.disabled = true;
-        try { await guarda(); const r = await K.post('/api/ia/probar', { proveedor: p.id }); K.toast(`Conexión correcta (${(r.ms / 1000).toFixed(1)} s)`); B.logros(); await refresca(); } catch (e) { K.fail(e); }
+        try { await guarda(); const r = await espera('Comprobando la clave y el modelo (hasta 30 s)…', () => K.post('/api/ia/probar', { proveedor: p.id })); K.toast(`Conexión correcta (${(r.ms / 1000).toFixed(1)} s)`); B.logros(); await refresca(); } catch (e) { K.fail(e); }
         bProbar.disabled = false;
       });
       acc.append(bGuardar, bProbar);
+      f.appendChild(estado);
       if (p.tieneClave) {
         const q = el('button', 'btn danger', 'Quitar clave'); q.type = 'button';
         q.addEventListener('click', async () => { if (!await K.confirm(`Se borrará la clave de ${p.nombre} de tu servidor.`, { ok: 'Quitar', danger: true, title: 'Quitar clave' })) return; try { await K.del(`/api/ia/proveedores/${p.id}/clave`); K.toast('Clave quitada'); await refresca(); } catch (e) { K.fail(e); } });

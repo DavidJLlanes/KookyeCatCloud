@@ -61,13 +61,17 @@
     const q = S.q.trim();
     if (q.length < 3 || S.ocupado) return;
     S.ocupado = true; S.error = ''; S.ia = null; B.pintaTodo();
+    // contador de segundos: los modelos gratuitos pueden tardar y sin él parece que no pasa nada
+    const t0 = Date.now();
+    const reloj = setInterval(() => { const e = document.querySelector('.bu-pensando'); if (e) e.textContent = `Buscando en tus datos y preguntando al modelo… ${Math.round((Date.now() - t0) / 1000)} s`; }, 1000);
     try {
       S.ia = await K.post('/api/ia/preguntar', { pregunta: q, ampliar: !!S.ampliar });
       B.logros();
     } catch (e) {
-      if (/acepta que se envíen/.test((e && e.message) || '')) { S.ocupado = false; B.ajustes({ aviso: true }); return; }
+      if (/acepta que se envíen/.test((e && e.message) || '')) { clearInterval(reloj); S.ocupado = false; B.ajustes({ aviso: true }); return; }
       S.error = (e && e.message) || 'No se pudo preguntar a la IA';
     }
+    clearInterval(reloj);
     S.ocupado = false; B.pintaTodo();
   };
 
