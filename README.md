@@ -533,7 +533,7 @@ notas, enlaces, fechas, cifras ni a ubicaciones largas del calendario.
   unirlos o quitar los que no usa nadie. Nada cambia sin tu confirmación.
 - **Todos son clicables**: un valor en una tarjeta, ficha o fila filtra ese módulo por él, desde cualquier sitio.
 
-Para desarrolladores: `lib/valores.js` es un servicio compartido (como las etiquetas). Cada módulo registra sus campos con
+Para desarrolladores: `lib/valores/index.js` es un servicio compartido (como las etiquetas). Cada módulo registra sus campos con
 `valores.registra({ campo, modulo, prop, etiqueta, multiple, uso, renombra })`, llama a `valores.aplica(user, modulo, obj)`
 antes de guardar y, en el cliente, usa `K.campoValor()` en el formulario, `K.chipValor()` para mostrar el valor y
 registra `K.filtros.<modulo> = (prop, valor) => …`. La normalización (`public/js/valores-clave.js`) es el mismo archivo
@@ -965,7 +965,7 @@ Cómo evitar problemas:
 1. Actívalo solo con webs tuyas o de las que te fíes. Para un ZIP de origen dudoso, o código generado por IA que no has revisado, déjalo apagado.
 2. No pongas secretos (claves de API, contraseñas) dentro de proyectos que vayas a previsualizar con JavaScript.
 3. Nunca escribas en ellas tus contraseñas reales: aunque el marco no pueda leer tu sesión, una web falsa podría pedírtelas.
-4. Si prefieres bloquear las conexiones salientes, cambia en `lib/codigo.js` (`vistaRouter`) los orígenes `https:` del CSP con JavaScript por `'self'` y las webs solo cargarán lo que haya en el proyecto.
+4. Si prefieres bloquear las conexiones salientes, cambia en `lib/codigo/vista.js` (`vistaRouter`) los orígenes `https:` del CSP con JavaScript por `'self'` y las webs solo cargarán lo que haya en el proyecto.
 5. Si no quieres que exista esta opción, elimina `js` del token en `POST /:id/vista` y el interruptor en `public/js/codigo.js` (`interruptorJs`).
 
 **Límites**
@@ -997,7 +997,7 @@ Los prompts de tipo **código** (sección Prompts) y los proyectos de **Código*
 - **Desde un prompt de código** (ficha → bloque *Resultado en Código*): **Ver** abre el proyecto, **Crear proyecto** genera uno nuevo con el prompt guardado en `prompt.md` y ya vinculado, **Vincular…** elige uno que ya tengas y la **×** quita el vínculo.
 - **Desde un proyecto** (bloque *Prompts vinculados*, bajo el título): **Ver** abre el prompt, **Crear prompt** crea un prompt de tipo código vinculado, **Vincular…** elige uno existente y la **×** quita el vínculo.
 - Un prompt admite hasta 20 proyectos y un proyecto hasta 20 prompts. Duplicar un prompt no copia sus vínculos.
-- Cada lado guarda solo los ids del otro (`prompt.codigo` en `.kcc/prompts/`, `proyecto.prompts` en `.kcc/codigo/<id>/proyecto.json`) y `lib/vinculos.js` los mantiene a la vez. Si borras uno de los dos, el vínculo sobrante se ignora y se limpia solo la próxima vez que se consulta.
+- Cada lado guarda solo los ids del otro (`prompt.codigo` en `.kcc/prompts/`, `proyecto.prompts` en `.kcc/codigo/<id>/proyecto.json`) y `lib/transversal/vinculos.js` los mantiene a la vez. Si borras uno de los dos, el vínculo sobrante se ignora y se limpia solo la próxima vez que se consulta.
 - API: `GET /api/vinculos/codigo/prompt/:id`, `GET /api/vinculos/codigo/proyecto/:id`, `GET /api/vinculos/codigo/prompts`, `POST /api/vinculos/codigo` y `/quitar` (`{promptId, proyectoId}`), `POST /api/vinculos/codigo/crear-proyecto` (`{promptId}`) y `/crear-prompt` (`{proyectoId}`).
 
 ![Lista de proyectos de código](docs/capturas/codigo.png)
@@ -1021,7 +1021,7 @@ Las secciones con contenido legible tienen en su menú ⋯ (o en el botón **Exp
 
 Cada sección construye su documento en Markdown y `public/js/docexport.js` (`K.doc`) lo entrega: el `.md` tal cual, el `.txt` sin marcas y el PDF.
 
-**El PDF lo genera el servidor** (`POST /api/pdf`, `lib/pdf.js` + `lib/pdf/`, con `pdfkit` y las fuentes DejaVu de `lib/pdf/fuentes/`): A4 con títulos, listas y tareas, citas, avisos, código, tablas (con la cabecera repetida al cambiar de página), imágenes de tus notas, enlaces y numeración «n / total». Las tablas anchas salen en horizontal; los emojis de color que la fuente no tiene se omiten. Antes se imprimía desde un marco oculto del navegador, que en el móvil no guardaba nada. Tras actualizar hace falta `npm ci` (la actualización nocturna ya lo hace).
+**El PDF lo genera el servidor** (`POST /api/pdf`, `lib/pdf/index.js` + `lib/pdf/`, con `pdfkit` y las fuentes DejaVu de `lib/pdf/fuentes/`): A4 con títulos, listas y tareas, citas, avisos, código, tablas (con la cabecera repetida al cambiar de página), imágenes de tus notas, enlaces y numeración «n / total». Las tablas anchas salen en horizontal; los emojis de color que la fuente no tiene se omiten. Antes se imprimía desde un marco oculto del navegador, que en el móvil no guardaba nada. Tras actualizar hace falta `npm ci` (la actualización nocturna ya lo hace).
 
 ### Dónde se guarda lo que exportas
 
@@ -1034,7 +1034,7 @@ Los CSV (Bases y Juegos) llevan «;» y BOM, y los números con coma decimal, pa
 - **Cada sección**: el botón ⤓ de la barra superior exporta los datos de la sección abierta (Notas, Prompts, Contactos, Calendario, Etiquetas, Compra, Juegos, Bases, Código, Logros, Portapapeles y Favoritos/álbumes). En **Cuenta → Mis datos (JSON)** están todas en una lista.
 - **Código**: el JSON exporta el `proyecto.json` de cada proyecto (árbol y versiones, sin el contenido de los archivos). Para llevarte la web completa usa **Exportar ZIP** en la cabecera del proyecto.
 - **Administración → Exportar todos los JSON**: un ZIP comprimido con los JSON de todos los usuarios (`usuarios/<nombre>/…`), los compartidos (`compartido/`), la lista de usuarios sin contraseñas y un `LEEME.json`. No incluye contraseñas, secretos, sesiones ni passkeys, ni los archivos subidos.
-- API: `GET /api/export/:seccion` y `GET /api/admin/export-all` (solo administradores). Código en `lib/exportar.js`.
+- API: `GET /api/export/:seccion` y `GET /api/admin/export-all` (solo administradores). Código en `lib/exportar/index.js`.
 
 ## Apariencia: tema y color de acento
 
@@ -1183,7 +1183,7 @@ Editor estilo Notion sobre las mismas carpetas y el mismo autoguardado de siempr
   - **Botón de plantilla** (`::boton nota:<id> Etiqueta` o `::boton fila:<base>:<plantilla> Etiqueta`): un botón dentro de la nota que crea una nota nueva desde una plantilla de nota o una fila nueva desde una plantilla de fila de una base, y la abre. Se inserta con `/` → *Botón*. Código en `public/js/notes/ricos-boton.js`; las plantillas de nota entran en la exportación de Notas y al borrarlas queda copia 30 días.
   - Logros de plantillas: *Molde*, *Producción en serie*, *Botonero* y *Moldes de nota*, un reto semanal y el título *Plantillero*.
   - Logros de anidado y vistas: *Muñecas rusas* y *Mirador*, y el título *Muñeca rusa*.
-  - Logros: familias *Maquetador*, *Académico*, *Mundo en una nota*, *Doble vida* y *Fuente única*, el especial *Maestro de bloques*, un reto semanal, el título *Arquitecto de notas* y la copa del Cronista. Los bloques se cuentan al guardar la nota (`lib/notas-bloques.js`).
+  - Logros: familias *Maquetador*, *Académico*, *Mundo en una nota*, *Doble vida* y *Fuente única*, el especial *Maestro de bloques*, un reto semanal, el título *Arquitecto de notas* y la copa del Cronista. Los bloques se cuentan al guardar la nota (`lib/notes/bloques.js`).
 - **Formato en móvil y táctil**: al seleccionar texto aparece la barra de formato (botones de 44 px, debajo de la selección para no chocar con el menú nativo) con negrita, cursiva, tachado, código, resaltado, enlace, Título 1-3, viñetas y tareas. Sin selección, escribe `/` para insertar bloques.
 - **Formato**: negrita, cursiva, tachado, resaltado, código y enlaces (barra flotante al
   seleccionar, o Ctrl+B / I / E / K). Arrastra el asa ⠿ para reordenar bloques.
@@ -1305,7 +1305,7 @@ Menú de un archivo, carpeta o álbum → *Compartir enlace*. La dirección es c
 - **Código QR**: botón *Código QR* al crear el enlace y en la lista de enlaces; se genera en el navegador (librería `qrcode-generator`, en `public/vendor/qrcode/`) y se **descarga como imagen PNG** (`qr-<id>.png`, 370 px con margen), o copias el enlace desde la misma ventana.
 - **La contraseña no viaja en la URL**: quien recibe el enlace la manda una sola vez en una cabecera (`POST /api/public/share/<id>/acceso`) y recibe un token de 1 hora firmado con el hash de la contraseña; las descargas y miniaturas usan `?t=<token>`. Cambiar la contraseña del enlace invalida los tokens, y el límite de 10 fallos por hora sigue vigente.
 - Los datos siguen en `uploadlinks.json`; `PUT /api/sharelinks/<id>/caducidad` cambia el plazo y `POST /api/sharelinks/<id>/qr` anota la descarga del QR (para los logros). La ruta `/<12 caracteres>` solo responde si existe ese enlace; si no, la app sigue como siempre. Funciona detrás de Nginx sin tocar nada, porque `/cloud/` ya va entero a la app.
-- Logros *Escaneable* (QR descargados) y *Cuenta atrás* (enlaces con caducidad), un reto semanal y el título *Escaneable*. Código en `lib/enlaces.js`, `lib/enlaces-resumen.js` y `public/js/app/qr-enlace.js`.
+- Logros *Escaneable* (QR descargados) y *Cuenta atrás* (enlaces con caducidad), un reto semanal y el título *Escaneable*. Código en `lib/enlaces/index.js`, `lib/enlaces/resumen.js` y `public/js/app/qr-enlace.js`.
 
 ## Zona Enlaces
 
@@ -1315,7 +1315,7 @@ Pestaña *Enlaces* (escritorio y móvil): todos tus enlaces públicos en un solo
 - **Acciones**: copiar, abrir, código QR, cambiar la caducidad (valores predefinidos u «Otro plazo…»), poner, cambiar o quitar la contraseña, dar un nombre y **revocar** (botón o deslizar la tarjeta). *Quitar caducados* revoca de golpe los que ya no sirven.
 - **API**: `GET /api/uploadlinks` (lista), `PUT /api/links/<id>/caducidad`, `PUT /api/links/<id>/clave`, `PUT /api/links/<id>/etiqueta`, `DELETE /api/links/<id>` (y la ruta antigua `DELETE /api/uploadlinks/<id>`), `POST /api/links/limpiar-caducados`. Revocar dos veces el mismo enlace devuelve 404 y las revocaciones simultáneas no se pisan (se vuelve a leer la lista antes de guardar).
 - **Nada se borra en el acto**: el enlace revocado se aparta 30 días en `.kcc/borrados/enlaces/`. El contador de revocados vive en `.kcc/enlaces/stats.json`.
-- Logro *Puertas cerradas* (enlaces revocados), un reto semanal y el título *Portero*. Código en `lib/enlaces-gestion.js`, `public/js/enlaces/` (`datos.js`, `acciones.js`, `lista.js`, `index.js`) y `public/css/enlaces.css`.
+- Logro *Puertas cerradas* (enlaces revocados), un reto semanal y el título *Portero*. Código en `lib/enlaces/gestion.js`, `public/js/enlaces/` (`datos.js`, `acciones.js`, `lista.js`, `index.js`) y `public/css/enlaces.css`.
 
 ## Búsqueda global e IA opcional
 
@@ -1808,7 +1808,7 @@ mismo servidor, esa es la única protección frente a la pérdida del propio VPS
 
 ```text
 server.js            Arranque, configuración y rutas de archivos (listar, subir, descargar, vista previa, mover)
-webdav.js            Servidor WebDAV (montado antes del analizador de JSON)
+lib/webdav/index.js            Servidor WebDAV (montado antes del analizador de JSON)
 lib/
   store.js           Escritura atómica de JSON con cola por archivo
   events.js          Avisos en directo (Server-Sent Events)

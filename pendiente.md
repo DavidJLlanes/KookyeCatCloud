@@ -87,12 +87,12 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 2. ~~Compartir desde el móvil.~~ Hecho.
 3. ~~Importar metadatos de ComfyUI en prompts.~~ Hecho.
 
-- [x] ~~Sección Juegos con estados, estadísticas, RAWG opcional, logros y tarjetas para compartir~~ Hecho: pestaña Juegos (`lib/games.js`, `public/js/games.js`), calendario «Juegos», 6 familias + 3 especiales + 2 retos, README y `RAWG_KEY`.
+- [x] ~~Sección Juegos con estados, estadísticas, RAWG opcional, logros y tarjetas para compartir~~ Hecho: pestaña Juegos (`lib/games/index.js`, `public/js/games.js`), calendario «Juegos», 6 familias + 3 especiales + 2 retos, README y `RAWG_KEY`.
 - [x] ~~2048 y Breakout con el diseño del Tetris~~ Hecho: `public/js/arcade.js`, endpoint `/api/game/arcade/:juego`, 13 familias + 4 especiales + 3 títulos + 8 retos nuevos, potenciadores por nivel y tarjeta con captura.
 
 - [x] ~~Bases de datos con columnas propias y vistas de tabla y Kanban~~ Hecho: `lib/bases/`, `public/js/bases/`, un JSON por base, 5 familias + 2 especiales + título + 2 retos; convención de gamificación en `CLAUDE.md`.
 
-- [x] ~~Módulo Código (editor con colores, números de línea y vista previa) y exportación de JSON por sección y completa~~ Hecho: `lib/codigo.js`, `public/js/codigo.js`, `lib/exportar.js`, `public/js/exportar.js`.
+- [x] ~~Módulo Código (editor con colores, números de línea y vista previa) y exportación de JSON por sección y completa~~ Hecho: `lib/codigo.js`, `public/js/codigo.js`, `lib/exportar/index.js`, `public/js/exportar.js`.
 - [x] ~~Código como proyectos (carpetas, archivos, subida de archivos y ZIP, versiones con diff y restauración, vista web sin JavaScript)~~ Hecho: reescrito `lib/codigo.js` + `public/js/codigo.js`; 8 familias + 3 especiales + título + reto. Pendiente opcional: ramas, etiquetas de versión y búsqueda dentro de los archivos.
 
 - [x] Copiar o mover entre Archivos y Código (fase 1), con deshacer de 1 minuto, previsualización, historial y logro «Mudanzas».

@@ -9,16 +9,16 @@ const path = require('path');
 const RAIZ = path.join(__dirname, '..');
 // lib/ puede tener módulos en carpeta (lib/pagos/, lib/marcadores/…): se recorren enteras
 const jsDe = (rel) => fs.readdirSync(path.join(RAIZ, rel), { withFileTypes: true }).flatMap(e => e.isDirectory() ? jsDe(`${rel}/${e.name}`) : e.name.endsWith('.js') ? [`${rel}/${e.name}`] : []);
-const ARCHIVOS = [...jsDe('lib'), 'server.js', 'webdav.js'];
+const ARCHIVOS = [...jsDe('lib'), 'server.js'];
 const PERMITIDOS = {
-  'lib/store.js': 'implementa las reglas',
-  'lib/copias.js': 'una sola copia a la vez (enCurso); el .tmp es el archivo de la copia',
-  'lib/exportar.js': 'solo lee para exportar; no vuelve a guardar',
-  'lib/copias-archivo.js': 'solo cuenta JSON dañados al hacer la copia',
-  'lib/fotos.js': 'caché de EXIF regenerable',
-  'lib/games.js': 'JSON de «quitados» en la zona temporal de transferencias',
-  'lib/transferir.js': 'instantánea en la zona temporal de transferencias',
-  'lib/vault.js': 'índice cifrado: un fallo de lectura lanza error, no devuelve vacío',
+  'lib/nucleo/store.js': 'implementa las reglas',
+  'lib/copias/index.js': 'una sola copia a la vez (enCurso); el .tmp es el archivo de la copia',
+  'lib/exportar/index.js': 'solo lee para exportar; no vuelve a guardar',
+  'lib/copias/archivo.js': 'solo cuenta JSON dañados al hacer la copia',
+  'lib/archivos/fotos.js': 'caché de EXIF regenerable',
+  'lib/games/index.js': 'JSON de «quitados» en la zona temporal de transferencias',
+  'lib/transversal/transferir.js': 'instantánea en la zona temporal de transferencias',
+  'lib/vault/index.js': 'índice cifrado: un fallo de lectura lanza error, no devuelve vacío',
 };
 const reglas = [
   ['R1', /JSON\.parse\([^)]*read(File|FileSync)\b[^\n]*catch\b[^\n]*(return|=)\s*(\[\]|\{\}|null)/],

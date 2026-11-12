@@ -13,7 +13,7 @@ let cookie = '', fallos = 0, total = 0, srv;
 
 function copia() {
   fs.mkdirSync(APP); fs.mkdirSync(DATA);
-  for (const f of ['server.js', 'webdav.js', 'package.json']) fs.copyFileSync(path.join(ROOT, f), path.join(APP, f));
+  for (const f of ['server.js', 'package.json']) fs.copyFileSync(path.join(ROOT, f), path.join(APP, f));
   execFileSync('cp', ['-r', path.join(ROOT, 'lib'), path.join(ROOT, 'public'), APP]);
   fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(APP, 'node_modules'));
 }
@@ -539,7 +539,7 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     cierto(fam.includes('val_unidos') || fam.includes('Sin duplicados'), 'falta la familia val_unidos');
   });
   await prueba('copias: horario de Madrid y reintentos (3:00, 4:00 y 5:00)', async () => {
-    const P = require(path.join(ROOT, 'lib/copias-programa.js'));
+    const P = require(path.join(ROOT, 'lib/copias/programa.js'));
     igual(P.ahoraMadrid(new Date('2026-10-31T02:30:00Z')).hora, 3, 'UTC+1 en otoño');
     igual(P.ahoraMadrid(new Date('2026-07-01T01:30:00Z')).hora, 3, 'UTC+2 en verano');
     igual(P.ahoraMadrid(new Date('2026-10-31T23:30:00Z')).fecha, '2026-11-01', 'cambio de día');
@@ -569,7 +569,7 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     igual((await req('GET', '/api/game')).j.recuentos.copias_manuales >= 1, true, 'contador de logros');
   });
   await prueba('copias: si no se puede escribir, el panel muestra el error (no se pierde en silencio)', async () => {
-    const crea = require(path.join(ROOT, 'lib/copias.js'));
+    const crea = require(path.join(ROOT, 'lib/copias/index.js'));
     const rutas = {};
     const router = { get: (p, ...h) => { rutas['GET ' + p] = h[h.length - 1]; }, post: (p, ...h) => { rutas['POST ' + p] = h[h.length - 1]; } };
     const fichero = path.join(TMP, 'no-es-carpeta'); fs.writeFileSync(fichero, 'x');   // un archivo en lugar de carpeta: no se puede escribir dentro

@@ -45,7 +45,7 @@ module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
   });
 
   await prueba('notas: se cuentan los bloques ricos y los logros salen', async () => {
-    const { cuentaBloques } = require('../../lib/notas-bloques');
+    const { cuentaBloques } = require('../../lib/notes/bloques');
     const md = ':::toggle A\nx\n:::\n\n:::columns\na\n:::col\nb\n:::\n\n::toc\n\n$$\nx^2\n$$\n\n$$y$$\n\n```mermaid\nA-->B\n```\n\n```js\n::toc\n```\n\n::embed geo:1,2,3\n\n::base 0123456789abcdef\n\n::sync 0123456789abcdef';
     const n = cuentaBloques(md);
     igual(n.toggle, 1); igual(n.columns, 1); igual(n.toc, 1, 'lo de dentro de un código no cuenta'); igual(n.eq, 2); igual(n.mermaid, 1); igual(n.embed, 1); igual(n.base, 1); igual(n.sync, 1);

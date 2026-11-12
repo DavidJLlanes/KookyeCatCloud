@@ -2,7 +2,7 @@
 // Pruebas de humo de autenticación (auditoría 18): el paso intermedio de la verificación en dos pasos no sirve como sesión,
 // un usuario borrado pierde sus sesiones, cambiar la contraseña propia pide la actual y cierra las demás sesiones,
 // WebDAV no salta la verificación en dos pasos y las escrituras desde otro sitio (aunque sea un subdominio hermano) se rechazan.
-const { totpEn, base32Decode } = require('../../lib/totp');
+const { totpEn, base32Decode } = require('../../lib/cuentas/totp');
 
 module.exports = async ({ req, prueba, igual, cierto, BASE }) => {
   const PW = 'Clave-larga-de-prueba-1';

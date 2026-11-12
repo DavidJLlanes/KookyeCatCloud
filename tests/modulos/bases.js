@@ -153,7 +153,7 @@ module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
   });
 
   await prueba('notas: botón de plantilla (conteo) y borrado de plantillas de nota con copia', async () => {
-    const { cuentaBloques } = require('../../lib/notas-bloques');
+    const { cuentaBloques } = require('../../lib/notes/bloques');
     igual(cuentaBloques('::boton nota:reunion Nueva reunión\n\n::boton fila:0123456789abcdef:fedcba9876543210 Tarea').boton, 2);
     igual(cuentaBloques('::boton javascript:x Hola').boton, 0, 'destino no válido');
     const t = await req('POST', '/api/note-templates', { name: 'Mi plantilla', body: '# Hola' }); igual(t.s, 200);
@@ -208,7 +208,7 @@ module.exports = async ({ req, prueba, igual, cierto, DATA }) => {
   });
 
   await prueba('notas: bloques dentro de columnas y bases con vista elegida (conteo)', async () => {
-    const { cuentaBloques } = require('../../lib/notas-bloques');
+    const { cuentaBloques } = require('../../lib/notes/bloques');
     const c = cuentaBloques(':::columns\n- uno\n- dos\n\n- [ ] t\n![](kcc:file/a.png)\n:::col\n1. a\ntexto\n:::\n- fuera de las columnas');
     igual(c.columns, 1); igual(c.anidados, 5, 'lista, tarea e imagen dentro de las columnas; lo de fuera no cuenta');
     const v = cuentaBloques('::base 0123456789abcdef fedcba9876543210\n::base 0123456789abcdef\n::base 0123456789abcdef zz');

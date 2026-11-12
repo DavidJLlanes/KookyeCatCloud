@@ -9,7 +9,7 @@ const RAIZ = path.join(__dirname, '..');
 const jsDe = (rel) => fs.readdirSync(path.join(RAIZ, rel), { withFileTypes: true })
   .flatMap(e => e.isDirectory() ? jsDe(`${rel}/${e.name}`) : e.name.endsWith('.js') ? [`${rel}/${e.name}`] : []);
 
-const archivos = ['server.js', 'webdav.js', 'public/sw.js', ...jsDe('lib'), ...jsDe('public/js'), ...jsDe('tests')];
+const archivos = ['server.js', 'public/sw.js', ...jsDe('lib'), ...jsDe('public/js'), ...jsDe('tests')];
 let fallos = 0;
 for (const f of archivos) {
   try { execFileSync(process.execPath, ['--check', path.join(RAIZ, f)], { stdio: 'pipe' }); }

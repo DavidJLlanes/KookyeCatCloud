@@ -34,7 +34,7 @@ const anda = (d) => {
 };
 const pedidos = process.argv.slice(2).map((a) => path.resolve(a));
 if (pedidos.length) archivos.push(...pedidos);
-else { for (const d of ['lib', 'public/js']) anda(path.join(RAIZ, d)); archivos.push(path.join(RAIZ, 'server.js'), path.join(RAIZ, 'webdav.js')); }
+else { for (const d of ['lib', 'public/js']) anda(path.join(RAIZ, d)); archivos.push(path.join(RAIZ, 'server.js')); }
 
 // El análisis tarda casi un minuto la primera vez: se guarda el resultado por expresión (tests/.regex-cache.json, fuera de git)
 const CACHE = path.join(__dirname, '.regex-cache.json');
