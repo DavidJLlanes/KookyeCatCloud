@@ -412,7 +412,7 @@ function auth(req, res, next) {
   const token = req.cookies.token || (req.headers.authorization || '').replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'No autenticado' });
   let payload;
-  try { payload = jwt.verify(token, JWT_SECRET); } catch { return res.status(401).json({ error: 'Token inválido' }); }
+  try { payload = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }); } catch { return res.status(401).json({ error: 'Token inválido' }); }
   if (!payload || payload.stage || !payload.jti) return res.status(401).json({ error: 'Token inválido' });
   const u = usuarioVivo(payload.username);
   if (!u) { revocaSesion(payload.jti); return res.status(401).json({ error: 'Sesión cerrada' }); }
