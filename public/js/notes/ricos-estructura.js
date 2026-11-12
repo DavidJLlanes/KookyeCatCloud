@@ -14,7 +14,7 @@
     nuevo: () => ({ text: '', body: '', open: true }),
     alCrear: (w) => { const t = w.querySelector('.nb-tt'); if (t) t.focus(); },
     parse(lines, i) {
-      const m = /^:::toggle(?:\s+(.*))?$/.exec(lines[i]); if (!m) return null;
+      const m = /^:::toggle(?:\s+([\s\S]*))?$/.exec(lines[i]); if (!m) return null;
       const { cuerpo, next } = C.hastaCierre(lines, i + 1);
       return { b: { t: 'toggle', text: (m[1] || '').trim(), body: C.desescapa(cuerpo), open: false }, next };
     },

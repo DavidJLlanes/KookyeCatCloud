@@ -24,15 +24,15 @@
   /* ---------- Markdown → texto plano ---------- */
   function aTxt(md) {
     return String(md)
-      .replace(/```[^\n]*\n([\s\S]*?)```/g, (_, c) => c.replace(/\s+$/, '') + '\n')
-      .replace(/^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/gm, '')          // línea separadora de tabla
+      .replace(/```[^\n]*\n([\s\S]*?)```/g, (_, c) => c.replace(/(?<!\s)\s+$/, '') + '\n')
+      .replace(/^[^\n]*$/gm, (l) => (((l) => /^\|?:?-{2,}:?(\|:?-{2,}:?)*\|?$/.test(String(l).replace(/\s+/g, '')))(l) ? '' : l))          // línea separadora de tabla
       .replace(/^\|(.*)\|\s*$/gm, (_, f) => f.split(/(?<!\\)\|/).map(c => c.trim().replace(/\\\|/g, '|')).join('  |  '))
       .replace(/^#{1,6}\s+(.*)$/gm, (_, t) => t)
       .replace(/^>\s?/gm, '')
-      .replace(/^(\s*)[-*+]\s+\[( |x|X)\]\s+/gm, (_, s, c) => s + (c === ' ' ? '[ ] ' : '[x] '))
-      .replace(/^(\s*)[-*+]\s+/gm, '$1- ')
-      .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, t, u) => t === u ? t : `${t} (${u})`)
+      .replace(/^([ \t]*)[-*+][ \t]+\[( |x|X)\][ \t]+/gm, (_, s, c) => s + (c === ' ' ? '[ ] ' : '[x] '))
+      .replace(/^([ \t]*)[-*+][ \t]+/gm, '$1- ')
+      .replace(/!\[([^\][\n]*)\]\([^()\n]*\)/g, '$1')
+      .replace(/\[([^\][\n]+)\]\(([^()\n]+)\)/g, (_, t, u) => t === u ? t : `${t} (${u})`)
       .replace(/(\*\*|__)(.+?)\1/g, '$2')
       .replace(/(^|[^*\w])\*(?!\s)(.+?)\*(?!\w)/g, '$1$2')
       .replace(/~~(.+?)~~/g, '$1')
@@ -47,8 +47,8 @@
   function inline(t) {
     const cod = [];
     t = esc(t).replace(/`([^`]+)`/g, (_, c) => { cod.push(c); return '\u0000' + (cod.length - 1) + '\u0000'; });
-    t = t.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '$1')
-      .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2">$1</a>')
+    t = t.replace(/!\[([^\][\n]*)\]\(([^()\s]+)\)/g, '$1')
+      .replace(/\[([^\][\n]+)\]\((https?:[^()\s]+)\)/g, '<a href="$2">$1</a>')
       .replace(/(\*\*|__)(.+?)\1/g, '<strong>$2</strong>')
       .replace(/(^|[^*\w])\*(?!\s)(.+?)\*(?!\w)/g, '$1<em>$2</em>')
       .replace(/~~(.+?)~~/g, '<del>$1</del>')
@@ -56,7 +56,7 @@
     return t.replace(/\u0000(\d+)\u0000/g, (_, i) => '<code>' + cod[+i] + '</code>');
   }
   const filaTabla = (l) => l.trim().replace(/^\|/, '').replace(/\|$/, '').split(/(?<!\\)\|/).map(c => c.trim());
-  const esSep = (l) => /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(l) && l.includes('-');
+  const esSep = (l) => ((l) => /^\|?:?-{2,}:?(\|:?-{2,}:?)*\|?$/.test(String(l).replace(/\s+/g, '')))(l) && l.includes('-');
 
   function aHtml(md) {
     const L = String(md).replace(/\r/g, '').split('\n'), out = [];
@@ -71,7 +71,7 @@
         i++; out.push('<pre>' + esc(c.join('\n')) + '</pre>'); continue;
       }
       if (/^\s*$/.test(l)) { cierraPar(); i++; continue; }
-      if ((m = /^(#{1,6})\s+(.*)$/.exec(l))) { cierraPar(); out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`); i++; continue; }
+      if ((m = /^(#{1,6})\s+([\s\S]*)$/.exec(l))) { cierraPar(); out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`); i++; continue; }
       if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(l)) { cierraPar(); out.push('<hr>'); i++; continue; }
       if (/^\|/.test(l) && i + 1 < L.length && esSep(L[i + 1])) {
         cierraPar(); const cab = filaTabla(l); i += 2; const filas = [];
@@ -90,7 +90,7 @@
         while (i < L.length && /^\s*([-*+]|\d+\.)\s+/.test(L[i])) {
           const sangria = /^(\s*)/.exec(L[i])[1].length;
           let t = L[i].replace(/^\s*([-*+]|\d+\.)\s+/, ''), caja = '';
-          const c = /^\[( |x|X)\]\s+(.*)$/.exec(t);
+          const c = /^\[( |x|X)\]\s+([\s\S]*)$/.exec(t);
           if (c) { caja = c[1] === ' ' ? '☐ ' : '☑ '; t = c[2]; }
           it.push(`<li style="margin-left:${Math.min(sangria, 12) * 6}pt">${caja}${inline(t)}</li>`); i++;
         }

@@ -56,7 +56,7 @@ function renderMarkdown(texto) {
     if (/^\s*$/.test(l)) { i++; continue; }
     if (/^\s*([-*_])\s*\1\s*\1[\s\1]*$/.test(l)) { raiz.appendChild(el('hr')); i++; continue; }
 
-    const h = l.match(/^(#{1,6})\s+(.*)$/);
+    const h = l.match(/^(#{1,6})\s+([\s\S]*)$/);
     if (h) {
       raiz.appendChild(mdEnLinea(el('h' + h[1].length), h[2]));
       i++;
@@ -73,7 +73,7 @@ function renderMarkdown(texto) {
     }
 
     // Tabla: cabecera + fila de guiones
-    if (/\|/.test(l) && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lineas[i + 1] || '')) {
+    if (/\|/.test(l) && ((t) => /^[:|-]+$/.test(t) && t.replace(/^\|/, '').includes('|'))(String(lineas[i + 1] || '').replace(/\s+/g, ''))) {
       const celdas = (fila) => fila.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map(c => c.trim());
       const tabla = el('table', 'md-table');
       const thead = el('thead');

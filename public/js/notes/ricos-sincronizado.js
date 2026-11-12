@@ -44,7 +44,7 @@
     K.get('/api/sincronizados').then(r => {
       if (!r.bloques.length) caja.appendChild(nodo('p', 'k-faint', 'Todavía no hay bloques sincronizados.'));
       r.bloques.forEach(b => {
-        const t = (b.texto || '').replace(/<br>/g, ' ').replace(/[*~=`\\]|\]\([^)]*\)|\[/g, '').trim().slice(0, 70) || 'Bloque vacío';
+        const t = (b.texto || '').replace(/<br>/g, ' ').replace(/[*~=`\\]|\]\([^()\n]*\)|\[/g, '').trim().slice(0, 70) || 'Bloque vacío';
         const x = nodo('button', 'btn', t); x.type = 'button'; x.addEventListener('click', () => usa(b.id)); caja.appendChild(x);
       });
     }).catch(K.fail);

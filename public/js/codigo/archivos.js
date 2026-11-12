@@ -93,12 +93,12 @@
   const asigna = (d) => { S.p = d; if (S.ruta && !d.archivos[S.ruta]) { S.ruta = null; S.texto = ''; S.bin = null; S.movil = 'arbol'; } pinta(); };
   async function nuevoArchivo(base) {
     const r = await pide('Nuevo archivo', base ? base + '/' : '', 'Crear', 'Escribe la ruta, p. ej. css/estilos.css'); if (!r) return;
-    try { await guardaYa(); const x = await K.put(url('/archivo'), { ruta: r, contenido: '' }); logros(); const d = await K.get(url('')); S.p = d; padresAbre(r); await abreArchivo(r.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')); void x; } catch (e) { K.fail(e); }
+    try { await guardaYa(); const x = await K.put(url('/archivo'), { ruta: r, contenido: '' }); logros(); const d = await K.get(url('')); S.p = d; padresAbre(r); await abreArchivo(r.replace(/\\/g, '/').replace(/^\/+|(?<!\/)\/+$/g, '')); void x; } catch (e) { K.fail(e); }
   }
   const padresAbre = (r) => { const p = r.replace(/\\/g, '/').split('/').filter(Boolean); p.pop(); let a = ''; p.forEach(x => { a += (a ? '/' : '') + x; S.abiertas.add(a); }); };
   async function nuevaCarpeta(base) {
     const r = await pide('Nueva carpeta', base ? base + '/' : '', 'Crear'); if (!r) return;
-    try { const d = await K.post(url('/carpeta'), { ruta: r }); padresAbre(r + '/x'); S.abiertas.add(r.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')); asigna(d); } catch (e) { K.fail(e); }
+    try { const d = await K.post(url('/carpeta'), { ruta: r }); padresAbre(r + '/x'); S.abiertas.add(r.replace(/\\/g, '/').replace(/^\/+|(?<!\/)\/+$/g, '')); asigna(d); } catch (e) { K.fail(e); }
   }
   async function mueve(ruta) {
     const n = await pide('Renombrar o mover', ruta, 'Mover', 'Cambia la ruta completa para moverlo a otra carpeta'); if (!n || n === ruta) return;

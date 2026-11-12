@@ -12,7 +12,7 @@
   /* ---------- Utilidades ---------- */
   // Estimación gruesa: ~4 caracteres por token en español e inglés. Sirve para ver el orden de magnitud, no para facturar.
   PRO.tokens = (texto) => Math.ceil(String(texto || '').length / 4);
-  PRO.slug = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+  PRO.slug = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|(?<!-)-+$/g, '').slice(0, 60);
 
   // Qué campos tiene sentido enseñar según el tipo: la ficha se adapta en vez de mostrar siempre los de imagen
   PRO.campos = (kind) => ({

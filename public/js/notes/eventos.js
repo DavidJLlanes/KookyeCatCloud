@@ -160,7 +160,7 @@
     const text = (e.clipboardData || window.clipboardData).getData('text/plain');
     if (!text) return;
     e.preventDefault();
-    if (w.dataset.t === 'table') { document.execCommand('insertText', false, text.replace(/\s*\n\s*/g, ' ')); return; }
+    if (w.dataset.t === 'table') { document.execCommand('insertText', false, text.replace(/(?<!\s)\s*\n\s*/g, ' ')); return; }
     if (w.dataset.t === 'code' || (!/\n/.test(text) && !/^(#{1,3} |[-*] |\d+\. |> |```)/.test(text))) {
       // Texto simple: se inserta tal cual, sin formato externo
       document.execCommand('insertText', false, text); return;

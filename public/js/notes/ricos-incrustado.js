@@ -13,7 +13,7 @@
     const t = String(txt || '').trim();
     let m = YT.exec(t); if (m) return 'https://www.youtube.com/watch?v=' + m[1];
     m = /^(-?\d{1,2}(?:\.\d+)?)\s*[,;]\s*(-?\d{1,3}(?:\.\d+)?)(?:\s*[,;]\s*(\d{1,2}))?$/.exec(t);
-    if (!m) m = /openstreetmap\.org\/.*#map=(\d{1,2})\/(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)/i.exec(t) && ((x) => [x[0], x[2], x[3], x[1]])(/openstreetmap\.org\/.*#map=(\d{1,2})\/(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)/i.exec(t));
+    if (!m) m = /openstreetmap\.org\/[^#\s]*#map=(\d{1,2})\/(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)/i.exec(t) && ((x) => [x[0], x[2], x[3], x[1]])(/openstreetmap\.org\/[^#\s]*#map=(\d{1,2})\/(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)/i.exec(t));
     if (m && Math.abs(+m[1]) <= 90 && Math.abs(+m[2]) <= 180) return `geo:${+(+m[1]).toFixed(5)},${+(+m[2]).toFixed(5)},${m[3] || 13}`;
     if (/^kcc:file\/.+\.pdf$/i.test(t)) return t;
     return '';
@@ -72,7 +72,7 @@
 
   C.registraRico('embed', {
     slash: ['Incrustar', 'Vídeo de YouTube, mapa o PDF', '▶'],
-    parse(lines, i) { const m = /^::embed\s+(\S+)(?:\s+(.*))?$/.exec(lines[i]); return m ? { b: { t: 'embed', src: m[1], text: (m[2] || '').trim() }, next: i + 1 } : null; },
+    parse(lines, i) { const m = /^::embed\s+(\S+)(?:\s+([\s\S]*))?$/.exec(lines[i]); return m ? { b: { t: 'embed', src: m[1], text: (m[2] || '').trim() }, next: i + 1 } : null; },
     md: (b) => `::embed ${b.src || ''}${b.text ? ' ' + String(b.text).replace(/<br>/g, ' ') : ''}`,
     pinta(w, c, b) {
       const marco = document.createElement('div'); marco.className = 'nb-emb';

@@ -3,7 +3,7 @@
 (function () {
   const C = (K._notes = K._notes || {});
 
-  const SEP = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/;
+  const SEP = { test: (l) => /^\|?:?-{3,}:?(\|:?-{3,}:?)*\|?$/.test(String(l).replace(/\s+/g, '')) };   // sin espacios: la versión con «\s*» entre partes era cúbica con líneas largas
   function celdas(linea) {
     let t = linea.trim();
     if (t.startsWith('|')) t = t.slice(1);
@@ -34,14 +34,14 @@
       }
       { const rico = C.parseRico(lines, i); if (rico) { blocks.push({ i: 0, text: '', ...rico.b }); i = rico.next; continue; } }
       if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(ln) && !/^\s*[-*]\s+\S/.test(ln)) { push('divider', ''); i++; continue; }
-      if ((m = /^(#{1,3})\s+(.*)$/.exec(ln))) { push('h' + m[1].length, m[2]); i++; continue; }
+      if ((m = /^(#{1,3})\s+([\s\S]*)$/.exec(ln))) { push('h' + m[1].length, m[2]); i++; continue; }
       if ((m = /^(\s*)[-*+]\s+\[( |x|X)\]\s?(.*)$/.exec(ln))) { push('todo', m[3], { i: Math.min(3, Math.floor(m[1].length / 2)), done: m[2] !== ' ' }); i++; continue; }
-      if ((m = /^(\s*)[-*+]\s+(.*)$/.exec(ln))) { push('ul', m[2], { i: Math.min(3, Math.floor(m[1].length / 2)) }); i++; continue; }
-      if ((m = /^(\s*)\d+[.)]\s+(.*)$/.exec(ln))) { push('ol', m[2], { i: Math.min(3, Math.floor(m[1].length / 2)) }); i++; continue; }
+      if ((m = /^(\s*)[-*+]\s+([\s\S]*)$/.exec(ln))) { push('ul', m[2], { i: Math.min(3, Math.floor(m[1].length / 2)) }); i++; continue; }
+      if ((m = /^(\s*)\d+[.)]\s+([\s\S]*)$/.exec(ln))) { push('ol', m[2], { i: Math.min(3, Math.floor(m[1].length / 2)) }); i++; continue; }
       if (/^>\s?/.test(ln)) {
         const buf = [];
         while (i < lines.length && /^>\s?/.test(lines[i])) buf.push(lines[i++].replace(/^>\s?/, ''));
-        const c = /^\[!(NOTE|TIP|WARNING|IMPORTANT)\]\s*(.*)$/.exec(buf[0]);
+        const c = /^\[!(NOTE|TIP|WARNING|IMPORTANT)\]\s*([\s\S]*)$/.exec(buf[0]);
         if (c) { buf[0] = c[2]; push('callout', buf.join('<br>'), { kind: c[1] }); } else push('quote', buf.join('<br>'));
         continue;
       }

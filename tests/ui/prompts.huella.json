@@ -11,8 +11,8 @@
   "menu": 0,
   "detalle": true,
   "detalleTexto": true,
-  "variables": 29,
-  "editor": 21,
+  "variables": 30,
+  "editor": 22,
   "api": "comparar,copiar,detail,extraMenu,filtrar,kindIcon,kindLabel,newPrompt,open,pro,reload",
   "errores": []
  },
@@ -28,8 +28,8 @@
   "menu": 0,
   "detalle": true,
   "detalleTexto": true,
-  "variables": 29,
-  "editor": 21,
+  "variables": 30,
+  "editor": 22,
   "railMovil": true,
   "api": "comparar,copiar,detail,extraMenu,filtrar,kindIcon,kindLabel,newPrompt,open,pro,reload",
   "errores": []

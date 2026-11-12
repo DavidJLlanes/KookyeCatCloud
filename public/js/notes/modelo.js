@@ -30,13 +30,13 @@
     const b = { t, i: +w.dataset.i || 0 };
     if (C.RICOS[t]) return C.RICOS[t].lee(w, b);
     if (t === 'table') {
-      b.rows = [...w.querySelectorAll('tr')].map(tr => [...tr.children].map(td => inlineMd(td).replace(/\|/g, '\\|').replace(/^(<br>)+|(<br>)+$/g, '')));
+      b.rows = [...w.querySelectorAll('tr')].map(tr => [...tr.children].map(td => inlineMd(td).replace(/\|/g, '\\|').replace(/^(<br>)+|(?<!<br>)(<br>)+$/g, '')));
       return b;
     }
-    if (t === 'image') { b.src = w.dataset.src || ''; b.text = inlineMd(c).replace(/^(<br>)+|(<br>)+$/g, ''); return b; }
+    if (t === 'image') { b.src = w.dataset.src || ''; b.text = inlineMd(c).replace(/^(<br>)+|(?<!<br>)(<br>)+$/g, ''); return b; }
     if (t === 'divider') return b;
     if (t === 'code') { b.text = c.textContent.replace(/\u200b/g, ''); b.lang = w.dataset.lang || ''; return b; }
-    b.text = inlineMd(c).replace(/^(<br>)+|(<br>)+$/g, '');
+    b.text = inlineMd(c).replace(/^(<br>)+|(?<!<br>)(<br>)+$/g, '');
     if (t === 'todo') b.done = w.classList.contains('is-done');
     if (t === 'callout') b.kind = w.dataset.k || 'NOTE';
     return b;
@@ -52,7 +52,7 @@
       if (k) out += (isList(b.t) && b.t === prev) ? '\n' : '\n\n';
       out += md; prev = b.t;
     });
-    return out.replace(/\n+$/, '');
+    return out.replace(/(?<!\n)\n+$/, '');
   }
 
   // Empuja el Markdown al textarea oculto: de ahí lo recoge el autoguardado de app.js

@@ -35,16 +35,16 @@
   function markdown(src) {
     const lines = src.replace(/\r/g, '').split('\n'); let out = '', lista = null, en = false, buf = [], lang = '';
     const inl = (t) => esc(t).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<i>$2</i>').replace(/~~([^~]+)~~/g, '<s>$1</s>')
-      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, a, u) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${a}</a>`);
+      .replace(/\[([^\][\n]+)\]\((https?:\/\/[^\s()]+)\)/g, (m, a, u) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${a}</a>`);
     const cierra2 = () => { if (lista) { out += `</${lista}>`; lista = null; } };
     for (const ln of lines) {
       const f = /^```(\w*)/.exec(ln);
       if (f) { if (!en) { cierra2(); en = true; buf = []; lang = f[1]; } else { out += `<pre class="hljs"><code>${colorea(buf.join('\n'), lang)}</code></pre>`; en = false; } continue; }
       if (en) { buf.push(ln); continue; }
       let m;
-      if ((m = /^(#{1,6})\s+(.*)$/.exec(ln))) { cierra2(); out += `<h${m[1].length}>${inl(m[2])}</h${m[1].length}>`; }
-      else if ((m = /^\s*[-*+]\s+(.*)$/.exec(ln))) { if (lista !== 'ul') { cierra2(); out += '<ul>'; lista = 'ul'; } out += `<li>${inl(m[1])}</li>`; }
-      else if ((m = /^\s*\d+[.)]\s+(.*)$/.exec(ln))) { if (lista !== 'ol') { cierra2(); out += '<ol>'; lista = 'ol'; } out += `<li>${inl(m[1])}</li>`; }
+      if ((m = /^(#{1,6})\s+([\s\S]*)$/.exec(ln))) { cierra2(); out += `<h${m[1].length}>${inl(m[2])}</h${m[1].length}>`; }
+      else if ((m = /^\s*[-*+]\s+([\s\S]*)$/.exec(ln))) { if (lista !== 'ul') { cierra2(); out += '<ul>'; lista = 'ul'; } out += `<li>${inl(m[1])}</li>`; }
+      else if ((m = /^\s*\d+[.)]\s+([\s\S]*)$/.exec(ln))) { if (lista !== 'ol') { cierra2(); out += '<ol>'; lista = 'ol'; } out += `<li>${inl(m[1])}</li>`; }
       else if ((m = /^>\s?(.*)$/.exec(ln))) { cierra2(); out += `<blockquote>${inl(m[1])}</blockquote>`; }
       else if (/^---+$/.test(ln.trim())) { cierra2(); out += '<hr>'; }
       else if (!ln.trim()) cierra2();

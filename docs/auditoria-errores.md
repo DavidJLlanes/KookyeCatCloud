@@ -308,3 +308,12 @@ Sin riesgo: la fórmula escrita con muchos paréntesis se rechaza por longitud a
 - **Riesgos menores, cerrados el mismo día:**
   - El análisis de Importar corre en un hilo aparte (`lib/importar/hilo.js`, `worker_threads`, con 1 GB de memoria como mucho y 2 minutos de tiempo): mientras se analiza un ZIP grande el servidor sigue respondiendo a todos. Prueba de humo: `/api/version` responde en menos de 400 ms durante un análisis.
   - Contar y crear van juntos en una cola por usuario (`store.enCola`) en Bases (crear, importar JSON, importar CSV) y Documentos (crear, duplicar, restaurar de la papelera): varias altas a la vez ya no se pasan del máximo. Prueba de humo: 5 altas simultáneas con 58 bases dejan exactamente 60.
+
+## Decimoséptima auditoría (12-11-2026): expresiones regulares en todo el código
+
+- **Barrido completo con `recheck`:** 672 expresiones literales del servidor y 426 del cliente analizadas con un recorrido del árbol sintáctico. Las que podían volver atrás de forma cuadrática o exponencial se reescribieron sin cambiar lo que aceptan.
+- **Recortes de barras** (`^\/+|\/+$`) en 13 archivos (compartidos, portapapeles, explorador, IA, rutas, enlaces, versiones, prompts, papelera, álbumes, `server.js`, WebDAV): ahora `(?<!\/)\/+$`. Una ruta con 90.000 barras ya no bloquea el servidor.
+- **Enlaces y listas de Markdown** (notas, PDF, exportación, importadores, conversor HTML → Markdown): sin `\s*` entre partes repetidas, `[\s\S]*` en vez de `(.*)` tras un ancla y clases que excluyen `[`, `]` y `)`. Los parámetros de ComfyUI, `.env` de tamaños y el CSV de contactos se leen sin retroceso.
+- **PDF:** un tramo de 200 o más espacios seguidos tardaba 12 s en una tabla y 5 s en un aviso (no era una regex, era la maquetación). Se acorta a 8 espacios antes de maquetar.
+- **Prueba nueva** `tests/modulos/redos.js`: rutas con barras, notas con `[` sin cerrar, PDF con espacios y documentos con espacios enormes deben responder en pocos segundos. 209/209 pruebas.
+- **Norma:** toda expresión nueva se pasa por `recheck` (`scan.js`) antes de entrar.

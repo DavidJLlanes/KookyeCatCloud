@@ -34,7 +34,7 @@
       while (i < lines.length && !/^\$\$\s*$/.test(lines[i])) cuerpo.push(lines[i++]);
       return { b: { t: 'eq', src: cuerpo.join('\n') }, next: i + 1 };
     },
-    md: (b) => '$$\n' + String(b.src || '').replace(/^\s*\$\$\s*$/gm, '') + '\n$$',
+    md: (b) => '$$\n' + String(b.src || '').replace(/^[ \t]*\$\$[ \t]*$/gm, '') + '\n$$',
     pinta(w, c, b) {
       const src = C.subEditable('nb-eq-src nb-plano', '', 'Escribe la fórmula en LaTeX, p. ej. \\frac{a}{b} + \\sqrt{x}');
       src.textContent = b.src || '';

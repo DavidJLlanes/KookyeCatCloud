@@ -121,7 +121,7 @@
       for (const n of notas) {
         const r = await K.get('/api/notes/' + encodeURIComponent(n.id));
         const fecha = new Date(r.updatedAt || Date.now()).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-        const cuerpo = String(r.body || '').replace(/^\s*#\s+.*\n/, m => (m.trim().slice(2).trim() === (r.title || '').trim() ? '' : m));
+        const cuerpo = String(r.body || '').replace(/^[ \t]*#[ \t][^\n]*\n/, m => (m.trim().slice(2).trim() === (r.title || '').trim() ? '' : m));
         md += (md ? '\n\f\n' : '') + `# ${((n.icon ? n.icon + ' ' : '') + (r.title || 'Sin título'))}\n\n*Editada el ${fecha}*\n\n${cuerpo}\n`;
       }
     } catch (e) { K.fail(e); return; }

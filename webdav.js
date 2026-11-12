@@ -33,7 +33,7 @@ function decodeHref(href, base = '') {
   try { p = new URL(p, 'http://x').pathname; } catch { /* ya era una ruta */ }
   // Se normaliza venga montado como venga (app.use recorta el prefijo, app.all no)
   if (base && (p === base || p.startsWith(base + '/'))) p = p.slice(base.length);
-  return p.replace(/^\/dav\/?/, '').replace(/^\/+/, '').replace(/\/+$/, '');
+  return p.replace(/^\/dav\/?/, '').replace(/^\/+/, '').replace(/(?<!\/)\/+$/, '');
 }
 
 function createDav({ isBlocked = () => 0, registerFailure = () => {}, clearFailures = () => {}, resolveFor, userRoot, loadUsers, isHidden, log, base = '', alSobrescribir, alMover, alCambiar, aPapelera }) {

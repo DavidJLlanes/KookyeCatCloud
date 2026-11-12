@@ -25,9 +25,9 @@
         if (fi.files[0]) {
           const txt = await fi.files[0].text();
           if (/\.json$/i.test(fi.files[0].name)) { const j = JSON.parse(txt); lista = Array.isArray(j) ? j : j.prompts || []; }
-          else lista = txt.split(/^\s*---\s*$/m).map(s => s.trim()).filter(Boolean).map(s => ({ title: s.split('\n')[0].slice(0, 80), body: s, kind: k.value, category: cat.value }));
+          else lista = txt.split(/^[ \t]*---[ \t]*$/m).map(s => s.trim()).filter(Boolean).map(s => ({ title: s.split('\n')[0].slice(0, 80), body: s, kind: k.value, category: cat.value }));
         }
-        if (ta.value.trim()) lista.push(...ta.value.split(/^\s*---\s*$/m).map(s => s.trim()).filter(Boolean).map(s => ({ title: s.split('\n')[0].slice(0, 80), body: s, kind: k.value, category: cat.value })));
+        if (ta.value.trim()) lista.push(...ta.value.split(/^[ \t]*---[ \t]*$/m).map(s => s.trim()).filter(Boolean).map(s => ({ title: s.split('\n')[0].slice(0, 80), body: s, kind: k.value, category: cat.value })));
         if (!lista.length) { K.toast('No hay nada que importar'); return false; }
         let total = 0;
         for (let i = 0; i < lista.length; i += 1000) { const r = await K.post('/api/prompts/import', { prompts: lista.slice(i, i + 1000) }); total += r.created; }

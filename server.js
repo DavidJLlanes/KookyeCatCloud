@@ -114,7 +114,7 @@ const SECURE_COOKIES = process.env.INSECURE_COOKIES !== '1';
 // midominio.es/cloud). Vacío = raíz del dominio o de un subdominio. Se normaliza para
 // admitir "cloud", "/cloud" o "/cloud/".
 const BASE_PATH = (() => {
-  const limpio = String(process.env.BASE_PATH || '').trim().replace(/^\/+|\/+$/g, '');
+  const limpio = String(process.env.BASE_PATH || '').trim().replace(/^\/+|(?<!\/)\/+$/g, '');
   return limpio ? '/' + limpio : '';
 })();
 const COOKIE_PATH = BASE_PATH || '/';

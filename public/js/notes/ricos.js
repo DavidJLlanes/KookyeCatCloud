@@ -12,7 +12,7 @@
   const C = (K._notes = K._notes || {});
   const RICOS = C.RICOS = C.RICOS || {};
   const { EST } = C;
-  const quitaBr = (s) => String(s || '').replace(/^(<br>)+|(<br>)+$/g, '');
+  const quitaBr = (s) => String(s || '').replace(/^(<br>)+|(?<!<br>)(<br>)+$/g, '');
 
   // Zona editable propia de un bloque rico (título de un desplegable, columna…); `md` es Markdown en línea
   C.subEditable = function (cls, md, ph) {
