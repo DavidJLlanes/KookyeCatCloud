@@ -36,6 +36,7 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [ ] Versiones de archivo: guardar las últimas N versiones al sobrescribir y poder restaurarlas.
 - [ ] Enlaces públicos más completos: límite de descargas y aviso de descarga (caducidad, contraseña y zona de gestión ya hechas: pestaña *Enlaces*).
 - [ ] Detección de duplicados por hash, con opción de liberar espacio.
+- [x] ~~Documentos al estilo Google Docs (editor rico, columnas, tablas, tareas, plantillas, versiones y papelera)~~ (12-11-2026). [ ] Quedan imágenes dentro de los documentos, encabezados/pies y números de página, comentarios, exportar a .docx/PDF y edición compartida.
 - [x] ~~Importadores desde Notion, Evernote, Google Docs, Apple Notes y CSV con asignación de columnas~~ (pestaña *Importar*, 12-11-2026). [ ] Queda probarlos con exportaciones reales grandes (Notion con miles de páginas, .docx con formatos raros) y, opcional, importar notas de Obsidian/OneNote y marcadores HTML.
 - [x] ~~Búsqueda en el contenido de notas y textos~~ (pestaña *Buscar*, 12-11-2026). [ ] Queda buscar dentro de PDF y documentos Office.
 - [ ] IA: respuesta en streaming, búsqueda semántica con embeddings, rellenar campos con IA, transcribir audio (Whisper) y comprobar OpenCode Zen con una cuenta real.

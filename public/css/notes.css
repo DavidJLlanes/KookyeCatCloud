@@ -113,4 +113,7 @@
 #btn-notes-select.on{color:var(--brand);}
 
 .nb-bar{flex-wrap:wrap;max-width:min(94vw,420px);}
-@media (pointer:coarse){.nb-bar-btn{min-width:44px;height:44px;font-size:calc(15px*var(--fs,1));}}
+@media (pointer:coarse){.nb-bar-btn{min-width:44px;height:44px;font-size:calc(15px*var(--fs,1));flex:none;}}
+/* Barra acoplada sobre el teclado (táctil): ancho completo, una fila desplazable, sin tapar el texto seleccionado ni chocar con el menú nativo */
+.nb-bar.k-dock,.dc-barra.k-dock{position:fixed;left:0;right:0;min-width:0;max-width:none;max-height:none;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior:contain;border-radius:14px 14px 0 0;padding:6px 8px calc(6px + var(--safe-bottom,0px))!important;z-index:260;-webkit-user-select:none;user-select:none;scrollbar-width:none;touch-action:pan-x;box-shadow:0 -6px 20px rgba(0,0,0,.3);}
+.nb-bar.k-dock::-webkit-scrollbar,.dc-barra.k-dock::-webkit-scrollbar{display:none;}

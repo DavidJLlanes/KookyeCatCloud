@@ -58,6 +58,7 @@ const createPagos = require('./lib/pagos');
 const createBusqueda = require('./lib/busqueda');
 const createIA = require('./lib/ia');
 const createImportar = require('./lib/importar');
+const createDocumentos = require('./lib/documentos');
 const createMarcadores = require('./lib/marcadores');
 const createSincronizados = require('./lib/sincronizados');
 const { resumenBloques } = require('./lib/notas-bloques');
@@ -382,6 +383,7 @@ const jsonGrande = express.json({ limit: '30mb' });
 const jsonPdf = express.json({ limit: '8mb' });
 app.use((req, res, next) => {
   if (req.path === '/api/prompts/import') return jsonGrande(req, res, next);
+  if (req.path.startsWith('/api/documentos')) return jsonPdf(req, res, next);   // un documento puede llegar a ~1,5 M de caracteres
   if (req.path === '/api/pdf' || req.path === '/api/bases/import') return jsonPdf(req, res, next);   // 8 MB (el PDF y la importación de una base)
   if (/^\/api\/(notes|text|prompts|calendar|labels|clip|shopping|codigo|bases)(\/|$)/.test(req.path)) return jsonMedio(req, res, next);
   return jsonPequeno(req, res, next);
@@ -545,7 +547,8 @@ const busquedaMod = createBusqueda({ express, userRoot, sendError, registrarActi
 const iaMod = createIA({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarLogros, secreto: JWT_SECRET, busqueda: busquedaMod.core });
 const importarMod = createImportar({ express, multer, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido,
   notas: () => ({ ...notesMod.core, extraeLinks: (b) => notesExtra.extraeLinks(b) }), bases: basesMod.core, contactos: contactsMod.core });
-modulosConLogros.push(busquedaMod, iaMod, importarMod);
+const documentosMod = createDocumentos({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido });
+modulosConLogros.push(busquedaMod, iaMod, importarMod, documentosMod);
 
 /* ---------------- Vaciado programado de las papeleras ----------------
    Hasta ahora lo caducado solo se borraba al abrir la papelera. Este barrido lo hace por su cuenta, para
@@ -593,6 +596,7 @@ app.use('/api/pagos', auth, pagosMod.router);
 app.use('/api/busqueda', auth, busquedaMod.router);
 app.use('/api/ia', auth, iaMod.router);
 app.use('/api/importar', auth, importarMod.router);
+app.use('/api/documentos', auth, documentosMod.router);
 app.use('/api/marcadores', auth, marcadoresMod.router);
 app.use('/api/sincronizados', auth, sincronizadosMod.router);
 app.use('/api/recordatorios', auth, recordatoriosMod.router);

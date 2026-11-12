@@ -110,6 +110,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 ### Novedades
 
+- **12 nov 2026 (tarde)** · **Documentos**: pestaña nueva con un editor de texto enriquecido (formato, columnas, tablas, tareas, plantillas) cómodo en móvil y escritorio. Y en el móvil la barra de formato de notas y documentos se acopla sobre el teclado para no chocar con el menú de copiar/cortar.
 - **12 nov 2026 (mediodía)** · **Importar**: pestaña nueva para traer notas y tablas desde Notion, Evernote, Google Docs, Apple Notes y CSV (con asignación de columnas a base nueva, base existente o contactos). Primero se revisa lo encontrado y luego se confirma.
 - **12 nov 2026 (mañana)** · **Buscar y preguntar a la IA**: pestaña nueva *Buscar* con búsqueda en todo (notas, prompts, bases, código, contactos, calendario, pagos, recordatorios, marcadores, portapapeles y archivos de texto) sin IA, con extractos marcados, filtros por módulo y tolerancia a acentos, plurales y erratas · opcional: conecta tu propia clave de OpenAI, Anthropic, Google, OpenRouter (modelos gratis), OpenCode Zen, Groq, Mistral, DeepSeek, xAI, Ollama o cualquier API compatible para **preguntar sobre tus datos** (con fuentes citadas) y **resumir fichas** · 
 - **12 nov 2026** · **Zona Enlaces**: una pestaña nueva para ver y gestionar todos los enlaces que has creado (descarga, subida y prompts): buscar, filtrar por tipo y estado, copiar, abrir, QR, cambiar caducidad o contraseña, poner nombre y revocar (también deslizando) · 
@@ -1331,6 +1332,19 @@ Pestaña *Buscar* (y *Ctrl K → Buscar «…» en todo*). Dos capas independien
 - La configuración y el historial no entran en la exportación (las claves cifradas no se pueden usar fuera de este servidor y no son contenido tuyo).
 - Logros del grupo *Saber*: *Buscador* (búsquedas), *Oráculo* (preguntas a la IA), *Resumidor*, *Coro de modelos* (proveedores distintos) y el especial *Cerebro conectado*; un reto semanal de búsquedas y otro de preguntas; títulos *Rastreador* y *Oráculo*; *Copa del Sabio*. Código en `lib/busqueda/`, `lib/ia/`, `public/js/buscar/` y `public/css/buscar.css`.
 
+## Documentos
+
+Pestaña **Documentos**: textos largos al estilo Google Docs, con editor enriquecido que funciona igual de bien en móvil y en escritorio.
+
+- **Formato:** estilos (texto normal, títulos 1-3, cita), 8 fuentes, tamaño en píxeles, negrita, cursiva, subrayado, tachado, color de texto y resaltado, alineación (izquierda, centro, derecha, justificado), listas con viñetas, numeradas y **de tareas** (con casillas que se marcan tocando), sangría, enlaces, líneas horizontales, quitar formato, deshacer y rehacer. Atajos: Ctrl+B/I/U, Ctrl+K (enlace), Ctrl+S.
+- **Columnas:** inserta bloques de 2, 3 o 4 columnas, cámbialas de número sin perder texto o quítalas dejando el contenido. En pantallas estrechas las columnas se apilan para escribir cómodamente. **Tablas:** insertar, añadir/quitar filas y columnas (Tab salta de celda).
+- **Hoja:** A4, Carta o fluida. Plantillas: carta, acta de reunión, currículum (2 columnas), boletín (3 columnas) y lista de tareas.
+- **Móvil:** la barra de formato se acopla encima del teclado, con botones grandes y una sola fila desplazable (los botones actúan al soltar, no al tocar, para que deslizar no dispare nada). Así el menú nativo de copiar/cortar/pegar, que sale junto a la selección, ya no tapa ni estorba al formateo. La misma solución se aplica a la barra de formato de las notas (`public/js/kit-formato.js`).
+- **Guardado:** automático (1,2 s tras dejar de escribir), con aviso si otro dispositivo cambió el documento (no se pisa). Si un guardado dejara el texto casi vacío se aparta una copia (**versiones anteriores**, últimas 5). Borrar manda a la **papelera** 30 días. Descargas en HTML (con su estilo), Markdown y texto.
+- **Seguridad:** el HTML se sanea en el cliente al pegar y otra vez en el servidor al guardar con una lista blanca (sin scripts, `on*`, `javascript:`, iframes ni estilos con `url()`); los enlaces llevan `rel="noopener noreferrer"`.
+- **Datos propios:** un JSON por documento en `.kcc/documentos/<id>.json` (más `salvavidas/` y `stats.json`). Entra en Buscar (búsqueda global) y en la exportación de datos. API: `GET/POST /api/documentos`, `GET/PUT/DELETE /:id`, `/:id/duplicar`, `/:id/export?format=html|md|txt`, `/:id/salvavidas`, `/:id/restaura`, `/papelera`.
+- Logros del grupo *Documentos*: *Papelería*, *Pluma incansable* (palabras), *Editor de columnas*, *Tabulador*, *Imprenta*, *Con molde* y los especiales *Capítulo largo* y *Bien maquetado*; un reto semanal de palabras; título *Redactor*; *Copa del Redactor*. Código en `lib/documentos/` y `public/js/documentos/`.
+
 ## Importar desde otras apps
 
 Pestaña **Importar**: trae notas y tablas desde Notion, Evernote, Google Docs, Apple Notes y CSV. Siempre en dos pasos: primero se **analiza** el archivo y se enseña lo que hay (notas, carpetas, adjuntos, avisos, tablas) y solo al confirmar se escribe; el análisis espera 20 minutos en memoria y se gasta al importar.
@@ -1823,6 +1837,7 @@ lib/
   enlaces.js         Enlaces públicos: descarga (archivo, carpeta, álbum), subida y prompts, URL corta `/cloud/<12>`, caducidad y QR (fábrica createEnlaces)
   enlaces-resumen.js Contadores de enlaces para los logros (QR, con caducidad, perpetuos, revocados)
   enlaces-gestion.js Zona Enlaces: caducidad, contraseña, nombre, revocar y limpiar (con copia 30 días)
+  documentos/        Documentos: `index.js` (rutas), `sanear.js` (lista blanca de HTML), `modelo.js`, `plantillas.js`, `exportar.js`, `resumen.js`
   importar/          Importadores: `plan.js` (detecta y analiza), `carpeta.js`, `enex.js`, `docx.js`, `html-md.js`, `csv.js`, `contactos-csv.js`, `ejecuta-notas.js`, `ejecuta-tablas.js`, `index.js`
   busqueda/          Búsqueda global sin IA (índice BM25 `indice.js`, `texto.js`, un lector por módulo en `fuentes/`)
   ia/                IA opcional: `proveedores.js` (catálogo), `adaptadores.js` (OpenAI/Anthropic/Google), `config.js`, `clave.js` (cifrado), `http.js` (anti-SSRF), `mensajes.js`
@@ -1871,6 +1886,7 @@ public/
   js/deslizar.js     Gesto «deslizar para eliminar» (K.deslizar) · js/app/qr-enlace.js  QR descargable y cambio de caducidad · vendor/qrcode/  librería del QR
   js/pagos/grafico.js, adjuntos.js  Gráfico anual y documentos adjuntos de Pagos
   js/enlaces/        Zona Enlaces (datos, acciones, lista, index) + css/enlaces.css
+  js/documentos/     Documentos (datos, sanea, comandos, barra, editor, lista, index) + css/documentos.css; js/kit-formato.js: barra de formato acoplada al teclado
   js/importar/       Importar (datos, elegir, revisar, tablas, index) + css/importar.css
   js/buscar/         Buscar y preguntar (datos, resultados, ia, ajustes, index) + css/buscar.css
   js/pagos/, js/marcadores/, js/recordatorios/, js/push/, js/sonidos/  Clientes de los módulos nuevos, un archivo por responsabilidad (datos, lista, formulario, ajustes…)

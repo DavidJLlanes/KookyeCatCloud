@@ -26,6 +26,7 @@
     { t: 'Ir a Código', i: 'i-code', f: () => switchTab('codigo') },
     { t: 'Ir a Bases', i: 'i-table', f: () => switchTab('bases') },
     { t: 'Ir a Pagos', s: 'Recibos, seguros y suscripciones', i: 'i-wallet', f: () => switchTab('pagos') },
+    { t: 'Ir a Documentos', s: 'Textos con formato, columnas y tablas', i: 'i-doc', f: () => switchTab('documentos') },
     { t: 'Ir a Importar', s: 'Desde Notion, Evernote, Google Docs, Apple Notes o CSV', i: 'i-upload', f: () => switchTab('importar') },
     { t: 'Ir a Buscar y preguntar', s: 'Búsqueda en todo y preguntas a la IA', i: 'i-search', f: () => K.buscar.abreCon('') },
     { t: 'Ir a Enlaces', s: 'Ver y gestionar tus enlaces compartidos', i: 'i-link', f: () => switchTab('enlaces') },

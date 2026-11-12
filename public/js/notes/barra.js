@@ -38,11 +38,8 @@
       });
       document.body.appendChild(EST.bar);
     }
-    const r = sel.getRangeAt(0).getBoundingClientRect();
-    EST.bar.style.left = Math.max(8, Math.min(r.left + r.width / 2 - EST.bar.offsetWidth / 2, innerWidth - EST.bar.offsetWidth - 8)) + 'px';
-    const tactil = matchMedia('(pointer:coarse)').matches;
-    // En táctil el menú nativo de copiar/pegar sale encima de la selección: la barra va debajo
-    EST.bar.style.top = (tactil ? Math.min(innerHeight - EST.bar.offsetHeight - 8, r.bottom + 34) : Math.max(8, r.top - EST.bar.offsetHeight - 8)) + 'px';
+    // En táctil la barra se acopla encima del teclado (el menú nativo de copiar/cortar tapaba la que flotaba junto al texto)
+    K.colocaBarra(EST.bar, sel.getRangeAt(0).getBoundingClientRect());
   }
   function hideBar() { if (EST.bar) { EST.bar.remove(); EST.bar = null; } }
   function toggleTag(tag) {

@@ -4,7 +4,7 @@
   if (!window.K) return;
   const B = K.buscar = { S: { q: '', m: '', modo: 'buscar', res: null, ia: null, resumen: null, config: null, recientes: [], ocupado: false, error: '' } };
   B.FUENTES = {
-    notas: ['Notas', 'i-note'], prompts: ['Prompts', 'i-sparkle'], bases: ['Bases', 'i-table'], codigo: ['Código', 'i-code'],
+    notas: ['Notas', 'i-note'], prompts: ['Prompts', 'i-sparkle'], bases: ['Bases', 'i-table'], documentos: ['Documentos', 'i-doc'], codigo: ['Código', 'i-code'],
     contactos: ['Contactos', 'i-contact'], calendario: ['Calendario', 'i-calendar'], pagos: ['Pagos', 'i-wallet'], recordatorios: ['Recordatorios', 'i-bell'],
     marcadores: ['Marcadores', 'i-bookmark'], sincronizados: ['Bloques sincronizados', 'i-note'], portapapeles: ['Portapapeles', 'i-doc'], archivos: ['Archivos', 'i-doc'],
   };
@@ -22,7 +22,7 @@
     if (f === 'pagos') return K.open('pago', id);
     if (f === 'codigo') return K.open('codigo', id);
     if (f === 'archivos') return K.open('file', id, { isDir: false });
-    const tab = { bases: 'bases', marcadores: 'marcadores', recordatorios: 'recordatorios', sincronizados: 'notes', portapapeles: 'clip' }[f];
+    const tab = { documentos: 'documentos', bases: 'bases', marcadores: 'marcadores', recordatorios: 'recordatorios', sincronizados: 'notes', portapapeles: 'clip' }[f];
     if (tab) switchTab(tab);
   };
 

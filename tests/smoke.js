@@ -416,7 +416,7 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     const ac = await fetch(BASE + `/api/public/share/${id}/acceso`, { method: 'POST', headers: { 'X-Clave': 'pw-1234' } }); igual(ac.status, 200);
     const tok = (await ac.json()).token; cierto(/^\d{13}\.[a-f0-9]{64}$/.test(tok), 'token temporal');
     const d = await publico('GET', `/api/public/share/${id}/download?t=${tok}`); igual(d.s, 200); igual(d.t, 'hola a.txt');
-    igual((await publico('GET', `/api/public/share/${id}/download?t=${tok.slice(0, -1)}0`)).s, 401, 'token manipulado');
+    igual((await publico('GET', `/api/public/share/${id}/download?t=${tok.slice(0, -1)}${tok.endsWith('0') ? '1' : '0'}`)).s, 401, 'token manipulado');
     igual((await fetch(BASE + `/api/public/share/${id}/acceso`, { method: 'POST', headers: { 'X-Clave': 'mala' } })).status, 401, 'canje con contraseña mala');
     const d2 = await fetch(BASE + `/api/public/share/${id}/download`, { headers: { 'X-Clave': 'pw-1234' } }); igual(d2.status, 200, 'también por cabecera');
     igual((await publico('GET', '/s/' + id)).s, 200, 'página pública');
@@ -682,7 +682,7 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
   // Módulos con sus propias pruebas (tests/modulos/<modulo>.js)
   process.env.__KCC_BASE = BASE; process.env.__KCC_COOKIE = cookie;
   const ctx = { req, prueba, igual, cierto, DATA, BASE, cookie: () => cookie };
-  for (const m of ['pagos', 'marcadores', 'sincronizados', 'perfil', 'push', 'bases', 'recordatorios', 'analisis', 'sesiones', 'transversal', 'explorador', 'prompts', 'calendario', 'seguridad', 'game', 'codigo', 'vault', 'enlaces', 'busqueda', 'ia', 'importar']) await require('./modulos/' + m)(ctx);
+  for (const m of ['pagos', 'marcadores', 'sincronizados', 'perfil', 'push', 'bases', 'recordatorios', 'analisis', 'sesiones', 'transversal', 'explorador', 'prompts', 'calendario', 'seguridad', 'game', 'codigo', 'vault', 'enlaces', 'busqueda', 'ia', 'importar', 'documentos']) await require('./modulos/' + m)(ctx);
   await prueba('cierre de sesión', async () => { cierto((await req('POST', '/api/logout')).s < 400, 'logout'); });
 
   srv.kill();
