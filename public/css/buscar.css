@@ -68,9 +68,13 @@
   .bu-res-ia span{display:none;}
 }
 
-/* Acceso a la IA: franja fija bajo la barra superior */
-.ia-franja{position:sticky;top:calc(var(--header-h) + var(--safe-top));z-index:29;display:flex;justify-content:center;padding:6px 16px;pointer-events:none;}
-.ia-acceso{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:6px 16px;border-radius:999px;border:1px solid var(--border,rgba(255,255,255,.14));background:var(--topbar-bg,rgba(11,13,18,.8));color:inherit;font:inherit;font-weight:600;font-size:calc(14px*var(--fs,1));cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 2px 10px rgba(0,0,0,.25);}
-.ia-acceso .ico{width:16px;height:16px;}
-.ia-acceso:hover{border-color:var(--accent,#8b5cf6);}
-body.tt-inmersivo .ia-franja{display:none;}
+/* Acceso a la IA: píldora con degradado junto a la ruta de Archivos */
+.ia-acceso{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 14px 0 11px;margin:0 auto 0 4px;border-radius:999px;border:1px solid transparent;color:#fff;font:inherit;font-weight:650;font-size:calc(13.5px*var(--fs,1));cursor:pointer;white-space:nowrap;flex:none;
+  background:linear-gradient(135deg,#6366f1,#a855f7 60%,#ec4899);box-shadow:0 4px 14px -4px rgba(168,85,247,.7),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .15s,box-shadow .15s,filter .15s;}
+.ia-acceso .ico{width:16px;height:16px;fill:currentColor;stroke:none;animation:ia-brillo 3.2s ease-in-out infinite;}
+.ia-acceso:hover{filter:brightness(1.1);box-shadow:0 6px 18px -4px rgba(168,85,247,.85),inset 0 1px 0 rgba(255,255,255,.3);}
+.ia-acceso:active{transform:scale(.96);}
+.ia-corto{display:none;}
+@media (max-width:640px){.ia-largo{display:none;}.ia-corto{display:inline;}}
+@keyframes ia-brillo{0%,100%{transform:scale(1) rotate(0);}50%{transform:scale(1.18) rotate(12deg);}}
+@media (prefers-reduced-motion:reduce){.ia-acceso .ico{animation:none;}}
