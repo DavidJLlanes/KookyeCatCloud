@@ -537,7 +537,7 @@ notas, enlaces, fechas, cifras ni a ubicaciones largas del calendario.
 Para desarrolladores: `lib/valores/index.js` es un servicio compartido (como las etiquetas). Cada módulo registra sus campos con
 `valores.registra({ campo, modulo, prop, etiqueta, multiple, uso, renombra })`, llama a `valores.aplica(user, modulo, obj)`
 antes de guardar y, en el cliente, usa `K.campoValor()` en el formulario, `K.chipValor()` para mostrar el valor y
-registra `K.filtros.<modulo> = (prop, valor) => …`. La normalización (`public/js/valores-clave.js`) es el mismo archivo
+registra `K.filtros.<modulo> = (prop, valor) => …`. La normalización (`public/js/valores/clave.js`) es el mismo archivo
 en servidor y navegador. Datos en `<usuario>/.kcc/valores.json`.
 
 ### Buscador global (Ctrl+K)
@@ -1020,13 +1020,13 @@ Las secciones con contenido legible tienen en su menú ⋯ (o en el botón **Exp
 | Compra | La pestaña activa: pendientes como lista de comprobación por categoría, comprados o productos |
 | Código | Descripción, árbol de archivos y el código de los archivos de texto (tope de ~600 KB) |
 
-Cada sección construye su documento en Markdown y `public/js/docexport.js` (`K.doc`) lo entrega: el `.md` tal cual, el `.txt` sin marcas y el PDF.
+Cada sección construye su documento en Markdown y `public/js/nucleo/docexport.js` (`K.doc`) lo entrega: el `.md` tal cual, el `.txt` sin marcas y el PDF.
 
 **El PDF lo genera el servidor** (`POST /api/pdf`, `lib/pdf/index.js` + `lib/pdf/`, con `pdfkit` y las fuentes DejaVu de `lib/pdf/fuentes/`): A4 con títulos, listas y tareas, citas, avisos, código, tablas (con la cabecera repetida al cambiar de página), imágenes de tus notas, enlaces y numeración «n / total». Las tablas anchas salen en horizontal; los emojis de color que la fuente no tiene se omiten. Antes se imprimía desde un marco oculto del navegador, que en el móvil no guardaba nada. Tras actualizar hace falta `npm ci` (la actualización nocturna ya lo hace).
 
 ### Dónde se guarda lo que exportas
 
-Toda exportación y descarga pasa por `public/js/guardar.js` (`K.guardar`, `K.guardarUrl`, `K.guardarPeticion`) y **siempre pregunta**: en el PC, el cuadro «Guardar como» del sistema (Chrome, Edge, Opera); en iPhone, la hoja de compartir con «Guardar en Archivos»; en Android, el menú de compartir (Archivos, Drive…), porque el navegador no permite un «Guardar como». Firefox y Safari de escritorio usan la descarga normal. Los archivos muy grandes (más de 150 MB en móvil, 600 MB en PC) se descargan directamente para no llenar la memoria. Varios archivos seleccionados bajan en un solo ZIP.
+Toda exportación y descarga pasa por `public/js/nucleo/guardar.js` (`K.guardar`, `K.guardarUrl`, `K.guardarPeticion`) y **siempre pregunta**: en el PC, el cuadro «Guardar como» del sistema (Chrome, Edge, Opera); en iPhone, la hoja de compartir con «Guardar en Archivos»; en Android, el menú de compartir (Archivos, Drive…), porque el navegador no permite un «Guardar como». Firefox y Safari de escritorio usan la descarga normal. Los archivos muy grandes (más de 150 MB en móvil, 600 MB en PC) se descargan directamente para no llenar la memoria. Varios archivos seleccionados bajan en un solo ZIP.
 
 Los CSV (Bases y Juegos) llevan «;» y BOM, y los números con coma decimal, para abrirse bien en Excel en español.
 
@@ -1051,7 +1051,7 @@ En **Cuenta → Apariencia** eliges el tema y el color de acento. Se guardan en 
 
 ## Tamaño del texto
 
-En **Cuenta → Tamaño del texto** puedes aumentar o reducir las letras de toda la aplicación (del 85 % al 140 %, con botones A− / A+, deslizador y «Restablecer»). Se guarda en el dispositivo y se aplica antes de pintar la página. Funciona con un único factor (`--fs`) que multiplica todas las tipografías de `public/css/` y de `index.html`: en CSS nuevo escribe `font-size:calc(13px*var(--fs,1))` en lugar de `13px`. Los campos de texto no bajan de 16 px para que iOS no haga zoom al enfocarlos. El código está en `public/js/textsize.js`.
+En **Cuenta → Tamaño del texto** puedes aumentar o reducir las letras de toda la aplicación (del 85 % al 140 %, con botones A− / A+, deslizador y «Restablecer»). Se guarda en el dispositivo y se aplica antes de pintar la página. Funciona con un único factor (`--fs`) que multiplica todas las tipografías de `public/css/` y de `index.html`: en CSS nuevo escribe `font-size:calc(13px*var(--fs,1))` en lugar de `13px`. Los campos de texto no bajan de 16 px para que iOS no haga zoom al enfocarlos. El código está en `public/js/nucleo/textsize.js`.
 
 ## Pagos
 
@@ -1151,11 +1151,11 @@ Las fotos de la galería y las imágenes de muestra de los prompts se abren en u
 completa con zoom: **rueda del ratón** o **pellizco con dos dedos** (de 1× a 8×), **doble toque o
 doble clic** para acercar y alejar, y arrastre para moverte por la imagen ampliada. Con la imagen
 sin ampliar, deslizar un dedo cambia de foto; en el teclado, `Esc` cierra, las flechas cambian de
-imagen, `+` y `-` hacen zoom y `0` lo restablece. Está en `public/js/zoom.js`.
+imagen, `+` y `-` hacen zoom y `0` lo restablece. Está en `public/js/nucleo/zoom.js`.
 
 ## Móvil: desplazamiento y tamaños táctiles
 
-**Deslizar para eliminar**: en pantallas táctiles, arrastra una fila hacia la izquierda más allá del umbral (se tiñe de rojo) y suéltala para eliminarla, con la misma confirmación y la misma copia de 30 días que el botón de siempre. Está en Pagos, Recordatorios, Marcadores web, Prompts (van a la papelera) y filas de Bases; no está donde borrar es definitivo (contactos, archivos con selección). El ratón no lo usa. Código en `public/js/deslizar.js` (`K.deslizar(elemento, { alBorrar })`).
+**Deslizar para eliminar**: en pantallas táctiles, arrastra una fila hacia la izquierda más allá del umbral (se tiñe de rojo) y suéltala para eliminarla, con la misma confirmación y la misma copia de 30 días que el botón de siempre. Está en Pagos, Recordatorios, Marcadores web, Prompts (van a la papelera) y filas de Bases; no está donde borrar es definitivo (contactos, archivos con selección). El ratón no lo usa. Código en `public/js/nucleo/deslizar.js` (`K.deslizar(elemento, { alBorrar })`).
 
 Las ventanas altas (como el detalle de un prompt) se desplazan con el dedo y llevan un botón de
 cerrar fijo arriba. La barra inferior usa iconos de 26 px y botones de al menos 78×60 px, se
@@ -1346,7 +1346,7 @@ Pestaña **Documentos**: textos largos al estilo Google Docs, con editor enrique
 - **Formato:** estilos (texto normal, títulos 1-3, cita), 8 fuentes, tamaño en píxeles, negrita, cursiva, subrayado, tachado, color de texto y resaltado, alineación (izquierda, centro, derecha, justificado), listas con viñetas, numeradas y **de tareas** (con casillas que se marcan tocando), sangría, enlaces, líneas horizontales, quitar formato, deshacer y rehacer. Atajos: Ctrl+B/I/U, Ctrl+K (enlace), Ctrl+S.
 - **Columnas:** inserta bloques de 2, 3 o 4 columnas, cámbialas de número sin perder texto o quítalas dejando el contenido. En pantallas estrechas las columnas se apilan para escribir cómodamente. **Tablas:** insertar, añadir/quitar filas y columnas (Tab salta de celda).
 - **Hoja:** A4, Carta o fluida. Plantillas: carta, acta de reunión, currículum (2 columnas), boletín (3 columnas) y lista de tareas.
-- **Móvil:** la barra de formato se acopla encima del teclado, con botones grandes y una sola fila desplazable (los botones actúan al soltar, no al tocar, para que deslizar no dispare nada). Así el menú nativo de copiar/cortar/pegar, que sale junto a la selección, ya no tapa ni estorba al formateo. La misma solución se aplica a la barra de formato de las notas (`public/js/kit-formato.js`).
+- **Móvil:** la barra de formato se acopla encima del teclado, con botones grandes y una sola fila desplazable (los botones actúan al soltar, no al tocar, para que deslizar no dispare nada). Así el menú nativo de copiar/cortar/pegar, que sale junto a la selección, ya no tapa ni estorba al formateo. La misma solución se aplica a la barra de formato de las notas (`public/js/nucleo/kit-formato.js`).
 - **Guardado:** automático (1,2 s tras dejar de escribir), con aviso si otro dispositivo cambió el documento (no se pisa). Si un guardado dejara el texto casi vacío se aparta una copia (**versiones anteriores**, últimas 5). Borrar manda a la **papelera** 30 días. Descargas en HTML (con su estilo), Markdown y texto.
 - **Seguridad:** el HTML se sanea en el cliente al pegar y otra vez en el servidor al guardar con una lista blanca (sin scripts, `on*`, `javascript:`, iframes ni estilos con `url()`); los enlaces llevan `rel="noopener noreferrer"`.
 - **Datos propios:** un JSON por documento en `.kcc/documentos/<id>.json` (más `salvavidas/` y `stats.json`). Entra en Buscar (búsqueda global) y en la exportación de datos. API: `GET/POST /api/documentos`, `GET/PUT/DELETE /:id`, `/:id/duplicar`, `/:id/export?format=html|md|txt`, `/:id/salvavidas`, `/:id/restaura`, `/papelera`.
@@ -1889,15 +1889,15 @@ public/
                      navegacion/ (lista, agrupacion, arrastrar, menu-contextual, filas, busqueda-seleccion, mover) y
                      visores/ (foto, documentos, hojas, texto, mapa, detalles) son scripts globales en orden
   tests/ui/          Pruebas de interfaz con Playwright (no van en npm test) y sus huellas de referencia
-  js/copias.js       Tarjeta de Administración: estado, crear copia, descargar y registro de intentos
+  js/copias/copias.js       Tarjeta de Administración: estado, crear copia, descargar y registro de intentos
   js/valores*.js     Valores reutilizables: normalización compartida con el servidor, campos con sugerencias, chips que filtran y pantalla de revisión
   js/bases/tabla-totales.js, tabla-orden.js  Agrupar, fila de totales y arrastrar filas en la tabla de Bases
   js/notes/ricos-columnas.js, ricos-base-vistas.js  Columnas con bloques dentro y vistas de una base en una nota
-  js/deslizar.js     Gesto «deslizar para eliminar» (K.deslizar) · js/app/qr-enlace.js  QR descargable y cambio de caducidad · vendor/qrcode/  librería del QR
+  js/nucleo/deslizar.js     Gesto «deslizar para eliminar» (K.deslizar) · js/app/qr-enlace.js  QR descargable y cambio de caducidad · vendor/qrcode/  librería del QR
   js/pagos/grafico.js, adjuntos.js  Gráfico anual y documentos adjuntos de Pagos
   js/enlaces/        Zona Enlaces (datos, acciones, lista, index) + css/enlaces.css
-  js/documentos/     Documentos (datos, sanea, comandos, barra, editor, lista, index) + css/documentos.css; js/kit-formato.js: barra de formato acoplada al teclado
-  js/kit-foco.js, kit-atras.js  Foco y teclado de diálogos y menús; el botón «atrás» del móvil cierra el diálogo · js/app/navegacion/tandas.js  Lista de archivos por tandas
+  js/documentos/     Documentos (datos, sanea, comandos, barra, editor, lista, index) + css/documentos.css; js/nucleo/kit-formato.js: barra de formato acoplada al teclado
+  js/nucleo/kit-foco.js, kit-atras.js  Foco y teclado de diálogos y menús; el botón «atrás» del móvil cierra el diálogo · js/app/navegacion/tandas.js  Lista de archivos por tandas
   js/importar/       Importar (datos, elegir, revisar, tablas, index) + css/importar.css
   js/buscar/         Buscar y preguntar (datos, resultados, ia, ajustes, index) + css/buscar.css
   js/pagos/, js/marcadores/, js/recordatorios/, js/push/, js/sonidos/  Clientes de los módulos nuevos, un archivo por responsabilidad (datos, lista, formulario, ajustes…)

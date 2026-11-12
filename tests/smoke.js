@@ -45,7 +45,7 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
   await prueba('versión pública', async () => { igual((await req('GET', '/api/version')).s, 200); });
   await prueba('página principal y service worker', async () => {
     const a = await req('GET', '/'); igual(a.s, 200); cierto(a.t.includes('docexport.js'), 'index sin docexport.js');
-    igual((await req('GET', '/sw.js')).s, 200); igual((await req('GET', '/js/docexport.js')).s, 200);
+    igual((await req('GET', '/sw.js')).s, 200); igual((await req('GET', '/js/nucleo/docexport.js')).s, 200);
   });
   await prueba('todos los <script> y hojas de estilo del index existen y están en el service worker', async () => {
     const html = (await req('GET', '/')).t, sw = (await req('GET', '/sw.js')).t;
@@ -470,7 +470,7 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     igual((await req('GET', '/api/capabilities')).j.textMax, 512 * 1024);
   });
   await prueba('valores: la normalización une variantes y no mezcla lo distinto', async () => {
-    const V = require(path.join(ROOT, 'public/js/valores-clave.js'));
+    const V = require(path.join(ROOT, 'public/js/valores/clave.js'));
     for (const [a, b] of [['Claude Sonnet 5,5', 'claude  sonnet 5.5'], ['CLAUDE-SONNET 5.5', 'Claude Sonnet 5.5'], ['Atención', 'atencion'], ['Node.js', 'NodeJS'], ['GPT 4o', 'gpt-4o']]) igual(V.clave(a), V.clave(b), `${a} = ${b}`);
     for (const [a, b] of [['Claude Sonnet 4.5', 'Claude Sonnet 5.5'], ['C++', 'C'], ['C#', 'C'], ['PS4', 'PS5'], ['5 5', '55'], ['Opus', 'Opus 4']]) cierto(V.clave(a) !== V.clave(b), `${a} ≠ ${b}`);
     cierto(V.sonParecidos(V.clave('claude sonet 5,5'), V.clave('Claude Sonnet 5.5')), 'errata de una letra');

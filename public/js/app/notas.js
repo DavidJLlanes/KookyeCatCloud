@@ -212,7 +212,7 @@ function menuNota(x, y, item) {
   }
   opcionCtx(menu, 'i-pencil', 'Renombrar', () => renombrarNota(item));
   if (item.parent) opcionCtx(menu, 'i-up', 'Sacar a la raíz', () => moverNota(item, ''));
-  if (window.KCC.noteMenu) window.KCC.noteMenu(menu, item);      // exportar, plantilla… (js/notes-extra.js)
+  if (window.KCC.noteMenu) window.KCC.noteMenu(menu, item);      // exportar, plantilla… (js/notes/extra.js)
   menu.appendChild(el('div', 'sep'));
   opcionCtx(menu, 'i-trash', item.type === 'folder' ? 'Eliminar carpeta y su contenido' : 'Eliminar nota',
     () => borrarNota(item), true);
