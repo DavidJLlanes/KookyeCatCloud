@@ -6,17 +6,21 @@
   const B = K.buscar, S = B.S;
 
   // Texto con las citas [n] convertidas en botones que abren la fuente
+  // Texto con **negrita** (los modelos la usan aunque no se la pidan), construido con nodos
+  function conNegrita(fr, t) {
+    t.split(/(\*\*[^*\n]+\*\*)/).forEach(x => { if (!x) return; if (/^\*\*[^*]+\*\*$/.test(x)) fr.appendChild(el('strong', null, x.slice(2, -2))); else fr.appendChild(document.createTextNode(x)); });
+  }
   function conCitas(texto, fuentes) {
     const fr = document.createDocumentFragment();
     let pos = 0;
     for (const m of texto.matchAll(/\[(\d{1,2})\]/g)) {
       const f = fuentes.find(x => x.n === Number(m[1]));
       if (!f) continue;
-      if (m.index > pos) fr.appendChild(document.createTextNode(texto.slice(pos, m.index)));
+      if (m.index > pos) conNegrita(fr, texto.slice(pos, m.index));
       const b = el('button', 'bu-cita', m[1]); b.type = 'button'; b.title = f.titulo; b.addEventListener('click', () => B.abrir(f));
       fr.appendChild(b); pos = m.index + m[0].length;
     }
-    if (pos < texto.length) fr.appendChild(document.createTextNode(texto.slice(pos)));
+    if (pos < texto.length) conNegrita(fr, texto.slice(pos));
     return fr;
   }
 
@@ -49,9 +53,12 @@
     const card = el('div', 'bu-resp');
     const txt = el('div', 'bu-resp-txt'); txt.appendChild(conCitas(r.respuesta, r.fuentes)); card.appendChild(txt);
     card.appendChild(el('small', 'k-faint', `${B.nombreProv(r.proveedor)} · ${r.modelo} · ${(r.ms / 1000).toFixed(1)} s`));
-    if (r.fuentes.length) {
-      const fs = el('div', 'bu-fuentes'); fs.appendChild(el('b', null, 'Fuentes'));
-      r.fuentes.forEach(f => { const b = el('button', 'bu-fuente'); b.type = 'button'; b.append(el('span', 'bu-cita', String(f.n)), icon(B.iconoDe(f.fuente)), el('span', null, f.titulo)); b.addEventListener('click', () => B.abrir(f)); fs.appendChild(b); });
+    // Se recuperan hasta 8 fragmentos, pero solo se listan los que la respuesta cita; si no cita ninguno, todos los consultados
+    const citadas = new Set([...String(r.respuesta).matchAll(/\[(\d{1,2})\]/g)].map(m => Number(m[1])));
+    const mostradas = citadas.size ? r.fuentes.filter(f => citadas.has(f.n)) : r.fuentes;
+    if (mostradas.length) {
+      const fs = el('div', 'bu-fuentes'); fs.appendChild(el('b', null, citadas.size ? 'Fuentes citadas' : 'Fuentes consultadas'));
+      mostradas.forEach(f => { const b = el('button', 'bu-fuente'); b.type = 'button'; b.append(el('span', 'bu-cita', String(f.n)), icon(B.iconoDe(f.fuente)), el('span', null, f.titulo)); b.addEventListener('click', () => B.abrir(f)); fs.appendChild(b); });
       card.appendChild(fs);
     }
     cont.appendChild(card);

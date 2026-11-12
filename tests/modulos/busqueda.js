@@ -81,10 +81,10 @@ module.exports = async ({ req, prueba, igual, cierto, DATA, BASE, cookie }) => {
     const a = await req('POST', '/api/shopping/products', { name: 'Gambas ' + marca, unit: 'paquete', quantity: 2, category: 'Congelados' }); igual(a.s, 200, JSON.stringify(a.j));
     igual((await req('POST', '/api/shopping/products', { name: 'Arroz ' + marca, unit: 'kg', quantity: 1, addToList: false })).s, 200);
     const r = await busca(marca, 'compra');
-    igual(r.resultados.filter(x => !/pendientes|catálogo/.test(x.titulo)).length, 2, 'un resultado por producto (y los dos resúmenes también casan con el nombre)');
+    igual(r.resultados.filter(x => !/pendientes de comprar|todos los productos/.test(x.titulo)).length, 2, 'un resultado por producto (y los dos resúmenes también casan con el nombre)');
     const g = r.resultados.find(x => /Gambas/.test(x.titulo)); cierto(g && g.fuente === 'compra', 'producto pendiente');
     const lista = await busca('qué hay en la lista de la compra pendiente', 'compra');
-    cierto(lista.resultados.some(x => /pendientes/.test(x.titulo)), 'el resumen de pendientes sale con una pregunta natural');
+    cierto(lista.resultados.some(x => /pendientes de comprar/.test(x.titulo)), 'el resumen de pendientes sale con una pregunta natural');
     const c = (await req('GET', '/api/busqueda/fuentes')).j.fuentes.find(f => f.id === 'compra');
     igual(c.documentos, (await req('GET', '/api/shopping')).j.products.length, 'el recuento cuenta productos, no resúmenes');
   });
