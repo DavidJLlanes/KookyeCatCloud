@@ -110,6 +110,10 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 ### Novedades
 
+- **12 nov 2026 (más tarde)** · **Rendimiento, accesibilidad y seguridad** (repaso con la guía [modern-web-guidance](https://github.com/GoogleChrome/modern-web-guidance) de Chrome y dos auditorías, la 16 y la 17):
+  - **Carpetas enormes**: la lista de archivos se pinta por tandas y cede el hilo, así que una carpeta de 5.000 archivos pasa de ~6 s con la interfaz congelada a menos de 1 s.
+  - **Diálogos y menús accesibles**: nombre y foco inicial seguros, el Tab no se escapa del diálogo, el foco vuelve a quien lo abrió, menús con flechas, Inicio/Fin y Esc. **El botón o gesto «atrás» del móvil cierra el diálogo abierto** en vez de sacarte de la app (y pregunta si hay cambios sin guardar). El Intro que confirma una palabra con teclados japonés, chino o coreano ya no ejecuta acciones por error.
+  - **Seguridad**: cabeceras `Permissions-Policy` y `Cross-Origin-Opener-Policy` y `form-action 'self'` en la CSP; barridos de expresiones regulares que podían bloquear el servidor con textos enormes (ahora `npm run check` los vigila con un escáner); el análisis de las importaciones corre en un hilo aparte y las altas simultáneas respetan los límites. Las barras de desplazamiento y los selectores nativos siguen el tema oscuro o claro.
 - **12 nov 2026 (tarde)** · **Documentos**: pestaña nueva con un editor de texto enriquecido (formato, columnas, tablas, tareas, plantillas) cómodo en móvil y escritorio. Y en el móvil la barra de formato de notas y documentos se acopla sobre el teclado para no chocar con el menú de copiar/cortar.
 - **12 nov 2026 (mediodía)** · **Importar**: pestaña nueva para traer notas y tablas desde Notion, Evernote, Google Docs, Apple Notes y CSV (con asignación de columnas a base nueva, base existente o contactos). Primero se revisa lo encontrado y luego se confirma.
 - **12 nov 2026 (mañana)** · **Buscar y preguntar a la IA**: pestaña nueva *Buscar* con búsqueda en todo (notas, prompts, bases, código, contactos, calendario, pagos, recordatorios, marcadores, portapapeles y archivos de texto) sin IA, con extractos marcados, filtros por módulo y tolerancia a acentos, plurales y erratas · opcional: conecta tu propia clave de OpenAI, Anthropic, Google, OpenRouter (modelos gratis), OpenCode Zen, Groq, Mistral, DeepSeek, xAI, Ollama o cualquier API compatible para **preguntar sobre tus datos** (con fuentes citadas) y **resumir fichas** · 
@@ -1732,7 +1736,8 @@ indique; reinicia el servicio tras cambiarlas.
 - **Aislamiento**: cada usuario ve solo su carpeta; las rutas se validan en cada petición y las
   carpetas internas (`.trash`, `.notes`, `.kcc`, `.vault`) no son accesibles por la API ni WebDAV.
 - **Navegador**: Content-Security-Policy estricta (sin CDN; la única excepción son los tiles del
-  mapa), contenido de usuario mostrado en `sandbox` y Markdown renderizado sin HTML.
+  mapa) con `form-action 'self'`, `Permissions-Policy` (micrófono, geolocalización, pagos, USB y Bluetooth apagados), `Cross-Origin-Opener-Policy: same-origin-allow-popups`, contenido de usuario mostrado en `sandbox` y Markdown renderizado sin HTML.
+- **Expresiones regulares**: `npm run check` analiza todas las del servidor y del cliente con `recheck` y falla si alguna puede bloquear el servidor con un texto largo (ReDoS).
 - **Errores y cabeceras**: los errores del sistema nunca muestran rutas del servidor; `Strict-Transport-Security` con HTTPS.
 - **Salidas a Internet**: los iconos de los marcadores y los avisos push solo conectan con destinos permitidos (sin direcciones privadas ni locales: defensa SSRF).
 - **Servicio**: systemd con `NoNewPrivileges`, `ProtectSystem=strict` y un usuario sin privilegios.
@@ -1889,6 +1894,7 @@ public/
   js/pagos/grafico.js, adjuntos.js  Gráfico anual y documentos adjuntos de Pagos
   js/enlaces/        Zona Enlaces (datos, acciones, lista, index) + css/enlaces.css
   js/documentos/     Documentos (datos, sanea, comandos, barra, editor, lista, index) + css/documentos.css; js/kit-formato.js: barra de formato acoplada al teclado
+  js/kit-foco.js, kit-atras.js  Foco y teclado de diálogos y menús; el botón «atrás» del móvil cierra el diálogo · js/app/navegacion/tandas.js  Lista de archivos por tandas
   js/importar/       Importar (datos, elegir, revisar, tablas, index) + css/importar.css
   js/buscar/         Buscar y preguntar (datos, resultados, ia, ajustes, index) + css/buscar.css
   js/pagos/, js/marcadores/, js/recordatorios/, js/push/, js/sonidos/  Clientes de los módulos nuevos, un archivo por responsabilidad (datos, lista, formulario, ajustes…)
@@ -1898,7 +1904,7 @@ public/
   sw.js, manifest.json  PWA
   audio/             Música del Tetris (CC0) y créditos
   vendor/            Leaflet alojado en local; game-icons.net (iconos de logros)
-tests/               smoke.js (pruebas de humo: arrancan la app en una copia temporal), modulos/ (una por módulo: pagos, marcadores, perfil, push, seguridad), sintaxis.js y auditoria.js (`npm run check`)
+tests/               smoke.js (pruebas de humo: arrancan la app en una copia temporal), modulos/ (una por módulo: pagos, marcadores, perfil, push, seguridad), sintaxis.js, auditoria.js y regex.js (`npm run check`)
 deploy/              update.sh y temporizador systemd de autoactualización
 .env.example         Todas las variables de configuración
 ```
@@ -1906,7 +1912,7 @@ deploy/              update.sh y temporizador systemd de autoactualización
 Las convenciones para módulos nuevos (JSON propio por módulo y gamificación obligatoria) están en
 `CLAUDE.md`.
 
-`npm run check` revisa la sintaxis de todo el código del servidor. No hay paso de build: lo que
+`npm run check` revisa la sintaxis de todo el código del servidor, la persistencia, las expresiones regulares (ReDoS) y ESLint. No hay paso de build: lo que
 ves en `public/` es lo que se sirve.
 
 ## Solución de problemas
