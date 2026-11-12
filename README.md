@@ -1355,6 +1355,7 @@ Pestaña **Importar**: trae notas y tablas desde Notion, Evernote, Google Docs, 
 - **Apple Notes:** sin exportación oficial en bloque; acepta la carpeta que dejen Exporter, Obsidian Importer o similares (Markdown, HTML o texto, con subcarpetas) y archivos sueltos.
 - **CSV con asignación de columnas:** detecta codificación (UTF-8/Windows-1252), separador (`, ; tab |`) y tipo de cada columna (número, fecha d/m/a o ISO, casilla, selección, enlace, correo, teléfono, texto). Se elige nombre, tipo o ignorar cada columna; destino **base nueva**, **base existente** (emparejando columnas) o **contactos** (con sugerencia automática para cabeceras de Google, Outlook y español; no duplica los que ya existen). Máximo 20.000 filas por CSV; lo que no se entiende como número o fecha queda vacío y se avisa.
 - **Dónde cae:** las notas van dentro de una carpeta «Importado de X · fecha» (en la raíz o en la carpeta que elijas), con sus subcarpetas; los adjuntos a «Adjuntos de notas» con nombre único. Si algo falla a medias se borra lo escrito y el índice queda como estaba; si se superara el límite de notas, no se importa nada.
+- **Rendimiento:** el análisis va en un hilo aparte (el servidor sigue respondiendo mientras tanto), como mucho 2 a la vez en todo el servidor.
 - **Seguridad:** sin dependencias nuevas; el XML se lee sin entidades externas, los ZIP tienen tope de archivos y de bytes reales descomprimidos, las rutas con `..` o absolutas se descartan, solo se copian adjuntos de tipos permitidos (nunca svg, html ni js) y los `<script>`/`<style>` del HTML se eliminan.
 - Datos propios: solo contadores en `.kcc/importar/stats.json`. API: `POST /api/importar/analizar` (multipart, hasta 100 MB) y `POST /api/importar/ejecutar`.
 - Logros del grupo *Importar*: *Mudanza*, *Trasvase de notas*, *Tablas al día*, *Con sus imágenes*, *Sin fronteras* y el especial *Puerto de llegada* (los cinco orígenes); un reto semanal; título *Maestro de mudanzas*; *Copa del Mudancero*. Código en `lib/importar/` y `public/js/importar/`.
@@ -1839,7 +1840,7 @@ lib/
   enlaces-gestion.js Zona Enlaces: caducidad, contraseña, nombre, revocar y limpiar (con copia 30 días)
   html-tokens.js     Lector de HTML en tiempo lineal (tokens, atributos, bloques, etiquetas): saneado de Documentos e importadores, sin expresiones regulares que se cuelguen
   documentos/        Documentos: `index.js` (rutas), `sanear.js` (lista blanca de HTML), `modelo.js`, `plantillas.js`, `exportar.js`, `resumen.js`
-  importar/          Importadores: `plan.js` (detecta y analiza), `carpeta.js`, `enex.js`, `docx.js`, `html-md.js`, `csv.js`, `contactos-csv.js`, `ejecuta-notas.js`, `ejecuta-tablas.js`, `index.js`
+  importar/          Importadores: `plan.js` (detecta y analiza), `hilo.js` (análisis en worker_threads), `carpeta.js`, `enex.js`, `docx.js`, `html-md.js`, `csv.js`, `contactos-csv.js`, `ejecuta-notas.js`, `ejecuta-tablas.js`, `index.js`
   busqueda/          Búsqueda global sin IA (índice BM25 `indice.js`, `texto.js`, un lector por módulo en `fuentes/`)
   ia/                IA opcional: `proveedores.js` (catálogo), `adaptadores.js` (OpenAI/Anthropic/Google), `config.js`, `clave.js` (cifrado), `http.js` (anti-SSRF), `mensajes.js`
   notes-imagenes/    Imágenes de las notas (cliente): optimizar, subir, insertar, ventana de elección y botón de la barra

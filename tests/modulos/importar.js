@@ -104,9 +104,25 @@ module.exports = async ({ req, prueba, igual, cierto, DATA, BASE, cookie }) => {
 
   await prueba('importar: HTML y Markdown maliciosos (miles de etiquetas sin cerrar) no cuelgan el servidor', async () => {
     const malo = zipSync({ 'a.md': strToU8('<aside'.repeat(60000) + '<img'.repeat(60000)), 'b.html': strToU8('<a "'.repeat(120000)), 'c.md': strToU8('a' + ' '.repeat(300000) + 'b') });
-    const t0 = Date.now(); const a = await sube('malo.zip', Buffer.from(malo), 'apple');
+    // El análisis va en otro hilo: mientras dura, el servidor sigue respondiendo al momento
+    const t0 = Date.now(); const pend = sube('malo.zip', Buffer.from(malo), 'apple');
+    let peor = 0; for (let k = 0; k < 5; k++) { const p0 = Date.now(); await fetch(BASE + '/api/version'); peor = Math.max(peor, Date.now() - p0); }
+    cierto(peor < 400, 'el servidor responde durante el análisis: ' + peor + ' ms');
+    const a = await pend;
     igual(a.s, 200, JSON.stringify(a.j).slice(0, 200)); cierto(Date.now() - t0 < 5000, 'tarda ' + (Date.now() - t0) + ' ms');
     const ia = await req('POST', '/api/ia/proveedores/__proto__/modelos'); igual(ia.s, 404, 'proveedor «__proto__»');
+  });
+
+  await prueba('importar/bases: altas simultáneas cerca del máximo no se pasan del límite de 60', async () => {
+    const hay = async () => (await req('GET', '/api/bases')).j.bases.length;
+    while (await hay() < 58) igual((await req('POST', '/api/bases', { nombre: 'Relleno' })).s, 200);
+    const r = await Promise.all(Array.from({ length: 5 }, (_, i) => req('POST', '/api/bases', { nombre: 'Carrera ' + i })));
+    igual(r.filter(x => x.s === 200).length, 2, JSON.stringify(r.map(x => x.s)));
+    igual(await hay(), 60, 'exactamente el máximo');
+    const csv = await sube('lleno.csv', Buffer.from('a,b\n1,2\n'));
+    const e = await ejecuta({ token: csv.j.token, notas: false, tablas: [{ tabla: 0, destino: 'nueva', columnas: [{ col: 0, nombre: 'a', tipo: 'text' }] }] });
+    cierto(e.j.errores.length === 1 && /máximo/.test(e.j.errores[0]), 'importar a base nueva respeta el máximo: ' + JSON.stringify(e.j));
+    for (const b of (await req('GET', '/api/bases')).j.bases.filter(x => /^(Relleno|Carrera)/.test(x.nombre))) await req('DELETE', '/api/bases/' + b.id);
   });
 
   await prueba('importar: CSV → base nueva con tipos, base existente y contactos', async () => {
