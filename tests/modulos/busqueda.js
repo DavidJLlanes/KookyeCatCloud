@@ -104,4 +104,45 @@ module.exports = async ({ req, prueba, igual, cierto, DATA, BASE, cookie }) => {
     const f = (await req('GET', '/api/busqueda/fuentes')).j.fuentes.map(x => x.id);
     for (const id of ['compra', 'juegos', 'enlaces', 'colecciones', 'logros', 'papelera']) cierto(f.includes(id), 'fuente ' + id);
   });
+
+  await prueba('busqueda: cada módulo con datos propios se encuentra (clave de lectura correcta)', async () => {
+    const m = 'auditoria' + Date.now().toString(36);
+    igual((await req('POST', '/api/calendar/events', { title: 'Evento ' + m, start: '2026-12-10T10:00', end: '2026-12-10T11:00' })).s, 200);
+    igual((await req('POST', '/api/recordatorios', { titulo: 'Recordar ' + m, fecha: '2026-12-11', hora: '09:00' })).s, 200);
+    igual((await req('POST', '/api/clip/text', { text: 'Portapapeles ' + m })).s, 200);
+    igual((await req('POST', '/api/sincronizados', { texto: 'Bloque ' + m })).s, 200);
+    igual((await req('POST', '/api/documentos', { title: 'Documento ' + m, html: '<p>Texto ' + m + '</p>' })).s, 200);
+    igual((await req('POST', '/api/codigo', { nombre: 'Proyecto ' + m, descripcion: 'Código ' + m })).s, 200);
+    const esperadas = { calendario: 'Evento', recordatorios: 'Recordar', portapapeles: 'Portapapeles', sincronizados: 'Bloque', documentos: 'Documento', codigo: 'Proyecto' };
+    for (const [f, ini] of Object.entries(esperadas)) {
+      const r = await busca(m, f); cierto(r.resultados.some(x => x.fuente === f), `${f}: no se encuentra lo que el módulo guarda (¿clave de lectura equivocada?)`);
+      void ini;
+    }
+  });
+
+  await prueba('busqueda: las etiquetas se encuentran por su nombre (notas, prompts, contactos y calendario)', async () => {
+    const m = 'etiq' + Date.now().toString(36);
+    const e = await req('POST', '/api/labels', { name: 'Etiqueta ' + m }); igual(e.s, 200, JSON.stringify(e.j));
+    const id = (e.j.label || e.j).id;
+    const nota = (await req('POST', '/api/notes', { type: 'note', title: 'Nota sin la palabra clave', body: 'texto cualquiera' })).j;
+    igual((await req('PUT', '/api/notes/' + (nota.item || nota).id, { labels: [id] })).s, 200);
+    igual((await req('POST', '/api/prompts', { title: 'Prompt neutro', body: 'cuerpo neutro', labels: [id] })).s, 200);
+    igual((await req('POST', '/api/contacts', { first: 'Neutro', last: 'Persona', labels: [id] })).s, 200);
+    igual((await req('POST', '/api/calendar/events', { title: 'Cita neutra', start: '2026-12-12T10:00', end: '2026-12-12T11:00', labels: [id] })).s, 200);
+    const r = await busca('Etiqueta ' + m);
+    for (const f of ['notas', 'prompts', 'contactos', 'calendario']) cierto(r.resultados.some(x => x.fuente === f), `${f}: lo etiquetado no sale al buscar el nombre de la etiqueta`);
+  });
+
+  await prueba('busqueda: los recuentos que usa la IA cuentan elementos, no filas ni carpetas ni resúmenes', async () => {
+    const b = (await req('POST', '/api/bases', { nombre: 'Base recuento', plantilla: 'vacia' })).j;
+    await req('POST', `/api/bases/${b.id}/rows`, { c: {} });
+    const antes = (await req('GET', '/api/busqueda/fuentes')).j.fuentes;
+    igual((await req('POST', '/api/notes', { type: 'folder', title: 'Carpeta recuento' })).s, 200);
+    await req('POST', '/api/notes', { type: 'note', title: 'Nota recuento', body: 'x' });
+    const despues = (await req('GET', '/api/busqueda/fuentes')).j.fuentes;
+    const n = (l, id) => l.find(f => f.id === id).documentos;
+    igual(n(despues, 'notas') - n(antes, 'notas'), 1, 'una carpeta de notas no cuenta como nota');
+    const real = (await req('GET', '/api/bases')).j;
+    igual(n(despues, 'bases'), (real.bases || real.items || real).length, 'las filas no cuentan como bases');
+  });
 };
