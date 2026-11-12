@@ -110,6 +110,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 ### Novedades
 
+- **12 nov 2026 (tarde)** · **Foto de perfil en la cabecera**: en algunos arranques (sobre todo en escritorio, con la sesión ya abierta) el avatar se quedaba con la inicial porque la foto se pintaba antes de cargarse su script; ahora se pinta siempre.
 - **12 nov 2026 (noche)** · **Cada icono de la barra inferior lleva al inicio de su sección**: pulsar Archivos desde una subcarpeta (o desde otra pestaña) vuelve a Inicio; Notas, Documentos, Bases y Código salen de lo abierto al listado; Buscar se vacía; Colecciones sale del álbum. Si lo abierto tiene cambios sin guardar no se sale: avisa y se queda (`public/js/app/inicio-seccion.js`).
 - **12 nov 2026 (noche)** · **Espacio con recuentos**: además de lo que ocupa, cada sección dice cuántos elementos tiene (3 notas, 45 prompts, 2 bases · 120 filas, 12 elementos en la papelera…), y «Tus archivos» cuántos archivos hay de cada tipo.
 - **12 nov 2026 (noche)** · **Botón «Preguntar a la IA»** en la barra superior, en todas las pestañas, con degradado (encoge con la pantalla: «IA» en tableta, solo el icono en móvil): abre Buscar directamente en modo IA.

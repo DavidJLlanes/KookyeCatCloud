@@ -80,4 +80,7 @@
     c.appendChild(f);
   }
   P.tarjeta = async function () { await carga(); tarjeta(); };
+  // Este script se carga después de arrancar la sesión: si la sesión ya estaba abierta, showApp() no encontró K.perfil
+  // y la cabecera se quedó con la inicial. Se pinta ahora la foto.
+  if (typeof state !== 'undefined' && state.user && !document.getElementById('app').hidden) P.cabecera();
 })();
