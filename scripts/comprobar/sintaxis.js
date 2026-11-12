@@ -4,12 +4,12 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const RAIZ = path.join(__dirname, '..');
+const RAIZ = path.join(__dirname, '..', '..');
 
 const jsDe = (rel) => fs.readdirSync(path.join(RAIZ, rel), { withFileTypes: true })
   .flatMap(e => e.isDirectory() ? jsDe(`${rel}/${e.name}`) : e.name.endsWith('.js') ? [`${rel}/${e.name}`] : []);
 
-const archivos = ['server.js', 'public/sw.js', ...jsDe('lib'), ...jsDe('public/js'), ...jsDe('tests')];
+const archivos = ['server.js', 'public/sw.js', ...jsDe('lib'), ...jsDe('public/js'), ...jsDe('tests'), ...jsDe('scripts')];
 let fallos = 0;
 for (const f of archivos) {
   try { execFileSync(process.execPath, ['--check', path.join(RAIZ, f)], { stdio: 'pipe' }); }

@@ -1807,109 +1807,59 @@ mismo servidor, esa es la única protección frente a la pérdida del propio VPS
 
 ## Estructura del proyecto
 
+Regla general: **una carpeta por dominio, un archivo por responsabilidad**. Las carpetas de `lib/` se llaman como su
+ruta de la API (`lib/contacts/` ↔ `/api/contacts`) y sus clientes viven en la carpeta homónima de `public/js/`. Ningún
+archivo suelto en `lib/` ni en `public/js/`: lo compartido va en `nucleo/`.
+
 ```text
-server.js            Arranque, configuración y rutas de archivos (listar, subir, descargar, vista previa, mover)
-lib/webdav/index.js            Servidor WebDAV (montado antes del analizador de JSON)
-lib/
-  store.js           Escritura atómica de JSON con cola por archivo
-  events.js          Avisos en directo (Server-Sent Events)
-  labels.js          Etiquetas de color compartidas entre módulos
-  pagos/             Pagos y recordatorios (modelo, fechas, valores, resumen, rutas, `adjuntos.js` con las pólizas)
-  sincronizados/     Bloques sincronizados de las notas (modelo, resumen, rutas); notas-bloques.js cuenta los bloques ricos
-  marcadores/        Marcadores web (modelo, favicon, red con defensa SSRF, resumen, rutas)
-  recordatorios/     Recordatorios (modelo, cuándo avisa cada uno, migración desde el calendario, resumen, rutas)
-  perfil/            Foto y nombre visible del perfil (procesado de imagen y rutas)
-  calendar/          Calendario (fechas, modelo del evento, repetición, calendarios, eventos, importar, iCal, API interna)
-  prompts/           Prompts de IA (base e índice, listado, categorías, fragmentos, parecidos, CRUD, imágenes, ComfyUI, importar/exportar, enganches)
-  explorador/        Listar, crear carpetas, subir, buscar, borrar, mover y lotes
-  transversal/       Lo que cruza módulos: iCal, búsqueda global, fechas de archivos y cableado calendario↔etiquetas↔notas
-  rutas.js           Rutas seguras por usuario (anti path traversal) y nombres libres
-  errores.js         Respuesta de errores sin filtrar rutas del servidor
-  archivos/          Descargas y ZIP, vista previa, miniaturas y edición de texto (tipos, imágenes, descarga, previa, texto)
-  analisis/          Reparto de espacio: estadísticas por tipo y por módulo, espacio por carpeta, duplicados
-  web/               Cabeceras de seguridad (CSP, HSTS), plantillas con prefijo, versión instalada y service worker
-  sesiones.js        Sesiones (JWT con jti) y cierre en remoto
-  actividad.js       Registro de actividad (JSONL con poda automática) y su ruta
-  totp.js            Verificación en dos pasos (RFC 6238)
-  limitador.js       Límite de intentos fallidos (login, WebDAV)
-  descomprime.js     Descompresión de ZIP con topes sobre los bytes reales
-  push/              Avisos push (ajustes, dispositivos, envío, programador y fuentes: pagos, calendario, contactos)
-  valores.js         Valores reutilizables: catálogo por campo, unificación y revisión de duplicados (fábrica createValores)
-  copias.js          Copia de seguridad: rutas de Administración, registro de intentos y comprobación de espacio (fábrica createCopias)
-  copias-archivo.js  Empaquetado con tar (sin copiar en disco), medida y verificación del archivo de copia
-  copias-programa.js Programador diario (3:00, reintentos 4:00 y 5:00, hora de Madrid) dentro del proceso de la app
-  albums.js          Favoritos y álbumes (fábrica createAlbums)
-  papelera.js        Papelera de archivos: borrar, restaurar, caducidad (fábrica createPapelera)
-  fotos.js           EXIF, mapa e índice de fotos (fábrica createFotos)
-  office.js          Visor de Office (PDF con LibreOffice) y de hojas de cálculo (fábrica createOffice)
-  cuentas.js         Login y 2FA, usuarios, sesiones abiertas y tokens de app (fábrica createCuentas)
-  enlaces.js         Enlaces públicos: descarga (archivo, carpeta, álbum), subida y prompts, URL corta `/cloud/<12>`, caducidad y QR (fábrica createEnlaces)
-  enlaces-resumen.js Contadores de enlaces para los logros (QR, con caducidad, perpetuos, revocados)
-  enlaces-gestion.js Zona Enlaces: caducidad, contraseña, nombre, revocar y limpiar (con copia 30 días)
-  html-tokens.js     Lector de HTML en tiempo lineal (tokens, atributos, bloques, etiquetas): saneado de Documentos e importadores, sin expresiones regulares que se cuelguen
-  documentos/        Documentos: `index.js` (rutas), `sanear.js` (lista blanca de HTML), `modelo.js`, `plantillas.js`, `exportar.js`, `resumen.js`
-  importar/          Importadores: `plan.js` (detecta y analiza), `hilo.js` (análisis en worker_threads), `carpeta.js`, `enex.js`, `docx.js`, `html-md.js`, `csv.js`, `contactos-csv.js`, `ejecuta-notas.js`, `ejecuta-tablas.js`, `index.js`
-  busqueda/          Búsqueda global sin IA (índice BM25 `indice.js`, `texto.js`, un lector por módulo en `fuentes/`)
-  ia/                IA opcional: `proveedores.js` (catálogo), `adaptadores.js` (OpenAI/Anthropic/Google), `config.js`, `clave.js` (cifrado), `http.js` (anti-SSRF), `mensajes.js`
-  notes-imagenes/    Imágenes de las notas (cliente): optimizar, subir, insertar, ventana de elección y botón de la barra
-  notes/             Editor de bloques de las notas (cliente): inline, parser, bloques, tablas, visor, modelo, seleccion,
-                     eventos, slash, ricos (marco de los bloques ricos) y ricos-boton/estructura/indice/ecuacion/diagrama/
-                     incrustado/base/sincronizado, menciones, barra, montaje, propiedades, registro (comparten K._notes)
-  calendar/          Calendario (cliente): estado, datos, estructura, lateral, mes, semana, agenda, evento,
-                     avisos, registro (comparten K._calendar)
-  ical.js            Feed iCal (RFC 5545) de solo lectura
-  holidays.js        Festivos de España calculados (sin servicios externos)
-  prompts/           Biblioteca de prompts (cliente): estado, datos, estructura, lateral, gestion, filtros,
-                     tarjetas, seleccion, copiar, ficha, editor, importar, registro (comparten K._prompts)
-  games/            Videojuegos (cliente): estado, vista, anadir, ficha, estadisticas, tarjetas, registro (K._games)
-  bases/             Bases: fórmulas, relaciones, resúmenes, plantillas de fila (`plantillas-filas.js`) y 5 tipos de vista (un JSON por base); `doble.js` (relaciones de doble sentido) y `orden-filas.js` (reordenar a mano)
-  codigo/            Proyectos de código (servidor): constantes, base, proyectos, archivos, versiones, vista, transferencia, vinculos
-  transferir.js      Copiar o mover entre Archivos y Código, con deshacer de 1 minuto e historial
-  exportar.js        Exportación de JSON por sección y ZIP completo (administración)
-  game/              Gamificación: niveles.js, logros.js, cosmeticos.js, retos.js (catálogos), utilidades.js,
-                     motor.js (métricas, logros, retos, vista) y rutas-estado/partidas/tienda.js
-  comfy.js           Lee metadatos de generación: ComfyUI, Automatic1111 / Forge, JSON y EXIF/XMP
-  clip.js            Portapapeles compartido entre dispositivos y destino de «Compartir»
-  contacts/         Contactos (cliente): estado, datos, vista, ficha, editor, importar, registro (K._contacts)
-  tetris/            (public/js) Tetris (cliente): estado, sonido, motor, dibujo, interfaz, entrada, pantallas (K._tetris)
-  arcade/            (public/js) 2048 y Breakout (cliente): estado, sonido, marco, g2048, breakout (K._arcade)
-  codigo/            (public/js) Código (cliente): estado, lista, proyecto, archivos, panel, subidas, versiones, vistaweb,
-                     registro (K._codigo)
-  vcard.js           Lectura y escritura de vCard 3.0
-  shopping.js        Lista y catálogo compartidos con imágenes WebP de 300 × 300
-  notes-extra.js     Imágenes, menciones, backlinks, plantillas y exportación de notas
-  versions.js        Historial de versiones de archivos de texto
-  vault/             Caja fuerte cifrada (servidor): constantes y cifrado, base, estado, contenido, subida, lectura, mover
-  shares.js          Compartición entre usuarios
-  webauthn.js        Passkeys sin dependencias (CBOR propio)
+server.js              Solo arranca, configura y monta los módulos (la lógica vive en lib/)
+lib/                   Servidor
+  nucleo/              Piezas comunes: store.js (JSON atómico con cola, .bak y papelera de borrados), rutas.js (rutas
+                       seguras por usuario, anti path traversal y symlinks), errores.js, eventos.js (avisos en directo,
+                       SSE), actividad.js (registro JSONL con poda), descomprime.js (ZIP con topes reales), html-tokens.js
+  web/                 Cabeceras de seguridad (CSP, HSTS, Permissions-Policy), origen.js (freno CSRF por Sec-Fetch-Site),
+                       plantillas con prefijo, versión instalada y service worker
+  cuentas/             Inicio de sesión y 2FA, usuarios y contraseñas (index.js), sesiones.js (JWT con jti, cierre en
+                       remoto), totp.js, limitador.js (intentos fallidos) y passkeys.js (WebAuthn, CBOR propio)
+  webdav/              Servidor WebDAV (se monta antes del analizador de JSON)
+  explorador/          Listar, crear carpetas, subir, buscar, borrar, mover y lotes
+  archivos/            Descargas y ZIP, vista previa, miniaturas (imagenes.js: sharp y ffmpeg sin autodetección),
+                       texto, albumes.js, fotos.js (EXIF y mapa), office.js, papelera.js, versiones.js y compartir.js
+  analisis/            Reparto del espacio (por tipo y por módulo, con su número de elementos), carpetas y duplicados
+  enlaces/             Enlaces públicos de descarga, subida y prompts (index.js), gestion.js y resumen.js
+  notes/               Bloc de notas (index.js), extra.js (backlinks, plantillas, exportar) y bloques.js
+  calendar/            Calendario: fechas, eventos, repetición, calendarios, importar, iCal, festivos.js, icalendar.js
+  contacts/            Contactos (index.js) y vcard.js
+  prompts/             Prompts de IA (base, listado, CRUD, imágenes, ComfyUI, metadatos.js, importar/exportar…)
+  bases/ documentos/ codigo/ pagos/ marcadores/ recordatorios/ sincronizados/ vault/ perfil/ push/
+  games/ shopping/ clip/ labels/ valores/ copias/ exportar/ importar/ busqueda/ ia/ pdf/
+                       Un módulo por carpeta, con index.js (fábrica create<Módulo>) y archivos pequeños de una sola
+                       responsabilidad (modelo, resumen, red, rutas…)
+  game/                Gamificación: catálogos (niveles, logros, cosméticos, retos), motor y rutas
+  transversal/         Lo que cruza módulos: iCal, búsqueda global (omni), transferir.js, vinculos.js, cableado
 public/
-  index.html         Página única (vistas, iconos SVG y los <script> en orden)
-  js/app/*.js        Aplicación principal, troceada por áreas (antes un solo app.js): estado, markdown, tema, sesión,
-                     navegación, visores, papelera y subida, notas, enlaces, colecciones, administración, cuenta e inicio.
-                     navegacion/ (lista, agrupacion, arrastrar, menu-contextual, filas, busqueda-seleccion, mover) y
-                     visores/ (foto, documentos, hojas, texto, mapa, detalles) son scripts globales en orden
-  tests/ui/          Pruebas de interfaz con Playwright (no van en npm test) y sus huellas de referencia
-  js/copias/copias.js       Tarjeta de Administración: estado, crear copia, descargar y registro de intentos
-  js/valores*.js     Valores reutilizables: normalización compartida con el servidor, campos con sugerencias, chips que filtran y pantalla de revisión
-  js/bases/tabla-totales.js, tabla-orden.js  Agrupar, fila de totales y arrastrar filas en la tabla de Bases
-  js/notes/ricos-columnas.js, ricos-base-vistas.js  Columnas con bloques dentro y vistas de una base en una nota
-  js/nucleo/deslizar.js     Gesto «deslizar para eliminar» (K.deslizar) · js/app/qr-enlace.js  QR descargable y cambio de caducidad · vendor/qrcode/  librería del QR
-  js/pagos/grafico.js, adjuntos.js  Gráfico anual y documentos adjuntos de Pagos
-  js/enlaces/        Zona Enlaces (datos, acciones, lista, index) + css/enlaces.css
-  js/documentos/     Documentos (datos, sanea, comandos, barra, editor, lista, index) + css/documentos.css; js/nucleo/kit-formato.js: barra de formato acoplada al teclado
-  js/nucleo/kit-foco.js, kit-atras.js  Foco y teclado de diálogos y menús; el botón «atrás» del móvil cierra el diálogo · js/app/navegacion/tandas.js  Lista de archivos por tandas
-  js/importar/       Importar (datos, elegir, revisar, tablas, index) + css/importar.css
-  js/buscar/         Buscar y preguntar (datos, resultados, ia, ajustes, index) + css/buscar.css
-  js/pagos/, js/marcadores/, js/recordatorios/, js/push/, js/sonidos/  Clientes de los módulos nuevos, un archivo por responsabilidad (datos, lista, formulario, ajustes…)
-  js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, recordatorios vinculados, portapapeles, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
-  css/               Estilos: modules (barra lateral y componentes), calendar, prompts, sistema (versiones, caja fuerte,
-                     passkeys), contacts, complementos (retoques, van los últimos) y uno por módulo (notes, shopping…)
-  sw.js, manifest.json  PWA
-  audio/             Música del Tetris (CC0) y créditos
-  vendor/            Leaflet alojado en local; game-icons.net (iconos de logros)
-tests/               smoke.js (pruebas de humo: arrancan la app en una copia temporal), modulos/ (una por módulo: pagos, marcadores, perfil, push, seguridad), sintaxis.js, auditoria.js y regex.js (`npm run check`)
-deploy/              update.sh y temporizador systemd de autoactualización
-.env.example         Todas las variables de configuración
+  index.html           Página única: vistas, iconos SVG y los <link>/<script> en orden
+  css/app/             Estilo base de la app en orden de carga: tokens (temas), base, archivos, visores, paneles, responsive
+  css/<módulo>.css     Un archivo por módulo (modules.css: barra lateral y componentes; complementos.css va el último)
+  js/nucleo/           Kit común (K): kit, foco y teclado de diálogos, botón «atrás», barra de formato, IME, tamaño de
+                       texto, tema inicial, zoom, deslizar, guardar, exportar a md/pdf, actualizaciones y Ctrl+K (omni)
+  js/app/              Aplicación principal (Archivos, administración, cuenta, inicio): navegacion/ y visores/
+  js/<módulo>/         Cliente de cada módulo, troceado en archivos que comparten un espacio K._<módulo>
+  js/valores/          Valores reutilizables: clave.js (compartido con el servidor), campos.js y pantalla.js
+  sw.js, manifest.json PWA (sw.js lleva la lista SHELL de lo que se guarda para usar sin conexión)
+  vendor/              Librerías alojadas en local (Leaflet, highlight.js, KaTeX, mermaid, QR, iconos de logros)
+  audio/               Música del Tetris (CC0) y créditos
+tests/
+  smoke.js             Pruebas de humo: arrancan la app en una copia temporal (npm test)
+  modulos/             Una por módulo y por tema transversal (seguridad, autenticacion, subidas, cabeceras, redos…)
+  ui/                  Pruebas de interfaz con Playwright (móvil y escritorio) y sus huellas de referencia
+scripts/
+  comprobar/           npm run check: sintaxis.js, persistencia.js (reglas de lib/nucleo/store.js) y regex.js (ReDoS)
+  herramientas/        mueve.js y mueve-cliente.py (mover módulos reescribiendo requires, index.html y sw.js),
+                       trocea-servidor.js y trocea-cliente.js (partir un archivo grande sin cambiar su comportamiento)
+deploy/                update.sh y temporizador systemd de autoactualización
+docs/                  Auditorías (auditoria-errores.md), copias de seguridad, hoja de ruta y capturas
+.env.example           Todas las variables de configuración
 ```
 
 Las convenciones para módulos nuevos (JSON propio por módulo y gamificación obligatoria) están en

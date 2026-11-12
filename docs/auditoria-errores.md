@@ -338,3 +338,35 @@ Sin riesgo: la fórmula escrita con muchos paréntesis se rechaza por longitud a
   - **Gesto «atrás» del móvil** (`public/js/kit-atras.js`): la app no usaba el historial, así que «atrás» con un diálogo abierto sacaba de la app. Ahora, mientras hay algún diálogo abierto existe una sola entrada propia en el historial (misma URL): «atrás» cierra el de arriba (con dos anidados, uno por gesto) y respeta el aviso de cambios sin guardar (si se cancela, la entrada se repone). Al cerrar por otra vía (Esc, botones) la entrada se quita sola, con una espera de 60 ms para que un diálogo que se sustituye al instante por otro reutilice la misma. Límite: Chrome no cuenta las entradas de historial añadidas sin que el usuario haya tocado nada (diálogos abiertos por temporizador); en ese caso «atrás» se comporta como antes.
   - El menú contextual de Notas (`app/notas.js`) usa la misma capa y ahora también lleva roles, flechas y foco.
 - **Escáner de expresiones regulares en `npm run check`** (`tests/regex.js`, `recheck` como dependencia de desarrollo): analiza las 1.099 literales del servidor y el cliente y falla si alguna es vulnerable a ReDoS. La primera vez tarda ~40 s; el resultado se guarda por expresión en `tests/.regex-cache.json` (fuera de git) y después tarda 1 s. Las 10 excepciones (coste cuadrático con la entrada acotada o de confianza) están justificadas en el propio archivo. No entra en `check:despliegue` (el servidor no instala dependencias de desarrollo).
+
+## Decimoctava auditoría, muy profunda (12-11-2026): autenticación, superficie pública y estructura
+
+Métodos nuevos respecto a las anteriores: barrido de **todas las rutas** (386) sin sesión y con un usuario normal
+contra las de administración (las abiertas son solo las públicas a propósito: páginas de enlaces, manifest, versión,
+login con passkey); **pruebas de explotación** escritas antes del arreglo (`tests/modulos/autenticacion.js`,
+`tests/modulos/subidas.js`), que fallaban y ahora pasan; ataques reales contra ffmpeg y LibreOffice en local.
+
+| Gravedad | Hallazgo | Arreglo |
+|---|---|---|
+| **Crítica** | **La verificación en dos pasos se podía saltar**: el JWT «pendiente» (cookie `pending2fa`, firmado con la misma clave) servía como sesión si se mandaba como `Authorization: Bearer` o como cookie `token`. Con solo la contraseña se entraba. | `auth` exige un JWT de sesión completo: con `jti` vivo, sin `stage`, solo HS256. |
+| Alta | Un **usuario borrado seguía dentro** con sus sesiones abiertas (30 días), y el rol salía del token (un cambio de rol no se aplicaba). | `auth` comprueba que el usuario existe y toma el rol del archivo de usuarios (caché por fecha de modificación); borrar un usuario cierra sus sesiones. |
+| Alta | **WebDAV saltaba la 2FA**: con 2FA activa, la contraseña sola abría los archivos por `/dav`. | Con 2FA, WebDAV solo acepta tokens de aplicación; comparación asíncrona y tiempo igual exista o no el usuario. |
+| Media | Cambiar la **contraseña propia no pedía la actual** ni cerraba las demás sesiones (una sesión robada bastaba para quedarse la cuenta). | Pide la actual (con límite de intentos) y cierra las demás sesiones; un administrador puede cambiar la de otro sin ella. Campo nuevo en Cuenta. |
+| Media | **CSRF desde un subdominio hermano**: `SameSite=Strict` no protege de otra app en `*.djl.com.es` (es «mismo sitio»). | `lib/web/origen.js`: escrituras con `Sec-Fetch-Site: cross-site` o `same-site` → 403. |
+| Media | **ffmpeg autodetectaba el formato** de los «vídeos» subidos: una lista HLS con extensión `.mp4` podía leer archivos del servidor o pedir URLs al hacer la miniatura. | Demuxer fijado por extensión, `-protocol_whitelist file`, `-nostdin` y tiempo máximo en los dos intentos (el segundo no lo tenía). |
+| Media | Un **enlace público de subida** admitía en cada petición 50 archivos de hasta 5 GB, aunque ya estuviera casi lleno. | El límite de cada petición es lo que le queda al enlace (archivos y bytes). |
+| Baja | Las **subidas con acentos** llegaban mal (`ñandú.txt` → `Ã±andÃº.txt`): multer usa latin1 por defecto. | `defParamCharset: 'utf8'`, sin caracteres de control y recorte a 200 bytes conservando la extensión; máximo 1.000 archivos por petición. |
+| Baja | `descomprimeZip` guardaba las entradas en un objeto normal (`__proto__` como nombre). | Objeto sin prototipo. Imágenes de RAWG sin seguir redirecciones; cambio de contraseña sin promesas sueltas. |
+
+Revisado sin hallazgos: LibreOffice no actualiza secciones enlazadas a archivos locales al convertir (probado con un
+`.odt` que enlaza un archivo del servidor), vista web de Código (sandbox sin `allow-same-origin` también abierta a pelo),
+inyección de HTML en el cliente (los `innerHTML` escapan o sanean y la CSP sin `unsafe-inline` en scripts lo respalda),
+enlaces y comparticiones ajenas (siempre se filtra por dueño), `npm audit` sin vulnerabilidades.
+
+**Estructura.** `lib/` y `public/js/` ya no tienen archivos sueltos: `lib/nucleo/`, `lib/cuentas/`, `lib/webdav/`,
+`public/js/nucleo/`, `public/js/valores/` y cada módulo en su carpeta; las 1.100 líneas de CSS en línea de
+`index.html` pasan a `public/css/app/`; las comprobaciones a `scripts/comprobar/` y las herramientas a
+`scripts/herramientas/` (`mueve.js` y `mueve-cliente.py` reescriben requires, `index.html` y `sw.js`). Verificado con:
+lista de rutas idéntica antes y después, `npm run check`, `npm test`, capturas de 22 pantallas (móvil y escritorio)
+iguales píxel a píxel salvo animaciones, y las 27 vistas sin errores con administrador y usuario normal.
+Las rutas de archivo citadas en las auditorías anteriores son las de su fecha.

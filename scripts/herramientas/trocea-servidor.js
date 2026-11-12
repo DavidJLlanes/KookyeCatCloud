@@ -1,9 +1,9 @@
 'use strict';
 // Trocea un módulo de servidor con forma `function createX(params) { ...cierre...; return {...}; }` en lib/<carpeta>/:
 // constantes.js (lo de antes de la fábrica), una sección por tramo (reciben `ctx` y devuelven lo que declaran) e index.js.
-// Uso: node tests/trocea-servidor.js <origen> <carpeta> <fábrica> <ini> <fin> nombre:desde-hasta ...   (ini-fin = cuerpo de la fábrica sin el return final)
+// Uso: node scripts/herramientas/trocea-servidor.js <origen> <carpeta> <fábrica> <ini> <fin> nombre:desde-hasta ...   (ini-fin = cuerpo de la fábrica sin el return final)
 const fs = require('fs'), path = require('path');
-const R = path.resolve(__dirname, '../node_modules') + '/';
+const R = path.resolve(__dirname, '../../node_modules') + '/';
 const espree = require(R + 'espree'), escope = require(R + 'eslint-scope');
 const [src, dir, fabrica, ini, fin, ...tramos] = process.argv.slice(2);
 const text = fs.readFileSync(src, 'utf8'), lines = text.split('\n');

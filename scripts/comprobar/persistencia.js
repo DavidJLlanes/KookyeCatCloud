@@ -6,7 +6,7 @@
 // Lo que es legítimo (cachés, lecturas que no se vuelven a guardar…) va en PERMITIDOS con su motivo.
 const fs = require('fs');
 const path = require('path');
-const RAIZ = path.join(__dirname, '..');
+const RAIZ = path.join(__dirname, '..', '..');
 // lib/ puede tener módulos en carpeta (lib/pagos/, lib/marcadores/…): se recorren enteras
 const jsDe = (rel) => fs.readdirSync(path.join(RAIZ, rel), { withFileTypes: true }).flatMap(e => e.isDirectory() ? jsDe(`${rel}/${e.name}`) : e.name.endsWith('.js') ? [`${rel}/${e.name}`] : []);
 const ARCHIVOS = [...jsDe('lib'), 'server.js'];

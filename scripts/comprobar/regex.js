@@ -2,14 +2,14 @@
 // Vigila las expresiones regulares (ReDoS, auditorías 16 y 17): analiza TODAS las literales del servidor y del cliente con `recheck`
 // y falla si alguna puede volver atrás de forma cuadrática o exponencial (una entrada larga bloquearía el servidor o el navegador).
 // Una excepción justificada (entrada acotada por longitud antes de llegar a la regex) va en EXCEPCIONES con el motivo.
-// Uso: node tests/regex.js [archivo.js …]   (sin argumentos: todo el código)
+// Uso: node scripts/comprobar/regex.js [archivo.js …]   (sin argumentos: todo el código)
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const espree = require('espree');
 const { checkSync } = require('recheck');
 
-const RAIZ = path.join(__dirname, '..');
+const RAIZ = path.join(__dirname, '..', '..');
 // [archivo, trozo del patrón, motivo]. Solo coste cuadrático (nunca exponencial) y con la entrada acotada o de confianza.
 const EXCEPCIONES = [
   ['lib/bases/valores.js', '@[^\\s@<>]+\\.', 'el valor se corta a 200 caracteres antes (cleanStr)'],
