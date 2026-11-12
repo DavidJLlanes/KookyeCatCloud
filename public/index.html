@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="/css/pagos.css">
 <link rel="stylesheet" href="/css/enlaces.css">
 <link rel="stylesheet" href="/css/buscar.css">
+<link rel="stylesheet" href="/css/importar.css">
 <link rel="stylesheet" href="/css/marcadores.css">
 <link rel="stylesheet" href="/css/recordatorios.css">
 <link rel="stylesheet" href="/css/notes-imagenes.css">
@@ -1292,6 +1293,7 @@
       <span class="tabs-label">Espacio</span>
       <button class="tab is-active" data-view="files"><svg class="ico"><use href="#i-folder"/></svg><span>Archivos</span></button>
       <button class="tab" data-view="buscar"><svg class="ico"><use href="#i-search"/></svg><span>Buscar</span></button>
+      <button class="tab" data-view="importar"><svg class="ico"><use href="#i-upload"/></svg><span>Importar</span></button>
       <button class="tab" data-view="notes"><svg class="ico"><use href="#i-note"/></svg><span>Notas</span></button>
       <button class="tab" data-view="shopping"><svg class="ico"><use href="#i-cart"/></svg><span>Compra</span></button>
       <button class="tab" data-view="bases"><svg class="ico"><use href="#i-table"/></svg><span>Bases</span></button>
@@ -1373,6 +1375,7 @@
   <main class="wrap kcc-view" id="view-pagos" hidden></main>
   <main class="wrap kcc-view" id="view-enlaces" hidden></main>
   <main class="wrap kcc-view" id="view-buscar" hidden></main>
+  <main class="wrap kcc-view" id="view-importar" hidden></main>
   <main class="wrap kcc-view" id="view-marcadores" hidden></main>
   <main class="wrap kcc-view" id="view-recordatorios" hidden></main>
   <main class="wrap kcc-view" id="view-codigo" hidden></main>
@@ -1735,6 +1738,7 @@
     <div class="inner">
       <button class="is-active" data-view="files"><svg class="ico"><use href="#i-folder"/></svg>Archivos</button>
       <button data-view="buscar"><svg class="ico"><use href="#i-search"/></svg>Buscar</button>
+      <button data-view="importar"><svg class="ico"><use href="#i-upload"/></svg>Importar</button>
       <button data-view="notes"><svg class="ico"><use href="#i-note"/></svg>Notas</button>
       <button data-view="shopping"><svg class="ico"><use href="#i-cart"/></svg>Compra</button>
       <button data-view="bases"><svg class="ico"><use href="#i-table"/></svg>Bases</button>
@@ -2149,6 +2153,11 @@
 <script src="/js/buscar/ia.js"></script>
 <script src="/js/buscar/ajustes.js"></script>
 <script src="/js/buscar/index.js"></script>
+<script src="/js/importar/datos.js"></script>
+<script src="/js/importar/tablas.js"></script>
+<script src="/js/importar/elegir.js"></script>
+<script src="/js/importar/revisar.js"></script>
+<script src="/js/importar/index.js"></script>
 <script src="/js/marcadores/datos.js"></script>
 <script src="/js/marcadores/tarjeta.js"></script>
 <script src="/js/marcadores/listado.js"></script>

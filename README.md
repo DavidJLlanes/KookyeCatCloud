@@ -110,6 +110,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 ### Novedades
 
+- **12 nov 2026 (mediodía)** · **Importar**: pestaña nueva para traer notas y tablas desde Notion, Evernote, Google Docs, Apple Notes y CSV (con asignación de columnas a base nueva, base existente o contactos). Primero se revisa lo encontrado y luego se confirma.
 - **12 nov 2026 (mañana)** · **Buscar y preguntar a la IA**: pestaña nueva *Buscar* con búsqueda en todo (notas, prompts, bases, código, contactos, calendario, pagos, recordatorios, marcadores, portapapeles y archivos de texto) sin IA, con extractos marcados, filtros por módulo y tolerancia a acentos, plurales y erratas · opcional: conecta tu propia clave de OpenAI, Anthropic, Google, OpenRouter (modelos gratis), OpenCode Zen, Groq, Mistral, DeepSeek, xAI, Ollama o cualquier API compatible para **preguntar sobre tus datos** (con fuentes citadas) y **resumir fichas** · 
 - **12 nov 2026** · **Zona Enlaces**: una pestaña nueva para ver y gestionar todos los enlaces que has creado (descarga, subida y prompts): buscar, filtrar por tipo y estado, copiar, abrir, QR, cambiar caducidad o contraseña, poner nombre y revocar (también deslizando) · 
 - **11 nov 2026 (tarde)** · **Enlaces cortos y QR**: los enlaces de descarga ahora son `…/cloud/k3x9tq7mw2ab` (12 letras y números al azar), con caducidad a tu medida (1 hora, 1 día, 7, 30, 90, 365, «otro plazo» o sin caducidad, y se puede cambiar después) y un **código QR** descargable en PNG · **Notas**: columnas con listas, tareas e imágenes dentro y elegir qué vista de una base se ve en la nota · **Bases**: relaciones de doble sentido, agrupar la tabla por una columna, fila de totales y arrastrar filas para reordenarlas · **Pagos**: gráfico del gasto del año y documentos adjuntos (póliza en PDF o imagen) · **Deslizar para eliminar** en móvil (Pagos, Recordatorios, Marcadores, Prompts y filas de Bases) · logros nuevos para todo ello.
@@ -1330,6 +1331,20 @@ Pestaña *Buscar* (y *Ctrl K → Buscar «…» en todo*). Dos capas independien
 - La configuración y el historial no entran en la exportación (las claves cifradas no se pueden usar fuera de este servidor y no son contenido tuyo).
 - Logros del grupo *Saber*: *Buscador* (búsquedas), *Oráculo* (preguntas a la IA), *Resumidor*, *Coro de modelos* (proveedores distintos) y el especial *Cerebro conectado*; un reto semanal de búsquedas y otro de preguntas; títulos *Rastreador* y *Oráculo*; *Copa del Sabio*. Código en `lib/busqueda/`, `lib/ia/`, `public/js/buscar/` y `public/css/buscar.css`.
 
+## Importar desde otras apps
+
+Pestaña **Importar**: trae notas y tablas desde Notion, Evernote, Google Docs, Apple Notes y CSV. Siempre en dos pasos: primero se **analiza** el archivo y se enseña lo que hay (notas, carpetas, adjuntos, avisos, tablas) y solo al confirmar se escribe; el análisis espera 20 minutos en memoria y se gasta al importar.
+
+- **Notion:** el ZIP de «Markdown y CSV» (admite ZIP dentro de ZIP). Se quitan los ids de 32 caracteres de los nombres, `<aside>` pasa a cita, `<details>` a bloque desplegable, las tablas HTML a tablas y las bases de datos (CSV) pueden ir a base nueva, a una base existente o a contactos.
+- **Evernote:** `.enex` (varias libretas en un ZIP). Texto enriquecido, tareas, tablas, etiquetas (como `#etiqueta`), fechas, enlace de origen e imágenes/archivos adjuntos. Las notas cifradas no se pueden leer y se avisa.
+- **Google Docs:** `.docx` («Descargar → Microsoft Word»), HTML comprimido (con las clases de negrita/cursiva) o Markdown. Títulos, listas, tablas, enlaces e imágenes; un primer título de nivel 1 pasa a ser el nombre de la nota.
+- **Apple Notes:** sin exportación oficial en bloque; acepta la carpeta que dejen Exporter, Obsidian Importer o similares (Markdown, HTML o texto, con subcarpetas) y archivos sueltos.
+- **CSV con asignación de columnas:** detecta codificación (UTF-8/Windows-1252), separador (`, ; tab |`) y tipo de cada columna (número, fecha d/m/a o ISO, casilla, selección, enlace, correo, teléfono, texto). Se elige nombre, tipo o ignorar cada columna; destino **base nueva**, **base existente** (emparejando columnas) o **contactos** (con sugerencia automática para cabeceras de Google, Outlook y español; no duplica los que ya existen). Máximo 20.000 filas por CSV; lo que no se entiende como número o fecha queda vacío y se avisa.
+- **Dónde cae:** las notas van dentro de una carpeta «Importado de X · fecha» (en la raíz o en la carpeta que elijas), con sus subcarpetas; los adjuntos a «Adjuntos de notas» con nombre único. Si algo falla a medias se borra lo escrito y el índice queda como estaba; si se superara el límite de notas, no se importa nada.
+- **Seguridad:** sin dependencias nuevas; el XML se lee sin entidades externas, los ZIP tienen tope de archivos y de bytes reales descomprimidos, las rutas con `..` o absolutas se descartan, solo se copian adjuntos de tipos permitidos (nunca svg, html ni js) y los `<script>`/`<style>` del HTML se eliminan.
+- Datos propios: solo contadores en `.kcc/importar/stats.json`. API: `POST /api/importar/analizar` (multipart, hasta 100 MB) y `POST /api/importar/ejecutar`.
+- Logros del grupo *Importar*: *Mudanza*, *Trasvase de notas*, *Tablas al día*, *Con sus imágenes*, *Sin fronteras* y el especial *Puerto de llegada* (los cinco orígenes); un reto semanal; título *Maestro de mudanzas*; *Copa del Mudancero*. Código en `lib/importar/` y `public/js/importar/`.
+
 ## Actualizaciones
 
 ### En el navegador y en el móvil
@@ -1808,6 +1823,7 @@ lib/
   enlaces.js         Enlaces públicos: descarga (archivo, carpeta, álbum), subida y prompts, URL corta `/cloud/<12>`, caducidad y QR (fábrica createEnlaces)
   enlaces-resumen.js Contadores de enlaces para los logros (QR, con caducidad, perpetuos, revocados)
   enlaces-gestion.js Zona Enlaces: caducidad, contraseña, nombre, revocar y limpiar (con copia 30 días)
+  importar/          Importadores: `plan.js` (detecta y analiza), `carpeta.js`, `enex.js`, `docx.js`, `html-md.js`, `csv.js`, `contactos-csv.js`, `ejecuta-notas.js`, `ejecuta-tablas.js`, `index.js`
   busqueda/          Búsqueda global sin IA (índice BM25 `indice.js`, `texto.js`, un lector por módulo en `fuentes/`)
   ia/                IA opcional: `proveedores.js` (catálogo), `adaptadores.js` (OpenAI/Anthropic/Google), `config.js`, `clave.js` (cifrado), `http.js` (anti-SSRF), `mensajes.js`
   notes-imagenes/    Imágenes de las notas (cliente): optimizar, subir, insertar, ventana de elección y botón de la barra
@@ -1855,6 +1871,7 @@ public/
   js/deslizar.js     Gesto «deslizar para eliminar» (K.deslizar) · js/app/qr-enlace.js  QR descargable y cambio de caducidad · vendor/qrcode/  librería del QR
   js/pagos/grafico.js, adjuntos.js  Gráfico anual y documentos adjuntos de Pagos
   js/enlaces/        Zona Enlaces (datos, acciones, lista, index) + css/enlaces.css
+  js/importar/       Importar (datos, elegir, revisar, tablas, index) + css/importar.css
   js/buscar/         Buscar y preguntar (datos, resultados, ia, ajustes, index) + css/buscar.css
   js/pagos/, js/marcadores/, js/recordatorios/, js/push/, js/sonidos/  Clientes de los módulos nuevos, un archivo por responsabilidad (datos, lista, formulario, ajustes…)
   js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, recordatorios vinculados, portapapeles, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…

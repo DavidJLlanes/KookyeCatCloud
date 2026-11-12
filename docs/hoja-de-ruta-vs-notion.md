@@ -9,7 +9,7 @@ Está basada en el conocimiento general de Notion, sin verificar con fuentes rec
 
 ## Prioridad media
 
-6. **Importadores:** desde Notion, Evernote, Google Docs, Apple Notes y CSV con asignación de columnas (hoy solo JSON propio y vCard).
+6. ~~**Importadores**~~ **Hecho (12-11-2026):** Notion, Evernote, Google Docs, Apple Notes y CSV con asignación de columnas (pestaña *Importar*).
 7. **Historial de versiones por nota** con restauración (hoy hay versiones de archivos de texto y un salvavidas en las notas).
 8. **Publicar una nota como página web** propia (hoy hay enlaces compartidos).
 9. **Automatizaciones sencillas:** «al pasar una tarea a Hecha, crea otra la semana que viene», «al vencer un pago, crea un recordatorio».

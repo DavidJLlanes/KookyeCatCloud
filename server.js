@@ -57,6 +57,7 @@ const createBases = require('./lib/bases');
 const createPagos = require('./lib/pagos');
 const createBusqueda = require('./lib/busqueda');
 const createIA = require('./lib/ia');
+const createImportar = require('./lib/importar');
 const createMarcadores = require('./lib/marcadores');
 const createSincronizados = require('./lib/sincronizados');
 const { resumenBloques } = require('./lib/notas-bloques');
@@ -542,7 +543,9 @@ app.use('/api', notesMod.router);
 // Búsqueda global sin IA + capa de IA opcional (lib/busqueda, lib/ia). Se crean aquí porque leen las notas.
 const busquedaMod = createBusqueda({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarLogros, notas: () => ({ readNotes, notaFile }) });
 const iaMod = createIA({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarLogros, secreto: JWT_SECRET, busqueda: busquedaMod.core });
-modulosConLogros.push(busquedaMod, iaMod);
+const importarMod = createImportar({ express, multer, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido,
+  notas: () => ({ ...notesMod.core, extraeLinks: (b) => notesExtra.extraeLinks(b) }), bases: basesMod.core, contactos: contactsMod.core });
+modulosConLogros.push(busquedaMod, iaMod, importarMod);
 
 /* ---------------- Vaciado programado de las papeleras ----------------
    Hasta ahora lo caducado solo se borraba al abrir la papelera. Este barrido lo hace por su cuenta, para
@@ -589,6 +592,7 @@ app.use('/api/bases', auth, basesMod.router);
 app.use('/api/pagos', auth, pagosMod.router);
 app.use('/api/busqueda', auth, busquedaMod.router);
 app.use('/api/ia', auth, iaMod.router);
+app.use('/api/importar', auth, importarMod.router);
 app.use('/api/marcadores', auth, marcadoresMod.router);
 app.use('/api/sincronizados', auth, sincronizadosMod.router);
 app.use('/api/recordatorios', auth, recordatoriosMod.router);
