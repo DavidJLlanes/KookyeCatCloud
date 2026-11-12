@@ -15,7 +15,7 @@ function buildRow(item) {
   if (!item.isDir && hasThumb(item.name)) {
     const img = el('img', 'thumb');
     img.src = BASE + '/api/thumb?path=' + qs(item.rel);
-    img.loading = 'lazy';
+    img.loading = 'lazy'; img.decoding = 'async';
     img.alt = '';
     // Si el servidor no puede generarla (sin ffmpeg, formato raro), cae al distintivo
     img.addEventListener('error', () => {
@@ -74,7 +74,7 @@ function buildTile(item) {
     tile.classList.add('photo');
     const img = el('img');
     img.src = BASE + '/api/thumb?path=' + qs(item.rel);
-    img.loading = 'lazy';
+    img.loading = 'lazy'; img.decoding = 'async';
     img.alt = item.name;
     img.addEventListener('error', () => {
       img.remove();

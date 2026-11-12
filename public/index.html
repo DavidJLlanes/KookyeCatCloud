@@ -354,6 +354,12 @@
   .row .where{font-size:calc(11.5px*var(--fs,1));color:var(--b3);margin-top:3px;display:flex;align-items:center;gap:5px;}
   .row .where svg{width:12px;height:12px;}
   @keyframes pop{from{opacity:0;transform:translateY(9px);}}
+  /* Carpetas enormes (guía modern-web-guidance «performance»): el navegador no maqueta ni pinta lo que está lejos de la pantalla
+     (alturas medidas: fila 68 px, baldosa 226 px en escritorio y 164 px en móvil; `auto` recuerda la real) y solo las primeras
+     filas llevan la animación de entrada (miles de animaciones a la vez congelaban la interfaz varios segundos). */
+  #file-list .row{content-visibility:auto;contain-intrinsic-size:auto 68px;}
+  #file-list .tile{content-visibility:auto;contain-intrinsic-size:auto 226px;}
+  #file-list .row.sin-entrada,#file-list .tile.sin-entrada{animation:none;}
 
   /* ---------- Cuadrícula ---------- */
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px;padding:14px 0 24px;}
@@ -1088,6 +1094,7 @@
 
   /* ---------- Responsive ---------- */
   @media (max-width:820px){
+    #file-list .tile{contain-intrinsic-size:auto 164px;}
     .wrap{padding:0 14px;}
     .tabs{display:none;}
     .mobilenav{display:block;}
@@ -2001,6 +2008,7 @@
 <script src="/js/app/tema.js"></script>
 <script src="/js/app/sesion.js"></script>
 <script src="/js/app/navegacion/lista.js"></script>
+<script src="/js/app/navegacion/tandas.js"></script>
 <script src="/js/app/navegacion/agrupacion.js"></script>
 <script src="/js/app/navegacion/arrastrar.js"></script>
 <script src="/js/app/navegacion/menu-contextual.js"></script>

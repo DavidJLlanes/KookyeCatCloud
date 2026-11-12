@@ -49,7 +49,7 @@ function tileGenerico(item, onQuitar, tituloQuitar, iconoQuitar) {
     tile.classList.add('photo');
     const img = el('img');
     img.src = BASE + '/api/thumb?path=' + qs(item.rel);
-    img.loading = 'lazy';
+    img.loading = 'lazy'; img.decoding = 'async';
     img.alt = item.name;
     img.addEventListener('error', () => {
       img.remove();

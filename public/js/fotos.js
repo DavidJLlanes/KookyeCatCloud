@@ -42,7 +42,7 @@
     const box = el('div', 'thumb-box');
     const img = el('img');
     img.src = BASE + '/api/thumb?path=' + encodeURIComponent(f.rel);
-    img.loading = 'lazy';
+    img.loading = 'lazy'; img.decoding = 'async';
     img.alt = f.name;
     img.title = `${f.name} · ${new Date(f.t).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
     img.addEventListener('error', () => { img.remove(); box.appendChild(icon('i-image')); });
@@ -198,7 +198,7 @@
     const cover = el('div', 'cover');
     const img = el('img');
     img.src = BASE + '/api/thumb?path=' + encodeURIComponent(fotos[0].rel);
-    img.loading = 'lazy';
+    img.loading = 'lazy'; img.decoding = 'async';
     img.alt = '';
     img.addEventListener('error', () => { img.remove(); cover.appendChild(icon('i-image')); });
     cover.appendChild(img);

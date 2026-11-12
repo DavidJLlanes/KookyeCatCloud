@@ -44,13 +44,13 @@ function pintarAgrupado(box, items) {
     return c;
   };
   let indice = 0;
-  const pinta = (lista, contenedor) => {
-    lista.forEach(item => {
-      item._i = indice++;
-      const nodo = state.view === 'grid' ? buildTile(item) : buildRow(item);
-      nodo.style.animationDelay = Math.min(indice * 18, 300) + 'ms';
-      contenedor.appendChild(nodo);
-    });
+  const trabajos = [];                               // cada uno añade su trozo; se ejecutan por tandas (tandas.js)
+  const pinta = (item, contenedor) => {
+    item._i = indice++;
+    const nodo = state.view === 'grid' ? buildTile(item) : buildRow(item);
+    nodo.style.animationDelay = Math.min(indice * 18, 300) + 'ms';
+    sinEntradaSiLejos(nodo, indice);
+    contenedor.appendChild(nodo);
   };
 
   if (carpetas.length) {
@@ -59,10 +59,13 @@ function pintarAgrupado(box, items) {
     cab.appendChild(el('span', 'cuenta', `${carpetas.length}`));
     box.appendChild(cab);
     const c = grid();
-    pinta(carpetas, c);
     box.appendChild(c);
+    for (const item of carpetas) trabajos.push(() => pinta(item, c));
   }
 
+  // Archivos por mes: el recuento de cada mes se saca de una vez (antes se recorría la lista entera por cada mes)
+  const porMes = new Map();
+  for (const item of archivos) { const m = claveMes(fechaDe(item)); porMes.set(m, (porMes.get(m) || 0) + 1); }
   let mesActual = null, anyoAnterior = null, contenedor = null;
   for (const item of archivos) {
     const t = fechaDe(item);
@@ -70,18 +73,22 @@ function pintarAgrupado(box, items) {
     if (mes !== mesActual) {
       mesActual = mes;
       const anyo = new Date(t).getFullYear();
-      const cab = el('div', 'grupo-cab');
-      cab.appendChild(el('h3', null, etiquetaMes(t)));
-      const delMes = archivos.filter(x => claveMes(fechaDe(x)) === mes).length;
-      cab.appendChild(el('span', 'cuenta', `${delMes} archivo${delMes === 1 ? '' : 's'}`));
-      // El año solo se destaca cuando cambia, para no repetirlo en cada mes
-      if (anyo !== anyoAnterior) { cab.appendChild(el('span', 'anyo', String(anyo))); anyoAnterior = anyo; }
-      box.appendChild(cab);
-      contenedor = grid();
-      box.appendChild(contenedor);
+      const delMes = porMes.get(mes);
+      const conAnyo = anyo !== anyoAnterior;           // el año solo se destaca cuando cambia, para no repetirlo en cada mes
+      anyoAnterior = anyo;
+      trabajos.push(() => {
+        const cab = el('div', 'grupo-cab');
+        cab.appendChild(el('h3', null, etiquetaMes(t)));
+        cab.appendChild(el('span', 'cuenta', `${delMes} archivo${delMes === 1 ? '' : 's'}`));
+        if (conAnyo) cab.appendChild(el('span', 'anyo', String(anyo)));
+        box.appendChild(cab);
+        contenedor = grid();
+        box.appendChild(contenedor);
+      });
     }
-    pinta([item], contenedor);
+    trabajos.push(() => pinta(item, contenedor));
   }
+  pintaEnTandas(trabajos);
 }
 
 function render() {
@@ -107,6 +114,7 @@ function render() {
     files ? `${files} archivo${files > 1 ? 's' : ''}` : '',
   ].filter(Boolean).join(' · ');
 
+  anulaTandas();
   box.textContent = '';
   if (!items.length) {
     box.className = '';
@@ -125,13 +133,14 @@ function render() {
   }
 
   box.className = state.view === 'grid' ? 'grid' : 'list';
-  items.forEach((item, i) => {
+  pintaEnTandas(items.map((item, i) => () => {
     item._i = i;                                   // índice visible, para el rango con Shift
     const node = state.view === 'grid' ? buildTile(item) : buildRow(item);
     // Entrada escalonada, con tope para que una carpeta enorme no tarde en aparecer
     node.style.animationDelay = Math.min(i * 22, 360) + 'ms';
+    sinEntradaSiLejos(node, i);
     box.appendChild(node);
-  });
+  }));
 }
 
 function onItemClick(item, ev) {
