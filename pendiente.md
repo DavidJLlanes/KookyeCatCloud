@@ -36,7 +36,8 @@ Ideas y tareas por hacer en KookyeCatCloud. Marca con `[x]` lo que se vaya compl
 - [ ] Versiones de archivo: guardar las últimas N versiones al sobrescribir y poder restaurarlas.
 - [ ] Enlaces públicos más completos: límite de descargas y aviso de descarga (caducidad, contraseña y zona de gestión ya hechas: pestaña *Enlaces*).
 - [ ] Detección de duplicados por hash, con opción de liberar espacio.
-- [ ] Búsqueda en el contenido de notas, textos y PDFs, no solo por nombre.
+- [x] ~~Búsqueda en el contenido de notas y textos~~ (pestaña *Buscar*, 12-11-2026). [ ] Queda buscar dentro de PDF y documentos Office.
+- [ ] IA: respuesta en streaming, búsqueda semántica con embeddings, rellenar campos con IA, transcribir audio (Whisper) y comprobar OpenCode Zen con una cuenta real.
 - [ ] Vista previa de más formatos: PDF, Markdown, audio, vídeo con miniaturas y documentos Office.
 
 ### Fotos y galería

@@ -110,6 +110,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 ### Novedades
 
+- **12 nov 2026 (mañana)** · **Buscar y preguntar a la IA**: pestaña nueva *Buscar* con búsqueda en todo (notas, prompts, bases, código, contactos, calendario, pagos, recordatorios, marcadores, portapapeles y archivos de texto) sin IA, con extractos marcados, filtros por módulo y tolerancia a acentos, plurales y erratas · opcional: conecta tu propia clave de OpenAI, Anthropic, Google, OpenRouter (modelos gratis), OpenCode Zen, Groq, Mistral, DeepSeek, xAI, Ollama o cualquier API compatible para **preguntar sobre tus datos** (con fuentes citadas) y **resumir fichas** · 
 - **12 nov 2026** · **Zona Enlaces**: una pestaña nueva para ver y gestionar todos los enlaces que has creado (descarga, subida y prompts): buscar, filtrar por tipo y estado, copiar, abrir, QR, cambiar caducidad o contraseña, poner nombre y revocar (también deslizando) · 
 - **11 nov 2026 (tarde)** · **Enlaces cortos y QR**: los enlaces de descarga ahora son `…/cloud/k3x9tq7mw2ab` (12 letras y números al azar), con caducidad a tu medida (1 hora, 1 día, 7, 30, 90, 365, «otro plazo» o sin caducidad, y se puede cambiar después) y un **código QR** descargable en PNG · **Notas**: columnas con listas, tareas e imágenes dentro y elegir qué vista de una base se ve en la nota · **Bases**: relaciones de doble sentido, agrupar la tabla por una columna, fila de totales y arrastrar filas para reordenarlas · **Pagos**: gráfico del gasto del año y documentos adjuntos (póliza en PDF o imagen) · **Deslizar para eliminar** en móvil (Pagos, Recordatorios, Marcadores, Prompts y filas de Bases) · logros nuevos para todo ello.
 - **11 nov 2026** · **Notas con más bloques**: desplegables, columnas, índice automático, ecuaciones LaTeX, diagramas Mermaid, incrustados (YouTube, mapas, PDF), una base dentro de la nota y bloques sincronizados entre notas · **Plantillas de fila en Bases y botones de plantilla en Notas** («Nueva reunión» con su estructura) · **Recordatorios que se repiten** (diario, semanal, mensual, «el primer lunes», anual) con botones «Hecho» y «Posponer» en el aviso · **Bases más potentes**: vistas de calendario, galería y línea de tiempo, fórmulas, relaciones entre bases y resúmenes, columnas de correo, teléfono y archivo, cambio de tipo de columna y varios filtros y órdenes por vista · nueva sección **Recordatorios** (con su propio JSON, creables desde notas, contactos, archivos, prompts y marcadores, calendario opcional y avisos push para todos los navegadores) · subida de imágenes optimizada en Notas para PC, Android e iPhone y visor de imágenes en la propia app · tarjetas de Compra arregladas en escritorio · nuevos logros y trofeos (Calculista, Tejedor de datos, Todas las perspectivas, Memoria de elefante…) · dos auditorías de errores y seguridad: `npm audit` a 0, rutas de archivo y claves especiales sin errores 500, importación de bases grandes · código de Bases y Notas troceado en carpetas.
@@ -1308,6 +1309,27 @@ Pestaña *Enlaces* (escritorio y móvil): todos tus enlaces públicos en un solo
 - **Nada se borra en el acto**: el enlace revocado se aparta 30 días en `.kcc/borrados/enlaces/`. El contador de revocados vive en `.kcc/enlaces/stats.json`.
 - Logro *Puertas cerradas* (enlaces revocados), un reto semanal y el título *Portero*. Código en `lib/enlaces-gestion.js`, `public/js/enlaces/` (`datos.js`, `acciones.js`, `lista.js`, `index.js`) y `public/css/enlaces.css`.
 
+## Búsqueda global e IA opcional
+
+Pestaña *Buscar* (y *Ctrl K → Buscar «…» en todo*). Dos capas independientes: la primera funciona siempre y sin IA; la segunda solo existe si conectas un proveedor.
+
+**1. Búsqueda sin IA** (`lib/busqueda/`)
+- Un **índice BM25 en JavaScript puro**, en memoria, por usuario, sobre: notas, prompts, bases (una entrada por base y por fila), proyectos de código, contactos, calendario, pagos, recordatorios, marcadores, portapapeles, bloques sincronizados y **archivos de texto** (`.md`, `.txt`, `.csv`, `.json`, `.html`, código…; hasta 4.000 archivos de 256 KB). La caja fuerte **no** se indexa.
+- Ignora acentos y mayúsculas, entiende plurales y algunos sufijos, completa el principio de la última palabra, perdona una errata y da más peso a las coincidencias en el título. Resultados con el fragmento y las coincidencias marcadas (siempre con nodos de texto, nunca HTML), contadores por módulo y filtro al pulsarlos. Al pulsar un resultado se abre donde vive.
+- Se reconstruye al cambiar algo (los módulos avisan con `alCambiar`) y, como las notas no avisan, también pasados 10 s. Si un módulo está dañado, ese módulo se omite y el resto sigue funcionando; la búsqueda nunca crea archivos en tus datos.
+- Datos propios: solo el historial reciente (`.kcc/busqueda/recientes.json`, 15 consultas, se borra con un botón) y un contador (`stats.json`). API: `GET /api/busqueda?q=&m=notas,pagos&n=`, `/fuentes`, `/recientes`, `POST /reindexar`.
+
+**2. IA con tu propia clave** (`lib/ia/`)
+- **Proveedores**: OpenRouter (con filtro de modelos gratuitos, `:free`), OpenCode Zen (modelos `-free`), OpenAI, Anthropic, Google Gemini, Groq, Mistral, DeepSeek, xAI, **Ollama** (modelo propio en tu máquina) y «Compatible con OpenAI» (LM Studio, vLLM, Together…). Los nombres de modelo no están fijos en el código: se piden al proveedor (*Ver modelos disponibles*) o se escriben a mano.
+- **Qué hace**: *Preguntar* («¿en qué compañía tengo el seguro del coche?»): la búsqueda sin IA localiza los fragmentos, solo esos se envían al modelo y la respuesta cita sus fuentes con números clicables. Opcionalmente la IA propone sinónimos para encontrar más. *Resumir* una ficha desde un resultado.
+- **Privacidad**: antes de la primera llamada hay que aceptar el envío de fragmentos (no se envía nada sin ese permiso; con Ollama no sale nada). Nunca se envía todo el contenido ni la caja fuerte. Los fragmentos viajan marcados como datos para que una nota que diga «ignora las instrucciones» no se obedezca.
+- **Claves**: se guardan **cifradas** (AES-256-GCM, clave derivada de `JWT_SECRET`) en `.kcc/ia/config.json`, por usuario, y **no vuelven nunca al cliente** (solo «guardada» y los últimos 4 caracteres). Si cambias `JWT_SECRET` hay que pegarlas de nuevo. Se envían únicamente en la cabecera `Authorization` / `x-api-key` / `x-goog-api-key` del proveedor.
+- **Seguridad de red**: los proveedores conocidos se llaman en su servidor fijo; una dirección escrita por el usuario (Ollama, compatible) se valida contra SSRF (resolución, IP pública, conexión a la IP comprobada) y las direcciones locales exigen `KCC_IA_PERMITE_LOCAL=1` en el servidor. Límite de 40 llamadas cada 10 min por usuario. Los errores del proveedor se muestran sin reflejar la clave.
+- API: `GET /api/ia/config`, `PUT /api/ia/proveedores/<id>`, `DELETE /api/ia/proveedores/<id>/clave`, `PUT /api/ia/activo`, `PUT /api/ia/consentimiento`, `POST /api/ia/proveedores/<id>/modelos`, `/probar`, `/preguntar`, `/resumir`. Sin streaming por ahora (la respuesta llega entera).
+- **Nota sobre OpenCode Zen**: su documentación indica que los modelos gratuitos pueden estar limitados a la propia herramienta OpenCode; si uno falla con tu clave, prueba uno de pago. Sin verificar contra una cuenta real.
+- La configuración y el historial no entran en la exportación (las claves cifradas no se pueden usar fuera de este servidor y no son contenido tuyo).
+- Logros del grupo *Saber*: *Buscador* (búsquedas), *Oráculo* (preguntas a la IA), *Resumidor*, *Coro de modelos* (proveedores distintos) y el especial *Cerebro conectado*; un reto semanal de búsquedas y otro de preguntas; títulos *Rastreador* y *Oráculo*; *Copa del Sabio*. Código en `lib/busqueda/`, `lib/ia/`, `public/js/buscar/` y `public/css/buscar.css`.
+
 ## Actualizaciones
 
 ### En el navegador y en el móvil
@@ -1665,6 +1687,7 @@ indique; reinicia el servicio tras cambiarlas.
 | `VERSIONS_KEEP` / `VERSIONS_DAYS` / `VERSIONS_MAX_BYTES` | 30 / 180 / 5 MB | Versiones de archivos de texto |
 | `PUSH_CONTACT` | `mailto:no-reply@kookyecat.dev` | Contacto que se da a los servicios push de los navegadores (`mailto:` o `https://`); Apple lo exige válido |
 | `APP_TZ` | `Europe/Madrid` | Zona horaria de las horas de los avisos y de «hoy» en Pagos |
+| `KCC_IA_PERMITE_LOCAL` | — | `1` permite que la IA hable con direcciones locales (Ollama en el propio servidor). Sin él solo se aceptan direcciones públicas por https. |
 | `KCC_PUSH_PRUEBAS` / `KCC_ICONOS_LOCALES` | — | **Solo para las pruebas automáticas** (avisos simulados / iconos de webs locales). No activar en producción |
 | `VAULT_IDLE_MIN` | 15 | Minutos sin usar la caja fuerte hasta que se bloquea |
 | `WEBAUTHN_RP_ID` / `WEBAUTHN_ORIGIN` | deducidos | Solo si el proxy no pasa bien `Host` / `X-Forwarded-Proto` |
@@ -1785,6 +1808,8 @@ lib/
   enlaces.js         Enlaces públicos: descarga (archivo, carpeta, álbum), subida y prompts, URL corta `/cloud/<12>`, caducidad y QR (fábrica createEnlaces)
   enlaces-resumen.js Contadores de enlaces para los logros (QR, con caducidad, perpetuos, revocados)
   enlaces-gestion.js Zona Enlaces: caducidad, contraseña, nombre, revocar y limpiar (con copia 30 días)
+  busqueda/          Búsqueda global sin IA (índice BM25 `indice.js`, `texto.js`, un lector por módulo en `fuentes/`)
+  ia/                IA opcional: `proveedores.js` (catálogo), `adaptadores.js` (OpenAI/Anthropic/Google), `config.js`, `clave.js` (cifrado), `http.js` (anti-SSRF), `mensajes.js`
   notes-imagenes/    Imágenes de las notas (cliente): optimizar, subir, insertar, ventana de elección y botón de la barra
   notes/             Editor de bloques de las notas (cliente): inline, parser, bloques, tablas, visor, modelo, seleccion,
                      eventos, slash, ricos (marco de los bloques ricos) y ricos-boton/estructura/indice/ecuacion/diagrama/
@@ -1830,6 +1855,7 @@ public/
   js/deslizar.js     Gesto «deslizar para eliminar» (K.deslizar) · js/app/qr-enlace.js  QR descargable y cambio de caducidad · vendor/qrcode/  librería del QR
   js/pagos/grafico.js, adjuntos.js  Gráfico anual y documentos adjuntos de Pagos
   js/enlaces/        Zona Enlaces (datos, acciones, lista, index) + css/enlaces.css
+  js/buscar/         Buscar y preguntar (datos, resultados, ia, ajustes, index) + css/buscar.css
   js/pagos/, js/marcadores/, js/recordatorios/, js/push/, js/sonidos/  Clientes de los módulos nuevos, un archivo por responsabilidad (datos, lista, formulario, ajustes…)
   js/                Módulos: calendario, prompts (+ comparar y estadísticas), contactos, recordatorios vinculados, portapapeles, fotos (línea de tiempo), visor con zoom, notas, caja fuerte, passkeys, actualizaciones…
   css/               Estilos: modules (barra lateral y componentes), calendar, prompts, sistema (versiones, caja fuerte,

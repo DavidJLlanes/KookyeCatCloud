@@ -5,7 +5,6 @@ Está basada en el conocimiento general de Notion, sin verificar con fuentes rec
 
 ## Prioridad alta
 
-2. **Búsqueda y respuestas sobre todo lo propio (equivalente a Notion AI).** Preguntar «¿qué apunté sobre el VPS?» y recibir la respuesta, resumir notas largas, rellenar campos solos, transcribir reuniones. Se puede empezar por una búsqueda semántica propia.
 4. **Recortador web.** Extensión del navegador que guarda una página entera, limpia, en la nube propia (Marcadores solo guarda el enlace).
 
 ## Prioridad media
@@ -32,3 +31,4 @@ Primero (4) y (6).
 - (1, parte) Bases, 11-11-2026 (tarde): relaciones de doble sentido, agrupar la tabla, fila de totales y arrastrar filas; en Notas, bloques anidados en columnas y vista elegible de una base; en Pagos, gráfico anual y documentos adjuntos.
 - Compartir, 11-11-2026 (tarde): enlaces cortos `/cloud/<12 caracteres>`, caducidad configurable y QR en PNG.
 - (1) Bases más potentes, 11-11-2026: calendario, galería y línea de tiempo, relaciones, resúmenes, fórmulas, tipos nuevos, cambio de tipo y filtros/órdenes múltiples. La numeración de arriba se mantiene.
+- (2, parte) Búsqueda y respuestas, 12-11-2026: búsqueda global sin IA (índice BM25 sobre todos los módulos y archivos de texto) y capa de IA opcional con tu propia clave (OpenAI, Anthropic, Google, OpenRouter con modelos gratis, OpenCode Zen, Groq, Mistral, DeepSeek, xAI, Ollama y APIs compatibles) para preguntar con fuentes citadas y resumir fichas. Queda: búsqueda semántica con embeddings, rellenar campos solos, transcribir reuniones, respuesta en streaming y buscar dentro de PDF y Office.

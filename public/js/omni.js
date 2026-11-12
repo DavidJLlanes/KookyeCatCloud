@@ -26,6 +26,7 @@
     { t: 'Ir a Código', i: 'i-code', f: () => switchTab('codigo') },
     { t: 'Ir a Bases', i: 'i-table', f: () => switchTab('bases') },
     { t: 'Ir a Pagos', s: 'Recibos, seguros y suscripciones', i: 'i-wallet', f: () => switchTab('pagos') },
+    { t: 'Ir a Buscar y preguntar', s: 'Búsqueda en todo y preguntas a la IA', i: 'i-search', f: () => K.buscar.abreCon('') },
     { t: 'Ir a Enlaces', s: 'Ver y gestionar tus enlaces compartidos', i: 'i-link', f: () => switchTab('enlaces') },
     { t: 'Avisos y notificaciones', s: 'Elegir qué te avisa y cuándo', i: 'i-bell', f: () => switchTab('cuenta') },
     { t: 'Nuevo pago', s: 'Apuntar un recibo o seguro', i: 'i-wallet', f: () => K.pagos.nuevo() },
@@ -93,6 +94,7 @@
       const acc = ACCIONES.filter(a => a.t.toLowerCase().includes(q.toLowerCase()));
       seccion('Acciones', acc, a => fila(a.i, a.t, a.s, a.f));
       if (!hay) res.appendChild(el('div', 'vacio', `Nada encontrado para “${q}”`));
+      if (K.buscar) res.appendChild(fila('i-search', `Buscar «${q}» en todo`, 'Todos los módulos, con extractos y preguntas a la IA', () => K.buscar.abreCon(q)));
       resalta();
     }
 

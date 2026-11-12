@@ -55,6 +55,8 @@ const createShopping = require('./lib/shopping');
 const createGames = require('./lib/games');
 const createBases = require('./lib/bases');
 const createPagos = require('./lib/pagos');
+const createBusqueda = require('./lib/busqueda');
+const createIA = require('./lib/ia');
 const createMarcadores = require('./lib/marcadores');
 const createSincronizados = require('./lib/sincronizados');
 const { resumenBloques } = require('./lib/notas-bloques');
@@ -215,7 +217,8 @@ const promptsMod = createPrompts({
 });
 const contactsMod = createContacts({ express, sharp, userRoot, sendError, registrarActividad, labels: labelsMod, calendar: calendarMod.core, valores: valoresMod.core });
 const shoppingMod = createShopping({ express, multer, sharp, dataRoot: DATA_ROOT, sendError, registrarActividad });
-const alCambiarContenido = (user) => { if (typeof gameMod !== 'undefined' && gameMod) gameMod.invalida(user); };   // refresca los logros al instante
+const alCambiarLogros = (user) => { if (typeof gameMod !== 'undefined' && gameMod) gameMod.invalida(user); };   // refresca los logros al instante
+const alCambiarContenido = (user) => { alCambiarLogros(user); if (typeof busquedaMod !== 'undefined' && busquedaMod) busquedaMod.core.invalida(user); };   // y deja que la búsqueda reconstruya su índice
 const gamesMod = createGames({ express, multer, sharp, userRoot, sendError, registrarActividad, calendar: calendarMod.core, alCambiar: alCambiarContenido, valores: valoresMod.core });
 const basesMod = createBases({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido });
 const pagosMod = createPagos({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido, calendar: calendarMod.core, valores: valoresMod.core });
@@ -536,6 +539,10 @@ const { papeleraDias, purgeExpired } = papeleraMod.core;
 const notesMod = createNotes({ express, auth, userRoot, sendError, papeleraDias, calendar: () => calendarMod.core, extraeLinks: (b) => notesExtra.extraeLinks(b) });
 const { readNotes, writeNotes, notaFile, descendientes, notasFuente, purgarNotasCaducadas, enCola: enColaNotas } = notesMod.core;
 app.use('/api', notesMod.router);
+// Búsqueda global sin IA + capa de IA opcional (lib/busqueda, lib/ia). Se crean aquí porque leen las notas.
+const busquedaMod = createBusqueda({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarLogros, notas: () => ({ readNotes, notaFile }) });
+const iaMod = createIA({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarLogros, secreto: JWT_SECRET, busqueda: busquedaMod.core });
+modulosConLogros.push(busquedaMod, iaMod);
 
 /* ---------------- Vaciado programado de las papeleras ----------------
    Hasta ahora lo caducado solo se borraba al abrir la papelera. Este barrido lo hace por su cuenta, para
@@ -580,6 +587,8 @@ app.use('/api/shopping', auth, shoppingMod);
 app.use('/api/games', auth, gamesMod.router);
 app.use('/api/bases', auth, basesMod.router);
 app.use('/api/pagos', auth, pagosMod.router);
+app.use('/api/busqueda', auth, busquedaMod.router);
+app.use('/api/ia', auth, iaMod.router);
 app.use('/api/marcadores', auth, marcadoresMod.router);
 app.use('/api/sincronizados', auth, sincronizadosMod.router);
 app.use('/api/recordatorios', auth, recordatoriosMod.router);
