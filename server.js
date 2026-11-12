@@ -540,7 +540,8 @@ app.use('/', enlacesMod.paginas);
 
 
 
-const analisisMod = createAnalisis({ express, auth, userRoot, userPath, isHidden, sendError, DATA_ROOT, TRASH_DIR, NOTES_DIR });
+const analisisMod = createAnalisis({ express, auth, userRoot, userPath, isHidden, sendError, DATA_ROOT, TRASH_DIR, NOTES_DIR,
+  contar: (u) => gameMod.recuentos(u), papelera: (u) => papeleraMod.core.readTrash(u) });
 app.use(analisisMod.router);   // sus rutas ya llevan /api
 
 /* ---------------- Bloc de notas ----------------

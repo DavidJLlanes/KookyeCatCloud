@@ -25,5 +25,14 @@ module.exports = async ({ req, prueba, igual, cierto, BASE, cookie }) => {
     cierto(g && g.some(f => f.name === 'an-b.txt'), 'las dos copias salen juntas');
     cierto(r.j.espacioRecuperable >= 5000, 'espacio recuperable');
   });
+  await prueba('análisis: cada sección de los datos de la app dice cuántos elementos tiene', async () => {
+    await req('POST', '/api/notes', { type: 'note', title: 'Nota para recuento', body: 'x' });
+    await new Promise(r => setTimeout(r, 200));
+    const r = await req('GET', '/api/stats'); igual(r.s, 200);
+    const notas = r.j.app.find(d => d.id === 'notes');
+    cierto(notas && /^\d[\d.]* notas?$/.test(notas.elementos || ''), 'notas con su número: ' + (notas && notas.elementos));
+    const pap = r.j.app.find(d => d.id === 'trash');
+    cierto(pap && /elementos?$/.test(pap.elementos || ''), 'papelera con su número: ' + (pap && pap.elementos));
+  });
   for (const n of ['an-a.txt', 'an-b.txt']) await req('DELETE', '/api/files', { path: n }).catch(() => {});
 };

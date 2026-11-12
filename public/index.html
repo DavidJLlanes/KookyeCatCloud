@@ -897,7 +897,9 @@
   .bt-item{display:grid;grid-template-columns:10px minmax(0,1fr) auto 40px;align-items:center;column-gap:9px;padding:6px 0;
     border-bottom:1px solid var(--line);font-size:calc(12.5px*var(--fs,1));min-width:0;}
   .bt-dot{width:10px;height:10px;border-radius:3px;}
-  .bt-item .lbl{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .bt-item .lbl{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;display:flex;flex-direction:column;line-height:1.25;}
+  .bt-item .lbl .bt-nom,.bt-item .lbl .bt-n{overflow:hidden;text-overflow:ellipsis;}
+  .bt-item .lbl .bt-n{color:var(--faint);font-size:calc(11.5px*var(--fs,1));font-variant-numeric:tabular-nums;}
   .bt-item .val{color:var(--text);font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right;}
   .bt-item .pc{color:var(--faint);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;}
   .bt-tip{position:fixed;z-index:210;pointer-events:none;padding:8px 12px;border-radius:9px;

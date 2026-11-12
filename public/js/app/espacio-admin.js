@@ -27,23 +27,28 @@ const COLOR_APP = Object.fromEntries(TIPOS_APP.map(t => [t.id, t.color]));
 function pctTxt(pct) { return pct > 0 && pct < 1 ? '<1%' : Math.round(pct) + '%'; }
 
 // Una barra apilada + leyenda en forma de tabla (valor exacto sin depender del color)
-function grupoReparto(titulo, datos) {
+// `contarArchivos`: en «Tus archivos» la cabecera suma archivos; en «Datos de la app» cada fila lleva su propio recuento
+function grupoReparto(titulo, datos, contarArchivos = true) {
   const sub = datos.reduce((n, d) => n + d.bytes, 0), cuenta = datos.reduce((n, d) => n + d.count, 0);
   const g = el('div', 'bt-grupo');
   const cab = el('div', 'bt-cab'); cab.appendChild(el('h4', null, titulo));
-  const tot = el('div', 'tot', fmtSize(sub)); tot.appendChild(el('span', null, ` · ${cuenta} archivo${cuenta === 1 ? '' : 's'}`)); cab.appendChild(tot);
+  const tot = el('div', 'tot', fmtSize(sub)); if (contarArchivos) tot.appendChild(el('span', null, ` · ${cuenta} archivo${cuenta === 1 ? '' : 's'}`)); cab.appendChild(tot);
   g.appendChild(cab);
   const barra = el('div', 'bt-bar'); barra.setAttribute('role', 'img'); barra.setAttribute('aria-label', titulo);
   const leyenda = el('div', 'bt-legend');
   for (const t of datos) {
     const pct = (t.bytes / sub) * 100;
     const seg = el('div', 'bt-seg'); seg.style.background = t.color; seg.style.flex = `${t.bytes} 0 0`; seg.tabIndex = 0;
-    seg.setAttribute('aria-label', `${t.nombre}: ${fmtSize(t.bytes)} · ${pct.toFixed(1)}% · ${t.count} archivo${t.count === 1 ? '' : 's'}`);
+    seg.setAttribute('aria-label', `${t.nombre}: ${fmtSize(t.bytes)} · ${pct.toFixed(1)}%${t.elementos ? ' · ' + t.elementos : ''}`);
     seg.addEventListener('mouseenter', e => mostrarTip(e, t, pct)); seg.addEventListener('mousemove', moverTip); seg.addEventListener('mouseleave', ocultarTip);
     barra.appendChild(seg);
     const item = el('div', 'bt-item'); item.title = t.nombre;
     const dot = el('span', 'bt-dot'); dot.style.background = t.color; item.appendChild(dot);
-    item.appendChild(el('span', 'lbl', t.nombre)); item.appendChild(el('span', 'val', fmtSize(t.bytes))); item.appendChild(el('span', 'pc', pctTxt(pct)));
+    // Nombre y, debajo, cuántos elementos son (archivos de ese tipo, o «45 prompts», «3 bases · 120 filas»…)
+    const nom = el('span', 'lbl'); nom.appendChild(el('span', 'bt-nom', t.nombre));
+    const cuantos = t.elementos || (contarArchivos ? `${t.count.toLocaleString('es-ES')} archivo${t.count === 1 ? '' : 's'}` : '');
+    if (cuantos) nom.appendChild(el('small', 'bt-n', cuantos));
+    item.appendChild(nom); item.appendChild(el('span', 'val', fmtSize(t.bytes))); item.appendChild(el('span', 'pc', pctTxt(pct)));
     leyenda.appendChild(item);
   }
   g.appendChild(barra); g.appendChild(leyenda);
@@ -58,7 +63,7 @@ function renderByType(byType, app) {
   caja.textContent = '';
   if (!archivos.length && !datos.length) { caja.hidden = true; return; }
   if (archivos.length) caja.appendChild(grupoReparto('Tus archivos', archivos));
-  if (datos.length) caja.appendChild(grupoReparto('Datos de la app', datos));
+  if (datos.length) caja.appendChild(grupoReparto('Datos de la app', datos, false));
   caja.hidden = false;
 }
 
@@ -69,7 +74,7 @@ function mostrarTip(ev, t, pct) {
   tipEl.appendChild(el('b', null, t.nombre));
   tipEl.appendChild(document.createTextNode(' '));
   tipEl.appendChild(el('span', null,
-    `${fmtSize(t.bytes)} · ${pct.toFixed(1)}% · ${t.count} archivo${t.count === 1 ? '' : 's'}`));
+    `${fmtSize(t.bytes)} · ${pct.toFixed(1)}%${t.elementos ? ' · ' + t.elementos : ''}`));
   document.body.appendChild(tipEl);
   moverTip(ev);
 }
