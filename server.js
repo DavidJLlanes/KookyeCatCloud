@@ -551,7 +551,7 @@ const notesMod = createNotes({ express, auth, userRoot, sendError, papeleraDias,
 const { readNotes, writeNotes, notaFile, descendientes, notasFuente, purgarNotasCaducadas, enCola: enColaNotas } = notesMod.core;
 app.use('/api', notesMod.router);
 // Búsqueda global sin IA + capa de IA opcional (lib/busqueda, lib/ia). Se crean aquí porque leen las notas.
-const busquedaMod = createBusqueda({ express, userRoot, dataRoot: DATA_ROOT, sendError, registrarActividad, alCambiar: alCambiarLogros, notas: () => ({ readNotes, notaFile }) });
+const busquedaMod = createBusqueda({ express, userRoot, dataRoot: DATA_ROOT, appDir: APP_DIR, sendError, registrarActividad, alCambiar: alCambiarLogros, notas: () => ({ readNotes, notaFile }) });
 const iaMod = createIA({ express, userRoot, sendError, registrarActividad, alCambiar: alCambiarLogros, secreto: JWT_SECRET, busqueda: busquedaMod.core });
 const importarMod = createImportar({ express, multer, userRoot, sendError, registrarActividad, alCambiar: alCambiarContenido,
   notas: () => ({ ...notesMod.core, extraeLinks: (b) => notesExtra.extraeLinks(b) }), bases: basesMod.core, contactos: contactsMod.core });

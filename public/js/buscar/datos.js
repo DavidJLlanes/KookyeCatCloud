@@ -6,7 +6,7 @@
   B.FUENTES = {
     notas: ['Notas', 'i-note'], prompts: ['Prompts', 'i-sparkle'], bases: ['Bases', 'i-table'], documentos: ['Documentos', 'i-doc'], codigo: ['Código', 'i-code'],
     contactos: ['Contactos', 'i-contact'], calendario: ['Calendario', 'i-calendar'], pagos: ['Pagos', 'i-wallet'], recordatorios: ['Recordatorios', 'i-bell'],
-    marcadores: ['Marcadores', 'i-bookmark'], compra: ['Lista de la compra', 'i-cart'], sincronizados: ['Bloques sincronizados', 'i-note'], portapapeles: ['Portapapeles', 'i-doc'], archivos: ['Archivos', 'i-doc'],
+    marcadores: ['Marcadores', 'i-bookmark'], compra: ['Lista de la compra', 'i-cart'], juegos: ['Juegos', 'i-gamepad'], enlaces: ['Enlaces', 'i-link'], colecciones: ['Colecciones', 'i-star'], logros: ['Logros y nivel', 'i-star-fill'], papelera: ['Papelera', 'i-trash'], sincronizados: ['Bloques sincronizados', 'i-note'], portapapeles: ['Portapapeles', 'i-doc'], archivos: ['Archivos', 'i-doc'],
   };
   const nombreDe = (f) => (B.FUENTES[f] || [f])[0];
   B.nombreDe = nombreDe;
@@ -22,7 +22,7 @@
     if (f === 'pagos') return K.open('pago', id);
     if (f === 'codigo') return K.open('codigo', id);
     if (f === 'archivos') return K.open('file', id, { isDir: false });
-    const tab = { documentos: 'documentos', bases: 'bases', marcadores: 'marcadores', compra: 'shopping', recordatorios: 'recordatorios', sincronizados: 'notes', portapapeles: 'clip' }[f];
+    const tab = { documentos: 'documentos', bases: 'bases', marcadores: 'marcadores', compra: 'shopping', juegos: 'games', enlaces: 'enlaces', colecciones: 'colecciones', logros: 'logros', papelera: 'trash', recordatorios: 'recordatorios', sincronizados: 'notes', portapapeles: 'clip' }[f];
     if (tab) switchTab(tab);
   };
 

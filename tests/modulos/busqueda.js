@@ -88,4 +88,20 @@ module.exports = async ({ req, prueba, igual, cierto, DATA, BASE, cookie }) => {
     const c = (await req('GET', '/api/busqueda/fuentes')).j.fuentes.find(f => f.id === 'compra');
     igual(c.documentos, (await req('GET', '/api/shopping')).j.products.length, 'el recuento cuenta productos, no resúmenes');
   });
+
+  await prueba('busqueda: juegos, enlaces, colecciones, papelera, logros y archivos que no son de texto', async () => {
+    igual((await req('POST', '/api/games', { title: 'Juego ' + marca, status: 'jugando', platforms: ['Switch'] })).s, 200);
+    const fd = new FormData(); fd.append('path', ''); fd.append('files', new Blob([Buffer.from([137, 80, 78, 71, 1, 2, 3])]), 'foto-' + marca + '.png');
+    igual((await fetch(BASE + '/api/upload', { method: 'POST', headers: { Cookie: cookie() }, body: fd })).status, 200);
+    igual((await req('POST', '/api/albums', { title: 'Álbum ' + marca, paths: ['foto-' + marca + '.png'] })).s, 200);
+    igual((await req('POST', '/api/sharelinks', { path: 'foto-' + marca + '.png', label: 'Enlace ' + marca })).s, 200);
+    const esperadas = { juegos: 'Juego ', enlaces: 'Enlace ', colecciones: 'Álbum: ', archivos: 'foto-' };
+    for (const [m, ini] of Object.entries(esperadas)) { const r = await busca(marca, m); cierto(r.resultados.some(x => x.fuente === m && x.titulo.startsWith(ini)), m + ': sale con su filtro'); }
+    const a = await busca('png ' + marca, 'archivos'); cierto(a.resultados.some(x => /foto-/.test(x.titulo)), 'un archivo que no es de texto sale por su nombre');
+    igual((await req('DELETE', '/api/files?path=' + encodeURIComponent('foto-' + marca + '.png'))).s, 200, 'a la papelera');
+    const p = await busca('foto ' + marca, 'papelera'); cierto(p.resultados.some(x => x.fuente === 'papelera'), 'lo borrado sale en la papelera');
+    cierto(Array.isArray((await busca('nivel racha logros', 'logros')).resultados), 'logros: el filtro responde');
+    const f = (await req('GET', '/api/busqueda/fuentes')).j.fuentes.map(x => x.id);
+    for (const id of ['compra', 'juegos', 'enlaces', 'colecciones', 'logros', 'papelera']) cierto(f.includes(id), 'fuente ' + id);
+  });
 };
