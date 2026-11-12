@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "test": "node tests/smoke.js",
-    "check": "node tests/sintaxis.js && node tests/auditoria.js && eslint .",
+    "check": "node tests/sintaxis.js && node tests/auditoria.js && node tests/regex.js && eslint .",
     "check:despliegue": "node tests/sintaxis.js && node tests/auditoria.js",
     "lint": "eslint ."
   },
@@ -35,6 +35,7 @@
   },
   "devDependencies": {
     "eslint": "^9.0.0",
-    "globals": "^15.0.0"
+    "globals": "^15.0.0",
+    "recheck": "^4.6.2"
   }
 }

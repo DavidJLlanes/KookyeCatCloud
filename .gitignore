@@ -24,3 +24,4 @@ passkeys.json.tmp
 /*.json.*.tmp
 /*.json.dañado-*
 /*.jsonl.*.tmp
+tests/.regex-cache.json

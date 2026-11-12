@@ -121,6 +121,8 @@
 .k-pop .item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 11px;border:none;background:none;color:var(--text);
   font:inherit;font-size:calc(13.5px*var(--fs,1));border-radius:9px;cursor:pointer;text-align:left;}
 .k-pop .item:hover,.k-pop .item.is-hot{background:var(--glass-2);}
+.k-pop .item:focus-visible,#ctxmenu button:focus-visible{outline:none;background:var(--glass-2);box-shadow:inset 0 0 0 2px var(--b3);}
+.modal:focus{outline:none;}
 .k-pop .item .ico{width:16px;height:16px;color:var(--muted);}
 .k-pop .item.danger{color:#ffb3bd;}
 .k-pop .sep{height:1px;background:var(--line);margin:6px 2px;}

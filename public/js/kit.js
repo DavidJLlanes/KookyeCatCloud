@@ -116,13 +116,14 @@ K.modal = function ({ title, sub, cls = '', content, actions = [], onClose, dism
     modal.appendChild(bar);
   }
   overlay.appendChild(modal);
-  let cerrado = false;
+  let cerrado = false, foco = null;
   const h = {
     el: modal, body: cuerpo, buttons: botones,
     close(valor) {
       if (cerrado) return; cerrado = true;
       overlay.remove();
       const i = _pila.indexOf(h); if (i >= 0) _pila.splice(i, 1);
+      if (foco) foco.cierra();                        // el foco vuelve a quien abrió el diálogo (kit-foco.js)
       if (onClose) onClose(valor);
     },
   };
@@ -148,6 +149,7 @@ K.modal = function ({ title, sub, cls = '', content, actions = [], onClose, dism
   h.dismiss = dismiss;
   _pila.push(h);
   document.body.appendChild(overlay);
+  if (K.modalAccesible) foco = K.modalAccesible(modal, overlay, { title, danger: actions.some((a) => a.danger) });
   return h;
 };
 // Cierra todos los diálogos abiertos (p. ej. al pulsar un valor para filtrar desde una ficha)
@@ -218,6 +220,19 @@ K.menu = function (anchor, items, opts) {
     cont.appendChild(b);
   }
   p = K.pop(anchor, cont, opts);
+  if (K.menuAccesible) {
+    const origen = document.activeElement;           // quien lo abrió; el foco vuelve ahí al cerrar por teclado
+    const m = K.menuAccesible(p.el, { items: '.item', cierra: p.close, vuelveA: anchor.focus ? anchor : origen });
+    const cierraBase = p.close;
+    const cierraYDevuelve = () => {
+      const dentro = p.el.contains(document.activeElement);
+      cierraBase();
+      if (K._popClose === cierraYDevuelve) K._popClose = null;   // Esc mira K._popClose: nunca debe quedar apuntando a un menú cerrado
+      if (dentro) m.devuelveFoco();
+    };
+    p.close = cierraYDevuelve;
+    if (K._popClose === cierraBase) K._popClose = cierraYDevuelve;   // Esc también devuelve el foco
+  }
   return p;
 };
 

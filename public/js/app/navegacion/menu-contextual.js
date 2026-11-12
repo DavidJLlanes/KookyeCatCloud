@@ -85,4 +85,5 @@ function abrirCtx(x, y, item) {
   const r = menu.getBoundingClientRect();
   menu.style.left = Math.max(8, Math.min(x, window.innerWidth - r.width - 8)) + 'px';
   menu.style.top = Math.max(8, Math.min(y, window.innerHeight - r.height - 8)) + 'px';
+  if (K.menuAccesible) K.menuAccesible(menu, { items: 'button', cierra: cerrarCtx });   // flechas, roles y foco (kit-foco.js)
 }
