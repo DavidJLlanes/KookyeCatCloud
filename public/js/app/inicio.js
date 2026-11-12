@@ -13,7 +13,7 @@ $('btn-home').addEventListener('click', () => {
 });
 
 document.querySelectorAll('.tab, .mobilenav button').forEach(btn => {
-  btn.addEventListener('click', () => switchTab(btn.dataset.view));
+  btn.addEventListener('click', () => irASeccion(btn.dataset.view));
 });
 
 $('btn-grid').addEventListener('click', () => setView('grid'));
