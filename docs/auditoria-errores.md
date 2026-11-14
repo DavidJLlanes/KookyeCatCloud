@@ -370,3 +370,38 @@ enlaces y comparticiones ajenas (siempre se filtra por dueño), `npm audit` sin 
 lista de rutas idéntica antes y después, `npm run check`, `npm test`, capturas de 22 pantallas (móvil y escritorio)
 iguales píxel a píxel salvo animaciones, y las 27 vistas sin errores con administrador y usuario normal.
 Las rutas de archivo citadas en las auditorías anteriores son las de su fecha.
+
+## Decimonovena auditoría (14-11-2026): superficie pública, cuentas y lo añadido a Buscar/IA
+
+Métodos: barrido de las 386 rutas sin sesión y con usuario normal (sin cambios respecto a la 18); **fuzz de errores**
+(2.650 peticiones con cuerpos y parámetros mal formados contra todas las rutas, buscando respuestas 500 y caídas);
+batería de ataque en una copia con tres cuentas (recorrido de rutas por la API, WebDAV, enlaces públicos y carpetas
+compartidas; contenido activo `.html`/`.svg` por cada punto que sirve archivos; saneador de Documentos con 26 cargas
+de XSS); lectura de autenticación (TOTP, passkeys, sesiones) y de todo lo que sale a Internet. Cada hallazgo tiene su
+prueba en `tests/modulos/auditoria19.js`, escrita antes del arreglo (8 pruebas, todas fallaban).
+
+| Gravedad | Hallazgo | Arreglo |
+|---|---|---|
+| **Alta** | **Un enlace de solo descarga servía para subir archivos**: `/api/public/link/:id/upload` buscaba el enlace por su identificador sin mirar el tipo, así que quien recibía un enlace para descargar una carpeta podía meter archivos en ella (y sin el tope de archivos, que esos enlaces no llevan). | Las rutas de subida solo aceptan enlaces de tipo subida. |
+| Media | **Node escuchaba en todas las interfaces**. La app se fía de `X-Forwarded-For` (`trust proxy`): si el puerto era accesible desde fuera, saltándose Nginx, cualquiera podía inventarse la IP y con ella el límite de intentos de contraseña y de código. | `LISTEN_HOST`, por defecto `127.0.0.1` (`lib/web/escucha.js`). Con Docker o proxy en otra máquina: `LISTEN_HOST=0.0.0.0`. |
+| Media | **El buscador y la IA del administrador incluían los archivos de las demás cuentas** (su raíz es la carpeta de datos entera, con `users/` dentro): sus textos podían salir como contexto hacia un proveedor de IA externo. | La fuente «archivos» del administrador se salta `users/`. Sigue viéndolos en el explorador. |
+| Media | **Verificación en dos pasos**: el límite de intentos del código era solo por IP (con la contraseña robada, repartir los intentos entre IP permitía probar sin fin) y un código valía varias veces durante 90 s. | Límite también por cuenta; cada código vale una vez (se guarda el último paso usado, también el de la confirmación). Comparación en tiempo constante. |
+| Baja | **WebDAV servía `.html` y `.svg` con su tipo real y sin cabeceras**: abierto en el navegador se ejecutaría en el origen de la app. | `nosniff` y `Content-Security-Policy: sandbox` en todo `/dav`. |
+| Baja | **Cambio perdido en `users.json`**: cambiar la contraseña o desactivar la 2FA leía la lista, esperaba a bcrypt (~150 ms) y guardaba la lista antigua; una cuenta creada en ese hueco desaparecía. | Se relee la lista después de la espera. |
+| Baja | **Restos de una cuenta borrada**: sus enlaces públicos seguían en el archivo (otra cuenta creada después con el mismo nombre los heredaba) y su calendario iCal seguía publicándose con el token antiguo. | Al borrar se quitan sus enlaces; el iCal contrasta el token con las cuentas actuales (también el rol). |
+| Baja | Dos **errores 500**: `POST /api/mkdir` con una ruta que no es texto y un recordatorio con fecha imposible (`9999-99-99`). | 400 con su mensaje. |
+| Baja | El **registro de actividad** (usuarios, IP, nombres de archivo) nacía legible para cualquier usuario del sistema. | Modo 600 (también el ya existente). La carpeta de datos nueva nace 700; si la existente es accesible para otros, se avisa al arrancar (no se cambia sola). |
+
+Revisado sin hallazgos: recorrido de rutas (API, WebDAV `COPY`/`MOVE` con `Destination` hostil, enlaces públicos,
+`@compartido`), escrituras con permiso de solo lectura en carpetas compartidas, carpetas internas (`.kcc`, `.trash`)
+inalcanzables, contenido activo por `/api/preview`, `/api/download`, portapapeles y enlaces públicos (descarga forzada
+o 415), avatar con SVG disfrazado, saneador de Documentos, capa de IA (claves cifradas, proveedor sin prototipo,
+direcciones privadas rechazadas con la IP fijada), passkeys (reto de un uso, origen, `rpIdHash`, contador), avisos push
+(servicios admitidos), descargas a terceros (todas por `descarga()` con redirecciones validadas), aislamiento del
+índice de búsqueda entre cuentas, `npm audit` (0), las 27 vistas sin errores con administrador y usuario normal.
+
+Observaciones que no se cambian: todas las cuentas con rol administrador comparten el mismo espacio de datos (su raíz
+es la carpeta de datos); `/share-target` sigue exento del freno CSRF porque llega desde el menú «Compartir» del móvil
+(lo más que puede hacer otro sitio del mismo dominio es añadir elementos al portapapeles); la carpeta de archivos de
+una cuenta borrada se conserva en disco.
+

@@ -652,7 +652,8 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
     igual(l1.s, 200); igual(l1.j.need2fa, true); igual(b2.jar.token, undefined, 'aún sin sesión');
     igual((await b2('GET', '/api/me')).s, 401);
     igual((await b2('POST', '/api/login/2fa', { code: '000000' })).s, 401);
-    igual((await b2('POST', '/api/login/2fa', { code: totp(su.j.secret) })).s, 200);
+    igual((await b2('POST', '/api/login/2fa', { code: totp(su.j.secret) })).s, 401, 'el código de la confirmación no vale otra vez');
+    igual((await b2('POST', '/api/login/2fa', { code: totp(su.j.secret, 1) })).s, 200);
     igual((await b2('GET', '/api/me')).j.username, 'bea');
     igual((await b2('POST', '/api/2fa/disable', { password: 'mala' })).s, 401);
     igual((await b2('POST', '/api/2fa/disable', { password: 'clave-segura-2' })).s, 200);
@@ -682,7 +683,7 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
   // Módulos con sus propias pruebas (tests/modulos/<modulo>.js)
   process.env.__KCC_BASE = BASE; process.env.__KCC_COOKIE = cookie;
   const ctx = { req, prueba, igual, cierto, DATA, BASE, cookie: () => cookie };
-  for (const m of ['pagos', 'marcadores', 'sincronizados', 'perfil', 'push', 'bases', 'recordatorios', 'analisis', 'sesiones', 'transversal', 'explorador', 'prompts', 'calendario', 'seguridad', 'game', 'codigo', 'vault', 'enlaces', 'busqueda', 'ia', 'importar', 'documentos', 'redos', 'cabeceras', 'autenticacion', 'subidas']) await require('./modulos/' + m)(ctx);
+  for (const m of ['pagos', 'marcadores', 'sincronizados', 'perfil', 'push', 'bases', 'recordatorios', 'analisis', 'sesiones', 'transversal', 'explorador', 'prompts', 'calendario', 'seguridad', 'game', 'codigo', 'vault', 'enlaces', 'busqueda', 'ia', 'importar', 'documentos', 'redos', 'cabeceras', 'autenticacion', 'subidas', 'auditoria19']) await require('./modulos/' + m)(ctx);
   await prueba('cierre de sesión', async () => { cierto((await req('POST', '/api/logout')).s < 400, 'logout'); });
 
   srv.kill();

@@ -74,7 +74,7 @@ const createArchivos = require('./lib/archivos');
 const { IMAGE_TYPES, HEIC_TYPES, VIDEO_TYPES, PREVIEW_TYPES, TEXT_RE, TEXT_MAX, THUMBABLE, DISPLAY_MAX, THUMB_SIZE, TILE_URL, TILE_ATTR, TILE_ORIGIN, bytesDeEntorno } = require('./lib/archivos/tipos');
 const createSesiones = require('./lib/cuentas/sesiones');
 const createActividad = require('./lib/nucleo/actividad');
-const { base32Encode, totpVerificar } = require('./lib/cuentas/totp');
+const { base32Encode, totpVerificar, totpPaso } = require('./lib/cuentas/totp');
 const { isBlocked, registerFailure, clearFailures } = require('./lib/cuentas/limitador');
 const createPush = require('./lib/push');
 const createCodigo = require('./lib/codigo');
@@ -139,7 +139,7 @@ const ACTIVITY_DIAS = Number(process.env.ACTIVITY_DIAS || 60);   // los registro
 
 // --- Setup ---
 try {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+  require('./lib/web/escucha').creaDatos(DATA_DIR);
   fs.mkdirSync(THUMBS_DIR, { recursive: true });
 } catch (err) {
   console.error(`No se pudo crear el directorio de datos ${DATA_DIR}:`, err.message);
@@ -484,9 +484,9 @@ function abreSesion(req, res, user, accion) {
 const cuentasMod = createCuentas({
   express, auth, adminOnly, jwt, bcrypt, JWT_SECRET, DUMMY_HASH, loadUsers, saveUsers,
   sessions, creaSesion, revocaSesion, revocaUsuario, marcaSesionesSucias,
-  isBlocked, registerFailure, clearFailures, totpVerificar, base32Encode,
+  isBlocked, registerFailure, clearFailures, totpVerificar, totpPaso, base32Encode,
   USERNAME_RE, MIN_PASSWORD, COOKIE_PATH, SECURE_COOKIES,
-  shares: () => sharesMod, passkeys: () => passkeysMod, vault: () => vaultMod, registrarActividad,
+  shares: () => sharesMod, passkeys: () => passkeysMod, vault: () => vaultMod, enlaces: () => enlacesMod.core, registrarActividad,
 });
 app.use('/api', cuentasMod.router);
 app.use(actividadMod.router);   // /api/activity
@@ -621,7 +621,7 @@ app.use('/api/admin/copias', copiasMod.router);
 modulosConLogros.push(copiasMod);   // Copias a mano aportan recuentos a la gamificación (ver CLAUDE.md)
 // Rutas y conexiones entre módulos (lib/transversal)
 montaTransversal({
-  app, auth, sendError, userPath, limpiaRel, BASE_PATH,
+  app, auth, sendError, userPath, limpiaRel, BASE_PATH, loadUsers,
   labels: labelsMod, calendar: calendarMod.core, prompts: promptsMod.core, games: gamesMod.core,
   readNotes, writeNotes, notaFile,
 });
@@ -650,5 +650,6 @@ process.on('unhandledRejection', (e) => console.error('Promesa rechazada sin cap
 
 root.use(BASE_PATH || '/', app);
 
-root.listen(PORT, () => { console.log(
-  `KookyeCatCloud escuchando en puerto ${PORT}${BASE_PATH ? `, bajo ${BASE_PATH}/` : ''}, datos en ${DATA_ROOT}`); pushMod.arranca(); });
+const HOST = require('./lib/web/escucha').anfitrion();
+root.listen(PORT, HOST, () => { console.log(
+  `KookyeCatCloud escuchando en ${HOST}:${PORT}${BASE_PATH ? `, bajo ${BASE_PATH}/` : ''}, datos en ${DATA_ROOT}`); pushMod.arranca(); });

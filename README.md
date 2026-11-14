@@ -110,6 +110,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 ### Novedades
 
+- **14 nov 2026** · **Auditoría 19 de seguridad y errores** (`docs/auditoria-errores.md`): un enlace de solo descarga ya no sirve para subir archivos; Node escucha solo en local por defecto (`LISTEN_HOST`); el buscador y la IA del administrador no incluyen los archivos de otras cuentas; la verificación en dos pasos limita los intentos también por cuenta y cada código vale una sola vez; WebDAV no sirve HTML/SVG como página activa; al borrar una cuenta se van sus enlaces y su calendario público; dos errores 500 y un cambio perdido en las cuentas corregidos. 8 pruebas de explotación nuevas (`tests/modulos/auditoria19.js`).
 - **12 nov 2026 (tarde)** · **Auditoría del índice de Buscar/IA**: se comprobó con datos reales que cada módulo se encuentra (calendario, recordatorios, portapapeles, bloques sincronizados, documentos y código, bien). Dos fallos corregidos: lo **etiquetado no salía al buscar el nombre de la etiqueta** (los elementos guardan solo el id; ahora notas, prompts, contactos y calendario indexan «Etiquetas: …»), y los **recuentos de «cuántos»** contaban filas de bases y carpetas de notas como si fueran bases o notas (ahora solo cuentan elementos; las filas van aparte como «Filas»). Tres pruebas nuevas lo vigilan.
 - **12 nov 2026 (tarde)** · **Respuestas de la IA más claras**: «Fuentes» ya no lista los 8 fragmentos que se recuperaron, sino solo los que la respuesta cita (si no cita ninguno, «Fuentes consultadas»); la **negrita** (`**así**`) de los modelos se pinta como negrita en vez de con asteriscos; y los resúmenes de la compra se llaman «Lista de la compra: todos los productos» y «…: pendientes de comprar».
 - **12 nov 2026 (tarde)** · **La IA y Buscar ven casi toda la app**: se añaden como fuentes (con su filtro y su icono) **Juegos, Enlaces, Colecciones** (favoritos y álbumes), **Logros y nivel** y **Papelera**, y los **archivos que no son de texto** (fotos, vídeos, PDF, Office) se encuentran por su nombre y carpeta. Siguen fuera la caja fuerte (a propósito) y el Mapa (las coordenadas no son texto buscable). La IA todavía solo consulta: no crea ni cambia nada.
@@ -1704,6 +1705,7 @@ indique; reinicia el servicio tras cambiarlas.
 | Variable | Por defecto | Qué hace |
 | --- | --- | --- |
 | `PORT` | 4000 | Puerto de Node (Nginx hace de proxy delante) |
+| `LISTEN_HOST` | 127.0.0.1 | Interfaz en la que escucha Node. Solo local por defecto (Nginx delante); con Docker o un proxy en otra máquina, `0.0.0.0` y el puerto cerrado en el cortafuegos |
 | `DATA_DIR` | — | Dónde se guardan los archivos. Debe estar en `ReadWritePaths` de systemd |
 | `BASE_PATH` | vacío | Subcarpeta (`/cloud`) si no va en la raíz del dominio |
 | `JWT_SECRET` | auto | Secreto de las sesiones; si falta se crea `.jwt-secret` |
@@ -1823,7 +1825,7 @@ lib/                   Servidor
   nucleo/              Piezas comunes: store.js (JSON atómico con cola, .bak y papelera de borrados), rutas.js (rutas
                        seguras por usuario, anti path traversal y symlinks), errores.js, eventos.js (avisos en directo,
                        SSE), actividad.js (registro JSONL con poda), descomprime.js (ZIP con topes reales), html-tokens.js
-  web/                 Cabeceras de seguridad (CSP, HSTS, Permissions-Policy), origen.js (freno CSRF por Sec-Fetch-Site),
+  web/                 Cabeceras de seguridad (CSP, HSTS, Permissions-Policy), origen.js (freno CSRF por Sec-Fetch-Site), escucha.js (interfaz de red y permisos de la carpeta de datos),
                        plantillas con prefijo, versión instalada y service worker
   cuentas/             Inicio de sesión y 2FA, usuarios y contraseñas (index.js), sesiones.js (JWT con jti, cierre en
                        remoto), totp.js, limitador.js (intentos fallidos) y passkeys.js (WebAuthn, CBOR propio)
