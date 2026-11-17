@@ -263,9 +263,9 @@ async function moverNota(item, parent) {
 
 async function borrarNota(item) {
   const aviso = item.type === 'folder'
-    ? `¿Eliminar la carpeta "${item.title}" y todo lo que contiene? No va a la papelera.`
-    : `¿Eliminar la nota "${item.title}"? No va a la papelera.`;
-  if (!confirm(aviso)) return;
+    ? `Se eliminará la carpeta «${item.title}» y todo lo que contiene. No va a la papelera.`
+    : `Se eliminará la nota «${item.title}». No va a la papelera.`;
+  if (!await K.confirmaBorrado([{ type: 'note', ref: item.id }], aviso, { ok: 'Eliminar' })) return;
   try {
     const res = await api(BASE + '/api/notes/' + qs(item.id), { method: 'DELETE' });
     const data = await res.json();

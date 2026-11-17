@@ -12,7 +12,7 @@
 
   // Elimina un pago (con confirmación; se guarda 30 días). Devuelve true si se borró.
   P.elimina = async (p) => {
-    if (!await K.confirm(`Se eliminará «${p.nombre}». Se guarda 30 días por si te arrepientes.`, { ok: 'Eliminar', danger: true })) return false;
+    if (!await K.confirmaBorrado([{ type: 'pago', ref: p.id }], `Se eliminará «${p.nombre}». Se guarda 30 días por si te arrepientes.`, { ok: 'Eliminar' })) return false;
     try { await K.del('/api/pagos/' + p.id); K.toast('Pago eliminado'); await recarga(); return true; } catch (e) { K.fail(e); return false; }
   };
 

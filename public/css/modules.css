@@ -201,3 +201,9 @@ select option{background:#111a2b;color:var(--text);}
 .omni-res .row small{display:block;color:var(--faint);font-size:calc(12px*var(--fs,1));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .omni-res .vacio{padding:34px;text-align:center;color:var(--faint);font-size:calc(14px*var(--fs,1));}
 
+
+/* Aviso al borrar algo con fecha en el calendario o con aviso pendiente (public/js/nucleo/confirma-borrado.js) */
+.cb-lista { display: grid; gap: calc(8px*var(--fs,1)); }
+.cb-lista p { margin: 0; font-size: calc(14px*var(--fs,1)); }
+.cb-items { margin: 0; padding-left: calc(18px*var(--fs,1)); font-size: calc(14px*var(--fs,1)); }
+.cb-nota { font-size: calc(13px*var(--fs,1)); }

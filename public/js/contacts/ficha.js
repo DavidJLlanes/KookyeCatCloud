@@ -94,7 +94,7 @@
   }
 
   async function elimina(c, m) {
-    if (!(await K.confirm(`“${nombre(c)}” se eliminará para siempre.`, { ok: 'Eliminar', danger: true, title: 'Eliminar contacto' }))) return;
+    if (!(await K.confirmaBorrado([{ type: 'contact', ref: c.id }], `“${nombre(c)}” se eliminará para siempre.`, { ok: 'Eliminar', title: 'Eliminar contacto' }))) return;
     try {
       await K.del('/api/contacts/' + c.id);
       S.items = S.items.filter(x => x.id !== c.id);

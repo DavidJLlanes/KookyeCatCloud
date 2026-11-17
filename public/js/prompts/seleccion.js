@@ -42,7 +42,7 @@
     } catch (e) { K.fail(e); }
   }
   async function purge(ids) {
-    if (!await K.confirm(`Se borrar${ids.length === 1 ? 'á este prompt' : 'án ' + ids.length + ' prompts'} para siempre, con sus imágenes.`, { ok: 'Borrar', danger: true })) return;
+    if (!await K.confirmaBorrado(ids.map(id => ({ type: 'prompt', ref: id })), `Se borrar${ids.length === 1 ? 'á este prompt' : 'án ' + ids.length + ' prompts'} para siempre, con sus imágenes.`, { ok: 'Borrar' })) return;
     try { await K.post('/api/prompts/bulk', { ids, op: 'delete', purge: true }); S.sel.clear(); K.bus.emit('prompts'); load(); } catch (e) { K.fail(e); }
   }
   async function patch(id, campos) { try { await K.put('/api/prompts/' + id, campos); K.bus.emit('prompts'); load(); } catch (e) { K.fail(e); } }

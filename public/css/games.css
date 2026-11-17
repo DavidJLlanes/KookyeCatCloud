@@ -91,3 +91,8 @@
 .gms-datos dd .gms-chips{display:flex;}
 .gms-tags .k-vchip{background:var(--brand-soft);color:var(--accent-text);border-color:transparent;}
 .gms-activos{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;}
+
+/* Resincronizar fechas con RAWG */
+.gms-rs-fila { display: grid; gap: calc(6px*var(--fs,1)); padding: calc(8px*var(--fs,1)) 0; border-bottom: 1px solid var(--line, rgba(128,128,128,.25)); }
+.gms-rs-fila small { display: block; font-size: calc(13px*var(--fs,1)); }
+.gms-rs-cal { font-size: calc(13px*var(--fs,1)); }

@@ -35,9 +35,18 @@ async function prueba(nombre, fn) {
 const igual = (a, b, m) => { if (a !== b) throw new Error(`${m || 'valor'}: esperado ${b}, recibido ${a}`); };
 const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
 
+// Un RAWG de mentira para probar la resincronización de juegos: cada id devuelve la fecha de salida que diga `rawgMock.fechas[id]`
+const rawgMock = { fechas: {}, falla: false };
+const rawgSrv = require('http').createServer((rq, rs) => {
+  const m = /^\/api\/games\/(\d+)/.exec(rq.url);
+  if (!m || rawgMock.falla) { rs.statusCode = rawgMock.falla ? 429 : 404; return rs.end('{}'); }
+  rs.setHeader('Content-Type', 'application/json'); rs.end(JSON.stringify({ id: Number(m[1]), name: 'Mock ' + m[1], released: rawgMock.fechas[m[1]] || null }));
+});
+
 (async () => {
   copia();
-  srv = spawn('node', ['server.js'], { cwd: APP, env: { ...process.env, PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: 'smoke-test-1', INSECURE_COOKIES: '1', TEXT_MAX: '512KB   # comentario al final, como en un .env de systemd', OFFICE_TIMEOUT: '90000    # ms', BASE_PATH: '', KCC_ICONOS_LOCALES: '1', KCC_PUSH_PRUEBAS: '1', KCC_IA_PERMITE_LOCAL: '1', THUMBS_DIR: path.join(TMP, 'thumbs'), COPIAS_DIR: path.join(TMP, 'copias') }, stdio: ['ignore', 'pipe', 'pipe'] });
+  await new Promise(r => rawgSrv.listen(PORT + 600, '127.0.0.1', r));
+  srv = spawn('node', ['server.js'], { cwd: APP, env: { ...process.env, RAWG_KEY: 'prueba', KCC_RAWG_URL: `http://127.0.0.1:${PORT + 600}/api`, PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: 'smoke-test-1', INSECURE_COOKIES: '1', TEXT_MAX: '512KB   # comentario al final, como en un .env de systemd', OFFICE_TIMEOUT: '90000    # ms', BASE_PATH: '', KCC_ICONOS_LOCALES: '1', KCC_PUSH_PRUEBAS: '1', KCC_IA_PERMITE_LOCAL: '1', THUMBS_DIR: path.join(TMP, 'thumbs'), COPIAS_DIR: path.join(TMP, 'copias') }, stdio: ['ignore', 'pipe', 'pipe'] });
   let log = ''; srv.stdout.on('data', d => { log += d; }); srv.stderr.on('data', d => { log += d; });
   for (let i = 0; i < 60; i++) { try { if ((await fetch(BASE + '/api/version')).ok) break; } catch { /* aún no */ } await dormir(250); }
 
@@ -682,11 +691,11 @@ const cierto = (v, m) => { if (!v) throw new Error(m || 'condición falsa'); };
   });
   // Módulos con sus propias pruebas (tests/modulos/<modulo>.js)
   process.env.__KCC_BASE = BASE; process.env.__KCC_COOKIE = cookie;
-  const ctx = { req, prueba, igual, cierto, DATA, BASE, cookie: () => cookie };
-  for (const m of ['pagos', 'marcadores', 'sincronizados', 'perfil', 'push', 'bases', 'recordatorios', 'analisis', 'sesiones', 'transversal', 'explorador', 'prompts', 'calendario', 'seguridad', 'game', 'codigo', 'vault', 'enlaces', 'busqueda', 'ia', 'importar', 'documentos', 'redos', 'cabeceras', 'autenticacion', 'subidas', 'auditoria19']) await require('./modulos/' + m)(ctx);
+  const ctx = { req, prueba, igual, cierto, DATA, BASE, cookie: () => cookie, rawgMock };
+  for (const m of ['pagos', 'marcadores', 'sincronizados', 'perfil', 'push', 'bases', 'recordatorios', 'analisis', 'sesiones', 'transversal', 'explorador', 'prompts', 'calendario', 'seguridad', 'game', 'codigo', 'vault', 'enlaces', 'busqueda', 'ia', 'importar', 'documentos', 'redos', 'cabeceras', 'autenticacion', 'subidas', 'auditoria19', 'borrado-calendario', 'juegos-rawg']) await require('./modulos/' + m)(ctx);
   await prueba('cierre de sesión', async () => { cierto((await req('POST', '/api/logout')).s < 400, 'logout'); });
 
-  srv.kill();
+  srv.kill(); rawgSrv.close();
   await dormir(300);
   fs.rmSync(TMP, { recursive: true, force: true });
   console.log(`\n${total - fallos}/${total} pruebas correctas`);

@@ -125,7 +125,7 @@ async function deleteSelected() {
   hide('action-modal');
   if (!item) return;
   const what = item.isDir ? 'la carpeta y todo su contenido' : 'el archivo';
-  if (!confirm(`¿Enviar ${what} "${item.name}" a la papelera?`)) return;
+  if (!await K.confirmaBorrado([{ type: 'file', ref: item.rel }], `Se enviará ${what} «${item.name}» a la papelera.`, { ok: 'A la papelera' })) return;
   try {
     const res = await api(BASE + '/api/files?path=' + qs(item.rel), { method: 'DELETE' });
     if (res.ok) { showToast('En la papelera. Puedes restaurarlo desde ahí.'); refresh(); }

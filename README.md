@@ -110,6 +110,7 @@ ffmpeg y LibreOffice opcionales · systemd + Nginx.
 
 ### Novedades
 
+- **17 nov 2026** · **Borrar con calendario o avisos**: al borrar una nota, un contacto, un archivo, un prompt, un pago o un juego que tiene un evento en el calendario o un recordatorio pendiente, la app lo dice y pregunta si se borran también (por defecto sí; si lo desmarcas, quedan en el calendario como eventos sueltos) · **Juegos: resincronizar con RAWG**: desde la ficha de un juego o desde el menú «⋯ → Resincronizar fechas con RAWG» (todos) se vuelve a mirar la fecha de salida y se propone cambiarla, con la opción de mover también su evento del calendario (y su aviso). No cambia nada sin que lo aceptes.
 - **14 nov 2026** · **Auditoría 19 de seguridad y errores** (`docs/auditoria-errores.md`): un enlace de solo descarga ya no sirve para subir archivos; Node escucha solo en local por defecto (`LISTEN_HOST`); el buscador y la IA del administrador no incluyen los archivos de otras cuentas; la verificación en dos pasos limita los intentos también por cuenta y cada código vale una sola vez; WebDAV no sirve HTML/SVG como página activa; al borrar una cuenta se van sus enlaces y su calendario público; dos errores 500 y un cambio perdido en las cuentas corregidos. 8 pruebas de explotación nuevas (`tests/modulos/auditoria19.js`).
 - **12 nov 2026 (tarde)** · **Auditoría del índice de Buscar/IA**: se comprobó con datos reales que cada módulo se encuentra (calendario, recordatorios, portapapeles, bloques sincronizados, documentos y código, bien). Dos fallos corregidos: lo **etiquetado no salía al buscar el nombre de la etiqueta** (los elementos guardan solo el id; ahora notas, prompts, contactos y calendario indexan «Etiquetas: …»), y los **recuentos de «cuántos»** contaban filas de bases y carpetas de notas como si fueran bases o notas (ahora solo cuentan elementos; las filas van aparte como «Filas»). Tres pruebas nuevas lo vigilan.
 - **12 nov 2026 (tarde)** · **Respuestas de la IA más claras**: «Fuentes» ya no lista los 8 fragmentos que se recuperaron, sino solo los que la respuesta cita (si no cita ninguno, «Fuentes consultadas»); la **negrita** (`**así**`) de los modelos se pinta como negrita en vez de con asteriscos; y los resúmenes de la compra se llaman «Lista de la compra: todos los productos» y «…: pendientes de comprar».
@@ -555,6 +556,8 @@ también crea cosas (“Nuevo prompt”, “Nuevo contacto”, “Nuevo evento�
 
 ### Fecha en el calendario
 
+- **Al borrar**: si lo que se borra (nota, contacto, archivo, prompt, pago, juego) tiene un evento en el calendario o un recordatorio pendiente, un diálogo lo enseña y pregunta si se borran también. Si no, quedan sueltos (el evento sigue en el calendario sin apuntar a lo borrado, el recordatorio sin vínculo). API: `POST /api/calendar/dependientes` y `/desvincula`.
+
 - **Al subir archivos**: en la barra de subida hay un interruptor *“Poner fecha de subida en
   el calendario”*. Con pocos archivos cada uno tiene su evento; con una subida grande se crea
   un solo evento para la carpeta. El interruptor se recuerda; la fecha vuelve a ser “hoy” en
@@ -890,9 +893,11 @@ Pestaña **Juegos** para llevar tu colección: **Próximos**, **Deseados** (list
 - **Sesiones**: «Sesión» suma horas y mueve el juego a *Jugando* si estaba pendiente o deseado.
 - **Búsqueda automática (opcional)**: con `RAWG_KEY` en el `.env` (clave gratuita de rawg.io) se busca el juego y se rellenan título, plataformas, géneros y carátula. Sin clave se añade a mano. Las carátulas se guardan en WebP.
 - **Carátula**: súbela desde el formulario de añadir o editar; en un juego ya existente, **Buscar en RAWG** (con `RAWG_KEY` válida) rellena carátula y datos.
+- **Borrar**: si el juego tiene evento en el calendario se pregunta si se borra también (ver «Fecha en el calendario»).
 - **Calendario**: la fecha de salida puede crear un evento en el calendario *Juegos* (se crea solo para todos los usuarios).
 - **Estadísticas**: juegos, jugados, horas, nota media, backlog, gasto, euros por hora, horas por género, jugados por año y mejor valorados.
 - **Exportar/importar**: JSON y CSV (compatible con hojas de cálculo). La importación evita duplicados por título y plataforma.
+- **Resincronizar con RAWG**: en la ficha de un juego vinculado, **Resincronizar fecha**; en el menú «⋯», **Resincronizar fechas con RAWG** revisa todos los vinculados (hasta 150 de una vez). Si ha cambiado la fecha de salida se te propone el cambio, juego a juego, y si el juego tiene evento en el calendario, también moverlo (conserva la hora y sus avisos). Nada se aplica sin aceptarlo. Con la clave limitada por RAWG se avisa y se repite más tarde.
 - **Almacenamiento**: `<tu carpeta>/.kcc/games/data.json` y `covers/` (un JSON por usuario, sin SQLite).
 - **Compartir**: desde la ficha, **Tarjeta** crea una imagen 1080×1350 del juego (carátula, nota, horas, estado, reseña) y **Mi perfil** crea una con tus totales, géneros con más horas, mejor valorados y logros. Se descargan, copian o comparten desde el móvil.
 

@@ -37,11 +37,12 @@
       btn('Carátula', 'i-image', () => subePortada(g), 'btn sm'),
       btn('Copiar o mover a…', 'i-move', () => { m.close(); setTimeout(() => K.transferir.abre({ tipo: 'juegos', ids: [g.id], titulo: g.title }, { alTerminar: () => load() }), 0); }, 'btn sm'));
     if (S.rawg) rapidas.appendChild(btn('Buscar en RAWG', 'i-search', () => { m.close(); setTimeout(() => vincula(g), 0); }, 'btn sm'));
+    if (S.rawg && g.rawgId) rapidas.appendChild(btn('Resincronizar fecha', 'i-refresh', () => { m.close(); setTimeout(() => C.resincroniza([g.id]), 0); }, 'btn sm'));
     w.appendChild(rapidas);
     const m = K.modal({
       title: '', content: w, cls: 'wide', actions: [
         { label: 'Cerrar' },
-        { label: 'Eliminar', danger: true, onClick: async () => { if (!await K.confirm(`Se eliminará «${g.title}» y su carátula.`, { ok: 'Eliminar', danger: true })) return false; return !!await guardar(() => K.del('/api/games/' + g.id)); } },
+        { label: 'Eliminar', danger: true, onClick: async () => { if (!await K.confirmaBorrado([{ type: 'game', ref: g.id }], `Se eliminará «${g.title}» y su carátula.`, { ok: 'Eliminar' })) return false; return !!await guardar(() => K.del('/api/games/' + g.id)); } },
         { label: 'Editar', primary: true, onClick: () => { setTimeout(() => editar(g), 0); return true; } },
       ],
     });

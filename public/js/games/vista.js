@@ -51,6 +51,7 @@
       { label: 'Exportar CSV (hoja de cálculo)', onClick: () => descarga('csv') },
       ...K.doc.items(() => S.items.length ? { titulo: 'Mis juegos', nombre: 'juegos', md: juegosMd(), ancho: true } : (K.toast('No hay juegos que exportar'), null)),
       { label: 'Importar JSON', onClick: importar },
+      ...(S.rawg ? [{ label: 'Resincronizar fechas con RAWG', onClick: () => C.resincroniza() }] : []),
     ]);
   }
   // Colección completa por estado, en tablas Markdown
