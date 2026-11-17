@@ -46,7 +46,7 @@ const rawgSrv = require('http').createServer((rq, rs) => {
 (async () => {
   copia();
   await new Promise(r => rawgSrv.listen(PORT + 600, '127.0.0.1', r));
-  srv = spawn('node', ['server.js'], { cwd: APP, env: { ...process.env, RAWG_KEY: 'prueba', KCC_RAWG_URL: `http://127.0.0.1:${PORT + 600}/api`, PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: 'smoke-test-1', INSECURE_COOKIES: '1', TEXT_MAX: '512KB   # comentario al final, como en un .env de systemd', OFFICE_TIMEOUT: '90000    # ms', BASE_PATH: '', KCC_ICONOS_LOCALES: '1', KCC_PUSH_PRUEBAS: '1', KCC_IA_PERMITE_LOCAL: '1', THUMBS_DIR: path.join(TMP, 'thumbs'), COPIAS_DIR: path.join(TMP, 'copias') }, stdio: ['ignore', 'pipe', 'pipe'] });
+  srv = spawn('node', ['server.js'], { cwd: APP, env: { ...process.env, RAWG_KEY: 'prueba', KCC_RAWG_ESPERA_MS: '1200', KCC_RAWG_URL: `http://127.0.0.1:${PORT + 600}/api`, PORT: String(PORT), DATA_DIR: DATA, ADMIN_PASSWORD: 'smoke-test-1', INSECURE_COOKIES: '1', TEXT_MAX: '512KB   # comentario al final, como en un .env de systemd', OFFICE_TIMEOUT: '90000    # ms', BASE_PATH: '', KCC_ICONOS_LOCALES: '1', KCC_PUSH_PRUEBAS: '1', KCC_IA_PERMITE_LOCAL: '1', THUMBS_DIR: path.join(TMP, 'thumbs'), COPIAS_DIR: path.join(TMP, 'copias') }, stdio: ['ignore', 'pipe', 'pipe'] });
   let log = ''; srv.stdout.on('data', d => { log += d; }); srv.stderr.on('data', d => { log += d; });
   for (let i = 0; i < 60; i++) { try { if ((await fetch(BASE + '/api/version')).ok) break; } catch { /* aún no */ } await dormir(250); }
 

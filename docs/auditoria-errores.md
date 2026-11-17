@@ -405,3 +405,23 @@ es la carpeta de datos); `/share-target` sigue exento del freno CSRF porque lleg
 (lo más que puede hacer otro sitio del mismo dominio es añadir elementos al portapapeles); la carpeta de archivos de
 una cuenta borrada se conserva en disco.
 
+
+## Vigésima auditoría (17-11-2026): borrado con calendario y resincronización con RAWG
+
+Alcance: lo añadido ese día (`/api/calendar/dependientes` y `/desvincula`, `K.confirmaBorrado`, `/api/games/resync/*`) más un barrido
+general (`npm audit` 0, procesos externos solo con `spawn` y argumentos en lista, ningún `eval`, `innerHTML` solo con texto saneado).
+
+Corregido:
+- **Revisiones de RAWG sin freno:** cualquier cuenta podía lanzar una revisión de hasta 150 juegos tras otra y gastar la cuota de la clave `RAWG_KEY`
+  del servidor. Ahora hay una revisión a la vez por cuenta y 20 s entre una y otra (`KCC_RAWG_ESPERA_MS`). La primera versión del freno no
+  funcionaba (se indexaba por el objeto `req.user`, nuevo en cada petición, en vez de por el nombre): lo cazó la prueba.
+- **Tipos de origen arbitrarios en `desvincula`:** se podía soltar el evento de un recordatorio (que es el propio aviso) y dejarlo duplicable.
+  Ahora solo se aceptan nota, contacto, archivo, prompt, juego y pago, con referencias de hasta 600 caracteres.
+- **Selecciones de más de 500 elementos:** el servidor mira 500 por llamada; el cliente las manda por trozos para que «conservar» no deje
+  eventos sin soltar.
+
+Comprobado sin hallazgos: las cuatro rutas nuevas exigen sesión; cuerpos rotos o raros (null, tipos cambiados, `__proto__`, rutas con `..`,
+5.000 elementos) dan 400 y nunca 500 ni trazas; un administrador no ve eventos de otra cuenta; la fecha que viene de RAWG se valida antes de guardarse.
+
+Observaciones que no se cambian: «conservar» suelta el evento antes de borrar, así que si el borrado falla el evento queda suelto (sin pérdida de datos);
+restaurar de la papelera algo cuyo evento se conservó puede crear un evento duplicado.

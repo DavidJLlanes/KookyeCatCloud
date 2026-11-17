@@ -2,6 +2,7 @@
 // Resincronizar juegos con RAWG (un RAWG de mentira, ver tests/smoke.js): detecta cambios de fecha de salida, propone y solo aplica lo aceptado,
 // moviendo si se pide el evento del calendario.
 module.exports = async ({ req, prueba, igual, cierto, rawgMock }) => {
+  const espera = () => new Promise(r => setTimeout(r, 1300));   // el servidor de pruebas deja 1,2 s entre revisiones
   const eventos = async () => (await req('GET', '/api/calendar/events?from=2027-04-01&to=2027-06-30')).j.events || [];
   let a, b, c;
 
@@ -17,6 +18,8 @@ module.exports = async ({ req, prueba, igual, cierto, rawgMock }) => {
     igual(r.j.cambios[0].calendario.date, '2027-04-10', 'avisa de que tiene evento');
     cierto(r.j.sinRawg >= 1, 'cuenta los no vinculados');
     igual((await req('GET', '/api/games')).j.items.find(g => g.id === a.id).released, '2027-04-10', 'revisar no cambia nada');
+    igual((await req('POST', '/api/games/resync/revisa', {})).s, 429, 'otra revisión enseguida: se pide esperar (cada una gasta peticiones de la clave de RAWG)');
+    await espera();
     igual((await req('POST', '/api/games/resync/revisa', { ids: [c.id] })).s, 400, 'un juego sin RAWG da aviso claro');
   });
 
@@ -33,7 +36,7 @@ module.exports = async ({ req, prueba, igual, cierto, rawgMock }) => {
   });
 
   await prueba('juegos RAWG: si RAWG limita las peticiones se avisa y no se pierde nada', async () => {
-    rawgMock.falla = true;
+    await espera(); rawgMock.falla = true;
     const r = await req('POST', '/api/games/resync/revisa', {});
     igual(r.s, 429);
     rawgMock.falla = false;

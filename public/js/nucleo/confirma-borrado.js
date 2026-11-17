@@ -18,9 +18,12 @@
     return c.length > 10 ? K.d.short(d) + ' ' + d.toTimeString().slice(0, 5) : K.d.short(d);
   }
 
+  // El servidor mira hasta 500 elementos por llamada: una selección grande se manda por trozos
+  const trozos = (items) => { const t = []; for (let i = 0; i < items.length; i += 500) t.push(items.slice(i, i + 500)); return t; };
+
   K.confirmaBorrado = async function (items, texto, { ok = 'Eliminar', title = 'Confirmar' } = {}) {
     let colgando = [];
-    try { colgando = (await K.post('/api/calendar/dependientes', { items })).items || []; } catch { colgando = []; }
+    try { for (const t of trozos(items)) colgando.push(...((await K.post('/api/calendar/dependientes', { items: t })).items || [])); } catch { colgando = []; }
     if (!colgando.length) return K.confirm(texto, { ok, danger: true, title });
 
     return new Promise((res) => {
@@ -46,7 +49,7 @@
           label: ok, danger: true,
           onClick: async () => {
             if (!chk.checked) {
-              try { await K.post('/api/calendar/desvincula', { items }); } catch (e) { K.fail(e); return false; }   // sin dejarlos sueltos no se borra: mejor avisar que perderlos
+              try { for (const t of trozos(items)) await K.post('/api/calendar/desvincula', { items: t }); } catch (e) { K.fail(e); return false; }   // sin dejarlos sueltos no se borra: mejor avisar que perderlos
             }
             hecho = true; res(true);
           },
