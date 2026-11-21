@@ -131,7 +131,8 @@
 .cr-e-format-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding:2px;overscroll-behavior-x:contain}
 .cr-e-format-row .cr-e-button{flex:none;min-width:44px;min-height:44px;touch-action:manipulation}
 .cr-e-toolbar .cr-e-heading{min-width:92px;max-width:110px;font-weight:600}
-.cr-e-body{flex:1;min-height:130px;display:flex;flex-direction:column;padding:16px 20px;overflow-y:auto;overscroll-behavior:contain}
+.cr-e-body{flex:1;min-height:0;display:flex;flex-direction:column;padding:16px 20px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-padding:18px}
+.cr-e-body .cr-e-title,.cr-e-body .cr-e-content{flex-shrink:0}
 .cr-e-title{display:block;width:100%;min-width:0;min-height:45px;padding:4px 0 12px!important;margin:0;background:transparent!important;background-image:none!important;color:#252724!important;-webkit-text-fill-color:#252724!important;outline:0!important;border:0!important;box-shadow:none!important;border-radius:0!important;font-size:21px!important;line-height:1.35;font-family:inherit!important;font-weight:400!important;overflow-wrap:anywhere}
 .cr-e-title:empty::before{content:attr(data-placeholder);color:#54574e;pointer-events:none}
 .cr-e-title h1,.cr-e-title h2,.cr-e-title h3,.cr-e-title p{margin:0}
@@ -152,7 +153,9 @@
 .cr-e-footer .cr-e-remove{background:transparent!important;color:#8d3940!important;-webkit-text-fill-color:#8d3940!important;border:0!important;font-size:.82rem;min-height:33px}
 @media(max-width:700px){
  .cr-e-overlay{padding:0;align-items:stretch}
- .cr-e-dialog{width:100%;max-height:100dvh;height:100dvh;min-height:0;border:0;border-radius:0;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+ .cr-e-dialog{box-sizing:border-box;width:100%;max-height:100%;height:100%;min-height:0;border:0;border-radius:0;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+ .cr-e-keyboard .cr-e-dialog{padding-bottom:0}
+ .cr-e-keyboard .cr-e-palette,.cr-e-keyboard .cr-e-footer{display:none}
  .cr-e-header{padding:7px 12px}
  .cr-e-toolbar{gap:5px;padding:8px 10px}
  .cr-e-toolbar .cr-e-button{min-width:44px;min-height:44px;padding:7px}

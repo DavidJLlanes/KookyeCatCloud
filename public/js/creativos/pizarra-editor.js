@@ -64,6 +64,7 @@
     dialog.setAttribute('role', 'dialog');
     dialog.setAttribute('aria-modal', 'true');
     dialog.setAttribute('aria-label', 'Editar nota adhesiva');
+    dialog.tabIndex = -1;
     dialog.dataset.color = COLORS.some(c => c[0] === item.color) ? item.color : 'amarillo';
     const header = make('header', 'cr-e-header');
     const done = button('Hecho', 'Guardar y cerrar', () => finish());
@@ -117,6 +118,10 @@
     overlay.append(dialog);
     document.body.append(overlay);
     const oldFocus = document.activeElement;
+    const pagePosition = { x: window.scrollX, y: window.scrollY };
+    const pageStyles = {};
+    for (const key of ['position', 'top', 'left', 'width', 'overflow']) pageStyles[key] = document.body.style[key];
+    Object.assign(document.body.style, { position: 'fixed', top: -pagePosition.y + 'px', left: -pagePosition.x + 'px', width: '100%', overflow: 'hidden' });
     let activeEditor = title;
     const owner = node => title.contains(node) ? title : editor.contains(node) ? editor : null;
     let savedRange = null;
@@ -127,6 +132,48 @@
     let closed = false;
     let last = item.id ? JSON.stringify(values()) : null;
     const formatButtons = [];
+    const viewport = window.visualViewport;
+    let viewportFrame = 0;
+    function revealCaret() {
+      if (!body.contains(document.activeElement)) return;
+      const selection = window.getSelection();
+      if (!selection?.rangeCount || !body.contains(selection.focusNode)) return;
+      const range = selection.getRangeAt(0).cloneRange();
+      range.collapse(false);
+      let caret = range.getBoundingClientRect();
+      if (!caret.height && selection.focusNode.nodeType === 1) {
+        // Un cursor situado justo después de un párrafo puede devolver un rectángulo vacío.
+        const atEnd = selection.focusOffset > 0;
+        let node = selection.focusNode.childNodes[Math.max(0, selection.focusOffset - 1)];
+        while (node?.childNodes.length) node = atEnd ? node.lastChild : node.firstChild;
+        if (node?.nodeType === 3) {
+          range.setStart(node, atEnd ? node.textContent.length : 0);
+          range.collapse(true);
+          caret = range.getBoundingClientRect();
+        }
+      }
+      if (!caret.height) return;
+      const bounds = body.getBoundingClientRect();
+      if (caret.bottom > bounds.bottom - 18) body.scrollTop += caret.bottom - bounds.bottom + 18;
+      else if (caret.top < bounds.top + 12) body.scrollTop -= bounds.top + 12 - caret.top;
+    }
+    function updateViewport() {
+      cancelAnimationFrame(viewportFrame);
+      viewportFrame = requestAnimationFrame(() => {
+        if (closed) return;
+        // Safari conserva el viewport de diseño al abrir el teclado y desplaza el visual.
+        const height = viewport ? viewport.height : window.innerHeight;
+        overlay.style.top = (viewport?.offsetTop || 0) + 'px';
+        overlay.style.left = (viewport?.offsetLeft || 0) + 'px';
+        overlay.style.width = (viewport ? viewport.width : window.innerWidth) + 'px';
+        overlay.style.height = height + 'px';
+        overlay.classList.toggle('cr-e-keyboard', window.innerHeight - height > 120);
+        revealCaret();
+      });
+    }
+    viewport?.addEventListener('resize', updateViewport);
+    viewport?.addEventListener('scroll', updateViewport);
+    window.addEventListener('resize', updateViewport);
     const escape = e => { if (e.key === 'Escape') { e.preventDefault(); finish(); } };
     document.addEventListener('keydown', escape);
     // The toolbar deliberately sits outside contenteditable: iOS blurs when toolbar controls are tapped.
@@ -291,10 +338,12 @@
       status.textContent = 'Sin guardar';
       clearTimeout(timer);
       timer = setTimeout(save, 900);
+      updateViewport();
     }
     title.addEventListener('input', schedule);
     for (const field of [title, editor]) {
       field.addEventListener('focus', () => { if (activeEditor !== field) { activeEditor = field; savedRange = null; toolbarRange = null; } });
+      field.addEventListener('focus', updateViewport);
       field.addEventListener('pointerdown', () => { toolbarRange = null; });
       field.addEventListener('keyup', remember);
       field.addEventListener('pointerup', remember);
@@ -315,9 +364,15 @@
     function cleanup() {
       closed = true;
       clearTimeout(timer);
+      cancelAnimationFrame(viewportFrame);
+      viewport?.removeEventListener('resize', updateViewport);
+      viewport?.removeEventListener('scroll', updateViewport);
+      window.removeEventListener('resize', updateViewport);
       document.removeEventListener('keydown', escape);
       document.removeEventListener('selectionchange', remember);
       overlay.remove();
+      Object.assign(document.body.style, pageStyles);
+      window.scrollTo(pagePosition.x, pagePosition.y);
       if (oldFocus && oldFocus.isConnected && typeof oldFocus.focus === 'function') oldFocus.focus({ preventScroll: true });
     }
     async function finish() {
@@ -328,7 +383,9 @@
       if (ok) cleanup();
       else done.disabled = false;
     }
-    title.focus({ preventScroll: true });
+    updateViewport();
+    // En móvil el teclado se abre solo al tocar el texto que se quiere editar.
+    (matchMedia('(pointer:coarse)').matches ? dialog : title).focus({ preventScroll: true });
     return { close: finish };
   }
   window.KCCPizarraEditor = { open, clean };
