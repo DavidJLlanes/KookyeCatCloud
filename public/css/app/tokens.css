@@ -25,6 +25,7 @@
   --sh-3:0 24px 60px -12px rgba(0,0,0,.7);
   /* Acento por defecto (app.js lo sustituye con applyAccent) */
   --b1:#4f7cff; --b2:#a855f7; --b3:#22d3ee;
+  --ia-accent:#4f7cff; --ia-ink:#ffffff; --ia-glow:0 6px 24px -6px rgba(79,124,255,.6);
   --brand:linear-gradient(135deg,var(--b1),var(--b2));
   --brand-soft:rgba(79,124,255,.16);
   --accent-text:rgb(176,196,255);

@@ -70,11 +70,10 @@
 
 /* Acceso a la IA: píldora con degradado en la barra superior, a la izquierda del perfil. Encoge con la pantalla
    («Preguntar a la IA» → «IA» → solo el icono) para que la barra nunca se desborde. */
-.ia-acceso{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 13px 0 10px;border-radius:999px;border:1px solid transparent;color:#fff;font:inherit;font-weight:650;font-size:calc(13px*var(--fs,1));cursor:pointer;white-space:nowrap;flex:none;
-  background:var(--brand);box-shadow:var(--glow),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .15s,box-shadow .15s,filter .15s;}
+.ia-acceso{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 13px 0 10px;border-radius:999px;border:1px solid transparent;color:var(--ia-ink);font:inherit;font-weight:650;font-size:calc(13px*var(--fs,1));cursor:pointer;white-space:nowrap;flex:none;
+  background:var(--ia-accent);box-shadow:var(--ia-glow),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .15s,box-shadow .15s,filter .15s;}
 .ia-acceso .ico{width:15px;height:15px;flex:none;fill:currentColor;stroke:none;animation:ia-brillo 3.2s ease-in-out infinite;}
-.ia-acceso:hover{filter:brightness(1.1);box-shadow:var(--glow),inset 0 1px 0 rgba(255,255,255,.3);}
-:root[data-theme="monocromo-oscuro"] .ia-acceso{color:#202325;}
+.ia-acceso:hover{filter:brightness(1.1);box-shadow:var(--ia-glow),inset 0 1px 0 rgba(255,255,255,.3);}
 .ia-acceso:active{transform:scale(.96);}
 .ia-corto{display:none;}
 @media (max-width:900px){.ia-largo{display:none;}.ia-corto{display:inline;}.ia-acceso{height:32px;padding:0 11px 0 9px;font-size:calc(12.5px*var(--fs,1));}}

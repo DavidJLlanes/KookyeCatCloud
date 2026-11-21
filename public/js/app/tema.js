@@ -54,6 +54,12 @@ function applyAccent(id, persist) {
   const claro = tema === 'claro' || tema === 'monocromo-claro';
   const monocromo = tema === 'monocromo-oscuro' || tema === 'monocromo-claro';
   const root = document.documentElement.style;
+  // El acceso a IA representa el acento elegido incluso en temas monocromos.
+  const [r, g, b] = rgbOf(a.b1);
+  const luminancia = [r, g, b].map(c => { const s = c / 255; return s <= .04045 ? s / 12.92 : ((s + .055) / 1.055) ** 2.4; });
+  root.setProperty('--ia-accent', a.b1);
+  root.setProperty('--ia-ink', .2126 * luminancia[0] + .7152 * luminancia[1] + .0722 * luminancia[2] <= .183 ? '#ffffff' : '#000000');
+  root.setProperty('--ia-glow', `0 6px 24px -6px ${alpha(a.b1, .6)}`);
   root.setProperty('--b1', monocromo ? (claro ? '#454946' : '#c3c6c2') : a.b1);
   root.setProperty('--b2', monocromo ? (claro ? '#626660' : '#a4a9a6') : a.b2);
   root.setProperty('--b3', monocromo ? (claro ? '#858982' : '#858b88') : a.b3);
