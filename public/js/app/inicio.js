@@ -48,13 +48,16 @@ $('sort-btn').addEventListener('click', e => {
   e.stopPropagation();
   K.menu(e.currentTarget, ORDENES.map(([id, label]) => ({
     label, checked: state.sort === id,
-    onClick: () => { state.sort = id; localStorage.setItem('fc-sort', id); pintaOrden(); render(); },
+    onClick: () => { state.sort = id; state.lastIndex = -1; localStorage.setItem('fc-sort', id); pintaOrden(); render(); },
   })));
 });
 $('type-chips').addEventListener('click', e => {
   const chip = e.target.closest('.chip');
   if (!chip) return;
   state.filter = chip.dataset.type;
+  state.selection.clear();
+  state.lastIndex = -1;
+  updateSelbar();
   document.querySelectorAll('#type-chips .chip').forEach(c => c.classList.toggle('is-active', c === chip));
   render();
 });
@@ -261,6 +264,7 @@ document.querySelectorAll('.overlay').forEach(ov => {
 $('lb-info').addEventListener('click', alternarExif);
 $('btn-agrupar').addEventListener('click', () => {
   state.agrupar = !state.agrupar;
+  state.lastIndex = -1;
   localStorage.setItem('fc-agrupar', state.agrupar ? '1' : '0');
   aplicarBotonAgrupar();
   render();

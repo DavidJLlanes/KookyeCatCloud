@@ -10,3 +10,8 @@
 .copias-hist{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:calc(12.5px*var(--fs,1));}
 .copias-hist li{overflow-wrap:anywhere;color:var(--muted);}
 .copias-hist li.error{color:#f87171;}
+.copias-disponibles{display:grid;gap:8px;margin-top:8px;}
+.copias-dia{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--glass);min-width:0;}
+.copias-dia span{min-width:0;font-size:calc(13px*var(--fs,1));color:var(--text);}
+.copias-dia .btn{flex:none;min-height:38px;padding:7px 12px;}
+.copias-vacia{margin:0;color:var(--muted);font-size:calc(13px*var(--fs,1));}

@@ -35,6 +35,7 @@ function exitSelectMode() {
   if (!state.selectMode && !state.selection.size) return;
   state.selectMode = false;
   state.selection.clear();
+  state.lastIndex = -1;
   $('btn-select').classList.remove('is-active');
   updateSelbar();
   if (state.tab === 'files') render();
@@ -73,7 +74,7 @@ function updateSelbar() {
 })();
 
 function selectedItems() {
-  return state.items.filter(i => state.selection.has(i.rel));
+  return visibleItems().filter(i => state.selection.has(i.rel));
 }
 
 // Guardar en la galería del móvil: se abre la hoja de compartir del sistema (iPhone «Guardar imagen»,
@@ -114,7 +115,9 @@ function downloadRel(rel) {
 async function bulkDelete() {
   const items = selectedItems();
   if (!items.length) return;
-  if (!confirm(`¿Enviar ${items.length} elemento${items.length > 1 ? 's' : ''} a la papelera?`)) return;
+  const names = items.slice(0, 4).map(i => `«${i.name}»`).join(', ');
+  const extra = items.length > 4 ? ` y ${items.length - 4} más` : '';
+  if (!await K.confirmaBorrado(items.map(i => ({ type: 'file', ref: i.rel })), `Se enviarán a la papelera ${items.length} elemento${items.length > 1 ? 's' : ''}: ${names}${extra}.`, { ok: 'A la papelera' })) return;
   try {
     const res = await post(BASE + '/api/batch', { op: 'delete', paths: items.map(i => i.rel) });
     const data = await res.json();

@@ -72,6 +72,20 @@ const rawgSrv = require('http').createServer((rq, rs) => {
     cierto([200, 201].includes((await req('POST', '/api/mkdir', { path: '', name: 'Prueba' })).s), 'mkdir');
     const l = await req('GET', '/api/files?path='); igual(l.s, 200); cierto(JSON.stringify(l.j).includes('Prueba'), 'carpeta no listada');
   });
+  await prueba('archivos: borrar dos carpetas no toca un archivo de la raíz', async () => {
+    for (const name of ['BorradoA', 'BorradoB']) igual((await req('POST', '/api/mkdir', { path: '', name })).s, 200);
+    const raiz = path.join(DATA, 'Conservar-raiz.txt');
+    fs.writeFileSync(raiz, 'contenido que debe sobrevivir');
+    fs.writeFileSync(path.join(DATA, 'BorradoA', 'dentro.txt'), 'dentro');
+    const r = await req('POST', '/api/batch', { op: 'delete', paths: ['BorradoA', 'BorradoB'] });
+    igual(r.s, 200); igual(r.j.done, 2); igual(r.j.errors.length, 0);
+    igual(fs.readFileSync(raiz, 'utf8'), 'contenido que debe sobrevivir');
+    const listado = (await req('GET', '/api/files?path=')).j.items;
+    cierto(listado.some(i => i.name === 'Conservar-raiz.txt' && !i.isDir), 'archivo raíz no visible');
+    const papelera = (await req('GET', '/api/trash')).j.items;
+    cierto(['BorradoA', 'BorradoB'].every(n => papelera.some(i => i.name === n && i.isDir)), 'faltan carpetas en la papelera');
+    fs.rmSync(raiz);
+  });
   let notaId;
   await prueba('notas: crear, leer, guardar, borrar', async () => {
     const c = await req('POST', '/api/notes', { type: 'note', title: 'Humo' }); igual(c.s, 200);
@@ -584,13 +598,30 @@ const rawgSrv = require('http').createServer((rq, rs) => {
     cierto(e && e.ultima, 'sin registro');
     igual(e.ultima.resultado, 'ok', 'resultado: ' + (e.ultima.error || ''));
     cierto(e.archivo && e.archivo.tamano > 0, 'sin archivo');
-    const f = path.join(TMP, 'copias', 'kookyecatcloud-datos.tar.gz');
+    const nombre = `kookyecatcloud-datos-${e.ultima.copia}.tar.gz`;
+    const f = path.join(TMP, 'copias', nombre);
     const lista = execFileSync('tar', ['-tzf', f]).toString();
     cierto(lista.includes('datos/'), 'sin datos'); cierto(lista.includes('app/users.json'), 'sin users.json');
     igual((fs.statSync(f).mode & 0o777).toString(8), '600', 'permisos del archivo');
     igual((fs.statSync(path.join(TMP, 'copias')).mode & 0o777).toString(8), '700', 'permisos de la carpeta');
-    igual(fs.existsSync(path.join(TMP, 'copias', 'kookyecatcloud-datos.tar.gz.tmp')), false, 'no deja temporales');
+    igual(fs.existsSync(f + '.tmp'), false, 'no deja temporales');
     const d = await fetch(BASE + '/api/admin/copias/descarga', { headers: { Cookie: cookie } }); igual(d.status, 200, 'descarga');
+    cierto(e.copias.some(c => c.fecha === e.ultima.copia && c.nombre === nombre), 'copia diaria en el panel');
+    const P = require(path.join(ROOT, 'lib/copias/programa.js'));
+    const ayer = P.ahoraMadrid(new Date(Date.now() - 86400000)).fecha;
+    const archivoAyer = path.join(TMP, 'copias', `kookyecatcloud-datos-${ayer}.tar.gz`);
+    fs.copyFileSync(f, archivoAyer);
+    cierto((await req('GET', '/api/admin/copias')).j.copias.some(c => c.fecha === ayer), 'se conserva la copia de ayer');
+    igual((await req('GET', `/api/admin/copias/descarga?fecha=${ayer}`)).s, 200, 'descargar un día elegido');
+    igual((await req('GET', '/api/admin/copias/descarga?fecha=../../etc/passwd')).s, 400, 'fecha inválida');
+    const antiguo = P.ahoraMadrid(new Date(Date.now() - 16 * 86400000)).fecha;
+    const archivoAntiguo = path.join(TMP, 'copias', `kookyecatcloud-datos-${antiguo}.tar.gz`);
+    fs.copyFileSync(f, archivoAntiguo);
+    igual((await req('POST', '/api/admin/copias', {})).s, 202, 'segunda copia del día');
+    for (let i = 0; i < 240; i++) { await dormir(500); e = (await req('GET', '/api/admin/copias')).j; if (!e.enCurso) break; }
+    igual(e.ultima.resultado, 'ok', 'segunda copia correcta');
+    igual(fs.existsSync(archivoAntiguo), false, 'se purgan las copias de más de dos semanas');
+    cierto(fs.existsSync(archivoAyer) && fs.existsSync(f), 'se conservan días recientes distintos');
     igual((await fetch(BASE + '/api/admin/copias')).status, 401, 'sin sesión');
     igual((await req('GET', '/api/game')).j.recuentos.copias_manuales >= 1, true, 'contador de logros');
   });

@@ -1768,13 +1768,15 @@ usuario (`DATA_DIR`), cuentas (`users.json`), secretos (`.jwt-secret`), comparti
 (`passkeys.json`), enlaces de suscripción del calendario (`ical-tokens.json`) y el `.env`. **No se cifra** y **no se
 incluyen las miniaturas** (se regeneran solas). El código no entra: está en GitHub.
 
-- **Un único archivo**: `kookyecatcloud-datos.tar.gz` en `COPIAS_DIR` (por defecto `/var/backups/kookyecatcloud/`). Cada copia
-  sustituye a la anterior. El registro de intentos está en `estado.json` en la misma carpeta.
+- **Histórico de dos semanas**: un archivo `kookyecatcloud-datos-AAAA-MM-DD.tar.gz` por día de Madrid en `COPIAS_DIR`
+  (por defecto `/var/backups/kookyecatcloud/`). Se conservan los 14 días más recientes. Una nueva copia del mismo día
+  sustituye solo la de ese día, después de verificarse. Desde Administración se puede descargar cualquiera de las disponibles.
+  El archivo anterior sin fecha se migra al día en que se creó.
 - **Cuándo**: a mano con «Crear copia ahora», y cada día a las **3:00** (hora de Madrid). Si la de las 3:00 falla o no
   se hace, reintenta a las **4:00** y a las **5:00**. El programador vive dentro de la propia app: no hay cron ni
   servicios nuevos. Si la app estaba parada en esa franja, la copia se hace al arrancar.
 - **Seguridad del proceso**: se escribe primero en un temporal, se verifica (se puede leer el archivo entero y todos
-  los JSON) y solo entonces sustituye a la anterior. Si algo falla, la copia buena de antes no se toca. Antes de empezar
+  los JSON) y solo entonces publica el archivo de ese día. Si algo falla, las copias buenas anteriores no se tocan. Antes de empezar
   se comprueba que haya espacio libre. Se ejecuta con prioridad baja de CPU y disco.
 - **Avisos**: la tarjeta muestra la última copia correcta o el error de la última fallida, y avisa si la última correcta
   tiene más de 26 horas. Las copias a mano cuentan para el logro «Previsor».
@@ -1787,8 +1789,8 @@ incluyen las miniaturas** (se regeneran solas). El código no entra: está en Gi
 ### Restaurar una copia
 
 1. Para el servicio: `sudo systemctl stop kookyecatcloud`.
-2. Extrae el archivo en una carpeta temporal:
-   `mkdir -p /root/restauracion && tar -xzf /var/backups/kookyecatcloud/kookyecatcloud-datos.tar.gz -C /root/restauracion`.
+2. Elige la fecha en Administración o en `COPIAS_DIR` y extrae ese archivo en una carpeta temporal:
+   `mkdir -p /root/restauracion && tar -xzf /var/backups/kookyecatcloud/kookyecatcloud-datos-AAAA-MM-DD.tar.gz -C /root/restauracion`.
    Dentro hay `datos/` (todo lo de `DATA_DIR`) y `app/` (`.env`, `users.json`, `.jwt-secret`, `passkeys.json`,
    `shares.json`, `ical-tokens.json`).
 3. Aparta lo actual, no lo borres: `sudo mv /var/lib/kookyecatcloud /var/lib/kookyecatcloud.antes`, y después

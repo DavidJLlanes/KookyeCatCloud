@@ -96,21 +96,27 @@ function emptyState(title, sub, iconName) {
   return wrap;
 }
 
+let filesRefreshId = 0;
 async function refresh(opts) {
+  const requestId = ++filesRefreshId;
+  const requestedPath = state.path;
+  const requestedQuery = state.query;
   // silent: actualización en directo por un aviso del servidor; sin esqueleto y sin perder la selección
   const silent = !!(opts && opts.silent === true);
   if (!silent) {
     renderBreadcrumb();
     renderSkeleton();
     state.selection.clear();
+    state.lastIndex = -1;
     updateSelbar();
   }
   try {
-    const url = state.query
-      ? `${BASE}/api/search?q=${qs(state.query)}&path=${qs(state.path)}`
-      : `${BASE}/api/files?path=${qs(state.path)}`;
+    const url = requestedQuery
+      ? `${BASE}/api/search?q=${qs(requestedQuery)}&path=${qs(requestedPath)}`
+      : `${BASE}/api/files?path=${qs(requestedPath)}`;
     const res = await api(url);
     const data = await res.json();
+    if (requestId !== filesRefreshId || requestedPath !== state.path || requestedQuery !== state.query) return;
     if (!res.ok) throw new Error(data.error || 'Error');
     state.truncated = !!data.truncated;
     state.perm = data.perm || null;               // 'read' | 'write' dentro de una carpeta compartida contigo
@@ -118,7 +124,7 @@ async function refresh(opts) {
     // rel = ruta completa relativa a la raíz del usuario; en búsqueda viene el directorio aparte
     state.items = (data.items || []).map(it => ({
       ...it,
-      rel: state.query ? joinPath(it.dir || '', it.name) : joinPath(state.path, it.name),
+      rel: requestedQuery ? joinPath(it.dir || '', it.name) : joinPath(requestedPath, it.name),
     }));
     if (silent) {
       const existen = new Set(state.items.map(i => i.rel));
@@ -129,6 +135,7 @@ async function refresh(opts) {
     if (window.KCC.afterList) window.KCC.afterList(data);
     cargarMetaFotos();          // en segundo plano: la rejilla ya está pintada
   } catch {
+    if (requestId !== filesRefreshId) return;
     if (silent) return;         // un fallo de red en una actualización en directo no debe tapar lo que ya se ve
     const box = $('file-list');
     box.textContent = '';

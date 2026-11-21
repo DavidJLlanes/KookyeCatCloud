@@ -566,13 +566,15 @@
 
       <section class="card" id="copias-card">
         <h3><svg class="ico"><use href="#i-shield"/></svg> Copia de seguridad</h3>
-        <p class="card-sub">Datos de todos los usuarios, archivos, cuentas, secretos y el .env en un único archivo sin cifrar. Cada copia sustituye a la anterior. Se guarda fuera de la web.</p>
+        <p class="card-sub">Una copia diaria de todos los datos durante 14 días. Se guarda fuera de la web.</p>
         <div id="copias-alerta" class="copias-alerta" hidden></div>
         <div id="copias-estado"></div>
         <div class="copias-acc">
           <button class="btn primary" id="copias-crear" type="button">Crear copia ahora</button>
-          <a class="btn" id="copias-bajar" href="#" hidden>Descargar copia</a>
+          <a class="btn" id="copias-bajar" href="#" hidden>Descargar última copia</a>
         </div>
+        <h4 class="ap-h">Copias disponibles</h4>
+        <div class="copias-disponibles" id="copias-disponibles"></div>
         <h4 class="ap-h">Últimos intentos</h4>
         <ol class="copias-hist" id="copias-historial"></ol>
       </section>

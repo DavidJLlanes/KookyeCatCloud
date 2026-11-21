@@ -35,7 +35,20 @@
     const bajar = $c('copias-bajar');
     bajar.hidden = !d.archivo;
     bajar.href = `${BASE}/api/admin/copias/descarga`;
-    bajar.onclick = (e) => { e.preventDefault(); K.guardarUrl('/api/admin/copias/descarga', { nombre: 'kookyecatcloud-datos.tar.gz' }); };
+    bajar.onclick = (e) => { e.preventDefault(); K.guardarUrl('/api/admin/copias/descarga', { nombre: d.copias[0].nombre }); };
+
+    const disponibles = $c('copias-disponibles');
+    disponibles.textContent = '';
+    if (!d.copias.length) disponibles.appendChild(el('p', 'copias-vacia', 'Todavía no hay copias disponibles.'));
+    for (const copia of d.copias) {
+      const fila = el('div', 'copias-dia');
+      fila.appendChild(el('span', null, `${copia.fecha} · ${tam(copia.tamano)}`));
+      const descargar = el('button', 'btn sm', 'Descargar'); descargar.type = 'button';
+      descargar.setAttribute('aria-label', `Descargar copia del ${copia.fecha}`);
+      descargar.addEventListener('click', () => K.guardarUrl(`/api/admin/copias/descarga?fecha=${encodeURIComponent(copia.fecha)}`, { nombre: copia.nombre }));
+      fila.appendChild(descargar);
+      disponibles.appendChild(fila);
+    }
 
     const h = $c('copias-historial');
     h.textContent = '';

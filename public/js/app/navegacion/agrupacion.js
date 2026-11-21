@@ -156,7 +156,10 @@ function onItemClick(item, ev) {
 }
 
 function seleccionarRango(desde, hasta) {
-  const lista = visibleItems();
+  const visibles = visibleItems();
+  const lista = state.agrupar && !state.query
+    ? [...visibles.filter(i => i.isDir), ...visibles.filter(i => !i.isDir).sort((a, b) => fechaDe(b) - fechaDe(a))]
+    : visibles;
   const a = Math.min(desde, hasta), b = Math.max(desde, hasta);
   for (let i = a; i <= b; i++) if (lista[i]) state.selection.add(lista[i].rel);
   updateSelbar();
