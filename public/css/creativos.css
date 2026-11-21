@@ -125,6 +125,7 @@
 .cr-e-status{margin-left:auto;font-size:.73rem;color:#50544c}
 .cr-e-button,.cr-e-heading{font-family:inherit;background:#ffffff8c!important;background-image:none!important;color:#282925!important;-webkit-text-fill-color:#282925!important;border:1px solid #00000027!important;border-radius:10px;box-shadow:none!important;padding:7px 9px;min-width:38px;min-height:37px;font-size:14px;font-weight:700;cursor:pointer}
 .cr-e-button:focus-visible,.cr-e-heading:focus-visible{outline:2px solid #555c4c;outline-offset:2px}
+.cr-e-toolbar .cr-e-button[aria-pressed="true"]{background:#353b36!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#353b36!important}
 .cr-e-header .cr-e-done{color:#fff!important;-webkit-text-fill-color:#fff!important;background:#353b36!important;border-color:#353b36!important;min-width:72px}
 .cr-e-toolbar{flex:none;display:flex;align-items:center;flex-wrap:wrap;gap:5px;padding:10px 13px;background:#ffffff35;border-bottom:1px solid #00000012}
 .cr-e-toolbar .cr-e-heading{min-width:92px;max-width:110px;font-weight:600}
@@ -154,3 +155,39 @@
  .cr-e-palette{gap:10px;padding:12px 8px}
  .cr-e-palette .cr-e-swatch{width:30px;height:30px;min-width:30px;min-height:30px}
 }
+
+/* Cuaderno: mismo sistema de superficies, controles y foco que el resto de la app. */
+.cr-dibujos .cr-head{margin-bottom:20px}
+.cr-dibujos .cr-head h2{font-size:clamp(1.5rem,3vw,2rem);letter-spacing:-.035em}
+.cr-sub{margin:4px 0 0;color:var(--muted);font-size:.92rem}
+.cr-d-layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:18px;align-items:start}
+.cr-d-sidebar,.cr-d-workspace{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh-1)}
+.cr-d-sidebar{padding:16px;position:sticky;top:80px}
+.cr-d-sidebar h3{font-size:.85rem;margin:0 0 12px;color:var(--muted)}
+.cr-d-list{display:grid;gap:6px;max-height:60vh;overflow:auto}
+.cr-d-gallery-item{width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:10px;padding:10px 11px;color:var(--text);font:inherit;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cr-d-gallery-item:hover{background:var(--surface-2)}
+.cr-d-gallery-item.is-active{background:var(--brand-soft);border-color:var(--accent-line);color:var(--accent-text)}
+.cr-d-gallery-item:focus-visible,.cr-dibujos button:focus-visible{outline:2px solid var(--accent-strong);outline-offset:2px}
+.cr-d-empty{font-size:.85rem;color:var(--muted);line-height:1.5}
+.cr-d-workspace{overflow:hidden}
+.cr-d-top{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.cr-d-top label{font-size:.85rem;color:var(--muted);font-weight:700}
+.cr-d-top input{flex:1;min-width:180px;background:var(--surface-2);color:var(--text);border:1px solid var(--line-2);border-radius:10px;padding:9px 11px;font:inherit}
+.cr-d-top [role=status]{font-size:.8rem;color:var(--muted)}
+.cr-d-tools{display:flex;align-items:center;flex-wrap:wrap;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line)}
+.cr-d-tools label{display:flex;align-items:center;gap:8px;font-size:.85rem;font-weight:650;color:var(--muted)}
+.cr-d-tools input[type=color]{width:38px;height:34px;border:1px solid var(--line);border-radius:9px;padding:2px;background:var(--surface-2);cursor:pointer}
+.cr-d-tools input[type=range]{width:110px;accent-color:var(--accent)}
+.cr-d-tools output{min-width:35px;font-variant-numeric:tabular-nums}
+.cr-d-tools #cr-d-eraser[aria-pressed=true]{background:var(--brand-soft);border-color:var(--accent-line);color:var(--accent-text)}
+.cr-d-paper{padding:16px;background:var(--surface-2)}
+.cr-dibujos .cr-canvas{border-radius:10px;box-shadow:var(--sh-1);border-color:var(--line);cursor:crosshair}
+.cr-d-footer{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;padding:14px 18px}
+.cr-d-footer>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cr-d-footer span{color:var(--muted);font-size:.8rem;margin-left:4px}
+.cr-d-footer .cr-d-delete{color:var(--bad,#d66b75)}
+.cr-dibujos button:disabled{opacity:.48;cursor:not-allowed}
+.cr-p-new-ui .cr-p-empty:not([hidden]){border:1px dashed var(--line-2);border-radius:18px;background:var(--surface);padding:48px 20px;margin:0}
+@media(max-width:850px){.cr-d-layout{grid-template-columns:1fr}.cr-d-sidebar{position:static;padding:12px}.cr-d-sidebar h3{margin-bottom:8px}.cr-d-list{display:flex;overflow:auto;max-height:none}.cr-d-gallery-item{width:auto;min-width:120px;max-width:220px;flex:none}}
+@media(max-width:600px){.cr-d-top,.cr-d-tools,.cr-d-footer{padding:12px}.cr-d-paper{padding:8px}.cr-d-footer>div{width:100%}.cr-d-footer .btn{flex:1}.cr-d-footer span{flex-basis:100%}}

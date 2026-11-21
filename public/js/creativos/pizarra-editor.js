@@ -5,7 +5,7 @@
     ['crema', 'Crema'], ['amarillo', 'Amarillo'], ['rosa', 'Rosa'],
     ['menta', 'Menta'], ['azul', 'Azul'], ['lavanda', 'Lavanda']
   ];
-  const TAGS = new Set(['DIV', 'P', 'BR', 'H1', 'H2', 'H3', 'B', 'STRONG', 'I', 'EM', 'U', 'S', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'SPAN']);
+  const TAGS = new Set(['DIV', 'P', 'BR', 'H1', 'H2', 'H3', 'B', 'STRONG', 'I', 'EM', 'U', 'S', 'STRIKE', 'DEL', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'SPAN']);
   function clean(html) {
     const doc = new DOMParser().parseFromString('<section>' + String(html || '') + '</section>', 'text/html');
     const area = doc.body.firstElementChild;
@@ -18,13 +18,30 @@
           continue;
         }
         const align = child.style.textAlign;
+        const weight = child.style.fontWeight;
+        const italic = child.style.fontStyle === 'italic';
+        const decoration = child.style.textDecorationLine || child.style.textDecoration;
         for (const attr of [...child.attributes]) child.removeAttribute(attr.name);
         if (['left', 'center', 'right', 'justify'].includes(align)) child.style.textAlign = align;
         walk(child);
+        if (child.tagName === 'STRIKE' || child.tagName === 'DEL') {
+          const strike = doc.createElement('s');
+          strike.append(...child.childNodes);
+          child.replaceWith(strike);
+          continue;
+        }
+        let contents = [...child.childNodes];
+        for (const [enabled, tag] of [[weight === 'bold' || Number(weight) >= 600, 'strong'], [italic, 'em'], [decoration.includes('underline'), 'u'], [decoration.includes('line-through'), 's']]) {
+          if (!enabled || !contents.length) continue;
+          const wrapper = doc.createElement(tag);
+          wrapper.append(...contents);
+          child.append(wrapper);
+          contents = [wrapper];
+        }
       }
     }
     walk(area);
-    return area.innerHTML.slice(0, 100000);
+    return area.innerHTML;
   }
   function make(tag, cls, label) {
     const elem = document.createElement(tag);
@@ -62,7 +79,10 @@
     title.value = item.titulo === 'Nueva nota' ? '' : item.titulo || '';
     const editor = make('div', 'cr-e-content');
     editor.contentEditable = 'true';
+    editor.spellcheck = true;
+    editor.lang = 'es';
     editor.setAttribute('role', 'textbox');
+    editor.setAttribute('aria-multiline', 'true');
     editor.setAttribute('aria-label', 'Contenido de la nota');
     editor.dataset.placeholder = 'Escribe una nota…';
     editor.innerHTML = clean(item.contenido);
@@ -73,7 +93,8 @@
     palette.setAttribute('role', 'group');
     palette.setAttribute('aria-label', 'Color de la nota');
     const foot = make('footer', 'cr-e-footer');
-    const remove = button('Eliminar', 'Eliminar esta nota', async () => {
+    const remove = button(item.id ? 'Eliminar' : 'Descartar', 'Eliminar esta nota', async () => {
+      if (!item.id) { cleanup(); return; }
       if (!window.confirm('¿Eliminar esta nota?')) return;
       try {
         await K.del('/api/creativos/pizarra/' + encodeURIComponent(item.id));
@@ -93,7 +114,8 @@
     let saving = false;
     let pending = false;
     let closed = false;
-    let last = JSON.stringify(values());
+    let last = item.id ? JSON.stringify(values()) : null;
+    const formatButtons = [];
     const escape = e => { if (e.key === 'Escape') { e.preventDefault(); finish(); } };
     document.addEventListener('keydown', escape);
     // The toolbar deliberately sits outside contenteditable: iOS blurs when toolbar controls are tapped.
@@ -102,29 +124,38 @@
       const selection = window.getSelection();
       if (selection && selection.rangeCount && editor.contains(selection.anchorNode) && editor.contains(selection.focusNode)) {
         savedRange = selection.getRangeAt(0).cloneRange();
+        updateToolbar();
       }
     }
     function restore() {
+      const range = savedRange && editor.contains(savedRange.startContainer) && editor.contains(savedRange.endContainer)
+        ? savedRange.cloneRange() : null;
       editor.focus({ preventScroll: true });
-      if (savedRange) {
-        try {
-          const sel = window.getSelection();
-          sel.removeAllRanges();
-          sel.addRange(savedRange);
-        } catch { /* The note may have changed in the meantime. */ }
-      }
+      const selection = window.getSelection();
+      if (!selection) return;
+      const target = range || document.createRange();
+      if (!range) { target.selectNodeContents(editor); target.collapse(false); }
+      selection.removeAllRanges();
+      selection.addRange(target);
     }
     function format(command, value) {
       restore();
-      document.execCommand(command, false, value);
+      // El editor de Documentos activa styleWithCSS globalmente. Aquí se guardan etiquetas semánticas.
+      document.execCommand('styleWithCSS', false, false);
+      const applied = document.execCommand(command, false, value);
       remember();
-      schedule();
+      if (applied) schedule();
+      else status.textContent = 'No se pudo aplicar el formato';
     }
     function control(label, tooltip, command, value) {
       const b = button(label, tooltip, () => format(command, value));
       // On desktop maintain the selection; on touch we restore the range after the tap.
       b.addEventListener('mousedown', e => { remember(); e.preventDefault(); });
       b.addEventListener('touchstart', remember, { passive: true });
+      b.addEventListener('pointerdown', remember);
+      b.dataset.command = command;
+      b.setAttribute('aria-pressed', 'false');
+      formatButtons.push(b);
       toolbar.append(b);
     }
     const heading = make('select', 'cr-e-heading');
@@ -136,7 +167,7 @@
     }
     heading.addEventListener('touchstart', remember, { passive: true });
     heading.addEventListener('mousedown', remember);
-    heading.addEventListener('change', () => { format('formatBlock', '<' + heading.value + '>'); heading.value = 'p'; });
+    heading.addEventListener('change', () => { format('formatBlock', heading.value); });
     toolbar.append(heading);
     control('B', 'Negrita', 'bold');
     control('I', 'Cursiva', 'italic');
@@ -144,10 +175,22 @@
     control('S', 'Tachado', 'strikeThrough');
     control('•', 'Viñetas', 'insertUnorderedList');
     control('1.', 'Lista numerada', 'insertOrderedList');
-    control('≡', 'Alinear izquierda', 'justifyLeft');
-    control('≡', 'Centrar texto', 'justifyCenter');
-    control('≡', 'Alinear derecha', 'justifyRight');
+    control('↤', 'Alinear izquierda', 'justifyLeft');
+    control('↔', 'Centrar texto', 'justifyCenter');
+    control('↦', 'Alinear derecha', 'justifyRight');
     control('☷', 'Justificar texto', 'justifyFull');
+    function updateToolbar() {
+      for (const b of formatButtons) {
+        let pressed = false;
+        try { pressed = document.queryCommandState(b.dataset.command); } catch { /* navegador sin estado */ }
+        b.setAttribute('aria-pressed', String(pressed));
+      }
+      const selection = window.getSelection();
+      const node = selection?.anchorNode;
+      const element = node?.nodeType === 1 ? node : node?.parentElement;
+      const block = element?.closest('h1,h2,h3');
+      heading.value = block && editor.contains(block) ? block.tagName.toLowerCase() : 'p';
+    }
     const swatches = [];
     for (const [id, name] of COLORS) {
       const swatch = button('', 'Color ' + name, () => {
@@ -186,11 +229,19 @@
         pending = false;
         const payload = values();
         const snapshot = JSON.stringify(payload);
-        if (snapshot === last) break;
+        if (snapshot === last || (!item.id && !title.value.trim() && !editor.textContent.trim())) break;
+        if (payload.contenido.length > 100000) {
+          status.textContent = 'Nota demasiado larga';
+          ok = false;
+          break;
+        }
         status.textContent = 'Guardando…';
         try {
-          const response = await K.put('/api/creativos/pizarra/' + encodeURIComponent(item.id), payload);
+          const response = item.id
+            ? await K.put('/api/creativos/pizarra/' + encodeURIComponent(item.id), payload)
+            : await K.post('/api/creativos/pizarra', payload);
           Object.assign(item, response.item);
+          remove.textContent = 'Eliminar';
           last = snapshot;
           onSaved(item);
         } catch (error) {

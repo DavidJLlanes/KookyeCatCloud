@@ -330,6 +330,20 @@ const rawgSrv = require('http').createServer((rq, rs) => {
     const r = await req('POST', '/api/prompts/export', { format: 'md' }); igual(r.s, 200); cierto(r.t.includes('Haz una web'), 'sin el prompt');
   });
   await prueba('logros', async () => { cierto((await req('GET', '/api/game')).s < 500, 'game'); });
+  await prueba('creativos: guardar, contar y borrar contenido real', async () => {
+    const nota = await req('POST', '/api/creativos/pizarra', { titulo: 'Nueva nota', contenido: '', color: 'amarillo' });
+    igual(nota.s, 201);
+    igual((await req('GET', '/api/game')).j.recuentos.cr_postits, 0, 'nota vacía');
+    igual((await req('PUT', '/api/creativos/pizarra/' + nota.j.item.id, { titulo: 'Idea', contenido: '<p>Hola</p>', color: 'menta' })).s, 200);
+    igual((await req('GET', '/api/game')).j.recuentos.cr_postits, 1, 'nota con contenido');
+    const dibujo = await req('POST', '/api/creativos/dibujos', { titulo: 'Prueba', contenido: [{ color: '#303030', grosor: 5, puntos: [[0.2, 0.3]] }] });
+    igual(dibujo.s, 201);
+    const recuentos = (await req('GET', '/api/game')).j.recuentos;
+    igual(recuentos.cr_dibujos, 1); igual(recuentos.cr_trazos, 1);
+    igual((await req('DELETE', '/api/creativos/dibujos/' + dibujo.j.item.id)).s, 200);
+    igual((await req('DELETE', '/api/creativos/pizarra/' + nota.j.item.id)).s, 200);
+    igual((await req('GET', '/api/game')).j.recuentos.cr_dibujos, 0);
+  });
   await prueba('exportar JSON de una sección y de todo', async () => {
     cierto((await req('GET', '/api/export/contactos')).s < 500, 'sección');
     cierto((await req('GET', '/api/admin/export-all')).s === 200, 'todo');

@@ -96,15 +96,19 @@
     } catch (error) { K.fail(error); }
     finally { loading = false; }
   }
-  root.querySelector('#cr-p-new').addEventListener('click', async () => {
-    try {
-      const result = await K.post('/api/creativos/pizarra', { titulo: 'Nueva nota', color: 'amarillo', contenido: '' });
-      items.unshift(result.item);
-      const card = preview(result.item);
-      board.prepend(card);
+  root.querySelector('#cr-p-new').addEventListener('click', () => {
+    let card;
+    edit({ titulo: '', color: 'amarillo', contenido: '' }, saved => {
+      const next = preview(saved);
+      if (card) card.replaceWith(next);
+      else { items.unshift(saved); board.prepend(next); }
+      card = next;
       refreshEmpty();
-      card.click();
-    } catch (error) { K.fail(error); }
+    }, removed => {
+      items = items.filter(item => item.id !== removed.id);
+      card?.remove();
+      refreshEmpty();
+    });
   });
   K.registerView('pizarra', { open: load, close() {
     const done = document.querySelector('.cr-e-overlay .cr-e-done');
