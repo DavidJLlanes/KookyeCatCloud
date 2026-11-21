@@ -25,7 +25,7 @@
     if (text !== undefined) el.textContent = text;
     return el;
   };
-  root.innerHTML = '<div class="cr-wrap cr-pizarra cr-p-new-ui"><header class="cr-head cr-p-head"><div><h2>Pizarra</h2><p class="cr-p-sub">Tus ideas, de un vistazo</p></div><button type="button" id="cr-p-new" class="btn primary">+ Nueva nota</button></header><div class="cr-p-density"><span class="cr-p-density-label">Vista</span><div id="cr-p-columns" role="group" aria-label="Columnas de notas"></div></div><div class="cr-board" id="cr-p-board"></div><p class="cr-p-empty" id="cr-p-empty" hidden>Tu pizarra está vacía. Añade tu primera nota.</p></div>';
+  root.innerHTML = '<div class="cr-wrap cr-pizarra cr-p-new-ui"><header class="cr-head cr-p-head"><div><h2>Pizarra</h2><p class="cr-p-sub">Tus ideas, de un vistazo</p></div><button type="button" id="cr-p-new" class="btn primary">+ Nueva nota</button></header><div class="cr-p-density"><div class="cr-p-density-heading"><span class="cr-p-density-label">ORGANIZA TU ESPACIO</span><strong>Vista de notas</strong><span id="cr-p-total" class="cr-p-total"></span></div><div id="cr-p-columns" role="group" aria-label="Columnas de notas"></div></div><div class="cr-board" id="cr-p-board"></div><p class="cr-p-empty" id="cr-p-empty" hidden>Tu pizarra está vacía. Añade tu primera nota.</p></div>';
   const board = root.querySelector('#cr-p-board');
   const empty = root.querySelector('#cr-p-empty');
   const controls = root.querySelector('#cr-p-columns');
@@ -46,7 +46,9 @@
       glyph.setAttribute('aria-hidden', 'true');
       glyph.style.setProperty('--glyph-cols', String(count));
       for (let i = 0; i < count; i++) glyph.append(node('i'));
-      btn.append(glyph);
+      const label = node('span', 'cr-p-layout-count', String(count));
+      label.append(node('small', '', count === 1 ? 'columna' : 'columnas'));
+      btn.append(glyph, label);
       btn.addEventListener('click', () => {
         const mode = mobile.matches ? 'mobile' : 'desktop';
         columns[mode] = count;
@@ -59,7 +61,11 @@
   if (mobile.addEventListener) mobile.addEventListener('change', layout);
   else mobile.addListener(layout);
   layout();
-  function refreshEmpty() { empty.hidden = board.children.length > 0; }
+  function refreshEmpty() {
+    const count = board.children.length;
+    empty.hidden = count > 0;
+    root.querySelector('#cr-p-total').textContent = count + (count === 1 ? ' nota' : ' notas');
+  }
   function preview(item) {
     const card = node('button', 'cr-postit cr-p-preview');
     card.type = 'button';

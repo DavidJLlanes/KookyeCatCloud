@@ -42,6 +42,10 @@ async function prueba(browser, mobile) {
   await page.locator('.cr-e-content').fill('Hola mundo');
   await selecciona(page, 5, 10);
   const bold = page.getByRole('button', { name: 'Negrita' });
+  await page.evaluate((touch) => {
+    const button = document.querySelector('[aria-label="Negrita"]');
+    button.addEventListener(touch ? 'touchstart' : 'mousedown', () => getSelection().collapseToEnd(), { capture: true, once: true });
+  }, mobile);
   if (mobile) await bold.tap(); else await bold.click();
   assert.match(await page.locator('.cr-e-content').evaluate(el => el.innerHTML), /<b>mundo<\/b>/);
   assert.equal(await bold.getAttribute('aria-pressed'), 'true');

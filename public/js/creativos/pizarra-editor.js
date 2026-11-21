@@ -110,6 +110,7 @@
     document.body.append(overlay);
     const oldFocus = document.activeElement;
     let savedRange = null;
+    let toolbarRange = null;
     let timer = 0;
     let saving = false;
     let pending = false;
@@ -123,13 +124,25 @@
     function remember() {
       const selection = window.getSelection();
       if (selection && selection.rangeCount && editor.contains(selection.anchorNode) && editor.contains(selection.focusNode)) {
+        // Al tocar una herramienta algunos navegadores colapsan la selección antes del click.
+        if (toolbarRange) return;
         savedRange = selection.getRangeAt(0).cloneRange();
         updateToolbar();
       }
     }
+    function captureForToolbar() {
+      const selection = window.getSelection();
+      if (selection?.rangeCount && editor.contains(selection.anchorNode) && editor.contains(selection.focusNode) && !selection.isCollapsed) {
+        toolbarRange = selection.getRangeAt(0).cloneRange();
+      } else if (!toolbarRange && savedRange && !savedRange.collapsed) {
+        toolbarRange = savedRange.cloneRange();
+      }
+    }
     function restore() {
-      const range = savedRange && editor.contains(savedRange.startContainer) && editor.contains(savedRange.endContainer)
-        ? savedRange.cloneRange() : null;
+      const candidate = toolbarRange || savedRange;
+      toolbarRange = null;
+      const range = candidate && editor.contains(candidate.startContainer) && editor.contains(candidate.endContainer)
+        ? candidate.cloneRange() : null;
       editor.focus({ preventScroll: true });
       const selection = window.getSelection();
       if (!selection) return;
@@ -149,10 +162,10 @@
     }
     function control(label, tooltip, command, value) {
       const b = button(label, tooltip, () => format(command, value));
-      // On desktop maintain the selection; on touch we restore the range after the tap.
-      b.addEventListener('mousedown', e => { remember(); e.preventDefault(); });
-      b.addEventListener('touchstart', remember, { passive: true });
-      b.addEventListener('pointerdown', remember);
+      // pointerdown ocurre antes de que el botón robe el foco, incluso en pantallas táctiles.
+      b.addEventListener('pointerdown', captureForToolbar);
+      b.addEventListener('mousedown', e => { captureForToolbar(); e.preventDefault(); });
+      b.addEventListener('touchstart', captureForToolbar, { passive: true });
       b.dataset.command = command;
       b.setAttribute('aria-pressed', 'false');
       formatButtons.push(b);
@@ -165,8 +178,9 @@
       opt.value = value;
       heading.append(opt);
     }
-    heading.addEventListener('touchstart', remember, { passive: true });
-    heading.addEventListener('mousedown', remember);
+    heading.addEventListener('pointerdown', captureForToolbar);
+    heading.addEventListener('touchstart', captureForToolbar, { passive: true });
+    heading.addEventListener('mousedown', captureForToolbar);
     heading.addEventListener('change', () => { format('formatBlock', heading.value); });
     toolbar.append(heading);
     control('B', 'Negrita', 'bold');
@@ -263,6 +277,8 @@
     }
     title.addEventListener('input', schedule);
     editor.addEventListener('input', schedule);
+    editor.addEventListener('pointerdown', () => { toolbarRange = null; });
+    editor.addEventListener('keydown', () => { toolbarRange = null; });
     editor.addEventListener('keyup', remember);
     editor.addEventListener('pointerup', remember);
     editor.addEventListener('touchend', remember, { passive: true });
