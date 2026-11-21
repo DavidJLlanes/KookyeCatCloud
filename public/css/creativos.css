@@ -223,3 +223,7 @@
 .kcc-section-secondary p{margin:0;color:var(--muted);font-size:.85rem;}
 .kcc-section-secondary .kv-search{min-width:min(220px,100%);max-width:440px;}
 @media(max-width:700px){.kcc-section-head{gap:8px!important}.kcc-section-head>div:not(:first-child):last-child{gap:8px}.kcc-section-head .btn.primary{font-size:.85rem;padding:8px 11px}.kcc-section-secondary .kv-search{flex:1 1 100%;max-width:none}}
+.kcc-search-actions{flex-wrap:nowrap;}
+.kcc-search-actions .kv-search{flex:1 1 auto;min-width:0;max-width:440px;}
+.kcc-search-actions>.btn.icon{flex:0 0 42px;width:42px;min-width:42px;min-height:42px;display:grid;place-items:center;margin:0;}
+@media(max-width:700px){.kcc-search-actions .kv-search{flex:1 1 auto;min-width:0;max-width:none;}}

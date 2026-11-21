@@ -24,7 +24,7 @@
     const nuevo = el('button', 'btn primary'); nuevo.type = 'button'; nuevo.append(icon('i-plus'), el('span', 'lbl', 'Nuevo contacto'));
     const mas = el('button', 'btn ghost icon'); mas.type = 'button'; mas.appendChild(icon('i-dots')); mas.title = 'Importar, exportar y más';
     const actions = el('div'); actions.appendChild(nuevo);
-    const secondary = el('div', 'kcc-section-secondary'); secondary.append(search, mas);
+    const secondary = el('div', 'kcc-section-secondary kcc-search-actions'); secondary.append(search, mas);
     head.append(t, actions);
 
     const wrap = el('div', 'pr');

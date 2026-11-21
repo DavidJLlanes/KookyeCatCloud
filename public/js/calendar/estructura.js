@@ -29,7 +29,7 @@
     ], { align: 'end' }));
     mas.title = 'Importar, exportar y más';
     const actions = el('div'); actions.appendChild(nuevo);
-    const secondary = el('div', 'kcc-section-secondary'); secondary.append(search, mas);
+    const secondary = el('div', 'kcc-section-secondary kcc-search-actions'); secondary.append(search, mas);
     head.append(t, actions);
 
     const cal = el('div', 'cal');

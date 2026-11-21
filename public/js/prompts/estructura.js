@@ -23,7 +23,7 @@
     vista.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg>';
     const mas = el('button', 'btn ghost icon'); mas.type = 'button'; mas.appendChild(icon('i-dots')); mas.title = 'Importar, exportar y más';
     const actions = el('div', 'pr-head-actions'); actions.append(vista, nuevo);
-    const secondary = el('div', 'kcc-section-secondary'); secondary.append(search, mas);
+    const secondary = el('div', 'kcc-section-secondary kcc-search-actions'); secondary.append(search, mas);
     head.classList.add('pr-head', 'kcc-section-head'); head.append(t, actions);
     const updateColumns = () => {
       const mode = mobileColumns.matches ? 'mobile' : 'desktop', n = S.columns[mode], max = mobileColumns.matches ? 3 : 5;
