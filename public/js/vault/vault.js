@@ -40,12 +40,12 @@
   /* ---------- Estructura ---------- */
   function build() {
     const v = $('view-vault'); v.textContent = '';
-    const cab = el('div', 'kv-head');
+    const cab = el('div', 'kv-head kcc-section-head');
     const t = el('div'); t.append(el('h2', null, 'Caja fuerte'), el('p', 'sub', 'Archivos cifrados con una contraseña distinta a la de tu cuenta'));
     const cuerpo = el('div', 'vt-body');
-    cab.append(t, el('span', 'grow'));
-    R.acc = el('div', 'k-row'); cab.appendChild(R.acc);
-    v.append(cab, cuerpo);
+    cab.append(t);
+    R.acc = el('div', 'k-row kcc-section-secondary');
+    v.append(cab, R.acc, cuerpo);
     R.cuerpo = cuerpo;
     S.built = true;
   }

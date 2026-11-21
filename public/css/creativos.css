@@ -213,3 +213,13 @@
  .cr-d-editor-foot{padding:10px 12px;gap:8px}.cr-d-editor-foot>div{width:100%;gap:6px}.cr-d-editor-foot .btn{flex:1;padding:8px;font-size:.8rem}
 }
 .cr-p-new-ui .cr-p-empty:not([hidden]){border:1px dashed var(--line-2);border-radius:18px;background:var(--surface);padding:48px 20px;margin:0}
+/* Jerarquía uniforme de cabeceras: título | vista + acción principal; el resto, debajo. */
+.kcc-section-head{display:flex!important;align-items:center!important;justify-content:space-between!important;flex-wrap:nowrap!important;gap:12px!important;margin-bottom:12px!important;min-width:0;}
+.kcc-section-head>div:first-child{min-width:0;}
+.kcc-section-head h1,.kcc-section-head h2{margin:0;font-size:clamp(1.5rem,3vw,2rem);font-weight:750;letter-spacing:-.035em;line-height:1.2;}
+.kcc-section-head>div:not(:first-child):last-child{display:flex;align-items:center;justify-content:flex-end;flex-wrap:nowrap;gap:8px;min-width:0;flex:none;}
+.kcc-section-head .btn.primary{min-height:42px;padding:8px 16px;border-radius:14px;font-weight:700;white-space:nowrap;}
+.kcc-section-secondary{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 16px;min-width:0;}
+.kcc-section-secondary p{margin:0;color:var(--muted);font-size:.85rem;}
+.kcc-section-secondary .kv-search{min-width:min(220px,100%);max-width:440px;}
+@media(max-width:700px){.kcc-section-head{gap:8px!important}.kcc-section-head>div:not(:first-child):last-child{gap:8px}.kcc-section-head .btn.primary{font-size:.85rem;padding:8px 11px}.kcc-section-secondary .kv-search{flex:1 1 100%;max-width:none}}

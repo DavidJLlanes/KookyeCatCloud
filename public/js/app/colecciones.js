@@ -62,6 +62,7 @@ function pintarColSubnav() {
   document.querySelectorAll('#col-subnav .chip').forEach(c => c.classList.toggle('is-active', c.dataset.col === COL.modo));
   $('col-favoritos').hidden = COL.modo !== 'favoritos';
   $('col-albumes').hidden = COL.modo !== 'albumes';
+  $('btn-nuevo-album').hidden = COL.modo !== 'albumes';
   $('col-fotos').hidden = COL.modo !== 'timeline' && COL.modo !== 'smart';
 }
 
@@ -148,7 +149,7 @@ async function cargarFavoritos() {
 }
 
 async function cargarAlbumes() {
-  $('albums-toolbar').hidden = false;
+  $('btn-nuevo-album').hidden = false;
   $('albums-grid').hidden = false;
   $('album-detalle').hidden = true;
   const grid = $('albums-grid');
@@ -187,7 +188,7 @@ function buildAlbumTile(album) {
 
 async function abrirAlbum(id) {
   COL.albumAbierto = id;
-  $('albums-toolbar').hidden = true;
+  $('btn-nuevo-album').hidden = true;
   $('albums-grid').hidden = true;
   $('album-detalle').hidden = false;
   const box = $('album-items');

@@ -249,16 +249,18 @@
 
   <!-- ---- Vista archivos ---- -->
   <main class="wrap" id="view-files">
+    <header class="kcc-section-head"><div><h2>Archivos</h2></div><div>
+      <button class="kcc-columns-toggle" id="btn-file-columns" type="button" aria-label="Cambiar vista de archivos"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg></button>
+      <button class="btn primary" id="btn-upload"><svg class="ico"><use href="#i-upload"/></svg><span class="lbl">Subir archivos</span></button>
+    </div></header>
     <div class="subbar">
       <nav class="crumbs" id="breadcrumb" aria-label="Ruta actual"></nav>
-            <div class="subbar-acciones">
+      <div class="subbar-acciones">
         <button class="btn ghost icon" id="btn-agrupar" title="Agrupar por meses" aria-label="Agrupar por meses"><svg class="ico"><use href="#i-calendar"/></svg></button>
       </div>
     </div>
 
-    <div class="toolbar">
-      <button class="kcc-columns-toggle" id="btn-file-columns" type="button" aria-label="Cambiar vista de archivos"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg></button>
-      <button class="btn primary" id="btn-upload"><svg class="ico"><use href="#i-upload"/></svg><span class="lbl">Subir archivos</span></button>
+    <div class="toolbar kcc-section-secondary">
       <button class="btn" id="btn-newfolder"><svg class="ico"><use href="#i-folder-plus"/></svg><span class="lbl">Nueva carpeta</span></button>
       <button class="btn ghost icon" id="btn-refresh" title="Actualizar" aria-label="Actualizar"><svg class="ico"><use href="#i-refresh"/></svg></button>
       <button class="btn ghost icon" id="btn-select" title="Seleccionar varios" aria-label="Seleccionar varios"><svg class="ico"><use href="#i-check-square"/></svg></button>
@@ -366,13 +368,12 @@
 
   <!-- ---- Vista mapa ---- -->
   <main class="wrap" id="view-map" hidden>
-    <div class="view-head">
+    <div class="view-head kcc-section-head">
       <div>
         <h2>Mapa de fotos</h2>
-        <p id="map-resumen">Cargando ubicaciones…</p>
       </div>
-      <button class="btn" id="btn-map-refresh"><svg class="ico"><use href="#i-refresh"/></svg><span class="lbl">Actualizar</span></button>
     </div>
+    <div class="kcc-section-secondary"><button class="btn" id="btn-map-refresh"><svg class="ico"><use href="#i-refresh"/></svg><span class="lbl">Actualizar</span></button><p id="map-resumen">Cargando ubicaciones…</p></div>
     <div class="mapa-caja">
       <div id="mapa"></div>
       <div class="mapa-vacio" id="mapa-vacio" hidden></div>
@@ -381,13 +382,12 @@
 
   <!-- ---- Vista papelera ---- -->
   <main class="wrap" id="view-trash" hidden>
-    <div class="view-head">
+    <div class="view-head kcc-section-head">
       <div>
         <h2>Papelera</h2>
-        <p id="trash-note">Los elementos se borran solos pasados 30 días</p>
       </div>
-      <button class="btn" id="btn-empty-trash"><svg class="ico"><use href="#i-trash"/></svg><span class="lbl">Vaciar</span></button>
     </div>
+    <div class="kcc-section-secondary"><button class="btn" id="btn-empty-trash"><svg class="ico"><use href="#i-trash"/></svg><span class="lbl">Vaciar</span></button><p id="trash-note">Los elementos se borran solos pasados 30 días</p></div>
     <div class="trash-auto">
       <label for="trash-days">Vaciar solo lo borrado tras</label>
       <select id="trash-days" aria-label="Días hasta el vaciado automático de la papelera"></select>
@@ -398,9 +398,10 @@
 
   <!-- ---- Vista colecciones (favoritos y álbumes) ---- -->
   <main class="wrap" id="view-colecciones" hidden>
-    <div class="view-head">
+    <div class="view-head kcc-section-head">
       <div><h2>Colecciones</h2></div>
-      <button class="kcc-columns-toggle" id="btn-collection-columns" type="button" aria-label="Cambiar columnas de colecciones"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg></button>
+      <div><button class="kcc-columns-toggle" id="btn-collection-columns" type="button" aria-label="Cambiar columnas de colecciones"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg></button>
+      <button class="btn primary" id="btn-nuevo-album" hidden><svg class="ico"><use href="#i-plus"/></svg><span class="lbl">Nuevo álbum</span></button></div>
     </div>
     <div class="chips" id="col-subnav">
       <button class="chip is-active" data-col="favoritos">Favoritos</button>
@@ -416,10 +417,6 @@
     </div>
 
     <div id="col-albumes" hidden>
-      <div class="toolbar" id="albums-toolbar">
-        <button class="btn primary" id="btn-nuevo-album"><svg class="ico"><use href="#i-plus"/></svg><span class="lbl">Nuevo álbum</span></button>
-        <span class="spacer"></span>
-      </div>
       <div id="albums-grid" class="grid"></div>
 
       <div id="album-detalle" hidden>

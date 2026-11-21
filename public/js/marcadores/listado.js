@@ -39,7 +39,7 @@
     if (!root || !S.cargado) return;
     root.textContent = '';
     const page = el('section', 'mk-page'); root.appendChild(page);
-    const cab = el('header', 'mk-head'); const t = el('div');
+    const cab = el('header', 'mk-head kcc-section-head'); const t = el('div');
     t.append(el('h1', null, 'Marcadores'));
     const primary = btn('Nuevo marcador', 'i-plus', () => M.editor(null), 'btn primary');
     const actions = el('div', 'mk-head-actions'); actions.appendChild(primary);

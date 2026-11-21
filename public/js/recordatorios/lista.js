@@ -36,9 +36,10 @@
     if (!root || !S.cargado) return;
     root.textContent = '';
     const page = el('section', 'rc-page'); root.appendChild(page);
-    const cab = el('header', 'rc-head'); const t = el('div');
+    const cab = el('header', 'rc-head kcc-section-head'); const t = el('div');
     t.append(el('h1', null, 'Avisos'));
-    cab.append(t, btn('Nuevo recordatorio', 'i-plus', () => R.editor(null), 'btn primary')); page.appendChild(cab);
+    const actions = el('div'); actions.appendChild(btn('Nuevo recordatorio', 'i-plus', () => R.editor(null), 'btn primary'));
+    cab.append(t, actions); page.appendChild(cab);
     const aviso = el('div', 'rc-avisos'); page.appendChild(aviso); franjaAvisos(aviso).catch(() => {});
 
     const pend = R.pendientes(), hechos = S.items.filter(r => r.hecho).sort((a, b) => (b.hechoEn || 0) - (a.hechoEn || 0));

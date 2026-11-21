@@ -114,13 +114,13 @@
 
   function build() {
     const v = $('view-logros'); v.textContent = '';
-    const head = el('div', 'kv-head');
+    const head = el('div', 'kv-head kcc-section-head');
     const t = el('div'); t.append(el('h2', null, 'Logros'));
     const jugar = el('button', 'btn'); jugar.type = 'button'; jugar.append(G.gi('gamepad', 'gi-sm'), el('span', 'lbl', 'Jugar al Tetris'));
     jugar.addEventListener('click', () => switchTab('tetris'));
     const j2 = el('button', 'btn'); j2.type = 'button'; j2.append(G.gi('cube', 'gi-sm'), el('span', 'lbl', '2048')); j2.addEventListener('click', () => switchTab('g2048'));
     const j3 = el('button', 'btn'); j3.type = 'button'; j3.append(G.gi('gamepad', 'gi-sm'), el('span', 'lbl', 'Breakout')); j3.addEventListener('click', () => switchTab('breakout'));
-    head.append(t, el('span', 'grow'), jugar, j2, j3);
+    head.append(t); const secondary = el('div', 'kcc-section-secondary'); secondary.append(jugar, j2, j3);
     const perfil = el('section', 'gm-perfil');
     const tabs = el('div', 'gm-tabs');
     [['resumen', 'Resumen'], ['logros', 'Logros'], ['tienda', 'Tienda']].forEach(([id, n]) => {
@@ -133,7 +133,7 @@
     pie.append('Iconos de ');
     const a = el('a', null, 'game-icons.net'); a.href = 'https://game-icons.net'; a.target = '_blank'; a.rel = 'noopener noreferrer';
     pie.append(a, ' hechos por Lorc, Delapouite y Carl Olsen, con licencia CC BY 3.0.');
-    v.append(head, perfil, tabs, cuerpo, pie);
+    v.append(head, secondary, perfil, tabs, cuerpo, pie);
     Object.assign(R, { perfil, tabs, cuerpo });
     S.built = true;
   }

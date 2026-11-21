@@ -18,19 +18,18 @@
   function esqueleto() {
     root.textContent = '';
     const page = el('div', 'en-page');
-    const cab = el('div', 'en-head');
+    const cab = el('div', 'en-head kcc-section-head');
     const tit = el('div'); tit.append(el('h1', null, 'Enlaces'));
-    const acc = el('div', 'en-head-acc');
     const limpiar = boton('Quitar caducados', 'i-trash', () => E.limpiaCaducados());
     const refresca = boton('Actualizar', 'i-refresh', () => E.carga().then(E.pinta).catch(K.fail));
-    acc.append(limpiar, refresca); cab.append(tit, acc);
+    cab.append(tit); const secondary = el('div', 'kcc-section-secondary'); secondary.append(limpiar, refresca);
     const resumen = el('div', 'en-resumen');
     const buscador = el('input'); buscador.type = 'search'; buscador.placeholder = 'Buscar por nombre, carpeta o código…'; buscador.setAttribute('aria-label', 'Buscar enlaces'); buscador.value = S.q;
     buscador.addEventListener('input', () => { S.q = buscador.value; pintaLista(); });
     const tipos = el('div', 'en-tabs'), estados = el('div', 'en-tabs');
     const barra = el('div', 'en-barra'); barra.append(buscador);
     const lista = el('div', 'en-lista');
-    page.append(cab, resumen, barra, tipos, estados, lista);
+    page.append(cab, secondary, resumen, barra, tipos, estados, lista);
     root.appendChild(page);
     caja = { resumen, tipos, estados, lista, buscador, limpiar };
   }

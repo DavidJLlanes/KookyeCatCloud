@@ -17,13 +17,15 @@
   function build() {
     const v = $('view-contacts');
     v.textContent = '';
-    const head = el('div', 'kv-head');
+    const head = el('div', 'kv-head kcc-section-head');
     const t = el('div'); t.append(el('h2', null, 'Contactos'));
     const search = el('div', 'kv-search'); search.appendChild(icon('i-search'));
     const si = el('input'); si.type = 'search'; si.placeholder = 'Buscar por nombre, teléfono, correo…  ( / )'; si.autocomplete = 'off'; search.appendChild(si);
     const nuevo = el('button', 'btn primary'); nuevo.type = 'button'; nuevo.append(icon('i-plus'), el('span', 'lbl', 'Nuevo contacto'));
     const mas = el('button', 'btn ghost icon'); mas.type = 'button'; mas.appendChild(icon('i-dots')); mas.title = 'Importar, exportar y más';
-    head.append(t, el('span', 'grow'), search, nuevo, mas);
+    const actions = el('div'); actions.appendChild(nuevo);
+    const secondary = el('div', 'kcc-section-secondary'); secondary.append(search, mas);
+    head.append(t, actions);
 
     const wrap = el('div', 'pr');
     const rail = el('aside', 'pr-rail');
@@ -42,7 +44,7 @@
     const content = el('div', 'ct-content');
     main.append(tools, barra, content);
     wrap.append(rail, main);
-    v.append(head, wrap);
+    v.append(head, secondary, wrap);
     Object.assign(R, { rail, content, count, si, wrap, barra, selb });
 
     si.addEventListener('input', K.debounce(() => { S.q = si.value.trim(); render(); }, 150));

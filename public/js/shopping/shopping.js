@@ -73,12 +73,19 @@
     if (!S.built) return;
     root.textContent = '';
     const page = el('section', 'shop-page');
-    const head = el('header', 'shop-head');
+    const head = el('header', 'shop-head kcc-section-head');
     const title = el('div'); title.append(el('h1', null, 'Compra'));
     const actions = el('div', 'shop-head-actions');
     const exp = button('Exportar', 'i-download', () => K.menu(exp, K.doc.items(() => { const d = compraMd(); return d.md ? { titulo: d.titulo, nombre: d.titulo, md: d.md } : (K.toast('No hay nada que exportar en esta pestaña'), null); }), { align: 'end' }), 'btn');
-    actions.append(exp, button('Categorías', 'i-tag', manageCategories, 'btn'), button('Nuevo producto', 'i-plus', () => editProduct(null), 'btn primary'));
+    const primary = button('Nuevo producto', 'i-plus', () => editProduct(null), 'btn primary');
+    const vista = el('button', 'kcc-columns-toggle'); vista.type = 'button';
+    vista.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg>';
+    vista.title = S.layouts[S.tab] === 'list' ? 'Lista · pulsar para cuadrícula' : 'Cuadrícula · pulsar para lista';
+    vista.setAttribute('aria-label', vista.title);
+    vista.addEventListener('click', () => setLayout(S.layouts[S.tab] === 'list' ? 'grid' : 'list'));
+    actions.append(vista, primary);
     head.append(title, actions); page.appendChild(head);
+    const secondary = el('div', 'kcc-section-secondary'); secondary.append(button('Categorías', 'i-tag', manageCategories, 'btn'), exp); page.appendChild(secondary);
 
     const bar = el('div', 'shop-toolbar');
     const search = el('label', 'search shop-search'); search.append(icon('i-search'));
@@ -90,11 +97,7 @@
       const b = el('button', S.tab === key ? 'is-active' : '', `${label} · ${count}`); b.type = 'button'; b.dataset.key = key; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', S.tab === key ? 'true' : 'false'); b.addEventListener('click', () => { S.tab = key; paint(); }); tabs.appendChild(b);
     });
     bar.appendChild(tabs);
-    const switcher = el('div', 'shop-view-switch'); switcher.setAttribute('role', 'group'); switcher.setAttribute('aria-label', 'Formato de visualización');
-    [['list', 'i-list', 'Lista'], ['grid', 'i-grid', 'Cuadrícula']].forEach(([layout, iconName, label]) => {
-      const b = el('button', S.layouts[S.tab] === layout ? 'is-active' : ''); b.type = 'button'; b.title = label; b.setAttribute('aria-label', label); b.setAttribute('aria-pressed', S.layouts[S.tab] === layout ? 'true' : 'false'); b.appendChild(icon(iconName)); b.addEventListener('click', () => setLayout(layout)); switcher.appendChild(b);
-    });
-    bar.appendChild(switcher); page.appendChild(bar);
+    page.appendChild(bar);
     const content = el('div', 'shop-content');
     if (S.tab === 'catalog') paintCatalog(content); else paintEntries(content, S.tab);
     page.appendChild(content); root.appendChild(page);

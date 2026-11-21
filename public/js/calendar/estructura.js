@@ -12,9 +12,8 @@
   function build() {
     const v = $('view-calendar');
     v.textContent = '';
-    const head = el('div', 'kv-head');
+    const head = el('div', 'kv-head kcc-section-head');
     const t = el('div'); t.append(el('h2', null, 'Agenda'));
-    const grow = el('span', 'grow');
     const search = el('div', 'kv-search'); search.appendChild(icon('i-search'));
     const si = el('input'); si.type = 'search'; si.placeholder = 'Buscar eventos…'; si.autocomplete = 'off';
     search.appendChild(si);
@@ -29,7 +28,9 @@
       '-', { label: 'Gestionar etiquetas…', icon: 'i-tag', onClick: () => K.manageLabels() },
     ], { align: 'end' }));
     mas.title = 'Importar, exportar y más';
-    head.append(t, grow, search, nuevo, mas);
+    const actions = el('div'); actions.appendChild(nuevo);
+    const secondary = el('div', 'kcc-section-secondary'); secondary.append(search, mas);
+    head.append(t, actions);
 
     const cal = el('div', 'cal');
     const side = el('aside', 'cal-side');
@@ -53,7 +54,7 @@
     const body = el('div', 'cal-body');
     main.append(bar, body);
     cal.append(side, main);
-    v.append(head, cal);
+    v.append(head, secondary, cal);
     Object.assign(R, { head, side, main, title, body, seg, si, search });
 
     hoy.addEventListener('click', () => { S.cursor = K.d.day(new Date()); S.dirty = true; load(); });

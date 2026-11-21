@@ -9,10 +9,10 @@
   function esqueleto() {
     root.textContent = '';
     const page = el('div', 'bu-page');
-    const cab = el('div', 'bu-head');
+    const cab = el('div', 'bu-head kcc-section-head');
     const tit = el('div'); tit.append(el('h1', null, 'Buscar'));
     const aj = el('button', 'btn sm'); aj.type = 'button'; aj.append(icon('i-key'), el('span', null, 'Ajustes de IA')); aj.addEventListener('click', () => B.ajustes());
-    cab.append(tit, aj);
+    cab.append(tit); const secondary = el('div', 'kcc-section-secondary'); secondary.appendChild(aj);
     const barra = el('div', 'bu-barra');
     const inp = el('input'); inp.type = 'search'; inp.autocomplete = 'off'; inp.spellcheck = false; inp.maxLength = 600; inp.value = S.q; inp.setAttribute('aria-label', 'Buscar o preguntar');
     const ir = el('button', 'btn primary bu-ir', 'Preguntar'); ir.type = 'button';
@@ -22,7 +22,7 @@
     barra.append(inp, ir);
     const chips = el('div', 'bu-chips');
     const cuerpo = el('div', 'bu-cuerpo');
-    page.append(cab, modos, barra, chips, cuerpo); root.appendChild(page);
+    page.append(cab, secondary, modos, barra, chips, cuerpo); root.appendChild(page);
     caja = { inp, ir, chips, cuerpo, modos };
     const lanzaD = K.debounce(() => { if (S.modo === 'buscar') B.lanza(); }, 220);
     inp.addEventListener('input', () => { S.q = inp.value; lanzaD(); });

@@ -6,10 +6,11 @@
   const vacioIcono = () => { const d = el('div', 'bs-empty-i'); d.appendChild(icon('i-table')); return d; };
 
   B.pintaLista = (page) => {
-    const head = el('header', 'bs-head'); const t = el('div'); t.append(el('h1', null, 'Bases'));
+    const head = el('header', 'bs-head kcc-section-head'); const t = el('div'); t.append(el('h1', null, 'Bases'));
     const acc = el('div', 'bs-actions');
     const primary = B.btn('Nueva base', 'i-plus', B.nueva, 'btn primary');
-    acc.append(primary, B.btn('Importar', 'i-upload', importar)); head.append(t, acc); page.appendChild(head);
+    acc.append(primary); head.append(t, acc); page.appendChild(head);
+    const extra = el('div', 'kcc-section-secondary'); extra.appendChild(B.btn('Importar', 'i-upload', importar)); page.appendChild(extra);
     const grid = el('div', 'bs-cards'); KCCColumnasVista({ id: 'bases', actions: acc, primary, grid });
     if (!S.lista.length) {
       const e = el('div', 'bs-empty'); e.append(vacioIcono(), el('h2', null, 'Aún no tienes bases'), el('p', 'k-muted', 'Empieza con una plantilla (proyectos, libros, gastos…) o crea una a tu gusto.'), B.btn('Crear la primera', 'i-plus', B.nueva, 'btn primary')); page.appendChild(e); return;

@@ -24,8 +24,9 @@
     if (S.p) pintaProyecto(page); else pintaLista(page);
   }
   function pintaLista(page) {
-    const head = el('header', 'cd-head'); const t = el('div'); t.append(el('h1', null, 'Código'));
-    const acc = el('div', 'cd-acc'); const primary = btn('Nuevo proyecto', 'i-plus', nuevo, 'btn primary'); acc.append(primary, btn('Subir ZIP', 'i-zip', zipNuevo)); head.append(t, acc); page.appendChild(head);
+    const head = el('header', 'cd-head kcc-section-head'); const t = el('div'); t.append(el('h1', null, 'Código'));
+    const acc = el('div', 'cd-acc'); const primary = btn('Nuevo proyecto', 'i-plus', nuevo, 'btn primary'); acc.append(primary); head.append(t, acc); page.appendChild(head);
+    const extra = el('div', 'kcc-section-secondary'); extra.appendChild(btn('Subir ZIP', 'i-zip', zipNuevo)); page.appendChild(extra);
     const bar = el('div', 'cd-bar2');
     const s = el('label', 'search cd-search'); s.appendChild(icon('i-search')); const inp = el('input'); inp.type = 'search'; inp.placeholder = 'Buscar proyecto…'; inp.value = S.q; inp.setAttribute('aria-label', 'Buscar');
     inp.addEventListener('input', K.debounce(() => { S.q = inp.value; pintaTarjetas(); }, 150)); s.appendChild(inp); bar.appendChild(s);

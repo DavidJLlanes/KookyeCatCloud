@@ -18,7 +18,7 @@
 
   I.pintaElegir = (root) => {
     const page = el('div', 'im-page');
-    const cab = el('div', 'im-head'); cab.append(el('h1', null, 'Importar'));
+    const cab = el('div', 'im-head kcc-section-head'); cab.append(el('h1', null, 'Importar'));
     page.appendChild(cab);
     if (S.error) page.appendChild(el('div', 'im-error', S.error));
     const rej = el('div', 'im-fuentes');

@@ -147,10 +147,10 @@
   function build() {
     const v = $('view-clip');
     v.textContent = '';
-    const head = el('div', 'kv-head');
+    const head = el('div', 'kv-head kcc-section-head');
     const t = el('div'); t.append(el('h2', null, 'Clip'));
     const vaciar = el('button', 'btn'); vaciar.type = 'button'; vaciar.append(icon('i-trash'), el('span', 'lbl', 'Vaciar'));
-    head.append(t, el('span', 'grow'), vaciar);
+    head.append(t); const secondary = el('div', 'kcc-section-secondary'); secondary.appendChild(vaciar);
 
     const caja = el('section', 'cb-caja');
     const ta = el('textarea'); ta.rows = 3; ta.placeholder = 'Escribe o pega aquí lo que quieras enviar…'; /* sin maxLength: al pegar, el navegador cortaría en silencio; el servidor avisa si no cabe */
@@ -179,7 +179,7 @@
 
     const nota = el('p', 'cb-nota k-faint');
     const lista = el('div', 'cb-lista');
-    v.append(head, caja, nota, lista);
+    v.append(head, secondary, caja, nota, lista);
     Object.assign(R, { ta, staged, enviar: bE, progreso, vaciar, nota, lista });
 
     vaciar.addEventListener('click', async () => {
