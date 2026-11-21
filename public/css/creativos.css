@@ -1,0 +1,19 @@
+/* Módulos de dibujo y pizarra; usan los tokens del tema existente. */
+.cr-wrap{max-width:1200px;margin:0 auto;padding:20px 12px 90px;color:var(--text)}
+.cr-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.cr-head h2{margin:0;font-size:1.5rem}
+.cr-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.cr-tools button,.cr-tools select,.cr-tools input,.cr-item button{border:1px solid var(--line-2);background:var(--surface-2);color:var(--text);border-radius:10px;padding:9px 12px;font:inherit}
+.cr-tools button,.cr-item button{cursor:pointer}
+.cr-tools button:focus-visible,.cr-item button:focus-visible{outline:2px solid var(--accent-strong);outline-offset:2px}
+.cr-list{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.cr-item{display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:4px;background:var(--surface)}
+.cr-canvas{display:block;width:100%;height:auto;aspect-ratio:16/10;border:1px solid var(--line-2);border-radius:14px;background:#f7f6f2;touch-action:none}
+.cr-board{min-height:65vh;position:relative;background:var(--surface-2);border:1px solid var(--line-2);border-radius:16px;padding:18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr));align-content:start;gap:16px}
+.cr-postit{min-height:210px;padding:14px;border-radius:5px;box-shadow:var(--sh-2);color:#262626;display:flex;flex-direction:column;gap:8px}
+.cr-postit[data-color=crema]{background:#f3e9d4}.cr-postit[data-color=amarillo]{background:#f6e49b}.cr-postit[data-color=rosa]{background:#f1c6ce}.cr-postit[data-color=menta]{background:#bfe3cd}.cr-postit[data-color=azul]{background:#c6dff1}.cr-postit[data-color=lavanda]{background:#dcd1ee}
+.cr-postit input{font:700 16px inherit;background:transparent;border:0;border-bottom:1px solid #0003;color:#262626;min-width:0;width:100%}
+.cr-postit [contenteditable]{flex:1;outline:0;overflow-wrap:anywhere;min-height:110px;max-height:350px;overflow:auto}
+.cr-postit [contenteditable] h1{font-size:1.55em}.cr-postit [contenteditable] h2{font-size:1.3em}.cr-postit [contenteditable] h3{font-size:1.1em}
+.cr-postit .cr-tools{margin:0;gap:4px}.cr-postit .cr-tools button,.cr-postit .cr-tools select{font-size:12px;padding:5px;background:#ffffffa8;color:#262626;border:1px solid #0002}
+@media(max-width:600px){.cr-wrap{padding:12px 8px 90px}.cr-board{grid-template-columns:1fr}.cr-tools{gap:5px}}
