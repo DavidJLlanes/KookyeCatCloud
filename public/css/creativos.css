@@ -43,7 +43,7 @@
 .cr-pizarra .cr-p-editor blockquote{margin:.5em 0;padding-left:10px;border-left:3px solid #515550}
 .cr-pizarra .cr-p-format{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:10px 0 7px;padding:9px 0;border-top:1px solid #0000001c;border-bottom:1px solid #0000001c}
 .cr-pizarra .cr-p-format[hidden]{display:none!important}
-.cr-pizarra .cr-p-btn,.cr-pizarra .cr-p-heading,.cr-pizarra .cr-p-color{appearance:none;background:#ffffff8c!important;background-image:none!important;border:1px solid #24262223!important;box-shadow:none!important;border-radius:9px;color:#262824!important;-webkit-text-fill-color:#262824!important;min-width:33px;height:34px;padding:5px 8px;font:600 .86rem/1.2 inherit;cursor:pointer;white-space:nowrap}
+.cr-pizarra .cr-p-btn,.cr-pizarra .cr-p-heading,.cr-pizarra .cr-p-color{appearance:none;background:#ffffff8c!important;background-image:none!important;border:1px solid #24262223!important;box-shadow:none!important;border-radius:9px;color:#262824!important;-webkit-text-fill-color:#262824!important;min-width:33px;height:34px;padding:5px 8px;font-family:inherit;font-size:.86rem;font-weight:600;line-height:1.2;cursor:pointer;white-space:nowrap}
 .cr-pizarra .cr-p-btn:focus-visible,.cr-pizarra select:focus-visible{outline:2px solid #4d5545;outline-offset:2px}
 .cr-pizarra .cr-p-heading{max-width:115px;font-size:.84rem}
 .cr-pizarra .cr-p-actions{display:flex;align-items:center;gap:8px;margin-top:6px}
