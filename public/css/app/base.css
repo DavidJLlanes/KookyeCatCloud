@@ -96,6 +96,10 @@ input:focus,select:focus{outline:none;border-color:var(--accent-strong);
 /* ---------- Layout ---------- */
 .app{position:relative;z-index:2;min-height:100dvh;padding-bottom:calc(110px + var(--safe-bottom));}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px;}
+.kcc-page{max-width:1200px;margin:0 auto;padding:20px 12px 90px;color:var(--text);}
+.kcc-page>.view-head{padding:0;}
+.kcc-map-page{width:100%;flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:0;}
+@media(max-width:600px){.kcc-page{padding:12px 8px 90px;}.kcc-map-page{padding-bottom:0;}}
 .topbar{position:sticky;top:0;z-index:30;height:calc(var(--header-h) + var(--safe-top));
   padding-top:var(--safe-top);
   padding-left:var(--safe-left);padding-right:var(--safe-right);

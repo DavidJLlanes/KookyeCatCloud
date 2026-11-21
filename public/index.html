@@ -248,7 +248,8 @@
   </div>
 
   <!-- ---- Vista archivos ---- -->
-  <main class="wrap" id="view-files">
+  <main class="wrap kcc-view" id="view-files">
+    <div class="kcc-page files-page">
     <header class="kcc-section-head"><div><h2>Archivos</h2></div><div>
       <button class="kcc-columns-toggle" id="btn-file-columns" type="button" aria-label="Cambiar vista de archivos"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg></button>
       <button class="btn primary" id="btn-upload"><svg class="ico"><use href="#i-upload"/></svg><span class="lbl">Subir archivos</span></button>
@@ -284,6 +285,7 @@
 
     <input type="file" id="file-input" multiple hidden>
     <div id="file-list"></div>
+    </div>
   </main>
 
   <!-- ---- Vista calendario ---- -->
@@ -362,7 +364,8 @@
   </main>
 
   <!-- ---- Vista mapa ---- -->
-  <main class="wrap" id="view-map" hidden>
+  <main class="wrap kcc-view" id="view-map" hidden>
+    <div class="kcc-page kcc-map-page">
     <div class="view-head kcc-section-head">
       <div>
         <h2>Mapa de fotos</h2>
@@ -373,10 +376,12 @@
       <div id="mapa"></div>
       <div class="mapa-vacio" id="mapa-vacio" hidden></div>
     </div>
+    </div>
   </main>
 
   <!-- ---- Vista papelera ---- -->
-  <main class="wrap" id="view-trash" hidden>
+  <main class="wrap kcc-view" id="view-trash" hidden>
+    <div class="kcc-page">
     <div class="view-head kcc-section-head">
       <div>
         <h2>Papelera</h2>
@@ -389,10 +394,12 @@
       <span id="trash-days-hint">Vale para archivos, notas y prompts</span>
     </div>
     <div id="trash-list"></div>
+    </div>
   </main>
 
   <!-- ---- Vista colecciones (favoritos y álbumes) ---- -->
-  <main class="wrap" id="view-colecciones" hidden>
+  <main class="wrap kcc-view" id="view-colecciones" hidden>
+    <div class="kcc-page">
     <div class="view-head kcc-section-head">
       <div><h2>Colecciones</h2></div>
       <div><button class="kcc-columns-toggle" id="btn-collection-columns" type="button" aria-label="Cambiar columnas de colecciones"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg></button>
@@ -425,6 +432,7 @@
         </div>
         <div id="album-items" class="grid"></div>
       </div>
+    </div>
     </div>
   </main>
 
