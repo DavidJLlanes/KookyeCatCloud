@@ -61,6 +61,7 @@
     const isMobile = movil.matches;
     const count = columnas[isMobile ? 'movil' : 'escritorio'];
     board.style.setProperty('--cr-p-cols', count);
+    board.dataset.columns = String(count);
     columnControls.replaceChildren();
     const max = isMobile ? 3 : 5;
     for (let n = 1; n <= max; n++) {
