@@ -288,7 +288,7 @@
     const m = K.modal({ title: nuevo ? 'Nuevo prompt' : 'Editar prompt', sub: nuevo ? 'Guarda tu prompt con todo su contexto' : '', cls: 'xl', content: root, dismiss: false,
       actions: [{ label: 'Cancelar', onClick: async () => { if ((title.value !== d.title || body.value !== d.body) && !await K.confirm('Hay cambios sin guardar. ¿Descartarlos?', { ok: 'Descartar', danger: true })) return false; } },
         { id: 'save', label: nuevo ? 'Guardar prompt' : 'Guardar cambios', primary: true, onClick: guardar }] });
-    if (nuevo) setTimeout(() => title.focus(), 40);
+    if (nuevo) K.focusField(title);
   }
 
 

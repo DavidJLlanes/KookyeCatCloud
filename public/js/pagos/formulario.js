@@ -59,7 +59,7 @@
       del.addEventListener('click', async () => { if (await P.elimina(p)) modal.close(); });
       f.appendChild(del);
     }
-    setTimeout(() => nombre.focus(), 40);
+    K.focusField(nombre);
   };
 
   // Marcar como pagado: fecha e importe por defecto, editables (la factura puede variar)

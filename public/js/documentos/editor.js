@@ -76,7 +76,7 @@
     const titulo = el('input', 'dc-titulo'); titulo.type = 'text'; titulo.value = doc.title; titulo.maxLength = 120; titulo.setAttribute('aria-label', 'Título del documento'); titulo.placeholder = 'Documento sin título';
     titulo.addEventListener('input', D.cambio); titulo.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); D.ed.focus(); } });
     const est = el('span', 'dc-estado', 'Guardado'); est.dataset.e = 'ok';
-    const mas = el('button', 'btn sm dc-mas'); mas.type = 'button'; mas.setAttribute('aria-label', 'Más opciones'); mas.textContent = '⋯'; mas.addEventListener('click', () => D.menuMas(mas, cabeza));
+    const mas = el('button', 'btn sm dc-mas'); mas.type = 'button'; mas.setAttribute('aria-label', 'Más opciones'); mas.appendChild(icon('i-dots')); mas.addEventListener('click', () => D.menuMas(mas, cabeza));
     top.append(atras, titulo, est, mas);
     const barra = D.creaBarra();
     const tactil = K.esTactil();

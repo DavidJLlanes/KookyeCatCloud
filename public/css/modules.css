@@ -73,6 +73,9 @@
 .btn.sm{padding:7px 12px;font-size:calc(13px*var(--fs,1));border-radius:10px;}
 .btn.tiny{padding:4px 9px;font-size:calc(12px*var(--fs,1));border-radius:8px;gap:5px;}
 .btn.tiny .ico{width:14px;height:14px;}
+/* Los tres puntos comparten centro visual y zona táctil en todos los módulos. */
+button:has(> svg use[href="#i-dots"]){display:inline-grid;place-items:center;line-height:1;}
+button:has(> svg use[href="#i-dots"]) > svg{display:block;margin:auto;flex:none;}
 .btn.is-on{background:var(--brand-soft);border-color:var(--accent-line);color:var(--accent-text);}
 .k-muted{color:var(--muted);} .k-faint{color:var(--faint);}
 .k-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}

@@ -49,7 +49,7 @@ function buildRow(item) {
     const menu = el('button', 'icon-btn');
     menu.appendChild(icon('i-dots'));
     menu.setAttribute('aria-label', 'Opciones');
-    menu.addEventListener('click', e => { e.stopPropagation(); openActions(item); });
+    menu.addEventListener('click', e => { e.stopPropagation(); openActions(item, menu); });
     row.appendChild(menu);
   }
 
@@ -103,7 +103,7 @@ function buildTile(item) {
     const dots = el('button', 'dots');
     dots.appendChild(icon('i-dots'));
     dots.setAttribute('aria-label', 'Opciones');
-    dots.addEventListener('click', e => { e.stopPropagation(); openActions(item); });
+    dots.addEventListener('click', e => { e.stopPropagation(); openActions(item, dots); });
     // Foto: el ⋮ flota sobre la imagen. Archivo/carpeta: va en la franja del nombre,
     // para no tapar el icono (sobre todo en móvil, donde la baldosa es grande).
     if (tile.classList.contains('photo')) box.appendChild(dots);

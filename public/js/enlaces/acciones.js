@@ -45,7 +45,7 @@
     if (l.protegido) acciones.push({ label: 'Quitar contraseña', danger: true, onClick: () => guarda('', 'Contraseña quitada') });
     acciones.push({ label: l.protegido ? 'Cambiar' : 'Poner', primary: true, onClick: () => { if (!pw.value) { K.toast('Escribe la contraseña'); return false; } return guarda(pw.value, 'Contraseña guardada'); } });
     K.modal({ title: l.protegido ? 'Contraseña del enlace' : 'Proteger con contraseña', sub: l.label, content: pw, actions: acciones });
-    setTimeout(() => pw.focus(), 40);
+    K.focusField(pw);
   };
 
   E.renombra = async (l) => {

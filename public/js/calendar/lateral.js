@@ -164,7 +164,7 @@
         await K.loadCalendars(true); K.bus.emit('calendar'); S.dirty = true; load();
       } catch (e) { K.fail(e); return false; }
     } }] });
-    setTimeout(() => nombre.focus(), 30);
+    K.focusField(nombre, 30);
   }
   async function delCalendar(c) {
     if (!await K.confirm(`Se borrará “${c.name}”. Sus eventos pasarán a Personal.`, { ok: 'Borrar', danger: true })) return;

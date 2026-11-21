@@ -45,7 +45,7 @@
       del.addEventListener('click', async () => { if (await M.elimina(m)) modal.close(); });
       f.appendChild(del);
     }
-    setTimeout(() => url.focus(), 40);
+    K.focusField(url);
   };
 
   M.editorCarpeta = function (c) {
@@ -68,6 +68,6 @@
       });
       f.appendChild(del);
     }
-    setTimeout(() => nombre.focus(), 40);
+    K.focusField(nombre);
   };
 })();

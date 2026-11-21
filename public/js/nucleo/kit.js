@@ -83,6 +83,12 @@ const _pila = [];
 K._sinGuardar = [];
 K.registraSinGuardar = (fn) => { K._sinGuardar.push(fn); };
 K.haySinGuardar = () => K._sinGuardar.some((fn) => { try { return !!fn(); } catch { return false; } });
+// En táctil, el enfoque automático abre el teclado y puede desplazar la navegación inferior.
+K.focusField = (node, delay = 40, select = false) => setTimeout(() => {
+  if (!node.isConnected || !matchMedia('(pointer:fine)').matches) return;
+  node.focus({ preventScroll: true });
+  if (select && node.select) node.select();
+}, delay);
 
 K.modal = function ({ title, sub, cls = '', content, actions = [], onClose, dismiss = true, bare = false } = {}) {
   const overlay = el('div', 'overlay');
@@ -104,6 +110,8 @@ K.modal = function ({ title, sub, cls = '', content, actions = [], onClose, dism
       const b = el('button', 'btn' + (a.primary ? ' primary' : '') + (a.danger ? ' danger' : ''), a.label);
       b.type = 'button';
       b.addEventListener('click', async () => {
+        const focused = document.activeElement;
+        if (focused && modal.contains(focused) && focused.matches('input, textarea, select, [contenteditable="true"]')) focused.blur();
         if (a.onClick) {
           b.disabled = true;
           try { const r = await a.onClick(h); if (r === false) return; } finally { b.disabled = false; }
@@ -121,6 +129,7 @@ K.modal = function ({ title, sub, cls = '', content, actions = [], onClose, dism
     el: modal, body: cuerpo, buttons: botones,
     close(valor) {
       if (cerrado) return; cerrado = true;
+      if (modal.contains(document.activeElement)) document.activeElement.blur();
       overlay.remove();
       const i = _pila.indexOf(h); if (i >= 0) _pila.splice(i, 1);
       if (foco) foco.cierra();                        // el foco vuelve a quien abrió el diálogo (kit-foco.js)
@@ -176,11 +185,11 @@ K.ask = (title, { value = '', placeholder = '', ok = 'Guardar', sub = '' } = {})
   const m = K.modal({ title, sub, content: input, onClose: () => { if (!hecho) res(null); },
     actions: [{ label: 'Cancelar' }, { label: ok, primary: true, onClick: () => { hecho = true; res(input.value.trim()); } }] });
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { hecho = true; res(input.value.trim()); m.close(); } });
-  setTimeout(() => { input.focus(); input.select(); }, 30);
+  K.focusField(input, 30, true);
 });
 
 /* ---------- Popovers y menús ---------- */
-K.pop = function (anchor, content, { align = 'start', width } = {}) {
+K.pop = function (anchor, content, { align = 'start', width, onClose } = {}) {
   K._popClose && K._popClose();
   const box = el('div', 'k-pop');
   if (width) box.style.width = width + 'px';
@@ -199,6 +208,7 @@ K.pop = function (anchor, content, { align = 'start', width } = {}) {
   const cierra = () => {
     box.remove(); document.removeEventListener('mousedown', fuera, true); window.removeEventListener('resize', cierra);
     if (K._popClose === cierra) K._popClose = null;
+    if (onClose) onClose();
   };
   const fuera = (e) => { if (!box.contains(e.target) && !(anchor.contains && anchor.contains(e.target))) cierra(); };
   setTimeout(() => document.addEventListener('mousedown', fuera, true), 0);
@@ -208,6 +218,10 @@ K.pop = function (anchor, content, { align = 'start', width } = {}) {
 };
 
 K.menu = function (anchor, items, opts) {
+  if (anchor instanceof Element && K._menuOpen && K._menuOpen.anchor === anchor && K._menuOpen.panel.isConnected) {
+    K._menuOpen.close();
+    return null;
+  }
   const cont = el('div');
   let p;
   for (const it of items) {
@@ -222,7 +236,13 @@ K.menu = function (anchor, items, opts) {
     b.addEventListener('click', () => { p.close(); it.onClick && it.onClick(); });
     cont.appendChild(b);
   }
-  p = K.pop(anchor, cont, opts);
+  p = K.pop(anchor, cont, { ...opts, onClose: () => {
+    if (K._menuOpen && K._menuOpen.panel === p.el) {
+      K._menuOpen = null;
+      K._popClose = null;
+      if (anchor instanceof Element) anchor.setAttribute('aria-expanded', 'false');
+    }
+  } });
   if (K.menuAccesible) {
     const origen = document.activeElement;           // quien lo abrió; el foco vuelve ahí al cerrar por teclado
     const m = K.menuAccesible(p.el, { items: '.item', cierra: p.close, vuelveA: anchor.focus ? anchor : origen });
@@ -236,6 +256,11 @@ K.menu = function (anchor, items, opts) {
     p.close = cierraYDevuelve;
     if (K._popClose === cierraBase) K._popClose = cierraYDevuelve;   // Esc también devuelve el foco
   }
+  if (anchor instanceof Element) {
+    anchor.setAttribute('aria-haspopup', 'menu');
+    anchor.setAttribute('aria-expanded', 'true');
+  }
+  K._menuOpen = { anchor, panel: p.el, close: () => p.close() };
   return p;
 };
 

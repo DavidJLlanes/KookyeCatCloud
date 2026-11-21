@@ -69,7 +69,7 @@
         if (alGuardar) alGuardar(body.name);
       } catch (e) { K.fail(e); return false; }
     } }] });
-    setTimeout(() => nm.focus(), 30);
+    K.focusField(nm, 30);
   }
   function editList(l) {
     const nm = el('input'); nm.value = l ? l.name : ''; nm.maxLength = 60; nm.placeholder = 'Nombre de la lista';
@@ -85,7 +85,7 @@
         K.bus.emit('prompts'); await load();
       } catch (e) { K.fail(e); return false; }
     } }] });
-    setTimeout(() => nm.focus(), 30);
+    K.focusField(nm, 30);
   }
   async function delMeta(tipo, x) {
     if (!await K.confirm(tipo === 'categories' ? `Se borrará “${x.name}”. Sus prompts pasarán a la categoría superior.` : `Se borrará la lista “${x.name}”. Los prompts no se tocan.`, { ok: 'Borrar', danger: true })) return;

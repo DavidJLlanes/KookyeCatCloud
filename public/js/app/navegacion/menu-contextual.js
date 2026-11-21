@@ -3,7 +3,7 @@
 /* ---------------------------------------------------------------
    Menú contextual (clic derecho)
 --------------------------------------------------------------- */
-function cerrarCtx() { hide('ctxmenu'); }
+function cerrarCtx() { hide('ctxmenu'); if (typeof notaMenuAnchor !== 'undefined') notaMenuAnchor = null; }
 
 function opcionCtx(menu, iconName, texto, accion, peligro) {
   const b = el('button', peligro ? 'danger' : null);
@@ -14,6 +14,7 @@ function opcionCtx(menu, iconName, texto, accion, peligro) {
 }
 
 function abrirCtx(x, y, item) {
+  if (typeof notaMenuAnchor !== 'undefined') notaMenuAnchor = null;
   const menu = $('ctxmenu');
   menu.textContent = '';
 

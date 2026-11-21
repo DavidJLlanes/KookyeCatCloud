@@ -78,7 +78,11 @@ function lbStep(delta) {
 /* ---------------------------------------------------------------
    Acciones individuales
 --------------------------------------------------------------- */
-function openActions(item) {
+function openActions(item, anchor) {
+  if (anchor && K._menuOpen && K._menuOpen.anchor === anchor && K._menuOpen.panel.isConnected) {
+    K._menuOpen.close();
+    return;
+  }
   state.selected = item;
   $('action-title').textContent = item.name;
   $('action-sub').textContent =
@@ -99,6 +103,16 @@ function openActions(item) {
   $('action-album').hidden = item.isDir;
 
   $('action-zip').hidden = false;
+  if (anchor) {
+    const actions = [...document.querySelectorAll('#action-modal .sheet > button:not([hidden])')].map(button => ({
+      label: button.textContent.trim(),
+      icon: button.querySelector('use')?.getAttribute('href')?.slice(1),
+      danger: button.classList.contains('danger'),
+      onClick: () => button.click(),
+    }));
+    K.menu(anchor, actions, { align: 'end' });
+    return;
+  }
   show('action-modal');
 }
 function downloadConvertido(rel, as) {

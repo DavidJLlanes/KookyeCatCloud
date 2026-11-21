@@ -216,7 +216,7 @@
     } });
     const m = K.modal({ title: nuevo ? (defaults.kind === 'task' ? 'Nueva tarea' : 'Nuevo evento') : 'Editar evento', cls: 'wide', content: root, actions: acciones,
       sub: nuevo ? '' : (sinFecha0 ? 'Sin fecha' : rangeTxt(ev)) });
-    if (nuevo) setTimeout(() => title.focus(), 40);
+    if (nuevo) K.focusField(title);
     title.addEventListener('keydown', (e) => { if (e.key === 'Enter' && m.buttons.save) m.buttons.save.click(); });
   }
 

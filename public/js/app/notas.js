@@ -161,7 +161,7 @@ function filaNota(item, nivel) {
   const mas = el('button', 'mas');
   mas.appendChild(icon('i-dots'));
   mas.setAttribute('aria-label', 'Opciones');
-  mas.addEventListener('click', e => { e.stopPropagation(); menuNota(e.clientX, e.clientY, item); });
+  mas.addEventListener('click', e => { e.stopPropagation(); menuNota(e.clientX, e.clientY, item, mas); });
   row.appendChild(mas);
 
   if (NT.selMode) {
@@ -202,8 +202,11 @@ function filaNota(item, nivel) {
   return row;
 }
 
-function menuNota(x, y, item) {
+let notaMenuAnchor = null;
+function menuNota(x, y, item, anchor) {
   const menu = $('ctxmenu');
+  if (anchor && !menu.hidden && notaMenuAnchor === anchor) { cerrarCtx(); return; }
+  notaMenuAnchor = anchor || null;
   menu.textContent = '';
   menu.appendChild(el('div', 'cab', item.title));
   if (item.type === 'folder') {

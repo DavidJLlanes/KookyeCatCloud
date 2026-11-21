@@ -85,7 +85,7 @@
     });
     c.append(l1, l2, sw, err, b);
     R.cuerpo.appendChild(c);
-    setTimeout(() => p1.focus(), 30);
+    K.focusField(p1, 30);
   }
 
   function pantallaBloqueada(mensaje) {
@@ -102,7 +102,7 @@
     p.addEventListener('keydown', (e) => { if (e.key === 'Enter') ir(); });
     c.append(l, err, b);
     R.cuerpo.appendChild(c);
-    setTimeout(() => p.focus(), 30);
+    K.focusField(p, 30);
   }
 
   async function entra() { await cargaEstado(); if (S.estado === 'abierta') { S.parent = ''; await cargaItems(); } pinta(); }
@@ -371,7 +371,7 @@
           try { await K.post('/api/vault/unlock', { password: p.value }); hecho = true; res(true); } catch (e) { K.fail(e); return false; }
         } }] });
         p.addEventListener('keydown', (e) => { if (e.key === 'Enter') m.buttons.go && m.buttons.go.click(); });
-        setTimeout(() => p.focus(), 30);
+        K.focusField(p, 30);
       });
       if (!ok) return;
     }

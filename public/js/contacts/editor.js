@@ -176,7 +176,7 @@
         } catch (e) { K.fail(e); return false; }
       } },
     ] });
-    setTimeout(() => first.focus(), 40);
+    K.focusField(first);
     return m;
   }
 

@@ -88,6 +88,6 @@
       f.appendChild(del);
     }
     sync();
-    setTimeout(() => titulo.focus(), 40);
+    K.focusField(titulo);
   };
 })();
