@@ -44,9 +44,41 @@
     b.addEventListener('click', handler);
     return b;
   }
-  root.innerHTML = '<div class="cr-wrap cr-pizarra"><header class="cr-head cr-p-head"><div><h2>Pizarra</h2><p class="cr-p-sub">Tus ideas, de un vistazo</p></div><button type="button" id="cr-p-new" class="btn primary">+ Nueva nota</button></header><div class="cr-board" id="cr-p-board"></div><p class="cr-p-empty" id="cr-p-empty" hidden>Tu pizarra está vacía. Añade tu primera nota.</p></div>';
+  root.innerHTML = '<div class="cr-wrap cr-pizarra"><header class="cr-head cr-p-head"><div><h2>Pizarra</h2><p class="cr-p-sub">Tus ideas, de un vistazo</p></div><button type="button" id="cr-p-new" class="btn primary">+ Nueva nota</button></header><div class="cr-p-layout"><span id="cr-p-layout-label">Columnas</span><div class="cr-p-columns" id="cr-p-columns" role="group" aria-labelledby="cr-p-layout-label"></div></div><div class="cr-board" id="cr-p-board"></div><p class="cr-p-empty" id="cr-p-empty" hidden>Tu pizarra está vacía. Añade tu primera nota.</p></div>';
   const board = root.querySelector('#cr-p-board');
   const vacio = root.querySelector('#cr-p-empty');
+  const columnControls = root.querySelector('#cr-p-columns');
+  const movil = window.matchMedia('(max-width:700px)');
+  const pref = { movil: 'kcc-pizarra-columnas-movil', escritorio: 'kcc-pizarra-columnas-escritorio' };
+  const leer = (key, fallback, max) => {
+    try {
+      const value = Number(localStorage.getItem(key));
+      return Number.isInteger(value) && value >= 1 && value <= max ? value : fallback;
+    } catch { return fallback; }
+  };
+  const columnas = { movil: leer(pref.movil, 1, 3), escritorio: leer(pref.escritorio, 3, 5) };
+  function pintarColumnas() {
+    const isMobile = movil.matches;
+    const count = columnas[isMobile ? 'movil' : 'escritorio'];
+    board.style.setProperty('--cr-p-cols', count);
+    columnControls.replaceChildren();
+    const max = isMobile ? 3 : 5;
+    for (let n = 1; n <= max; n++) {
+      const option = boton(String(n), n + (n === 1 ? ' columna' : ' columnas'), () => {
+        const mode = movil.matches ? 'movil' : 'escritorio';
+        columnas[mode] = n;
+        try { localStorage.setItem(pref[mode], String(n)); } catch { /* almacenamiento privado */ }
+        pintarColumnas();
+      });
+      option.classList.add('cr-p-col-option');
+      option.setAttribute('aria-pressed', String(n === count));
+      if (n === count) option.classList.add('is-active');
+      columnControls.append(option);
+    }
+  }
+  if (movil.addEventListener) movil.addEventListener('change', pintarColumnas);
+  else movil.addListener(pintarColumnas);
+  pintarColumnas();
 
   function actualizarVacio() { vacio.hidden = !!board.children.length; }
   function tarjeta(item) {
