@@ -44,6 +44,7 @@ const createContacts = require('./lib/contacts');
 const createNotesExtra = require('./lib/notes/extra');
 const createPdf = require('./lib/pdf');
 const createNotes = require('./lib/notes');
+const createCreativos = require('./lib/creativos');
 const createAlbums = require('./lib/archivos/albumes');
 const createPapelera = require('./lib/archivos/papelera');
 const createFotos = require('./lib/archivos/fotos');
@@ -547,6 +548,9 @@ app.use(analisisMod.router);   // sus rutas ya llevan /api
 /* ---------------- Bloc de notas ----------------
    Vive en lib/notes.js; aquí se crea y se exponen sus funciones al resto del servidor. */
 const { papeleraDias, purgeExpired } = papeleraMod.core;
+const creativosMod = createCreativos({ express, auth, userRoot, alCambiar: alCambiarContenido });
+app.use('/api', creativosMod.router);
+modulosConLogros.push(creativosMod);
 const notesMod = createNotes({ express, auth, userRoot, sendError, papeleraDias, calendar: () => calendarMod.core, extraeLinks: (b) => notesExtra.extraeLinks(b) });
 const { readNotes, writeNotes, notaFile, descendientes, notasFuente, purgarNotasCaducadas, enCola: enColaNotas } = notesMod.core;
 app.use('/api', notesMod.router);
