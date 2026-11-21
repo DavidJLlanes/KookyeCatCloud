@@ -72,8 +72,12 @@
     card.addEventListener('click', () => {
       edit(item, updated => {
         Object.assign(item, updated);
-        const replacement = preview(item);
-        card.replaceWith(replacement);
+        const heading = card.querySelector('.cr-p-preview-title');
+        const text = card.querySelector('.cr-p-preview-text');
+        card.dataset.color = item.color || 'amarillo';
+        card.setAttribute('aria-label', 'Editar nota ' + (item.titulo || 'Sin título'));
+        heading.textContent = item.titulo && item.titulo !== 'Nueva nota' ? item.titulo : 'Sin título';
+        text.innerHTML = clean(item.contenido);
       }, removed => {
         items = items.filter(other => other.id !== removed.id);
         card.remove();
