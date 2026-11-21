@@ -37,6 +37,7 @@
 <script src="/js/nucleo/textsize.js"></script>
 <script src="/js/nucleo/viewport-fix.js"></script>
 <link rel="stylesheet" href="/css/game.css">
+<link rel="stylesheet" href="/css/creativos.css">
 <meta name="description" content="KookyeCatCloud: nube privada autoalojada para archivos, fotos, notas y calendario, con logros, retos y una experiencia gamificada.">
 <link rel="icon" id="favicon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
@@ -215,6 +216,8 @@
       <button class="tab" data-view="buscar"><svg class="ico"><use href="#i-search"/></svg><span>Buscar</span></button>
       <button class="tab" data-view="documentos"><svg class="ico"><use href="#i-doc"/></svg><span>Documentos</span></button>
       <button class="tab" data-view="importar"><svg class="ico"><use href="#i-upload"/></svg><span>Importar</span></button>
+      <button class="tab" data-view="dibujos"><svg class="ico"><use href="#i-pencil"/></svg><span>Dibujos</span></button>
+      <button class="tab" data-view="pizarra"><svg class="ico"><use href="#i-note"/></svg><span>Pizarra</span></button>
       <button class="tab" data-view="notes"><svg class="ico"><use href="#i-note"/></svg><span>Notas</span></button>
       <button class="tab" data-view="shopping"><svg class="ico"><use href="#i-cart"/></svg><span>Compra</span></button>
       <button class="tab" data-view="bases"><svg class="ico"><use href="#i-table"/></svg><span>Bases</span></button>
@@ -291,6 +294,8 @@
   <!-- ---- Vista calendario ---- -->
   <main class="wrap kcc-view" id="view-calendar" hidden></main>
   <main class="wrap kcc-view" id="view-shopping" hidden></main>
+  <main class="wrap kcc-view" id="view-dibujos" hidden></main>
+  <main class="wrap kcc-view" id="view-pizarra" hidden></main>
   <main class="wrap kcc-view" id="view-games" hidden></main>
   <main class="wrap kcc-view" id="view-bases" hidden></main>
   <main class="wrap kcc-view" id="view-pagos" hidden></main>
@@ -663,6 +668,8 @@
       <button data-view="buscar"><svg class="ico"><use href="#i-search"/></svg>Buscar</button>
       <button data-view="documentos"><svg class="ico"><use href="#i-doc"/></svg>Documentos</button>
       <button data-view="importar"><svg class="ico"><use href="#i-upload"/></svg>Importar</button>
+      <button data-view="dibujos"><svg class="ico"><use href="#i-pencil"/></svg>Dibujos</button>
+      <button data-view="pizarra"><svg class="ico"><use href="#i-note"/></svg>Pizarra</button>
       <button data-view="notes"><svg class="ico"><use href="#i-note"/></svg>Notas</button>
       <button data-view="shopping"><svg class="ico"><use href="#i-cart"/></svg>Compra</button>
       <button data-view="bases"><svg class="ico"><use href="#i-table"/></svg>Bases</button>
@@ -942,6 +949,8 @@
 <script src="/js/app/inicio.js"></script>
 <script src="/js/nucleo/kit.js"></script>
 <script src="/js/nucleo/kit-foco.js"></script>
+<script src="/js/creativos/dibujos.js"></script>
+<script src="/js/creativos/pizarra.js"></script>
 <script src="/js/nucleo/kit-atras.js"></script>
 <script src="/js/nucleo/confirma-borrado.js"></script>
 <script src="/js/nucleo/deslizar.js"></script>
