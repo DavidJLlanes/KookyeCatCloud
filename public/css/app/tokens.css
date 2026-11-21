@@ -45,7 +45,7 @@
 }
 /* Esquema de color nativo (barras de desplazamiento, selectores de fecha, casillas): sigue al tema elegido */
 :root{color-scheme:dark;}
-:root[data-theme="claro"]{color-scheme:light;}
+:root[data-theme="claro"],:root[data-theme="monocromo-claro"]{color-scheme:light;}
 /* Océano: el azulado de siempre */
 :root[data-theme="oscuro"]{
   --topbar-bg:linear-gradient(180deg,rgba(7,11,22,.86),rgba(7,11,22,.62));
@@ -73,6 +73,29 @@
   --sh-2:0 8px 24px -8px rgba(15,23,42,.18);
   --sh-3:0 24px 60px -16px rgba(15,23,42,.26);
   --aurora-op:.2; --aurora-base:#eef3ff;
+}
+
+/* Monocromos planos: superficies diferenciadas sin blancos/negros absolutos. */
+:root[data-theme="monocromo-oscuro"]{
+  --bg:#191b1d;--bg-deep:#151719;--surface:#232629;--surface-2:#2b2e31;--surface-3:#363a3d;
+  --ink:#e8e7e3;--text:#e8e7e3;--muted:#b8bcb8;--faint:#969d99;
+  --field:#202325;--topbar-bg:#202325;--nav-bg:#202325;--panel-bg:#232629;
+  --glass:rgba(232,231,227,.045);--glass-2:rgba(232,231,227,.075);
+  --line:rgba(232,231,227,.14);--line-2:rgba(232,231,227,.26);
+  --brand:#c3c6c2;--brand-soft:rgba(232,231,227,.12);--accent-text:#e8e7e3;
+  --accent-line:rgba(232,231,227,.32);--accent-strong:#c3c6c2;--glow:none;
+  --aurora-op:0;--aurora-base:#151719;--danger:#ee9195;--danger-soft:rgba(238,145,149,.13);--ok:#91c9aa;
+}
+:root[data-theme="monocromo-claro"]{
+  --bg:#eeede9;--bg-deep:#f1f0ec;--surface:#f8f7f3;--surface-2:#e8e7e2;--surface-3:#dadbd5;
+  --ink:#242629;--text:#242629;--muted:#555b57;--faint:#676e69;
+  --field:#f8f7f3;--topbar-bg:#f1f0ec;--nav-bg:#eeede9;--panel-bg:#f8f7f3;
+  --glass:rgba(36,38,41,.035);--glass-2:rgba(36,38,41,.065);
+  --line:rgba(36,38,41,.14);--line-2:rgba(36,38,41,.26);
+  --brand:#454946;--brand-soft:rgba(36,38,41,.09);--accent-text:#303431;
+  --accent-line:rgba(36,38,41,.28);--accent-strong:#454946;--glow:none;
+  --aurora-op:0;--aurora-base:#f1f0ec;--danger:#a53c44;--danger-soft:rgba(165,60,68,.1);--ok:#356d50;
+  --sh-1:0 1px 2px rgba(36,38,41,.08);--sh-2:0 8px 24px -8px rgba(36,38,41,.12);--sh-3:0 24px 60px -16px rgba(36,38,41,.18);
 }
 
 *{box-sizing:border-box;}
