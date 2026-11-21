@@ -9,6 +9,8 @@ const TEMAS = [
   { id: 'grafito', name: 'Grafito', desc: 'Neutro y sobrio', sw: ['#0b0d12', '#191d27', '#e9ecf3'] },
   { id: 'oscuro', name: 'Océano', desc: 'Oscuro con tono azulado', sw: ['#070b16', '#16203a', '#eaf0ff'] },
   { id: 'claro', name: 'Claro', desc: 'Fondo claro para el día', sw: ['#f2f4f9', '#ffffff', '#0f172a'] },
+  { id: 'monocromo-oscuro', name: 'Carbón', desc: 'Marfil sobre grafito, sin degradados', sw: ['#151719', '#292c2e', '#e8e7e3'] },
+  { id: 'monocromo-claro', name: 'Piedra', desc: 'Antracita sobre marfil, sin degradados', sw: ['#f1f0ec', '#e4e3de', '#242629'] },
   { id: 'auto', name: 'Automático', desc: 'Sigue el modo del sistema', sw: null },
 ];
 // b1 = acento principal; b2 y b3 completan el degradado y las manchas del fondo
@@ -48,19 +50,21 @@ const temaEfectivo = (id) => (id === 'auto' ? (esClaroSistema() ? 'claro' : 'gra
 
 function applyAccent(id, persist) {
   const a = ACENTOS.find(x => x.id === id) || ACENTOS[0];
-  const claro = document.documentElement.dataset.theme === 'claro';
+  const tema = document.documentElement.dataset.theme;
+  const claro = tema === 'claro' || tema === 'monocromo-claro';
+  const monocromo = tema === 'monocromo-oscuro' || tema === 'monocromo-claro';
   const root = document.documentElement.style;
-  root.setProperty('--b1', a.b1);
-  root.setProperty('--b2', a.b2);
-  root.setProperty('--b3', a.b3);
+  root.setProperty('--b1', monocromo ? (claro ? '#454946' : '#c3c6c2') : a.b1);
+  root.setProperty('--b2', monocromo ? (claro ? '#626660' : '#a4a9a6') : a.b2);
+  root.setProperty('--b3', monocromo ? (claro ? '#858982' : '#858b88') : a.b3);
   // Fondo: un velo muy suave del acento sobre el tono base del tema
-  root.setProperty('--aurora-base', claro ? mezcla('#eef3ff', a.b1, .07) : mezcla('#0b0d12', a.b1, .1));
-  root.setProperty('--brand-soft', alpha(a.b1, claro ? .12 : .16));
+  root.setProperty('--aurora-base', monocromo ? (claro ? '#f1f0ec' : '#151719') : claro ? mezcla('#eef3ff', a.b1, .07) : mezcla('#0b0d12', a.b1, .1));
+  root.setProperty('--brand-soft', monocromo ? (claro ? 'rgba(36,38,41,.09)' : 'rgba(232,231,227,.12)') : alpha(a.b1, claro ? .12 : .16));
   // Texto de acento: más oscuro en el claro, más claro en los oscuros (contraste AA)
-  root.setProperty('--accent-text', claro ? mezcla('#0f172a', a.b1, .72) : mezcla('#ffffff', a.b1, .55));
-  root.setProperty('--accent-line', alpha(a.b1, .4));
-  root.setProperty('--accent-strong', alpha(a.b1, .72));
-  root.setProperty('--glow', `0 6px 24px -6px ${alpha(a.b1, .6)}`);
+  root.setProperty('--accent-text', monocromo ? (claro ? '#303431' : '#e8e7e3') : claro ? mezcla('#0f172a', a.b1, .72) : mezcla('#ffffff', a.b1, .55));
+  root.setProperty('--accent-line', monocromo ? (claro ? 'rgba(36,38,41,.28)' : 'rgba(232,231,227,.32)') : alpha(a.b1, .4));
+  root.setProperty('--accent-strong', monocromo ? (claro ? '#454946' : '#c3c6c2') : alpha(a.b1, .72));
+  root.setProperty('--glow', monocromo ? 'none' : `0 6px 24px -6px ${alpha(a.b1, .6)}`);
   if (persist) guardaLS('kcc-accent', a.id);
   document.querySelectorAll('.acento').forEach(b => { const on = b.dataset.acento === a.id; b.classList.toggle('is-active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
 }
