@@ -3,6 +3,14 @@
 (function () {
   if (!window.K || !K.documentos) return;
   const D = K.documentos, S = D.S;
+  const mobile = matchMedia('(max-width:700px)');
+  const keys = { mobile: 'kcc-documentos-columnas-movil', desktop: 'kcc-documentos-columnas-escritorio' };
+  const preference = (key, fallback, max) => {
+    try { const n = Number(localStorage.getItem(key)); return Number.isInteger(n) && n >= 1 && n <= max ? n : fallback; } catch { return fallback; }
+  };
+  const columns = { mobile: preference(keys.mobile, 2, 3), desktop: preference(keys.desktop, 3, 5) };
+  let activeLayout = null;
+  mobile.addEventListener('change', () => { if (activeLayout) activeLayout(); });
 
   async function nuevo(raiz, plantilla) {
     try { const d = await D.crea(plantilla); K.bus && K.bus.emit('documentos'); D.logros(); D.pintaEditor(raiz, d.id); }
@@ -13,11 +21,13 @@
     raiz.textContent = '';
     const page = el('div', 'dc-page');
     const cab = el('div', 'dc-head');
-    const tit = el('div'); tit.append(el('h1', null, 'Documentos'), el('p', 'k-faint', 'Escribe con formato, columnas, tablas y listas de tareas. Se guarda solo.'));
+    const tit = el('div'); tit.append(el('h1', null, 'Documentos'), el('p', 'k-faint', 'Tus documentos, de un vistazo'));
     const acc = el('div', 'dc-acciones');
+    const vista = el('button', 'dc-view-toggle cr-p-view-toggle'); vista.type = 'button';
+    vista.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg>';
     const pap = el('button', 'btn sm', 'Papelera'); pap.type = 'button'; pap.addEventListener('click', () => papelera(raiz));
     const nu = el('button', 'btn primary', '+ Nuevo documento'); nu.type = 'button'; nu.addEventListener('click', () => nuevo(raiz, 'blanco'));
-    acc.append(pap, nu); cab.append(tit, acc); page.appendChild(cab);
+    acc.append(vista, nu, pap); cab.append(tit, acc); page.appendChild(cab);
 
     const pl = S.plantillas.filter(p => p.id !== 'blanco');
     if (pl.length) {
@@ -27,21 +37,38 @@
     }
     const busca = el('input', 'dc-busca'); busca.type = 'search'; busca.placeholder = 'Buscar en tus documentos…'; busca.value = S.busca; busca.setAttribute('aria-label', 'Buscar documentos');
     const rejilla = el('div', 'dc-rejilla');
+    const resumen = el('p', 'dc-resumen k-faint');
+    const layout = () => {
+      const mode = mobile.matches ? 'mobile' : 'desktop', n = columns[mode], next = n % (mobile.matches ? 3 : 5) + 1;
+      rejilla.style.setProperty('--dc-cols', String(n)); rejilla.dataset.columns = String(n);
+      vista.title = `${n} ${n === 1 ? 'columna' : 'columnas'} · pulsar para ${next}`;
+      vista.setAttribute('aria-label', `Cambiar columnas: ${n} ${n === 1 ? 'actual' : 'actuales'}, siguiente ${next}`);
+    };
+    vista.addEventListener('click', () => {
+      const mode = mobile.matches ? 'mobile' : 'desktop';
+      columns[mode] = columns[mode] % (mobile.matches ? 3 : 5) + 1;
+      try { localStorage.setItem(keys[mode], String(columns[mode])); } catch { /* almacenamiento privado */ }
+      layout();
+    });
+    activeLayout = layout;
+    layout();
     const norm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     const pinta = () => {
       rejilla.textContent = ''; const q = norm(S.busca.trim());
       const l = (S.lista || []).filter(d => !q || norm(d.title + ' ' + d.extracto).includes(q)).sort((a, b) => (b.favorito - a.favorito) || (b.updatedAt - a.updatedAt));
+      resumen.textContent = `${l.length} ${l.length === 1 ? 'documento' : 'documentos'}`;
       if (!l.length) { rejilla.appendChild(el('p', 'k-faint dc-vacio', S.lista && S.lista.length ? 'Ningún documento coincide con la búsqueda.' : 'Aún no tienes documentos. Crea uno en blanco o desde una plantilla.')); return; }
       for (const d of l) {
         const c = el('button', 'dc-tarjeta'); c.type = 'button';
-        const mini = el('div', 'dc-mini'); mini.textContent = d.extracto || ' ';
-        const t = el('div', 'dc-tarjeta-t'); t.append(el('strong', null, (d.favorito ? '★ ' : '') + d.title));
-        const m = el('div', 'dc-meta k-faint', `${d.palabras.toLocaleString('es-ES')} palabras · ${D.fecha(d.updatedAt)}${d.cols ? ' · columnas' : ''}`);
-        c.append(mini, t, m); c.addEventListener('click', () => D.pintaEditor(raiz, d.id)); rejilla.appendChild(c);
+        const mini = el('div', 'dc-mini'); mini.textContent = d.extracto || 'Documento sin contenido';
+        const t = el('div', 'dc-tarjeta-t'); t.append(el('strong', null, d.title));
+        if (d.favorito) { const star = el('span', 'dc-favorito', '★'); star.title = 'Favorito'; t.appendChild(star); }
+        const m = el('div', 'dc-meta k-faint', `${(d.palabras || 0).toLocaleString('es-ES')} palabras · ${D.fecha(d.updatedAt)}`);
+        c.append(mini, t, m); c.setAttribute('aria-label', `Abrir documento ${d.title}`); c.addEventListener('click', () => D.pintaEditor(raiz, d.id)); rejilla.appendChild(c);
       }
     };
     busca.addEventListener('input', () => { S.busca = busca.value; pinta(); });
-    page.append(busca, rejilla); raiz.appendChild(page); pinta();
+    page.append(busca, resumen, rejilla); raiz.appendChild(page); pinta();
   };
 
   /* ---------- Menú «⋯» del editor ---------- */
