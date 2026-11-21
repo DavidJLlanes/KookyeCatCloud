@@ -16,8 +16,7 @@ document.querySelectorAll('.tab, .mobilenav button').forEach(btn => {
   btn.addEventListener('click', () => irASeccion(btn.dataset.view));
 });
 
-$('btn-grid').addEventListener('click', () => setView('grid'));
-$('btn-list').addEventListener('click', () => setView('list'));
+$('btn-file-columns').addEventListener('click', cycleFileColumns);
 $('btn-refresh').addEventListener('click', refresh);
 // En iPhone, el selector de fotos de Safari quita la ubicación salvo que se active en "Opciones".
 // Un aviso una sola vez evita subir cientos de fotos sin coordenadas sin darse cuenta.

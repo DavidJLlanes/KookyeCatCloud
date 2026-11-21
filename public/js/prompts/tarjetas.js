@@ -26,7 +26,7 @@
   function render() {
     if (!S.built || !S.M) return;
     const f = S.M.facets;
-    R.sub.textContent = S.q.trash ? `${f.trash} en la papelera` : `${f.total} prompt${f.total === 1 ? '' : 's'} guardado${f.total === 1 ? '' : 's'}`;
+    R.updateColumns();
     R.selb.classList.toggle('is-on', S.selMode);
     renderRail();
     renderActive();

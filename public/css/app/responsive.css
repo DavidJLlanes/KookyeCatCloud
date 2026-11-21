@@ -54,7 +54,6 @@
   body .ct-selbar .btn,body .notes-selbar .btn{min-height:44px;padding:8px 14px;}
   /* Zonas táctiles de al menos 40 px (antes varias medían 30-34 px y costaba acertar) */
   .chip{min-height:40px;}
-  #btn-grid,#btn-list{min-width:42px;min-height:40px;}
   .seg button{min-height:40px;}
   .ct-fav{min-width:42px;min-height:42px;}
   .tile .dots{min-width:38px;min-height:38px;}

@@ -64,7 +64,7 @@
     root.textContent = '';
     const page = el('section', 'pg-page'); root.appendChild(page);
     const cab = el('header', 'pg-head'); const t = el('div');
-    t.append(el('h1', null, 'Pagos'), el('p', 'k-muted', 'Recibos, seguros y suscripciones: compañía, importe y cuándo toca pagar'));
+    t.append(el('h1', null, 'Pagos'));
     cab.append(t, btn('Nuevo pago', 'i-plus', () => P.editor(null), 'btn primary')); page.appendChild(cab);
     if (!S.pagos.length) {
       const v = el('div', 'pg-vacio'); v.append(el('h2', null, 'Aún no hay pagos'), el('p', 'k-muted', 'Apunta tus seguros, suministros y suscripciones para saber qué pagas, a quién y cuándo.'), btn('Añadir el primero', 'i-plus', () => P.editor(null), 'btn primary'));

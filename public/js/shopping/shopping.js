@@ -74,7 +74,7 @@
     root.textContent = '';
     const page = el('section', 'shop-page');
     const head = el('header', 'shop-head');
-    const title = el('div'); title.append(el('h1', null, 'Lista de la compra'), el('p', 'k-muted', 'Compartida entre las cuentas de esta instalación'));
+    const title = el('div'); title.append(el('h1', null, 'Compra'));
     const actions = el('div', 'shop-head-actions');
     const exp = button('Exportar', 'i-download', () => K.menu(exp, K.doc.items(() => { const d = compraMd(); return d.md ? { titulo: d.titulo, nombre: d.titulo, md: d.md } : (K.toast('No hay nada que exportar en esta pestaña'), null); }), { align: 'end' }), 'btn');
     actions.append(exp, button('Categorías', 'i-tag', manageCategories, 'btn'), button('Nuevo producto', 'i-plus', () => editProduct(null), 'btn primary'));

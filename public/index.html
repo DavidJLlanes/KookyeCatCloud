@@ -252,15 +252,12 @@
     <div class="subbar">
       <nav class="crumbs" id="breadcrumb" aria-label="Ruta actual"></nav>
             <div class="subbar-acciones">
-        <div class="seg" role="group" aria-label="Modo de vista">
-          <button id="btn-grid" title="Cuadrícula" aria-label="Cuadrícula"><svg class="ico"><use href="#i-grid"/></svg></button>
-          <button id="btn-list" title="Lista" aria-label="Lista"><svg class="ico"><use href="#i-list"/></svg></button>
-        </div>
         <button class="btn ghost icon" id="btn-agrupar" title="Agrupar por meses" aria-label="Agrupar por meses"><svg class="ico"><use href="#i-calendar"/></svg></button>
       </div>
     </div>
 
     <div class="toolbar">
+      <button class="kcc-columns-toggle" id="btn-file-columns" type="button" aria-label="Cambiar vista de archivos"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg></button>
       <button class="btn primary" id="btn-upload"><svg class="ico"><use href="#i-upload"/></svg><span class="lbl">Subir archivos</span></button>
       <button class="btn" id="btn-newfolder"><svg class="ico"><use href="#i-folder-plus"/></svg><span class="lbl">Nueva carpeta</span></button>
       <button class="btn ghost icon" id="btn-refresh" title="Actualizar" aria-label="Actualizar"><svg class="ico"><use href="#i-refresh"/></svg></button>
@@ -402,7 +399,8 @@
   <!-- ---- Vista colecciones (favoritos y álbumes) ---- -->
   <main class="wrap" id="view-colecciones" hidden>
     <div class="view-head">
-      <div><h2>Colecciones</h2><p>Favoritos, álbumes, línea de tiempo y álbumes inteligentes</p></div>
+      <div><h2>Colecciones</h2></div>
+      <button class="kcc-columns-toggle" id="btn-collection-columns" type="button" aria-label="Cambiar columnas de colecciones"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg></button>
     </div>
     <div class="chips" id="col-subnav">
       <button class="chip is-active" data-col="favoritos">Favoritos</button>
@@ -949,6 +947,7 @@
 <script src="/js/app/inicio-seccion.js"></script>
 <script src="/js/app/inicio.js"></script>
 <script src="/js/nucleo/kit.js"></script>
+<script src="/js/nucleo/columnas-vista.js"></script>
 <script src="/js/nucleo/kit-foco.js"></script>
 <script src="/js/creativos/dibujos.js"></script>
 <script src="/js/creativos/pizarra-editor.js"></script>

@@ -19,7 +19,7 @@
     root.textContent = '';
     const page = el('div', 'en-page');
     const cab = el('div', 'en-head');
-    const tit = el('div'); tit.append(el('h1', null, 'Enlaces'), el('p', 'k-faint', 'Todos los enlaces públicos que has creado: ver, copiar, cambiar la caducidad o la contraseña y revocarlos.'));
+    const tit = el('div'); tit.append(el('h1', null, 'Enlaces'));
     const acc = el('div', 'en-head-acc');
     const limpiar = boton('Quitar caducados', 'i-trash', () => E.limpiaCaducados());
     const refresca = boton('Actualizar', 'i-refresh', () => E.carga().then(E.pinta).catch(K.fail));

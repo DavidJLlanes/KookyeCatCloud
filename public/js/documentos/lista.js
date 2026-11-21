@@ -21,7 +21,7 @@
     raiz.textContent = '';
     const page = el('div', 'dc-page');
     const cab = el('div', 'dc-head');
-    const tit = el('div'); tit.append(el('h1', null, 'Documentos'), el('p', 'k-faint', 'Tus documentos, de un vistazo'));
+    const tit = el('div'); tit.append(el('h1', null, 'Documentos'));
     const acc = el('div', 'dc-acciones');
     const vista = el('button', 'dc-view-toggle cr-p-view-toggle'); vista.type = 'button';
     vista.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg>';

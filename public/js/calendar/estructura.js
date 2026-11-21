@@ -13,7 +13,7 @@
     const v = $('view-calendar');
     v.textContent = '';
     const head = el('div', 'kv-head');
-    const t = el('div'); t.append(el('h2', null, 'Calendario'), el('p', 'sub', 'Eventos, tareas y todo lo que subes, en un solo sitio'));
+    const t = el('div'); t.append(el('h2', null, 'Agenda'));
     const grow = el('span', 'grow');
     const search = el('div', 'kv-search'); search.appendChild(icon('i-search'));
     const si = el('input'); si.type = 'search'; si.placeholder = 'Buscar eventos…'; si.autocomplete = 'off';

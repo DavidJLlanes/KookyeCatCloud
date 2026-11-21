@@ -37,7 +37,7 @@
     root.textContent = '';
     const page = el('section', 'rc-page'); root.appendChild(page);
     const cab = el('header', 'rc-head'); const t = el('div');
-    t.append(el('h1', null, 'Recordatorios'), el('p', 'k-muted', 'Lo que no quieres olvidar, con aviso en el navegador'));
+    t.append(el('h1', null, 'Avisos'));
     cab.append(t, btn('Nuevo recordatorio', 'i-plus', () => R.editor(null), 'btn primary')); page.appendChild(cab);
     const aviso = el('div', 'rc-avisos'); page.appendChild(aviso); franjaAvisos(aviso).catch(() => {});
 

@@ -41,10 +41,28 @@ function aplicarBotonAgrupar() {
   $('btn-agrupar').title = state.agrupar ? 'Ver todas seguidas' : 'Agrupar por meses';
 }
 
+const fileColumnsMobile = matchMedia('(max-width:700px)');
+const fileColumnKeys = { mobile: 'kcc-archivos-columnas-movil', desktop: 'kcc-archivos-columnas-escritorio' };
+const fileColumns = Object.fromEntries([['mobile', 2, 3], ['desktop', 3, 5]].map(([mode, fallback, max]) => {
+  const n = Number(localStorage.getItem(fileColumnKeys[mode]));
+  return [mode, Number.isInteger(n) && n >= 1 && n <= max ? n : fallback];
+}));
 function applyViewButtons() {
-  $('btn-grid').classList.toggle('is-active', state.view === 'grid');
-  $('btn-list').classList.toggle('is-active', state.view === 'list');
+  const mode = fileColumnsMobile.matches ? 'mobile' : 'desktop', n = fileColumns[mode], max = fileColumnsMobile.matches ? 3 : 5;
+  const button = $('btn-file-columns'), next = state.view === 'list' ? '1 columna' : n === max ? 'lista' : `${n + 1} columnas`;
+  button.title = `${state.view === 'list' ? 'Lista' : `${n} ${n === 1 ? 'columna' : 'columnas'}`} · pulsar para ${next}`;
+  button.setAttribute('aria-label', `Cambiar vista: ${state.view === 'list' ? 'lista' : `${n} ${n === 1 ? 'columna' : 'columnas'}`} actual, siguiente ${next}`);
+  document.getElementById('view-files').style.setProperty('--file-cols', String(n));
 }
+function cycleFileColumns() {
+  const mode = fileColumnsMobile.matches ? 'mobile' : 'desktop', max = fileColumnsMobile.matches ? 3 : 5;
+  if (state.view === 'list') { fileColumns[mode] = 1; state.view = 'grid'; }
+  else if (fileColumns[mode] === max) state.view = 'list';
+  else fileColumns[mode]++;
+  localStorage.setItem(fileColumnKeys[mode], String(fileColumns[mode]));
+  setView(state.view);
+}
+fileColumnsMobile.addEventListener('change', () => { applyViewButtons(); render(); });
 function setView(view) {
   state.view = view;
   localStorage.setItem('fc-view', view);

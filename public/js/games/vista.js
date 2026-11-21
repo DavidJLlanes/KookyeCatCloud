@@ -38,12 +38,14 @@
     root.textContent = '';
     const page = el('section', 'gms-page');
     const head = el('header', 'gms-head');
-    const t = el('div'); t.append(el('h1', null, 'Juegos'), el('p', 'k-muted', `${S.items.length} en tu colección`));
+    const t = el('div'); t.append(el('h1', null, 'Juegos'));
     const acc = el('div', 'gms-actions');
-    acc.append(btn('Mi perfil', 'i-star', tarjetaPerfil), btn(S.stats ? 'Biblioteca' : 'Estadísticas', 'i-bars', () => { S.stats = !S.stats; pinta(); }), (() => { const m = btn('', 'i-dots', ev => menuMas(ev.currentTarget)); m.setAttribute('aria-label', 'Más opciones'); return m; })(), btn('Añadir', 'i-plus', () => anadir(), 'btn primary'));
+    const primary = btn('Añadir', 'i-plus', () => anadir(), 'btn primary');
+    acc.append(primary, btn('Mi perfil', 'i-star', tarjetaPerfil), btn(S.stats ? 'Biblioteca' : 'Estadísticas', 'i-bars', () => { S.stats = !S.stats; pinta(); }), (() => { const m = btn('', 'i-dots', ev => menuMas(ev.currentTarget)); m.setAttribute('aria-label', 'Más opciones'); return m; })());
     head.append(t, acc); page.appendChild(head);
     if (S.stats) page.appendChild(panelStats()); else page.appendChild(biblioteca());
     root.appendChild(page);
+    const grid = page.querySelector('.gms-grid'); if (grid) KCCColumnasVista({ id: 'games', actions: acc, primary, grid });
   }
   function menuMas(anchor) {
     K.menu(anchor, [

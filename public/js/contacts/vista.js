@@ -18,7 +18,7 @@
     const v = $('view-contacts');
     v.textContent = '';
     const head = el('div', 'kv-head');
-    const t = el('div'); const sub = el('p', 'sub', ''); t.append(el('h2', null, 'Contactos'), sub);
+    const t = el('div'); t.append(el('h2', null, 'Contactos'));
     const search = el('div', 'kv-search'); search.appendChild(icon('i-search'));
     const si = el('input'); si.type = 'search'; si.placeholder = 'Buscar por nombre, teléfono, correo…  ( / )'; si.autocomplete = 'off'; search.appendChild(si);
     const nuevo = el('button', 'btn primary'); nuevo.type = 'button'; nuevo.append(icon('i-plus'), el('span', 'lbl', 'Nuevo contacto'));
@@ -43,7 +43,7 @@
     main.append(tools, barra, content);
     wrap.append(rail, main);
     v.append(head, wrap);
-    Object.assign(R, { sub, rail, content, count, si, wrap, barra, selb });
+    Object.assign(R, { rail, content, count, si, wrap, barra, selb });
 
     si.addEventListener('input', K.debounce(() => { S.q = si.value.trim(); render(); }, 150));
     sort.addEventListener('change', () => { S.sort = sort.value; try { localStorage.setItem('kcc-ct-sort', S.sort); } catch { /* sin almacenamiento */ } render(); });
@@ -147,7 +147,6 @@
     pintaRail();
     const lista = filtrados();
     const total = S.items.length;
-    R.sub.textContent = total ? `${total} contacto${total === 1 ? '' : 's'}` : 'Tu agenda';
     R.count.textContent = lista.length !== total ? `${lista.length} de ${total}` : '';
     pintaSel(lista);
     const c = R.content; c.textContent = '';

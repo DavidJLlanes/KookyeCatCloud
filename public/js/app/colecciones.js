@@ -28,6 +28,28 @@ async function toggleFavorite(rel) {
    Colecciones: favoritos y álbumes
 --------------------------------------------------------------- */
 const COL = { modo: 'favoritos', albumAbierto: null };
+const collectionMobile = matchMedia('(max-width:700px)');
+const collectionKeys = { mobile: 'kcc-colecciones-columnas-movil', desktop: 'kcc-colecciones-columnas-escritorio' };
+const collectionColumns = Object.fromEntries([['mobile', 2, 3], ['desktop', 3, 5]].map(([mode, fallback, max]) => {
+  const n = Number(localStorage.getItem(collectionKeys[mode]));
+  return [mode, Number.isInteger(n) && n >= 1 && n <= max ? n : fallback];
+}));
+function updateCollectionColumns() {
+  const mode = collectionMobile.matches ? 'mobile' : 'desktop', n = collectionColumns[mode], next = n % (collectionMobile.matches ? 3 : 5) + 1;
+  const button = $('btn-collection-columns');
+  button.hidden = COL.modo !== 'favoritos' && COL.modo !== 'albumes';
+  button.title = `${n} ${n === 1 ? 'columna' : 'columnas'} · pulsar para ${next}`;
+  button.setAttribute('aria-label', `Cambiar columnas: ${n} ${n === 1 ? 'actual' : 'actuales'}, siguiente ${next}`);
+  $('view-colecciones').style.setProperty('--collection-cols', String(n));
+}
+$('btn-collection-columns').addEventListener('click', () => {
+  const mode = collectionMobile.matches ? 'mobile' : 'desktop', max = collectionMobile.matches ? 3 : 5;
+  collectionColumns[mode] = collectionColumns[mode] % max + 1;
+  try { localStorage.setItem(collectionKeys[mode], String(collectionColumns[mode])); } catch { /* almacenamiento privado */ }
+  updateCollectionColumns();
+});
+collectionMobile.addEventListener('change', updateCollectionColumns);
+updateCollectionColumns();
 
 function loadColecciones() {
   pintarColSubnav();
@@ -36,6 +58,7 @@ function loadColecciones() {
   else if (window.Fotos) Fotos.carga(COL.modo);
 }
 function pintarColSubnav() {
+  updateCollectionColumns();
   document.querySelectorAll('#col-subnav .chip').forEach(c => c.classList.toggle('is-active', c.dataset.col === COL.modo));
   $('col-favoritos').hidden = COL.modo !== 'favoritos';
   $('col-albumes').hidden = COL.modo !== 'albumes';

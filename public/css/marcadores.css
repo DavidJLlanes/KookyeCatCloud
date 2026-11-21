@@ -53,3 +53,4 @@
   #view-marcadores{padding-right:8px;padding-left:8px;}
   .mk-caja.tarjetas{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;}
 }
+.mk-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}

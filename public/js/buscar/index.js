@@ -10,7 +10,7 @@
     root.textContent = '';
     const page = el('div', 'bu-page');
     const cab = el('div', 'bu-head');
-    const tit = el('div'); tit.append(el('h1', null, 'Buscar'), el('p', 'k-faint', 'Todo lo tuyo en un solo sitio, sin IA. Y, si conectas una, hazle preguntas sobre tus notas y datos.'));
+    const tit = el('div'); tit.append(el('h1', null, 'Buscar'));
     const aj = el('button', 'btn sm'); aj.type = 'button'; aj.append(icon('i-key'), el('span', null, 'Ajustes de IA')); aj.addEventListener('click', () => B.ajustes());
     cab.append(tit, aj);
     const barra = el('div', 'bu-barra');

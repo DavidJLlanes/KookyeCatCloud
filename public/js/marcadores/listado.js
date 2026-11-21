@@ -40,8 +40,10 @@
     root.textContent = '';
     const page = el('section', 'mk-page'); root.appendChild(page);
     const cab = el('header', 'mk-head'); const t = el('div');
-    t.append(el('h1', null, 'Marcadores'), el('p', 'k-muted', 'Tus webs favoritas, con carpetas y colores'));
-    cab.append(t, btn('Nuevo marcador', 'i-plus', () => M.editor(null), 'btn primary')); page.appendChild(cab);
+    t.append(el('h1', null, 'Marcadores'));
+    const primary = btn('Nuevo marcador', 'i-plus', () => M.editor(null), 'btn primary');
+    const actions = el('div', 'mk-head-actions'); actions.appendChild(primary);
+    cab.append(t, actions); page.appendChild(cab);
     if (!S.marcadores.length) {
       const v = el('div', 'mk-vacio'); v.append(el('h2', null, 'Aún no tienes marcadores'), el('p', 'k-muted', 'Guarda tus webs con nombre, descripción y color. El icono de cada una se busca solo.'), btn('Añadir el primero', 'i-plus', () => M.editor(null), 'btn primary'));
       page.appendChild(v); return;
@@ -52,19 +54,15 @@
     const orden = el('select'); orden.setAttribute('aria-label', 'Ordenar');
     [['nombre', 'Por nombre'], ['recientes', 'Más recientes'], ['abiertos', 'Más abiertos']].forEach(([v, n]) => { const o = el('option', null, n); o.value = v; orden.appendChild(o); });
     orden.value = S.orden; orden.addEventListener('change', () => { S.orden = orden.value; pintaListado(); });
-    const vista = el('div', 'mk-vista');
-    [['tarjetas', 'i-grid', 'Tarjetas'], ['lista', 'i-list', 'Lista']].forEach(([id, ic, n]) => {
-      const b = el('button', 'icon-btn' + (S.vista === id ? ' on' : '')); b.type = 'button'; b.title = n; b.setAttribute('aria-label', `Ver en ${n.toLowerCase()}`); b.setAttribute('aria-pressed', String(S.vista === id)); b.appendChild(icon(ic));
-      b.addEventListener('click', () => { M.guardaVista(id); M.pinta(); }); vista.appendChild(b);
-    });
-    barra.append(busca, orden, vista); page.append(barra, carpetas());
+    barra.append(busca, orden); page.append(barra, carpetas());
     const caja = el('div', 'mk-caja'); caja.id = 'mk-caja'; page.appendChild(caja);
     pintaListado();
+    KCCColumnasVista({ id: 'marcadores', actions, primary, grid: caja, list: { active: () => S.vista === 'lista', set: enabled => { M.guardaVista(enabled ? 'lista' : 'tarjetas'); M.pinta(); } } });
   };
 
   function pintaListado() {
     const caja = document.getElementById('mk-caja'); if (!caja) return;
-    caja.textContent = ''; caja.className = 'mk-caja ' + S.vista;
+    caja.textContent = ''; caja.className = 'mk-caja ' + S.vista + (caja.classList.contains('kcc-column-grid') && S.vista === 'tarjetas' ? ' kcc-column-grid' : '');
     const l = visibles();
     if (!l.length) { caja.appendChild(el('p', 'k-muted mk-nada', 'No hay marcadores aquí.')); return; }
     if (S.vista === 'lista') { const t = el('div', 'mk-tabla'); t.appendChild(M.cabeceraLista()); l.forEach(m => t.appendChild(M.fila(m))); caja.appendChild(t); }

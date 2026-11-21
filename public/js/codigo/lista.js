@@ -24,15 +24,15 @@
     if (S.p) pintaProyecto(page); else pintaLista(page);
   }
   function pintaLista(page) {
-    const head = el('header', 'cd-head'); const t = el('div'); t.append(el('h1', null, 'Código'), el('p', 'k-muted', 'Proyectos con carpetas, archivos, versiones y vista web'));
-    const acc = el('div', 'cd-acc'); acc.append(btn('Subir ZIP', 'i-zip', zipNuevo), btn('Nuevo proyecto', 'i-plus', nuevo, 'btn primary')); head.append(t, acc); page.appendChild(head);
+    const head = el('header', 'cd-head'); const t = el('div'); t.append(el('h1', null, 'Código'));
+    const acc = el('div', 'cd-acc'); const primary = btn('Nuevo proyecto', 'i-plus', nuevo, 'btn primary'); acc.append(primary, btn('Subir ZIP', 'i-zip', zipNuevo)); head.append(t, acc); page.appendChild(head);
     const bar = el('div', 'cd-bar2');
     const s = el('label', 'search cd-search'); s.appendChild(icon('i-search')); const inp = el('input'); inp.type = 'search'; inp.placeholder = 'Buscar proyecto…'; inp.value = S.q; inp.setAttribute('aria-label', 'Buscar');
     inp.addEventListener('input', K.debounce(() => { S.q = inp.value; pintaTarjetas(); }, 150)); s.appendChild(inp); bar.appendChild(s);
     const fv = el('button', 'btn cd-favbtn' + (S.fav ? ' on' : ''), '★ Favoritos'); fv.type = 'button'; fv.addEventListener('click', () => { S.fav = !S.fav; fv.classList.toggle('on', S.fav); pintaTarjetas(); }); bar.appendChild(fv);
     if (S.etiqueta) { const c = el('span', 'k-chip', 'Etiqueta: ' + S.etiqueta); const x = el('button', 'x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Quitar filtro'); x.addEventListener('click', () => { S.etiqueta = ''; pinta(); }); c.appendChild(x); bar.appendChild(c); }
     page.appendChild(bar);
-    const g = el('div', 'cd-grid'); g.id = 'cd-grid'; page.appendChild(g); pintaTarjetas();
+    const g = el('div', 'cd-grid'); g.id = 'cd-grid'; page.appendChild(g); KCCColumnasVista({ id: 'codigo', actions: acc, primary, grid: g }); pintaTarjetas();
   }
   function pintaTarjetas() {
     const g = root.querySelector('#cd-grid'); if (!g) return; g.textContent = '';

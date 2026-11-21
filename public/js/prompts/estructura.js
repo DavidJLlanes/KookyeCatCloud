@@ -15,7 +15,7 @@
     const v = $('view-prompts');
     v.textContent = '';
     const head = el('div', 'kv-head');
-    const t = el('div'); const h2 = el('h2', null, 'Prompts'); const sub = el('p', 'sub', ''); t.append(h2, sub);
+    const t = el('div'); const h2 = el('h2', null, 'Prompts'); t.append(h2);
     const search = el('div', 'kv-search'); search.appendChild(icon('i-search'));
     const si = el('input'); si.type = 'search'; si.placeholder = 'Buscar prompts…'; si.autocomplete = 'off'; search.appendChild(si);
     const nuevo = el('button', 'btn primary'); nuevo.type = 'button'; nuevo.append(icon('i-plus'), el('span', 'lbl', 'Nuevo prompt'));
@@ -25,17 +25,21 @@
     const actions = el('div', 'pr-head-actions'); actions.append(vista, nuevo, mas);
     head.classList.add('pr-head'); head.append(t, el('span', 'grow'), search, actions);
     const updateColumns = () => {
-      const mode = mobileColumns.matches ? 'mobile' : 'desktop', n = S.columns[mode], next = n % (mobileColumns.matches ? 3 : 5) + 1;
-      vista.title = `${n} ${n === 1 ? 'columna' : 'columnas'} · pulsar para ${next}`;
-      vista.setAttribute('aria-label', `Cambiar columnas: ${n} ${n === 1 ? 'actual' : 'actuales'}, siguiente ${next}`);
+      const mode = mobileColumns.matches ? 'mobile' : 'desktop', n = S.columns[mode], max = mobileColumns.matches ? 3 : 5;
+      const next = S.view === 'list' ? '1 columna' : n === max ? 'lista' : `${n + 1} columnas`;
+      vista.title = `${S.view === 'list' ? 'Lista' : `${n} ${n === 1 ? 'columna' : 'columnas'}`} · pulsar para ${next}`;
+      vista.setAttribute('aria-label', `Cambiar vista: ${S.view === 'list' ? 'lista' : `${n} ${n === 1 ? 'columna' : 'columnas'}`} actual, siguiente ${next}`);
       const grid = R.content?.querySelector('.pr-grid');
       if (grid) { grid.style.setProperty('--pr-cols', String(n)); grid.dataset.columns = String(n); }
     };
     vista.addEventListener('click', () => {
-      const mode = mobileColumns.matches ? 'mobile' : 'desktop';
-      S.columns[mode] = S.columns[mode] % (mobileColumns.matches ? 3 : 5) + 1;
+      const mode = mobileColumns.matches ? 'mobile' : 'desktop', max = mobileColumns.matches ? 3 : 5;
+      if (S.view === 'list' || S.view === 'board') { S.columns[mode] = 1; S.view = 'grid'; }
+      else if (S.columns[mode] === max) S.view = 'list';
+      else S.columns[mode]++;
       try { localStorage.setItem(columnKeys[mode], String(S.columns[mode])); } catch { /* almacenamiento privado */ }
-      if (S.view !== 'grid') { S.view = 'grid'; try { localStorage.setItem('kcc-pr-view', 'grid'); } catch {} render(); }
+      try { localStorage.setItem('kcc-pr-view', S.view); } catch { /* almacenamiento privado */ }
+      if (S.view === 'list' || !R.content.querySelector('.pr-grid')) render();
       updateColumns();
     });
     mobileColumns.addEventListener('change', updateColumns);
@@ -59,7 +63,7 @@
     wrap.append(rail, main);
     v.append(head, wrap);
     const selbar = el('div', 'pr-selbar'); selbar.hidden = true; v.appendChild(selbar);
-    Object.assign(R, { head, sub, rail, content, active, count, sort, si, selbar, selb, filt, updateColumns });
+    Object.assign(R, { head, rail, content, active, count, sort, si, selbar, selb, filt, updateColumns });
     updateColumns();
 
     si.addEventListener('input', K.debounce(() => { S.q.q = si.value.trim(); load(); }, 220));

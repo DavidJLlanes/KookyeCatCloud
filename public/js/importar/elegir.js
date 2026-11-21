@@ -18,7 +18,7 @@
 
   I.pintaElegir = (root) => {
     const page = el('div', 'im-page');
-    const cab = el('div', 'im-head'); cab.append(el('h1', null, 'Importar'), el('p', 'k-faint', 'Trae tus notas y tablas desde otras apps. Primero verás lo que se ha encontrado; nada se guarda hasta que lo confirmes.'));
+    const cab = el('div', 'im-head'); cab.append(el('h1', null, 'Importar'));
     page.appendChild(cab);
     if (S.error) page.appendChild(el('div', 'im-error', S.error));
     const rej = el('div', 'im-fuentes');

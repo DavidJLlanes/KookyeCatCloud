@@ -148,7 +148,7 @@
     const v = $('view-clip');
     v.textContent = '';
     const head = el('div', 'kv-head');
-    const t = el('div'); t.append(el('h2', null, 'Portapapeles'), el('p', 'sub', 'Envía texto o archivos de un dispositivo a otro'));
+    const t = el('div'); t.append(el('h2', null, 'Clip'));
     const vaciar = el('button', 'btn'); vaciar.type = 'button'; vaciar.append(icon('i-trash'), el('span', 'lbl', 'Vaciar'));
     head.append(t, el('span', 'grow'), vaciar);
 

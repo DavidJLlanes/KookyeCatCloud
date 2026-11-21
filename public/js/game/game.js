@@ -115,7 +115,7 @@
   function build() {
     const v = $('view-logros'); v.textContent = '';
     const head = el('div', 'kv-head');
-    const t = el('div'); t.append(el('h2', null, 'Logros'), el('p', 'sub', 'Sube de nivel usando la app y jugando: Tetris, 2048 y Breakout'));
+    const t = el('div'); t.append(el('h2', null, 'Logros'));
     const jugar = el('button', 'btn'); jugar.type = 'button'; jugar.append(G.gi('gamepad', 'gi-sm'), el('span', 'lbl', 'Jugar al Tetris'));
     jugar.addEventListener('click', () => switchTab('tetris'));
     const j2 = el('button', 'btn'); j2.type = 'button'; j2.append(G.gi('cube', 'gi-sm'), el('span', 'lbl', '2048')); j2.addEventListener('click', () => switchTab('g2048'));

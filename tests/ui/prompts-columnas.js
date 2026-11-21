@@ -31,16 +31,18 @@ async function check(browser, mobile) {
   }
   const max = mobile ? 3 : 5;
   let n = mobile ? 2 : 3;
-  for (let i = 0; i < max; i++) {
+  for (let i = 0; i < max - (mobile ? 2 : 3); i++) {
     await page.locator('.pr-view-toggle').click(); n = n % max + 1;
     assert.equal(await page.locator('.pr-grid').getAttribute('data-columns'), String(n));
     assert.equal(await page.locator('.pr-grid').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length), n);
     assert.ok(await page.locator('.pr-grid .pr-card').last().evaluate(el => el.getBoundingClientRect().right <= innerWidth + 1));
   }
   assert.equal(await page.evaluate(mode => localStorage.getItem(K._prompts.columnKeys[mode]), mobile ? 'mobile' : 'desktop'), String(n));
-  await page.evaluate(() => { K._prompts.S.view = 'list'; });
+  await page.locator('.pr-view-toggle').click();
+  assert.equal(await page.evaluate(() => K._prompts.S.view), 'list');
   await page.locator('.pr-view-toggle').click();
   assert.equal(await page.evaluate(() => K._prompts.S.view), 'grid');
+  assert.equal(await page.locator('.pr-grid').getAttribute('data-columns'), '1');
   assert.deepEqual(errors, []);
   await page.close();
 }

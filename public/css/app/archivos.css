@@ -24,6 +24,8 @@
 
 /* ---------- Cuadrícula ---------- */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px;padding:14px 0 24px;}
+#view-files .grid{grid-template-columns:repeat(var(--file-cols,3),minmax(0,1fr));}
+#view-colecciones .grid{grid-template-columns:repeat(var(--collection-cols,3),minmax(0,1fr));}
 .tile{position:relative;display:flex;flex-direction:column;border-radius:var(--r);overflow:hidden;
   background:var(--glass);border:1px solid var(--line);cursor:pointer;
   animation:pop .45s var(--ease) both;
