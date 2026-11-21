@@ -130,6 +130,8 @@
 .cr-e-toolbar{flex:none;display:grid;gap:6px;padding:10px 13px;background:#ffffff35;border-bottom:1px solid #00000012;user-select:none;-webkit-user-select:none}
 .cr-e-format-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding:2px;overscroll-behavior-x:contain}
 .cr-e-format-row .cr-e-button{flex:none;min-width:44px;min-height:44px;touch-action:manipulation}
+.cr-e-format-row .cr-e-align{display:grid;place-items:center}
+.cr-e-align svg{display:block;width:24px;height:24px;pointer-events:none}
 .cr-e-toolbar .cr-e-heading{min-width:92px;max-width:110px;font-weight:600}
 .cr-e-body{flex:1;min-height:0;display:flex;flex-direction:column;padding:16px 20px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-padding:18px}
 .cr-e-body .cr-e-title,.cr-e-body .cr-e-content{flex-shrink:0}

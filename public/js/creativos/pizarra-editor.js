@@ -242,6 +242,7 @@
       b.setAttribute('aria-pressed', 'false');
       formatButtons.push(b);
       (command === 'formatBlock' ? blocks : marks).append(b);
+      return b;
     }
     for (const [tag, label] of [['p', 'Texto'], ['h1', 'Título 1'], ['h2', 'Título 2'], ['h3', 'Título 3']]) {
       control(tag === 'p' ? 'Texto' : tag.toUpperCase(), label, 'formatBlock', tag);
@@ -252,10 +253,21 @@
     control('S', 'Tachado', 'strikeThrough');
     control('•', 'Viñetas', 'insertUnorderedList');
     control('1.', 'Lista numerada', 'insertOrderedList');
-    control('↤', 'Alinear izquierda', 'justifyLeft');
-    control('↔', 'Centrar texto', 'justifyCenter');
-    control('↦', 'Alinear derecha', 'justifyRight');
-    control('☷', 'Justificar texto', 'justifyFull');
+    for (const [label, command, lines] of [
+      ['Alinear izquierda', 'justifyLeft', 'M4 5h16M4 10h10M4 15h16M4 20h10'],
+      ['Centrar texto', 'justifyCenter', 'M4 5h16M7 10h10M4 15h16M7 20h10'],
+      ['Alinear derecha', 'justifyRight', 'M4 5h16M10 10h10M4 15h16M10 20h10'],
+      ['Justificar texto', 'justifyFull', 'M4 5h16M4 10h16M4 15h16M4 20h16']
+    ]) {
+      const b = control('', label, command);
+      b.classList.add('cr-e-align');
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      for (const [key, value] of Object.entries({ viewBox: '0 0 24 24', width: '24', height: '24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.2', 'stroke-linecap': 'round', 'aria-hidden': 'true' })) svg.setAttribute(key, value);
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', lines);
+      svg.append(path);
+      b.append(svg);
+    }
     function updateToolbar() {
       const selection = window.getSelection();
       const node = selection?.anchorNode;
