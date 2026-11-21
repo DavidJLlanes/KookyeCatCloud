@@ -55,3 +55,30 @@
 .cr-pizarra .cr-p-status{font-size:.7rem;color:#444a43;opacity:.78}
 .cr-pizarra .cr-p-empty{padding:24px;text-align:center;color:var(--muted)}
 @media(max-width:700px){.cr-pizarra .cr-board{grid-template-columns:1fr;gap:12px}.cr-pizarra .cr-postit{padding:15px 15px 10px;border-radius:16px}.cr-pizarra .cr-p-head{gap:8px}.cr-pizarra .cr-p-head .btn{font-size:.88rem}.cr-pizarra .cr-p-format{gap:4px}.cr-pizarra .cr-p-btn{min-width:32px}}
+
+/* Densidad de la pizarra: preferencia independiente por dispositivo. */
+.cr-pizarra .cr-p-layout{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin:-6px 0 18px;color:var(--muted);font-size:.85rem;font-weight:650}
+.cr-pizarra .cr-p-columns{display:inline-flex;gap:3px;padding:4px;border:1px solid var(--line);border-radius:13px;background:var(--surface)}
+.cr-pizarra .cr-p-col-option{min-width:36px;min-height:36px;display:grid;place-items:center;border:0;border-radius:9px;background:transparent;color:var(--text);font:700 .87rem/1 inherit;cursor:pointer}
+.cr-pizarra .cr-p-col-option.is-active{background:var(--surface-3);color:var(--accent-text);box-shadow:inset 0 0 0 1px var(--accent-line)}
+.cr-pizarra .cr-p-col-option:focus-visible{outline:2px solid var(--accent-strong);outline-offset:2px}
+.cr-pizarra .cr-board{grid-template-columns:repeat(var(--cr-p-cols,3),minmax(0,1fr))}
+@media(max-width:700px){
+  .cr-pizarra .cr-board{grid-template-columns:repeat(var(--cr-p-cols,1),minmax(0,1fr));gap:9px}
+  .cr-pizarra .cr-p-layout{justify-content:space-between;margin:0 0 12px}
+  .cr-pizarra .cr-postit{min-width:0;padding:12px 10px 8px}
+  /* En vista de varias columnas se compacta la nota, pero al editar
+     se expande a todo el ancho para que el teclado y el formato sean utilizables. */
+  .cr-pizarra .cr-board[style*="--cr-p-cols: 2"] .cr-postit:not(:focus-within),
+  .cr-pizarra .cr-board[style*="--cr-p-cols: 3"] .cr-postit:not(:focus-within){min-height:130px;padding:9px 8px 7px;border-radius:12px}
+  .cr-pizarra .cr-board[style*="--cr-p-cols: 2"] .cr-postit:not(:focus-within) .cr-p-title,
+  .cr-pizarra .cr-board[style*="--cr-p-cols: 3"] .cr-postit:not(:focus-within) .cr-p-title{font-size:.9rem!important;min-height:28px;line-height:1.2!important}
+  .cr-pizarra .cr-board[style*="--cr-p-cols: 2"] .cr-postit:not(:focus-within) .cr-p-editor,
+  .cr-pizarra .cr-board[style*="--cr-p-cols: 3"] .cr-postit:not(:focus-within) .cr-p-editor{font-size:.8rem;min-height:65px;max-height:150px}
+  .cr-pizarra .cr-board[style*="--cr-p-cols: 2"] .cr-postit:not(:focus-within) .cr-p-actions,
+  .cr-pizarra .cr-board[style*="--cr-p-cols: 3"] .cr-postit:not(:focus-within) .cr-p-actions,
+  .cr-pizarra .cr-board[style*="--cr-p-cols: 2"] .cr-postit:not(:focus-within) .cr-p-foot,
+  .cr-pizarra .cr-board[style*="--cr-p-cols: 3"] .cr-postit:not(:focus-within) .cr-p-foot{display:none}
+  .cr-pizarra .cr-board[style*="--cr-p-cols: 2"] .cr-postit:focus-within,
+  .cr-pizarra .cr-board[style*="--cr-p-cols: 3"] .cr-postit:focus-within{grid-column:1/-1;min-width:0;z-index:2}
+}
