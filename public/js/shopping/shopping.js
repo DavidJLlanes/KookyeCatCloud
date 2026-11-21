@@ -78,6 +78,9 @@
     const actions = el('div', 'shop-head-actions');
     const exp = button('Exportar', 'i-download', () => K.menu(exp, K.doc.items(() => { const d = compraMd(); return d.md ? { titulo: d.titulo, nombre: d.titulo, md: d.md } : (K.toast('No hay nada que exportar en esta pestaña'), null); }), { align: 'end' }), 'btn');
     const primary = button('Nuevo producto', 'i-plus', () => editProduct(null), 'btn primary');
+    primary.setAttribute('aria-label', 'Nuevo producto');
+    primary.querySelector('span').classList.add('kcc-primary-long');
+    primary.appendChild(el('span', 'kcc-primary-short', 'Añadir'));
     const vista = el('button', 'kcc-columns-toggle'); vista.type = 'button';
     vista.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg>';
     vista.title = S.layouts[S.tab] === 'list' ? 'Lista · pulsar para cuadrícula' : 'Cuadrícula · pulsar para lista';
