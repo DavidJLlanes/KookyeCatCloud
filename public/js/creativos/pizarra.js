@@ -72,8 +72,8 @@
     const status = node('span', 'cr-p-status', 'Guardado');
     let timer = null, saving = false, pending = false, destroyed = false;
     let cachedSelection = null;
-    let last = JSON.stringify({ titulo: item.titulo, color: item.color, contenido: limpiar(item.contenido) });
-    let queue = Promise.resolve();
+    let last = '';
+
 
     function datos() {
       return {
@@ -82,6 +82,7 @@
         contenido: limpiar(editor.innerHTML)
       };
     }
+    last = JSON.stringify(datos());
     function selectionInside() {
       const selection = window.getSelection();
       return selection && selection.rangeCount && editor.contains(selection.anchorNode)
