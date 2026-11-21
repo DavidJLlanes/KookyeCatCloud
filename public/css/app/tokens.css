@@ -124,3 +124,23 @@ body{
 ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--ink) 11%,transparent);border-radius:99px;
   border:3px solid transparent;background-clip:content-box;}
 ::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--ink) 20%,transparent);background-clip:content-box;}
+
+/* Los temas planos neutralizan los degradados de los componentes habituales,
+   sin ocultar imágenes, portadas o fotografías de fondo cargadas por el usuario. */
+:root:is([data-theme="monocromo-oscuro"],[data-theme="monocromo-claro"]) .aurora{
+  background:var(--bg-deep)!important;
+}
+:root:is([data-theme="monocromo-oscuro"],[data-theme="monocromo-claro"]) .aurora .blob{display:none!important;}
+:root:is([data-theme="monocromo-oscuro"],[data-theme="monocromo-claro"]) :is(
+  .btn.primary,.uprow .mini i,.du-row .fill,.is-sel .check,.lb-tools .icon-btn.is-active,
+  .pindots i.filled,.gm-barra i,.gm-dia i,.gm-reto-ic,.gm-logro-ic::before,
+  .gm-logro-ic::after,.gm-prev.marco i,.gm-toast,.gm-toast.oro,.gm-ficha.oro,
+  .gm-vitrina,.gm-logro,.tt-energia i.on,.ar-energia i.on,.tt-salir,
+  .editor-vacio,.album-tile .cover,.pinlock
+){background-image:none!important;}
+:root[data-theme="monocromo-oscuro"] :is(.gm-toast,.gm-toast.oro,.gm-vitrina,.gm-logro,.gm-ficha.oro,.gm-reto-ic,.pinlock){background-color:var(--surface-2)!important;}
+:root[data-theme="monocromo-claro"] :is(.gm-toast,.gm-toast.oro,.gm-vitrina,.gm-logro,.gm-ficha.oro,.gm-reto-ic,.pinlock){background-color:var(--surface-2)!important;}
+:root:is([data-theme="monocromo-oscuro"],[data-theme="monocromo-claro"]) :is(.gm-barra i,.gm-dia i,.tt-energia i.on,.ar-energia i.on){background-color:var(--accent-strong)!important;}
+:root[data-theme="monocromo-oscuro"] :is(.btn.primary,.is-sel .check,.lb-tools .icon-btn.is-active){color:#151719!important;}
+:root[data-theme="monocromo-claro"] :is(.btn.primary,.is-sel .check,.lb-tools .icon-btn.is-active){color:#f8f7f3!important;}
+:root:is([data-theme="monocromo-oscuro"],[data-theme="monocromo-claro"]) .acento{background:var(--c1)!important;}
