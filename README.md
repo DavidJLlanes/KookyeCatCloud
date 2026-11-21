@@ -1770,7 +1770,9 @@ incluyen las miniaturas** (se regeneran solas). El código no entra: está en Gi
 
 - **Histórico de dos semanas**: un archivo `kookyecatcloud-datos-AAAA-MM-DD.tar.gz` por día de Madrid en `COPIAS_DIR`
   (por defecto `/var/backups/kookyecatcloud/`). Se conservan los 14 días más recientes. Una nueva copia del mismo día
-  sustituye solo la de ese día, después de verificarse. Desde Administración se puede descargar cualquiera de las disponibles.
+  sustituye solo la de ese día, después de verificarse. Desde Administración se puede descargar cualquiera de las disponibles
+  o pulsar **Recuperar** para añadir los archivos y registros que falten. La recuperación no sobrescribe archivos ni
+  registros actuales y no borra lo que no esté en la copia.
   El archivo anterior sin fecha se migra al día en que se creó.
 - **Cuándo**: a mano con «Crear copia ahora», y cada día a las **3:00** (hora de Madrid). Si la de las 3:00 falla o no
   se hace, reintenta a las **4:00** y a las **5:00**. El programador vive dentro de la propia app: no hay cron ni
@@ -1786,7 +1788,11 @@ incluyen las miniaturas** (se regeneran solas). El código no entra: está en Gi
 - **Permisos**: la carpeta queda en `700` y el archivo en `600`. Contiene contraseñas cifradas, secretos y el `.env` **en
   claro**: no la pongas en ninguna ruta que sirva Nginx ni la compartas con nadie.
 
-### Restaurar una copia
+### Sustituir toda la instalación manualmente
+
+El botón **Recuperar** de Administración fusiona los datos ausentes de la fecha elegida con los actuales. Si necesitas
+volver por completo al estado anterior (incluidos los cambios de elementos que aún existen), usa este procedimiento
+manual:
 
 1. Para el servicio: `sudo systemctl stop kookyecatcloud`.
 2. Elige la fecha en Administración o en `COPIAS_DIR` y extrae ese archivo en una carpeta temporal:

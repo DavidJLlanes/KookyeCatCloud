@@ -124,7 +124,7 @@ const USERNAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]{2,31}$/;
 const MIN_PASSWORD = 8;
 // Caché de miniaturas: fuera de DATA_DIR para que no aparezca en los listados
 const THUMBS_DIR = process.env.THUMBS_DIR || path.join(APP_DIR, '.thumbs');
-// Copia de seguridad: fuera de la web y de DATA_DIR (un único archivo, reemplazado en cada copia)
+// Copias diarias: fuera de la web y de DATA_DIR (14 días de historial)
 const COPIAS_DIR = process.env.COPIAS_DIR || '/var/backups/kookyecatcloud';
 const { TRASH_DIR, TRASH_SWEEP_HOURS } = createPapelera;
 // Enlaces: de subida (otros te dejan archivos) y de descarga (mandas tú algo).

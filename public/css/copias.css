@@ -14,4 +14,6 @@
 .copias-dia{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--glass);min-width:0;}
 .copias-dia span{min-width:0;font-size:calc(13px*var(--fs,1));color:var(--text);}
 .copias-dia .btn{flex:none;min-height:38px;padding:7px 12px;}
+.copias-dia-acciones{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;}
+@media(max-width:480px){.copias-dia{align-items:flex-start;flex-direction:column}.copias-dia-acciones{justify-content:flex-start}}
 .copias-vacia{margin:0;color:var(--muted);font-size:calc(13px*var(--fs,1));}

@@ -592,6 +592,11 @@ const rawgSrv = require('http').createServer((rq, rs) => {
   });
   await prueba('copias: crear, verificar, descargar (solo administrador)', async () => {
     igual((await req('GET', '/api/admin/copias')).s, 200, 'estado');
+    const carpetaMerge = path.join(DATA, 'prueba-recuperacion');
+    fs.mkdirSync(carpetaMerge);
+    fs.writeFileSync(path.join(carpetaMerge, 'ausente.txt'), 'desde la copia');
+    fs.writeFileSync(path.join(carpetaMerge, 'presente.txt'), 'versión anterior');
+    fs.writeFileSync(path.join(carpetaMerge, 'catalogo.json'), JSON.stringify({ items: [{ id: 'antiguo', title: 'De la copia' }, { id: 'comun', title: 'Versión anterior' }] }));
     igual((await req('POST', '/api/admin/copias', {})).s, 202, 'arranca');
     let e = null;
     for (let i = 0; i < 240; i++) { await dormir(500); e = (await req('GET', '/api/admin/copias')).j; if (!e.enCurso) break; }
@@ -622,6 +627,26 @@ const rawgSrv = require('http').createServer((rq, rs) => {
     igual(e.ultima.resultado, 'ok', 'segunda copia correcta');
     igual(fs.existsSync(archivoAntiguo), false, 'se purgan las copias de más de dos semanas');
     cierto(fs.existsSync(archivoAyer) && fs.existsSync(f), 'se conservan días recientes distintos');
+    fs.rmSync(path.join(carpetaMerge, 'ausente.txt'));
+    fs.writeFileSync(path.join(carpetaMerge, 'presente.txt'), 'versión actual');
+    fs.writeFileSync(path.join(carpetaMerge, 'nuevo.txt'), 'solo actual');
+    fs.writeFileSync(path.join(carpetaMerge, 'catalogo.json'), JSON.stringify({ items: [{ id: 'comun', title: 'Versión actual' }, { id: 'nuevo', title: 'Solo actual' }] }));
+    igual((await req('POST', '/api/admin/copias/recuperar', { fecha: ayer })).s, 202, 'inicia recuperación de la fecha elegida');
+    let recuperada;
+    for (let i = 0; i < 240; i++) { await dormir(250); recuperada = (await req('GET', '/api/admin/copias')).j.restauracion; if (recuperada?.estado !== 'en_curso') break; }
+    igual(recuperada?.estado, 'ok', 'recuperación: ' + (recuperada?.error || ''));
+    igual(fs.readFileSync(path.join(carpetaMerge, 'ausente.txt'), 'utf8'), 'desde la copia', 'archivo ausente recuperado');
+    igual(fs.readFileSync(path.join(carpetaMerge, 'presente.txt'), 'utf8'), 'versión actual', 'archivo actual intacto');
+    igual(fs.readFileSync(path.join(carpetaMerge, 'nuevo.txt'), 'utf8'), 'solo actual', 'archivo solo actual intacto');
+    const items = JSON.parse(fs.readFileSync(path.join(carpetaMerge, 'catalogo.json'))).items;
+    igual(items.length, 3, 'catálogo fusionado');
+    igual(items.find(x => x.id === 'comun').title, 'Versión actual', 'registro actual intacto');
+    cierto(items.some(x => x.id === 'antiguo'), 'registro ausente recuperado');
+    igual((await req('POST', '/api/admin/copias/recuperar', { fecha: ayer })).s, 202, 'repetir recuperación');
+    for (let i = 0; i < 240; i++) { await dormir(250); recuperada = (await req('GET', '/api/admin/copias')).j.restauracion; if (recuperada?.estado !== 'en_curso') break; }
+    igual(recuperada?.estado, 'ok', 'segunda recuperación');
+    igual(JSON.parse(fs.readFileSync(path.join(carpetaMerge, 'catalogo.json'))).items.length, 3, 'no duplica registros');
+    igual((await req('POST', '/api/admin/copias/recuperar', { fecha: '../../etc/passwd' })).s, 400, 'fecha de recuperación inválida');
     igual((await fetch(BASE + '/api/admin/copias')).status, 401, 'sin sesión');
     igual((await req('GET', '/api/game')).j.recuentos.copias_manuales >= 1, true, 'contador de logros');
   });
@@ -630,7 +655,7 @@ const rawgSrv = require('http').createServer((rq, rs) => {
     const rutas = {};
     const router = { get: (p, ...h) => { rutas['GET ' + p] = h[h.length - 1]; }, post: (p, ...h) => { rutas['POST ' + p] = h[h.length - 1]; } };
     const fichero = path.join(TMP, 'no-es-carpeta'); fs.writeFileSync(fichero, 'x');   // un archivo en lugar de carpeta: no se puede escribir dentro
-    const m = crea({ express: { Router: () => router }, auth: null, adminOnly: null, sendError: (res, e) => { throw e; }, registrarActividad() {}, alCambiar() {}, dataRoot: DATA, appDir: ROOT, copiasDir: path.join(fichero, 'copias') });
+    const m = crea({ express: { Router: () => router, json: () => (_req, _res, next) => next() }, auth: null, adminOnly: null, sendError: (res, e) => { throw e; }, registrarActividad() {}, alCambiar() {}, dataRoot: DATA, appDir: ROOT, copiasDir: path.join(fichero, 'copias') });
     rutas['POST /']({ user: { username: 'admin' } }, { status: () => ({ json() {} }) });
     let e = null;
     for (let i = 0; i < 50; i++) { await dormir(100); e = await m.core.estado(); if (!e.enCurso && e.ultima) break; }
