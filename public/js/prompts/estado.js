@@ -27,6 +27,12 @@
     q: { q: '', category: '', list: '', kind: '', status: '', model: '', tool: '', language: '', fav: false, minRating: 0, images: '', cal: false, from: '', to: '', trash: false, sort: 'updated' },
     labels: new Set(), view: 'grid', sel: new Set(), selMode: false, modelsAll: false, toolsAll: false,
   };
+  const mobileColumns = matchMedia('(max-width:700px)');
+  const columnKeys = { mobile: 'kcc-prompts-columnas-movil', desktop: 'kcc-prompts-columnas-escritorio' };
+  const readColumns = (key, fallback, max) => {
+    try { const n = Number(localStorage.getItem(key)); return Number.isInteger(n) && n >= 1 && n <= max ? n : fallback; } catch { return fallback; }
+  };
+  S.columns = { mobile: readColumns(columnKeys.mobile, 2, 3), desktop: readColumns(columnKeys.desktop, 3, 5) };
   try { S.view = localStorage.getItem('kcc-pr-view') || 'grid'; S.q.sort = localStorage.getItem('kcc-pr-sort') || 'updated'; } catch {}
   const R = {};
   const imgUrl = (pid, iid, thumb) => `${BASE}/api/prompts/${pid}/img/${iid}${thumb ? '?thumb=1' : ''}`;
@@ -47,5 +53,5 @@
   const colorOf = (p) => p.color || (catBy(p.category) && catBy(p.category).color) || 'transparent';
 
 
-  Object.assign(C, { KIND_BASE, KIND_ICONS, PRO, STATUS, SORTS, S, R, imgUrl, kindDefs, kindBy, catBy, listBy, colorOf });
+  Object.assign(C, { KIND_BASE, KIND_ICONS, PRO, STATUS, SORTS, S, R, imgUrl, kindDefs, kindBy, catBy, listBy, colorOf, mobileColumns, columnKeys });
 })();

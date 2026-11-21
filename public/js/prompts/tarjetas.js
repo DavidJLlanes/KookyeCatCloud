@@ -61,6 +61,7 @@
       c.appendChild(b);
     } else {
       const g = el('div', 'pr-grid'); S.items.forEach(p => g.appendChild(card(p))); c.appendChild(g);
+      R.updateColumns();
     }
     if (S.view !== 'board' && S.items.length < S.total) {
       const m = el('div', 'pr-more'); const b = el('button', 'btn', `Cargar más (${S.total - S.items.length})`); b.type = 'button'; b.addEventListener('click', () => load(true)); m.appendChild(b); c.appendChild(m);

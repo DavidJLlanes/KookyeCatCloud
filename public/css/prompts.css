@@ -29,7 +29,7 @@
 .pr-count{font-size:calc(13px*var(--fs,1));color:var(--faint);margin:0 4px 0 auto;}
 
 /* Cuadrícula de tarjetas */
-.pr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(262px,1fr));gap:16px;}
+.pr-grid{display:grid;grid-template-columns:repeat(var(--pr-cols,3),minmax(0,1fr));align-items:start;gap:16px;}
 .pr-card{--c:transparent;position:relative;display:flex;flex-direction:column;border-radius:20px;overflow:hidden;cursor:pointer;
   background:linear-gradient(170deg,color-mix(in srgb,var(--ink) 7%,transparent),color-mix(in srgb,var(--ink) 3%,transparent));border:1px solid var(--line);
   transition:transform .25s var(--ease),border-color .2s,box-shadow .25s;}
@@ -200,7 +200,7 @@
   .pr-rail .pr-sec{flex:0 0 250px;max-height:260px;overflow:auto;}
 }
 @media (max-width:600px){
-  .pr-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  .pr-grid{gap:10px;}
   .pr-body{padding:10px 11px;}
   .pr-snip{-webkit-line-clamp:2;}
   /* Tarjeta estrecha (2 columnas): los datos arriba y el botón «Copiar» a todo el ancho, sin salirse */
@@ -208,5 +208,32 @@
   .pr-foot .grow{display:none;}
   .pr-foot .pr-copy{flex:0 0 auto;width:100%;justify-content:center;}
   .pr-board{grid-template-columns:repeat(4,82vw);}
+}
+
+/* Galería de prompts: el mismo selector directo de columnas que Pizarra. */
+.pr-head{gap:12px;margin-bottom:4px;}
+.pr-head h2{font-size:clamp(1.5rem,3vw,2rem);}
+.pr-head .sub{font-size:.92rem;color:var(--muted);}
+.pr-head-actions{display:flex;align-items:center;gap:8px;flex:none;}
+.pr-head-actions .btn.primary{min-height:42px;padding:8px 16px;border-radius:14px;font-weight:700;}
+.pr-view-toggle{width:42px;height:42px;flex:none;display:grid;place-items:center;padding:0;border:1px solid var(--line-2);border-radius:12px;background:var(--surface);color:var(--muted);cursor:pointer;}
+.pr-view-toggle:hover{background:var(--brand-soft);border-color:var(--accent-line);color:var(--accent-text);}
+.pr-view-toggle:focus-visible{outline:2px solid var(--accent-strong);outline-offset:2px;}
+.pr-grid .pr-card{min-width:0;border-radius:17px;background:var(--surface);box-shadow:0 3px 12px #00000012;}
+.pr-grid .pr-cover{aspect-ratio:5/3;}
+.pr-grid .pr-body{min-width:0;}
+.pr-grid .pr-title{overflow-wrap:anywhere;}
+.pr-grid .pr-foot .pr-copy{opacity:1;transform:none;}
+@media(max-width:700px){
+  .pr-head .kv-search{order:3;flex:1 0 100%;max-width:none;}
+  .pr-head-actions{order:2;}
+  .pr-head-actions .btn.primary{font-size:.85rem;}
+  .pr-view-toggle{width:40px;height:40px;}
+  .pr-grid{gap:9px;}
+  .pr-grid .pr-body{padding:9px;gap:5px;}
+  .pr-grid .pr-title{font-size:clamp(.72rem,3vw,.95rem);}
+  .pr-grid .pr-snip{font-size:clamp(.65rem,2.7vw,.8rem);-webkit-line-clamp:2;}
+  .pr-grid[data-columns="3"] .pr-body .k-chips,.pr-grid[data-columns="3"] .pr-foot .pr-meta{display:none;}
+  .pr-grid[data-columns="3"] .pr-copy{width:100%;justify-content:center;}
 }
 

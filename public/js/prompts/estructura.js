@@ -2,7 +2,7 @@
 /* prompts/estructura.js: parte del módulo (se carga con el resto de prompts/ en index.html). Comparte el espacio K._prompts. */
 (function () {
   const C = (K._prompts = K._prompts || {});
-  const { R, S, SORTS } = C;
+  const { R, S, SORTS, mobileColumns, columnKeys } = C;
   const load = (...a) => C.load(...a);
   const manageKinds = (...a) => C.manageKinds(...a);
   const openEditor = (...a) => C.openEditor(...a);
@@ -19,8 +19,26 @@
     const search = el('div', 'kv-search'); search.appendChild(icon('i-search'));
     const si = el('input'); si.type = 'search'; si.placeholder = 'Buscar en títulos, textos, notas…  ( / )'; si.autocomplete = 'off'; search.appendChild(si);
     const nuevo = el('button', 'btn primary'); nuevo.type = 'button'; nuevo.append(icon('i-plus'), el('span', 'lbl', 'Nuevo prompt'));
+    const vista = el('button', 'pr-view-toggle'); vista.type = 'button';
+    vista.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg>';
     const mas = el('button', 'btn ghost icon'); mas.type = 'button'; mas.appendChild(icon('i-dots')); mas.title = 'Importar, exportar y más';
-    head.append(t, el('span', 'grow'), search, nuevo, mas);
+    const actions = el('div', 'pr-head-actions'); actions.append(vista, nuevo, mas);
+    head.classList.add('pr-head'); head.append(t, el('span', 'grow'), search, actions);
+    const updateColumns = () => {
+      const mode = mobileColumns.matches ? 'mobile' : 'desktop', n = S.columns[mode], next = n % (mobileColumns.matches ? 3 : 5) + 1;
+      vista.title = `${n} ${n === 1 ? 'columna' : 'columnas'} · pulsar para ${next}`;
+      vista.setAttribute('aria-label', `Cambiar columnas: ${n} ${n === 1 ? 'actual' : 'actuales'}, siguiente ${next}`);
+      const grid = R.content?.querySelector('.pr-grid');
+      if (grid) { grid.style.setProperty('--pr-cols', String(n)); grid.dataset.columns = String(n); }
+    };
+    vista.addEventListener('click', () => {
+      const mode = mobileColumns.matches ? 'mobile' : 'desktop';
+      S.columns[mode] = S.columns[mode] % (mobileColumns.matches ? 3 : 5) + 1;
+      try { localStorage.setItem(columnKeys[mode], String(S.columns[mode])); } catch { /* almacenamiento privado */ }
+      if (S.view !== 'grid') { S.view = 'grid'; try { localStorage.setItem('kcc-pr-view', 'grid'); } catch {} render(); }
+      updateColumns();
+    });
+    mobileColumns.addEventListener('change', updateColumns);
 
     const wrap = el('div', 'pr');
     const rail = el('aside', 'pr-rail');
@@ -46,7 +64,8 @@
     wrap.append(rail, main);
     v.append(head, wrap);
     const selbar = el('div', 'pr-selbar'); selbar.hidden = true; v.appendChild(selbar);
-    Object.assign(R, { head, sub, rail, content, active, count, sort, seg, si, selbar, selb, filt });
+    Object.assign(R, { head, sub, rail, content, active, count, sort, seg, si, selbar, selb, filt, updateColumns });
+    updateColumns();
 
     si.addEventListener('input', K.debounce(() => { S.q.q = si.value.trim(); load(); }, 220));
     sort.addEventListener('change', () => { S.q.sort = sort.value; try { localStorage.setItem('kcc-pr-sort', sort.value); } catch {} load(); });
