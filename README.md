@@ -513,7 +513,7 @@ en el calendario con un enlace de vuelta al elemento.
 | Contactos | Todos los contactos en un solo archivo | `<usuario>/.kcc/contacts.json` |
 | Etiquetas | Lista de etiquetas con color | `<usuario>/.kcc/labels.json` |
 | Valores reutilizables | Catálogo de valores por campo (modelo, plataforma, empresa…) | `<usuario>/.kcc/valores.json` |
-| Copia de seguridad | Un único `.tar.gz` sin cifrar, fuera de la web (no está en `DATA_DIR`) | `COPIAS_DIR` (`/var/backups/kookyecatcloud/`) |
+| Copia de seguridad | Un `.tar.gz` diario sin cifrar durante 14 días, fuera de la web (no está en `DATA_DIR`) | `COPIAS_DIR` (`/var/backups/kookyecatcloud/`) |
 
 Todo está oculto al explorador de archivos y a WebDAV (son carpetas con punto). Para las
 copias de seguridad, ver «Copias de seguridad» más abajo.
@@ -1815,7 +1815,7 @@ Bases, proyectos de Código, contactos, juegos y eventos no tienen papelera en l
 
 ### Si una nota «desaparece»
 
-Las notas guardan un `index.json` y un `.md` por nota en `<datos>/.notes/` (`users/<nombre>/.notes/` para el resto de usuarios). Las escrituras van en cola, son atómicas y dejan `index.json.bak`; un índice dañado se aparta como `.dañado-<fecha>` y se restaura el `.bak`; si el cuerpo de una nota se queda vacío de golpe, el texto anterior queda en `.notes/salvavidas/`. En Notas → Papelera, **Buscar notas perdidas** recupera en la carpeta «Notas recuperadas» cualquier `.md` que ya no figure en el índice. Para sacar una nota de una copia de seguridad: `mkdir -p /root/recuperar && sudo tar -xzf /var/backups/kookyecatcloud/kookyecatcloud-datos.tar.gz -C /root/recuperar --wildcards '*/.notes/*'`, busca con `sudo grep -rl "palabra" /root/recuperar` y copia el `.md` a `.notes/` (después, «Buscar notas perdidas»).
+Las notas guardan un `index.json` y un `.md` por nota en `<datos>/.notes/` (`users/<nombre>/.notes/` para el resto de usuarios). Las escrituras van en cola, son atómicas y dejan `index.json.bak`; un índice dañado se aparta como `.dañado-<fecha>` y se restaura el `.bak`; si el cuerpo de una nota se queda vacío de golpe, el texto anterior queda en `.notes/salvavidas/`. En Notas → Papelera, **Buscar notas perdidas** recupera en la carpeta «Notas recuperadas» cualquier `.md` que ya no figure en el índice. Para sacar una nota de una copia de seguridad, descarga la fecha elegida en Administración o usa el archivo correspondiente de `COPIAS_DIR`; extráelo en una carpeta temporal, busca el `.md` y cópialo a `.notes/` (después, «Buscar notas perdidas»).
 
 Recomendación: descarga una copia a tu ordenador de vez en cuando con el botón «Descargar copia». Como todo vive en el
 mismo servidor, esa es la única protección frente a la pérdida del propio VPS.
