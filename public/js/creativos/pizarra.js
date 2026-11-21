@@ -1,5 +1,5 @@
 'use strict';
-/* Pizarra: tarjetas de lectura rápida y selector visual de densidad.
+/* Pizarra: tarjetas de altura variable y selector compacto de columnas.
    La edición y el formato viven en pizarra-editor.js. */
 (function () {
   const root = document.getElementById('view-pizarra');
@@ -18,6 +18,7 @@
   }
   const columns = { mobile: readPreference(pref.mobile, 2, 3), desktop: readPreference(pref.desktop, 3, 5) };
   let items = [];
+  const cards = new Map();
   let loading = false;
   const node = (tag, cls, text) => {
     const el = document.createElement(tag);
@@ -25,10 +26,22 @@
     if (text !== undefined) el.textContent = text;
     return el;
   };
-  root.innerHTML = '<div class="cr-wrap cr-pizarra cr-p-new-ui"><header class="cr-head cr-p-head"><div><h2>Pizarra</h2><p class="cr-p-sub">Tus ideas, de un vistazo</p></div><button type="button" id="cr-p-new" class="btn primary">+ Nueva nota</button></header><div class="cr-p-density"><div class="cr-p-density-heading"><span class="cr-p-density-label">ORGANIZA TU ESPACIO</span><strong>Vista de notas</strong><span id="cr-p-total" class="cr-p-total"></span></div><div id="cr-p-columns" role="group" aria-label="Columnas de notas"></div></div><div class="cr-board" id="cr-p-board"></div><p class="cr-p-empty" id="cr-p-empty" hidden>Tu pizarra está vacía. Añade tu primera nota.</p></div>';
+  root.innerHTML = '<div class="cr-wrap cr-pizarra cr-p-new-ui"><header class="cr-head cr-p-head"><div><h2>Pizarra</h2><p class="cr-p-sub">Tus ideas, de un vistazo</p></div><div class="cr-p-head-actions"><div class="cr-p-view-control"><button type="button" id="cr-p-view-toggle" class="cr-p-view-toggle" aria-label="Cambiar columnas" aria-controls="cr-p-columns" aria-expanded="false" title="Cambiar columnas"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="15" width="18" height="5" rx="1.5"/></svg></button><div id="cr-p-columns" class="cr-p-view-menu" role="group" aria-label="Columnas de notas" hidden></div></div><button type="button" id="cr-p-new" class="btn primary">+ Nueva nota</button></div></header><div class="cr-board" id="cr-p-board"></div><p class="cr-p-empty" id="cr-p-empty" hidden>Tu pizarra está vacía. Añade tu primera nota.</p></div>';
   const board = root.querySelector('#cr-p-board');
   const empty = root.querySelector('#cr-p-empty');
   const controls = root.querySelector('#cr-p-columns');
+  const toggle = root.querySelector('#cr-p-view-toggle');
+  function closeMenu() { controls.hidden = true; toggle.setAttribute('aria-expanded', 'false'); }
+  toggle.addEventListener('click', () => {
+    controls.hidden = !controls.hidden;
+    toggle.setAttribute('aria-expanded', String(!controls.hidden));
+  });
+  document.addEventListener('pointerdown', event => {
+    if (!controls.hidden && !root.querySelector('.cr-p-view-control').contains(event.target)) closeMenu();
+  });
+  root.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !controls.hidden) { event.preventDefault(); closeMenu(); toggle.focus(); }
+  });
   function layout() {
     const isMobile = mobile.matches;
     const active = columns[isMobile ? 'mobile' : 'desktop'];
@@ -36,35 +49,39 @@
     board.dataset.columns = String(active);
     controls.replaceChildren();
     for (let count = 1; count <= (isMobile ? 3 : 5); count++) {
-      const btn = node('button', 'cr-p-layout-button');
+      const btn = node('button', 'cr-p-view-option', count + (count === 1 ? ' columna' : ' columnas'));
       btn.type = 'button';
-      btn.title = count + (count === 1 ? ' columna' : ' columnas');
-      btn.setAttribute('aria-label', btn.title);
       btn.setAttribute('aria-pressed', String(count === active));
-      if (count === active) btn.classList.add('is-active');
-      const glyph = node('span', 'cr-p-layout-glyph');
-      glyph.setAttribute('aria-hidden', 'true');
-      glyph.style.setProperty('--glyph-cols', String(count));
-      for (let i = 0; i < count; i++) glyph.append(node('i'));
-      const label = node('span', 'cr-p-layout-count', String(count));
-      label.append(node('small', '', count === 1 ? 'columna' : 'columnas'));
-      btn.append(glyph, label);
       btn.addEventListener('click', () => {
         const mode = mobile.matches ? 'mobile' : 'desktop';
         columns[mode] = count;
         try { localStorage.setItem(pref[mode], String(count)); } catch { /* privada */ }
         layout();
+        closeMenu();
+        toggle.focus();
       });
       controls.append(btn);
+    }
+    rebalance();
+  }
+  function rebalance() {
+    const count = Number(board.dataset.columns) || 1;
+    const slots = Array.from({ length: count }, () => node('div', 'cr-p-column'));
+    const heights = Array(count).fill(0);
+    board.replaceChildren(...slots);
+    for (const item of items) {
+      let card = cards.get(item.id);
+      if (!card) { card = preview(item); cards.set(item.id, card); }
+      const shortest = heights.indexOf(Math.min(...heights));
+      slots[shortest].append(card);
+      heights[shortest] = slots[shortest].offsetHeight;
     }
   }
   if (mobile.addEventListener) mobile.addEventListener('change', layout);
   else mobile.addListener(layout);
   layout();
   function refreshEmpty() {
-    const count = board.children.length;
-    empty.hidden = count > 0;
-    root.querySelector('#cr-p-total').textContent = count + (count === 1 ? ' nota' : ' notas');
+    empty.hidden = items.length > 0;
   }
   function preview(item) {
     const card = node('button', 'cr-postit cr-p-preview');
@@ -84,9 +101,12 @@
         card.setAttribute('aria-label', 'Editar nota ' + (item.titulo || 'Sin título'));
         heading.textContent = item.titulo && item.titulo !== 'Nueva nota' ? item.titulo : 'Sin título';
         text.innerHTML = clean(item.contenido);
+        rebalance();
       }, removed => {
         items = items.filter(other => other.id !== removed.id);
+        cards.delete(removed.id);
         card.remove();
+        rebalance();
         refreshEmpty();
       });
     });
@@ -97,7 +117,8 @@
     loading = true;
     try {
       items = (await K.get('/api/creativos/pizarra')).items;
-      board.replaceChildren(...items.map(preview));
+      cards.clear();
+      rebalance();
       refreshEmpty();
     } catch (error) { K.fail(error); }
     finally { loading = false; }
@@ -107,12 +128,16 @@
     edit({ titulo: '', color: 'amarillo', contenido: '' }, saved => {
       const next = preview(saved);
       if (card) card.replaceWith(next);
-      else { items.unshift(saved); board.prepend(next); }
+      else items.unshift(saved);
+      cards.set(saved.id, next);
       card = next;
+      rebalance();
       refreshEmpty();
     }, removed => {
       items = items.filter(item => item.id !== removed.id);
+      cards.delete(removed.id);
       card?.remove();
+      rebalance();
       refreshEmpty();
     });
   });
