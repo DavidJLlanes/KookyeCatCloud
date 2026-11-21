@@ -65,11 +65,35 @@ async function prueba(browser, mobile) {
     selection.removeAllRanges();
     selection.addRange(range);
   });
-  await page.getByLabel('Estilo de párrafo').selectOption('h2');
+  await page.getByRole('button', { name: 'Título 2', exact: true }).click();
   await page.getByRole('button', { name: 'Centrar texto' }).click();
   await page.getByRole('button', { name: 'Guardar y cerrar' }).click();
   const updated = await page.evaluate(() => saved.at(-1));
   assert.match(updated.contenido, /<h2 style="text-align: center;">Hola mundo<\/h2>/);
+  // La selección de la captura está en el título, no en el cuerpo.
+  await page.evaluate(() => {
+    KCCPizarraEditor.open({ id: 'nota-1', titulo: 'MRW', contenido: '<p>41800km máximos Peugeot renting</p>', color: 'crema' }, () => {}, () => {});
+    const title = document.querySelector('.cr-e-title');
+    title.focus();
+    const range = document.createRange();
+    range.selectNodeContents(title.querySelector('strong'));
+    const selection = getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  const italic = page.getByRole('button', { name: 'Cursiva' });
+  if (mobile) await italic.tap(); else await italic.click();
+  assert.equal(await page.locator('.cr-e-title i').textContent(), 'MRW');
+  assert.equal(await page.locator('.cr-e-content').innerHTML(), '<p>41800km máximos Peugeot renting</p>');
+  await page.getByRole('button', { name: 'Título 2', exact: true }).click();
+  await page.getByRole('button', { name: 'Guardar y cerrar' }).click();
+  const withTitle = await page.evaluate(() => saved.at(-1));
+  assert.equal(withTitle.titulo, 'MRW');
+  assert.match(withTitle.tituloHtml, /<h2>/);
+  assert.match(withTitle.tituloHtml, /<i>MRW<\/i>/);
+  await page.evaluate(item => KCCPizarraEditor.open({ id: 'nota-1', ...item }, () => {}, () => {}), withTitle);
+  assert.equal(await page.locator('.cr-e-title h2 i').textContent(), 'MRW');
+  await page.getByRole('button', { name: 'Guardar y cerrar' }).click();
   assert.deepEqual(errors, []);
   await page.close();
 }

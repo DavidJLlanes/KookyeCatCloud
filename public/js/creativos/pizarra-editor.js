@@ -71,12 +71,17 @@
     const status = make('span', 'cr-e-status', 'Guardado');
     header.append(make('span', 'cr-e-header-label', 'Editar nota'), status, done);
     const body = make('div', 'cr-e-body');
-    const title = make('input', 'cr-e-title');
-    title.type = 'text';
-    title.maxLength = 120;
-    title.placeholder = 'Título';
+    const title = make('div', 'cr-e-title');
+    title.contentEditable = 'true';
+    title.setAttribute('role', 'textbox');
+    title.dataset.placeholder = 'Título';
     title.setAttribute('aria-label', 'Título');
-    title.value = item.titulo === 'Nueva nota' ? '' : item.titulo || '';
+    title.textContent = item.titulo === 'Nueva nota' ? '' : item.titulo || '';
+    if (item.tituloHtml) title.innerHTML = clean(item.tituloHtml);
+    else if (title.textContent) {
+      const strong = make('strong', '', title.textContent);
+      title.replaceChildren(strong);
+    }
     const editor = make('div', 'cr-e-content');
     editor.contentEditable = 'true';
     editor.spellcheck = true;
@@ -89,6 +94,9 @@
     const toolbar = make('div', 'cr-e-toolbar');
     toolbar.setAttribute('role', 'toolbar');
     toolbar.setAttribute('aria-label', 'Formato del texto');
+    const blocks = make('div', 'cr-e-format-row');
+    const marks = make('div', 'cr-e-format-row');
+    toolbar.append(blocks, marks);
     const palette = make('div', 'cr-e-palette');
     palette.setAttribute('role', 'group');
     palette.setAttribute('aria-label', 'Color de la nota');
@@ -109,6 +117,8 @@
     overlay.append(dialog);
     document.body.append(overlay);
     const oldFocus = document.activeElement;
+    let activeEditor = title;
+    const owner = node => title.contains(node) ? title : editor.contains(node) ? editor : null;
     let savedRange = null;
     let toolbarRange = null;
     let timer = 0;
@@ -123,16 +133,18 @@
     document.addEventListener('selectionchange', remember);
     function remember() {
       const selection = window.getSelection();
-      if (selection && selection.rangeCount && editor.contains(selection.anchorNode) && editor.contains(selection.focusNode)) {
+      if (selection && selection.rangeCount && owner(selection.anchorNode) && owner(selection.anchorNode) === owner(selection.focusNode)) {
         // Al tocar una herramienta algunos navegadores colapsan la selección antes del click.
         if (toolbarRange) return;
+        activeEditor = owner(selection.anchorNode);
         savedRange = selection.getRangeAt(0).cloneRange();
         updateToolbar();
       }
     }
     function captureForToolbar() {
       const selection = window.getSelection();
-      if (selection?.rangeCount && editor.contains(selection.anchorNode) && editor.contains(selection.focusNode) && !selection.isCollapsed) {
+      if (selection?.rangeCount && owner(selection.anchorNode) && owner(selection.anchorNode) === owner(selection.focusNode) && !selection.isCollapsed) {
+        activeEditor = owner(selection.anchorNode);
         toolbarRange = selection.getRangeAt(0).cloneRange();
       } else if (!toolbarRange && savedRange && !savedRange.collapsed) {
         toolbarRange = savedRange.cloneRange();
@@ -141,13 +153,13 @@
     function restore() {
       const candidate = toolbarRange || savedRange;
       toolbarRange = null;
-      const range = candidate && editor.contains(candidate.startContainer) && editor.contains(candidate.endContainer)
+      const range = candidate && activeEditor.contains(candidate.startContainer) && activeEditor.contains(candidate.endContainer)
         ? candidate.cloneRange() : null;
-      editor.focus({ preventScroll: true });
+      activeEditor.focus({ preventScroll: true });
       const selection = window.getSelection();
       if (!selection) return;
       const target = range || document.createRange();
-      if (!range) { target.selectNodeContents(editor); target.collapse(false); }
+      if (!range) { target.selectNodeContents(activeEditor); target.collapse(false); }
       selection.removeAllRanges();
       selection.addRange(target);
     }
@@ -161,28 +173,32 @@
       else status.textContent = 'No se pudo aplicar el formato';
     }
     function control(label, tooltip, command, value) {
-      const b = button(label, tooltip, () => format(command, value));
+      let lastTouch = 0;
+      let touchStart = null;
+      const b = button(label, tooltip, () => { if (Date.now() - lastTouch > 700) format(command, value); });
       // pointerdown ocurre antes de que el botón robe el foco, incluso en pantallas táctiles.
       b.addEventListener('pointerdown', captureForToolbar);
       b.addEventListener('mousedown', e => { captureForToolbar(); e.preventDefault(); });
-      b.addEventListener('touchstart', captureForToolbar, { passive: true });
+      b.addEventListener('touchstart', e => {
+        captureForToolbar();
+        touchStart = e.touches[0];
+      }, { passive: true });
+      b.addEventListener('touchend', e => {
+        const end = e.changedTouches[0];
+        if (!touchStart || Math.abs(end.clientX - touchStart.clientX) > 10 || Math.abs(end.clientY - touchStart.clientY) > 10) return;
+        e.preventDefault();
+        lastTouch = Date.now();
+        format(command, value);
+      }, { passive: false });
       b.dataset.command = command;
+      if (value) b.dataset.value = value;
       b.setAttribute('aria-pressed', 'false');
       formatButtons.push(b);
-      toolbar.append(b);
+      (command === 'formatBlock' ? blocks : marks).append(b);
     }
-    const heading = make('select', 'cr-e-heading');
-    heading.setAttribute('aria-label', 'Estilo de párrafo');
-    for (const [value, label] of [['p','Párrafo'],['h1','H1'],['h2','H2'],['h3','H3']]) {
-      const opt = make('option', '', label);
-      opt.value = value;
-      heading.append(opt);
+    for (const [tag, label] of [['p', 'Texto'], ['h1', 'Título 1'], ['h2', 'Título 2'], ['h3', 'Título 3']]) {
+      control(tag === 'p' ? 'Texto' : tag.toUpperCase(), label, 'formatBlock', tag);
     }
-    heading.addEventListener('pointerdown', captureForToolbar);
-    heading.addEventListener('touchstart', captureForToolbar, { passive: true });
-    heading.addEventListener('mousedown', captureForToolbar);
-    heading.addEventListener('change', () => { format('formatBlock', heading.value); });
-    toolbar.append(heading);
     control('B', 'Negrita', 'bold');
     control('I', 'Cursiva', 'italic');
     control('U', 'Subrayado', 'underline');
@@ -194,16 +210,16 @@
     control('↦', 'Alinear derecha', 'justifyRight');
     control('☷', 'Justificar texto', 'justifyFull');
     function updateToolbar() {
-      for (const b of formatButtons) {
-        let pressed = false;
-        try { pressed = document.queryCommandState(b.dataset.command); } catch { /* navegador sin estado */ }
-        b.setAttribute('aria-pressed', String(pressed));
-      }
       const selection = window.getSelection();
       const node = selection?.anchorNode;
       const element = node?.nodeType === 1 ? node : node?.parentElement;
       const block = element?.closest('h1,h2,h3');
-      heading.value = block && editor.contains(block) ? block.tagName.toLowerCase() : 'p';
+      const tag = block && activeEditor.contains(block) ? block.tagName.toLowerCase() : 'p';
+      for (const b of formatButtons) {
+        let pressed = false;
+        try { pressed = b.dataset.command === 'formatBlock' ? b.dataset.value === tag : document.queryCommandState(b.dataset.command); } catch { /* sin estado */ }
+        b.setAttribute('aria-pressed', String(pressed));
+      }
     }
     const swatches = [];
     for (const [id, name] of COLORS) {
@@ -228,7 +244,8 @@
     paintSwatches();
     function values() {
       return {
-        titulo: title.value.trim() || 'Sin título',
+        titulo: title.textContent.trim().slice(0, 120) || 'Sin título',
+        tituloHtml: clean(title.innerHTML),
         contenido: clean(editor.innerHTML),
         color: dialog.dataset.color
       };
@@ -243,8 +260,8 @@
         pending = false;
         const payload = values();
         const snapshot = JSON.stringify(payload);
-        if (snapshot === last || (!item.id && !title.value.trim() && !editor.textContent.trim())) break;
-        if (payload.contenido.length > 100000) {
+        if (snapshot === last || (!item.id && !title.textContent.trim() && !editor.textContent.trim())) break;
+        if (payload.contenido.length > 100000 || payload.tituloHtml.length > 8000 || title.textContent.length > 120) {
           status.textContent = 'Nota demasiado larga';
           ok = false;
           break;
@@ -276,6 +293,12 @@
       timer = setTimeout(save, 900);
     }
     title.addEventListener('input', schedule);
+    for (const field of [title, editor]) {
+      field.addEventListener('focus', () => { if (activeEditor !== field) { activeEditor = field; savedRange = null; toolbarRange = null; } });
+      field.addEventListener('pointerdown', () => { toolbarRange = null; });
+      field.addEventListener('keyup', remember);
+      field.addEventListener('pointerup', remember);
+    }
     editor.addEventListener('input', schedule);
     editor.addEventListener('pointerdown', () => { toolbarRange = null; });
     editor.addEventListener('keydown', () => { toolbarRange = null; });
@@ -283,7 +306,7 @@
     editor.addEventListener('pointerup', remember);
     editor.addEventListener('touchend', remember, { passive: true });
     // Imported text is plain; saved HTML is whitelisted.
-    editor.addEventListener('paste', e => {
+    for (const field of [title, editor]) field.addEventListener('paste', e => {
       if (!e.clipboardData) return;
       e.preventDefault();
       document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));

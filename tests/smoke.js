@@ -335,6 +335,9 @@ const rawgSrv = require('http').createServer((rq, rs) => {
     igual(nota.s, 201);
     igual((await req('GET', '/api/game')).j.recuentos.cr_postits, 0, 'nota vacía');
     igual((await req('PUT', '/api/creativos/pizarra/' + nota.j.item.id, { titulo: 'Idea', contenido: '<p>Hola</p>', color: 'menta' })).s, 200);
+    igual((await req('PUT', '/api/creativos/pizarra/' + nota.j.item.id, { titulo: 'Idea', tituloHtml: '<h2><i>Idea</i></h2>', contenido: '<p>Hola</p>', color: 'menta' })).s, 200);
+    igual((await req('GET', '/api/creativos/pizarra')).j.items.find(item => item.id === nota.j.item.id).tituloHtml, '<h2><i>Idea</i></h2>', 'formato del título guardado');
+    igual((await req('PUT', '/api/creativos/pizarra/' + nota.j.item.id, { titulo: 'Idea', tituloHtml: 123, contenido: '<p>Hola</p>', color: 'menta' })).s, 400, 'formato de título inválido');
     igual((await req('GET', '/api/game')).j.recuentos.cr_postits, 1, 'nota con contenido');
     const dibujo = await req('POST', '/api/creativos/dibujos', { titulo: 'Prueba', contenido: [{ color: '#303030', grosor: 5, puntos: [[0.2, 0.3]] }] });
     igual(dibujo.s, 201);

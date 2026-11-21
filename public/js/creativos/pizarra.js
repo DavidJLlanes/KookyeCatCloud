@@ -71,7 +71,8 @@
     card.type = 'button';
     card.dataset.color = item.color || 'amarillo';
     card.setAttribute('aria-label', 'Editar nota ' + (item.titulo || 'Sin título'));
-    const heading = node('strong', 'cr-p-preview-title', item.titulo && item.titulo !== 'Nueva nota' ? item.titulo : 'Sin título');
+    const heading = node('div', 'cr-p-preview-title', item.titulo && item.titulo !== 'Nueva nota' ? item.titulo : 'Sin título');
+    if (item.tituloHtml) { heading.innerHTML = clean(item.tituloHtml); heading.style.fontWeight = '400'; }
     const contents = node('div', 'cr-p-preview-text');
     contents.innerHTML = clean(item.contenido);
     card.append(heading, contents);
@@ -83,6 +84,7 @@
         card.dataset.color = item.color || 'amarillo';
         card.setAttribute('aria-label', 'Editar nota ' + (item.titulo || 'Sin título'));
         heading.textContent = item.titulo && item.titulo !== 'Nueva nota' ? item.titulo : 'Sin título';
+        if (item.tituloHtml) { heading.innerHTML = clean(item.tituloHtml); heading.style.fontWeight = '400'; }
         text.innerHTML = clean(item.contenido);
         rebalance();
       }, removed => {

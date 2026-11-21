@@ -42,7 +42,7 @@ async function check(browser, width, max) {
     const layout = await page.evaluate(() => [...document.querySelectorAll('.cr-p-column')].map(column =>
       [...column.querySelectorAll('.cr-p-preview')].map(card => {
         const box = card.getBoundingClientRect();
-        return { title: card.querySelector('strong').textContent, x: box.x, y: box.y, right: box.right, bottom: box.bottom };
+        return { title: card.querySelector('.cr-p-preview-title').textContent, x: box.x, y: box.y, right: box.right, bottom: box.bottom };
       })));
     for (let i = 0; i < Math.min(count, NOTES.length); i++) assert.equal(layout[i][0].title, NOTES[i].titulo);
     for (const column of layout) {
