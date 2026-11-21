@@ -15,12 +15,20 @@ async function check(browser, mobile) {
     window.$ = id => document.getElementById(id);
     window.el = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined) node.textContent = text; return node; };
     window.icon = () => { const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.classList.add('ico'); return svg; };
-    window.K = { debounce: fn => fn, _prompts: { R: {}, S: { q: { sort: 'updated' }, columns: { mobile: 2, desktop: 3 }, view: 'grid' }, SORTS: [['updated', 'Recientes']], mobileColumns: matchMedia('(max-width:700px)'), columnKeys: { mobile: 'test-prompt-mobile', desktop: 'test-prompt-desktop' } } };
+    window.K = { debounce: fn => fn, menu: (_, items) => { window.menuItems = items; }, _prompts: { R: {}, S: { q: { sort: 'updated' }, columns: { mobile: 2, desktop: 3 }, view: 'grid' }, SORTS: [['updated', 'Recientes']], mobileColumns: matchMedia('(max-width:700px)'), columnKeys: { mobile: 'test-prompt-mobile', desktop: 'test-prompt-desktop' } } };
     K._prompts.render = () => { K._prompts.R.content.innerHTML = '<div class="pr-grid"><article class="pr-card">Uno</article><article class="pr-card">Dos</article><article class="pr-card">Tres</article></div>'; K._prompts.R.updateColumns(); };
   });
   await page.addScriptTag({ path: path.join(ROOT, 'public/js/prompts/estructura.js') });
   await page.evaluate(() => { K._prompts.build(); K._prompts.render(); });
   assert.equal(await page.locator('.pr-view-toggle svg rect').count(), 4);
+  assert.equal(await page.locator('.pr-tools .seg').count(), 0, 'sin selector duplicado de vistas');
+  await page.locator('button[title="Importar, exportar y más"]').click();
+  assert.deepEqual(await page.evaluate(() => menuItems.filter(item => item && item.label && ['Tarjetas', 'Lista', 'Tablero por estado'].includes(item.label)).map(item => item.label)), ['Tarjetas', 'Lista', 'Tablero por estado']);
+  if (mobile) {
+    const positions = await page.locator('.pr-tools').evaluate(tools => Object.fromEntries(['.pr-railbtn', 'select', '.pr-count'].map(selector => [selector, tools.querySelector(selector).getBoundingClientRect().top])));
+    assert.equal(positions['.pr-railbtn'], positions.select, 'categorías y ordenación comparten fila');
+    assert.ok(positions['.pr-count'] > positions.select, 'el contador queda después de las acciones');
+  }
   const max = mobile ? 3 : 5;
   let n = mobile ? 2 : 3;
   for (let i = 0; i < max; i++) {
