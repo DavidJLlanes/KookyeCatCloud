@@ -107,13 +107,6 @@ function render() {
     info.hidden = true;
   }
 
-  const dirs = items.filter(i => i.isDir).length;
-  const files = items.length - dirs;
-  $('folder-count').textContent = [
-    dirs ? `${dirs} carpeta${dirs > 1 ? 's' : ''}` : '',
-    files ? `${files} archivo${files > 1 ? 's' : ''}` : '',
-  ].filter(Boolean).join(' · ');
-
   anulaTandas();
   box.textContent = '';
   if (!items.length) {

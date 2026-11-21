@@ -104,8 +104,8 @@
       x.value = valor; x.addEventListener('change', () => { cambio(x.value); pintaGrid(); }); return x;
     };
     bar.append(
-      sel(S.genero, [['', 'Todos los géneros'], ...unicos(g => g.genres || []).map(v => [v, v])], v => { S.genero = v; }, 'Género'),
-      sel(S.plataforma, [['', 'Todas las plataformas'], ...unicos(g => g.platforms || []).map(v => [v, v])], v => { S.plataforma = v; }, 'Plataforma'),
+      sel(S.genero, [['', 'Géneros'], ...unicos(g => g.genres || []).map(v => [v, v])], v => { S.genero = v; }, 'Género'),
+      sel(S.plataforma, [['', 'Plataformas'], ...unicos(g => g.platforms || []).map(v => [v, v])], v => { S.plataforma = v; }, 'Plataforma'),
       sel(S.orden, [['reciente', 'Recientes'], ['nota', 'Mejor nota'], ['horas', 'Más horas'], ['titulo', 'Título A-Z'], ['salida', 'Fecha de salida'], ['prioridad', 'Prioridad']], v => { S.orden = v; guarda(); }, 'Ordenar'));
     w.appendChild(bar);
     const act = [['estudio', 'Estudio'], ['saga', 'Saga'], ['tienda', 'Tienda'], ['etiqueta', 'Etiqueta']].filter(([k]) => S[k]);

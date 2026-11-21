@@ -1,5 +1,14 @@
 /* Explorador de archivos: lista, cuadrícula, distintivos por tipo, estados vacíos, subida y navegación móvil.
    Antes estaba en línea en index.html; el orden de carga de css/app/*.css importa (ver index.html). */
+/* Ruta y acciones en una sola línea. La ruta cede espacio y se desplaza si es larga. */
+#view-files .file-location-bar{gap:8px;padding:0;margin:0 0 4px;min-height:42px;}
+#view-files .file-location-bar .crumbs{flex:1 1 auto;flex-wrap:nowrap;white-space:nowrap;overflow-x:auto;scrollbar-width:none;min-width:0;}
+#view-files .file-location-bar .crumbs::-webkit-scrollbar{display:none;}
+#view-files .file-location-bar .crumbs button{flex:none;}
+#view-files .file-location-bar .crumbs .sep{flex:none;}
+#view-files .file-location-actions{gap:4px;flex:none;}
+#view-files .file-location-actions .btn{width:42px;height:42px;min-width:42px;min-height:42px;padding:0;display:grid;place-items:center;border-radius:12px;}
+#view-files .file-location-actions .btn:hover{background:var(--glass);}
 /* ---------- Lista ---------- */
 .list{display:flex;flex-direction:column;gap:5px;padding:14px 0 24px;}
 .row{position:relative;display:flex;align-items:center;gap:14px;padding:11px 14px;border-radius:var(--r);

@@ -66,8 +66,9 @@
 .gms-bar-b{display:block;height:12px;border-radius:99px;background:var(--brand);}
 .gms-bar-v{color:var(--muted);font-variant-numeric:tabular-nums;}
 @media (max-width:640px){
-  .gms-bar{grid-template-columns:1fr 1fr;}
+  .gms-bar{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
   .gms-search{grid-column:1/-1;}
+  .gms-bar select{font-size:12px;padding:10px 20px 10px 8px;height:42px;}
   .gms-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
   .gms-row{grid-template-columns:1fr;}
   .gms-ficha-top{flex-direction:column;align-items:center;}

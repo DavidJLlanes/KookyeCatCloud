@@ -1,5 +1,5 @@
 'use strict';
-/* Documentos · lista de documentos (con búsqueda, plantillas y papelera) y menú «⋯» del editor (exportar, versiones, borrar…). */
+/* Documentos · lista de documentos (con búsqueda y plantillas) y menú «⋯» del editor (exportar, versiones, borrar…). */
 (function () {
   if (!window.K || !K.documentos) return;
   const D = K.documentos, S = D.S;
@@ -25,15 +25,18 @@
     const acc = el('div', 'dc-acciones');
     const vista = el('button', 'dc-view-toggle cr-p-view-toggle'); vista.type = 'button';
     vista.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg>';
-    const pap = el('button', 'btn sm', 'Papelera'); pap.type = 'button'; pap.addEventListener('click', () => papelera(raiz));
     const nu = el('button', 'btn primary', '+ Nuevo documento'); nu.type = 'button'; nu.addEventListener('click', () => nuevo(raiz, 'blanco'));
     acc.append(vista, nu); cab.append(tit, acc); page.appendChild(cab);
-    const extra = el('div', 'kcc-section-secondary'); extra.appendChild(pap); page.appendChild(extra);
 
     const pl = S.plantillas.filter(p => p.id !== 'blanco');
     if (pl.length) {
-      const fila = el('div', 'dc-plantillas'); fila.appendChild(el('span', 'k-faint dc-pl-t', 'Empezar desde una plantilla'));
-      for (const p of pl) { const b = el('button', 'dc-plantilla'); b.type = 'button'; b.title = p.desc; b.append(el('span', 'dc-pl-i', p.icono), el('span', null, p.nombre)); b.addEventListener('click', () => nuevo(raiz, p.id)); fila.appendChild(b); }
+      const fila = el('div', 'dc-plantillas');
+      const label = el('label', 'dc-pl-t', 'Empezar desde una plantilla');
+      const selector = el('select', 'dc-pl-select'); selector.setAttribute('aria-label', 'Elegir plantilla de documento');
+      selector.appendChild(new Option('Elegir plantilla', '', true, true));
+      for (const p of pl) selector.appendChild(new Option(`${p.icono} ${p.nombre}`, p.id));
+      selector.addEventListener('change', () => { const id = selector.value; selector.selectedIndex = 0; if (id) nuevo(raiz, id); });
+      label.appendChild(selector); fila.appendChild(label);
       page.appendChild(fila);
     }
     const busca = el('input', 'dc-busca'); busca.type = 'search'; busca.placeholder = 'Buscar en tus documentos…'; busca.value = S.busca; busca.setAttribute('aria-label', 'Buscar documentos');
@@ -102,16 +105,4 @@
     } catch (e) { K.fail(e); }
   }
 
-  async function papelera(raiz) {
-    try {
-      const r = await K.get('/api/documentos/papelera'); const w = el('div', 'dc-modal-l');
-      if (!r.documentos.length) w.appendChild(el('p', 'k-faint', 'La papelera está vacía. Lo que borres se conserva 30 días.'));
-      for (const d of r.documentos) {
-        const b = el('button', 'btn dc-ver'); b.type = 'button'; b.textContent = `Restaurar «${d.title}» · ${d.palabras} palabras · borrado ${new Date(d.borrado).toLocaleDateString('es-ES')}`;
-        b.addEventListener('click', async () => { try { await K.post('/api/documentos/papelera/restaura', { nombre: d.nombre }); K.toast('Restaurado'); await D.carga(); D.pintaLista(raiz); b.remove(); } catch (e) { K.fail(e); } });
-        w.appendChild(b);
-      }
-      K.modal({ title: 'Papelera de documentos', content: w, actions: [{ label: 'Cerrar', primary: true }] });
-    } catch (e) { K.fail(e); }
-  }
 })();
