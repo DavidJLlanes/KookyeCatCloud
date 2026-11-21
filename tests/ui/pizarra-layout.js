@@ -30,12 +30,15 @@ async function check(browser, width, max) {
   await page.addScriptTag({ path: path.join(ROOT, 'public/js/creativos/pizarra.js') });
   await page.locator('.cr-p-preview').first().waitFor();
   assert.equal(await page.locator('.cr-p-density').count(), 0);
-  for (let count = 1; count <= max; count++) {
-    await page.getByRole('button', { name: 'Cambiar columnas' }).click();
-    await page.getByRole('button', { name: count + (count === 1 ? ' columna' : ' columnas') }).click();
+  assert.equal(await page.locator('.cr-p-view-menu').count(), 0);
+  const initial = Number(await page.locator('#cr-p-board').getAttribute('data-columns'));
+  for (let step = 1; step <= max; step++) {
+    await page.locator('#cr-p-view-toggle').click();
+    const count = (initial - 1 + step) % max + 1;
     assert.equal(await page.locator('.cr-p-column').count(), count);
     assert.equal(await page.locator('.cr-p-preview').count(), NOTES.length);
-    assert.equal(await page.locator('#cr-p-view-toggle').getAttribute('aria-expanded'), 'false');
+    assert.equal(await page.locator('#cr-p-board').getAttribute('data-columns'), String(count));
+    assert.match(await page.locator('#cr-p-view-toggle').getAttribute('aria-label'), new RegExp('siguiente ' + (count % max + 1)));
     const layout = await page.evaluate(() => [...document.querySelectorAll('.cr-p-column')].map(column =>
       [...column.querySelectorAll('.cr-p-preview')].map(card => {
         const box = card.getBoundingClientRect();

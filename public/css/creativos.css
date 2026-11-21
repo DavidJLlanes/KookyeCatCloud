@@ -87,16 +87,9 @@
 /* Pizarra: mosaico de notas con altura natural y control de vista junto a Nueva nota. */
 .cr-p-new-ui .cr-p-head{margin-bottom:20px}
 .cr-p-new-ui .cr-p-head-actions{display:flex;align-items:center;gap:8px}
-.cr-p-new-ui .cr-p-view-control{position:relative}
 .cr-p-new-ui .cr-p-view-toggle{width:42px;height:42px;display:grid;place-items:center;padding:0;border:1px solid var(--line-2);border-radius:12px;background:var(--surface);color:var(--muted);cursor:pointer;transition:background .15s ease,color .15s ease}
-.cr-p-new-ui .cr-p-view-toggle:hover,.cr-p-new-ui .cr-p-view-toggle[aria-expanded="true"]{background:var(--brand-soft);border-color:var(--accent-line);color:var(--accent-text)}
-.cr-p-new-ui .cr-p-view-toggle:focus-visible,.cr-p-new-ui .cr-p-view-option:focus-visible{outline:2px solid var(--accent-strong);outline-offset:2px}
-.cr-p-new-ui .cr-p-view-menu{position:absolute;right:0;top:calc(100% + 8px);z-index:20;min-width:162px;padding:5px;border:1px solid var(--line-2);border-radius:13px;background:var(--surface);box-shadow:var(--sh-2)}
-.cr-p-new-ui .cr-p-view-menu[hidden]{display:none}
-.cr-p-new-ui .cr-p-view-option{display:block;width:100%;min-height:38px;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:var(--text);font:inherit;font-size:.86rem;text-align:left;cursor:pointer}
-.cr-p-new-ui .cr-p-view-option:hover{background:var(--surface-2)}
-.cr-p-new-ui .cr-p-view-option[aria-pressed="true"]{background:var(--brand-soft);color:var(--accent-text);font-weight:700}
-.cr-p-new-ui .cr-p-view-option[aria-pressed="true"]::after{content:'✓';float:right}
+.cr-p-new-ui .cr-p-view-toggle:hover{background:var(--brand-soft);border-color:var(--accent-line);color:var(--accent-text)}
+.cr-p-new-ui .cr-p-view-toggle:focus-visible{outline:2px solid var(--accent-strong);outline-offset:2px}
 .cr-p-new-ui .cr-board{display:grid;grid-template-columns:repeat(var(--cr-p-cols,3),minmax(0,1fr));align-items:start;gap:14px;min-height:0}
 .cr-p-new-ui .cr-p-column{display:flex;flex-direction:column;gap:14px;min-width:0}
 .cr-p-new-ui .cr-postit.cr-p-preview{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:8px;text-align:left;width:100%;min-width:0;min-height:0;height:auto;margin:0;padding:16px 15px;border:1px solid #161b1820!important;border-radius:15px;background:var(--note)!important;background-image:none!important;box-shadow:0 2px 8px #00000014!important;color:#242622!important;-webkit-text-fill-color:#242622!important;font-family:inherit;cursor:pointer;overflow:hidden}

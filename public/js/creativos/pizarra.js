@@ -26,42 +26,25 @@
     if (text !== undefined) el.textContent = text;
     return el;
   };
-  root.innerHTML = '<div class="cr-wrap cr-pizarra cr-p-new-ui"><header class="cr-head cr-p-head"><div><h2>Pizarra</h2><p class="cr-p-sub">Tus ideas, de un vistazo</p></div><div class="cr-p-head-actions"><div class="cr-p-view-control"><button type="button" id="cr-p-view-toggle" class="cr-p-view-toggle" aria-label="Cambiar columnas" aria-controls="cr-p-columns" aria-expanded="false" title="Cambiar columnas"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="15" width="18" height="5" rx="1.5"/></svg></button><div id="cr-p-columns" class="cr-p-view-menu" role="group" aria-label="Columnas de notas" hidden></div></div><button type="button" id="cr-p-new" class="btn primary">+ Nueva nota</button></div></header><div class="cr-board" id="cr-p-board"></div><p class="cr-p-empty" id="cr-p-empty" hidden>Tu pizarra está vacía. Añade tu primera nota.</p></div>';
+  root.innerHTML = '<div class="cr-wrap cr-pizarra cr-p-new-ui"><header class="cr-head cr-p-head"><div><h2>Pizarra</h2><p class="cr-p-sub">Tus ideas, de un vistazo</p></div><div class="cr-p-head-actions"><button type="button" id="cr-p-view-toggle" class="cr-p-view-toggle" aria-label="Cambiar columnas" title="Cambiar columnas"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx=".8"/><rect x="14" y="3" width="7" height="7" rx=".8"/><rect x="3" y="14" width="7" height="7" rx=".8"/><rect x="14" y="14" width="7" height="7" rx=".8"/></svg></button><button type="button" id="cr-p-new" class="btn primary">+ Nueva nota</button></div></header><div class="cr-board" id="cr-p-board"></div><p class="cr-p-empty" id="cr-p-empty" hidden>Tu pizarra está vacía. Añade tu primera nota.</p></div>';
   const board = root.querySelector('#cr-p-board');
   const empty = root.querySelector('#cr-p-empty');
-  const controls = root.querySelector('#cr-p-columns');
   const toggle = root.querySelector('#cr-p-view-toggle');
-  function closeMenu() { controls.hidden = true; toggle.setAttribute('aria-expanded', 'false'); }
   toggle.addEventListener('click', () => {
-    controls.hidden = !controls.hidden;
-    toggle.setAttribute('aria-expanded', String(!controls.hidden));
-  });
-  document.addEventListener('pointerdown', event => {
-    if (!controls.hidden && !root.querySelector('.cr-p-view-control').contains(event.target)) closeMenu();
-  });
-  root.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !controls.hidden) { event.preventDefault(); closeMenu(); toggle.focus(); }
+    const mode = mobile.matches ? 'mobile' : 'desktop';
+    const max = mobile.matches ? 3 : 5;
+    columns[mode] = columns[mode] % max + 1;
+    try { localStorage.setItem(pref[mode], String(columns[mode])); } catch { /* privada */ }
+    layout();
   });
   function layout() {
     const isMobile = mobile.matches;
     const active = columns[isMobile ? 'mobile' : 'desktop'];
     board.style.setProperty('--cr-p-cols', String(active));
     board.dataset.columns = String(active);
-    controls.replaceChildren();
-    for (let count = 1; count <= (isMobile ? 3 : 5); count++) {
-      const btn = node('button', 'cr-p-view-option', count + (count === 1 ? ' columna' : ' columnas'));
-      btn.type = 'button';
-      btn.setAttribute('aria-pressed', String(count === active));
-      btn.addEventListener('click', () => {
-        const mode = mobile.matches ? 'mobile' : 'desktop';
-        columns[mode] = count;
-        try { localStorage.setItem(pref[mode], String(count)); } catch { /* privada */ }
-        layout();
-        closeMenu();
-        toggle.focus();
-      });
-      controls.append(btn);
-    }
+    const next = active % (isMobile ? 3 : 5) + 1;
+    toggle.title = `${active} ${active === 1 ? 'columna' : 'columnas'} · pulsar para ${next}`;
+    toggle.setAttribute('aria-label', `Cambiar columnas: ${active} ${active === 1 ? 'actual' : 'actuales'}, siguiente ${next}`);
     rebalance();
   }
   function rebalance() {
