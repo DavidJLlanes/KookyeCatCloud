@@ -20,7 +20,7 @@
   for(const ev of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(ev,()=>{activo=null;});
   $('#cr-d-new').onclick=()=>elegir(null);
   $('#cr-d-undo').onclick=()=>{trazos.pop();pintar();};
-  $('#cr-d-save').onclick=async()=>{try{const payload={titulo:$('#cr-d-title').value,contenido:trazos};const url='/api/creativos/dibujos'+(actual?'/'+encodeURIComponent(actual.id):'');await (actual?K.put(url,payload):K.post(url,payload));K.toast('Dibujo guardado');await cargar();}catch(e){aviso(e);}};
+  $('#cr-d-save').onclick=async()=>{try{const payload={titulo:$('#cr-d-title').value,contenido:trazos};const url='/api/creativos/dibujos'+(actual?'/'+encodeURIComponent(actual.id):'');const saved=await (actual?K.put(url,payload):K.post(url,payload));actual=saved.item;K.toast('Dibujo guardado');await cargar();}catch(e){aviso(e);}};
   $('#cr-d-delete').onclick=async()=>{if(!actual||!confirm('¿Eliminar este dibujo?'))return;try{await K.del('/api/creativos/dibujos/'+encodeURIComponent(actual.id));actual=null;await cargar();}catch(e){aviso(e);}};
   $('#cr-d-export').onclick=()=>{const a=document.createElement('a');a.download='dibujo.png';a.href=canvas.toDataURL('image/png');a.click();};
   K.registerView('dibujos',{open:cargar,close(){}});
